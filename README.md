@@ -1,14 +1,18 @@
+![Version](https://img.shields.io/badge/version-v0.0.1-red.svg)
+
 # The trackintel Framework
 Focusing on human mobility data, *trackintel* provides functionalities for data quality enhancement, integrating data from various sources, performing quantitative analysis and mining tasks, and visualizing the data and/or analysis results. In addition to these core functionalities, packages are provided for user mobility profiling and trajectory-based learning analytics.
 
-## User Characteristics
+You can find the documentation under [the Wiki](https://github.com/mie-lab/trackintel/wiki).
+
+## Target Users
 *trackintel* is intended for use mainly by researchers with:
 * Programming experience in Python
 * Proficiency in movement data mining and analysis
 
 ## Assumptions 
-* Movement data exists in csv, json, or gpx format
-* Movement data consists of points with x,y-coordinates, a time stamp and a user ID
+* Movement data exists in csv, (geo)json, gpx or PostGIS format
+* Movement data consists of points with x,y-coordinates, a time stamp, an optional accuracy and a user ID
 * The tracking data can be reasonably segmented into 
   * positionfixes (raw tracking points)
   * triplegs (aggregated tracking points based on the transport mode)
