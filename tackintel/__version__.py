@@ -1,8 +1,0 @@
-__title__ = 'trackintel'
-__description__ = 'Human mobility and movement analysis framework.'
-__url__ = 'https://github.com/mie-lab/trackintel'
-__version__ = '0.0.1'
-__author__ = 'Dominik Bucher, Henry Martin'
-__author_email__ = 'dobucher@ethz.ch, martinhe@ethz.ch'
-__license__ = 'MIT License'
-__copyright__ = 'Copyright 2018 Dominik Bucher, Henry Martin'
