@@ -24,6 +24,21 @@ You can find the documentation under [the Wiki](https://github.com/mie-lab/track
   * tours (aggregated trips starting / ending at the same location / staypoint)
 * One of the following transportation modes was used at any time: car, walking, bike, bus, tram, train, plane, ship, e-car, e-bike
 
+## Installation and Usage
+
+This is not on [pypi.org](https://pypi.org/) yet, so to install you have to `git clone` the repository and install it with `pip install .`.
+
+You should then be able to run the examples in the `examples` folder or import trackintel using:
+```{python}
+import trackintel
+```
+
 ## Development
 
 You can install *trackintel* locally using `pip install .`. For quick testing, use `trackintel.print_version()`.
+
+Testing is done using [pytest](https://docs.pytest.org/en/latest). Simply run the tests using `pytest` in the top-level trackintel folder.
+
+## Contributors
+
+trackintel is primarily maintained by the Mobility Information Engineering Lab at ETH Zurich ([mie-lab.ethz.ch](http://mie-lab.ethz.ch)). If you want to contribute, send a pull request and put yourself in the `AUTHORS.md` file.
