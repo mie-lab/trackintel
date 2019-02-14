@@ -14,14 +14,23 @@ ureg = UnitRegistry()
 
 
 def a4_figsize(fig_height_mm=None, columns=2):
-    """
-    Generates sizes for a figure that fits on an A4 page.
+    """Generates sizes for a figure that fits on an A4 page.
 
     The sizes are taken from:
     http://www.springer.com/computer/journal/450 > Artwork and Illustrations Guidelines > Figure Placement and Size
 
-    :param fig_height_mm: If set, uses this height for the figure. Otherwise computes one based on an aesthetic ratio.
-    :param columns: The number of columns this figure should span (1, 1.5 or 2).
+    Parameters
+    ----------
+    fig_height_mm : float
+        If set, uses this height for the figure. Otherwise computes one based on an aesthetic ratio.
+
+    columns : float
+        The number of columns this figure should span (1, 1.5 or 2).
+
+    Returns
+    -------
+    (float, float)
+        The width and height in which to plot a figure to fit on an A4 sheet.
     """
 
     if columns == 1:
@@ -53,8 +62,12 @@ def a4_figsize(fig_height_mm=None, columns=2):
 
 
 def regular_figure():
-    """
-    Sets some rc parameters for increased readability.
+    """Sets some rc parameters for increased readability and creates an empty figure.
+
+    Returns
+    -------
+    (figure, axis)
+        The figure and its default axis.
     """
 
     params = {
@@ -76,12 +89,16 @@ def regular_figure():
 
 
 def save_fig(out_filename, tight='tight', formats=['png', 'pdf']):
-    """
-    Saves a figure to a file.
+    """Saves a figure to a file.
 
-    :param out_filename: The filename of the figure.
-    :param tight: How the bounding box should be drawn.
-    :param formats: A list denoting in which formats this figure should be saved ('png' or 'pdf').
+    Parameters
+    ----------
+    out_filename : str
+        The filename of the figure.
+    tight : str
+        How the bounding box should be drawn.
+    formats : list
+        A list denoting in which formats this figure should be saved ('png' or 'pdf').
     """
 
     if out_filename.endswith('.png'):

@@ -39,6 +39,12 @@ You can install *trackintel* locally using `pip install .`. For quick testing, u
 
 Testing is done using [pytest](https://docs.pytest.org/en/latest). Simply run the tests using `pytest` in the top-level trackintel folder.
 
+### Documentation
+
+The documentation follws the [pandas resp. numpy docstring standard](https://pandas-docs.github.io/pandas-docs-travis/development/contributing.html#contributing-to-the-documentation). In particular, it uses [Sphinx](http://www.sphinx-doc.org/en/master/) to create the documentation.
+
+You can install Sphinx using `pip install -U sphinx` or `conda install sphinx`. Generate the documentation using `sphinx-quickstart` in the root folder.
+
 ## Contributors
 
 trackintel is primarily maintained by the Mobility Information Engineering Lab at ETH Zurich ([mie-lab.ethz.ch](http://mie-lab.ethz.ch)). If you want to contribute, send a pull request and put yourself in the `AUTHORS.md` file.

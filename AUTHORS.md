@@ -8,4 +8,4 @@ René Buffat: [@rbuffat (Github)](https://github.com/rbuffat).
 
 # Previous Authors, Advisors, Visionaries
 
-David Jonietz
+David Jonietz: [@DavidJonietz (Github)](https://github.com/DavidJonietz).
