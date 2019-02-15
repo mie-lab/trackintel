@@ -65,8 +65,14 @@ def extract_staypoints(positionfixes, method='sliding',
         num_pfs = len(positionfixes)
 
         i = 0
-        while i < num_pfs - 1:
-            j = i + 1
+        j = 1
+        while i < num_pfs:
+            if j == num_pfs:
+                # We're at the end, this can happen if in the last "bin", 
+                # the dist_threshold is never crossed anymore.
+                break
+            else:
+                j = i + 1
             while j < num_pfs:
                 dist = dist_func(pfs[i]['longitude'], pfs[i]['latitude'], 
                                  pfs[j]['longitude'], pfs[j]['latitude'])
@@ -86,6 +92,7 @@ def extract_staypoints(positionfixes, method='sliding',
 
     elif method == 'dbscan':
         pass
+
 
     ret_staypoints['geom'] = list(zip(ret_staypoints.longitude, ret_staypoints.latitude))
     ret_staypoints['geom'] = ret_staypoints['geom'].apply(Point)

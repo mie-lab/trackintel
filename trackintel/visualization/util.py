@@ -85,6 +85,7 @@ def regular_figure():
     matplotlib.rcParams.update(params)
     fig = plt.figure(figsize=a4_figsize(columns=2))
     ax = fig.gca()
+    ax.ticklabel_format(useOffset=False)
     return fig, ax
 
 
