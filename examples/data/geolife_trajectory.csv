@@ -1,4 +1,4 @@
-user;tracked_at;latitude;longitude;elevation;accuracy
+user_id;tracked_at;latitude;longitude;elevation;accuracy
 1;2008-10-26T05:59:34Z;39.979984;116.324016;47;1
 1;2008-10-26T05:59:36Z;39.979612;116.323642;14;1
 1;2008-10-26T05:59:37Z;39.97965;116.323677;68;1

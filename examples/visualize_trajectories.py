@@ -13,9 +13,9 @@ import trackintel as ti
 logging.basicConfig(filename='log/visualize_trajectories.log', level=logging.INFO, filemode='w')
 
 # GPSies trajectory.
-positionfixes = ti.read_positionfixes_csv('data/gpsies_trajectory.csv', sep=';')
-ti.plot_positionfixes(positionfixes, out_filename='out/gpsies_trajectory_positionfixes.png', plot_osm=True)
+pfs = ti.read_positionfixes_csv('data/gpsies_trajectory.csv', sep=';')
+pfs.as_positionfixes.plot(out_filename='out/gpsies_trajectory_positionfixes.png', plot_osm=True)
 
 # Geolife trajectory.
-positionfixes = ti.read_positionfixes_csv('data/geolife_trajectory.csv', sep=';')
-ti.plot_positionfixes(positionfixes, out_filename='out/geolife_trajectory_positionfixes.png', plot_osm=False)
+pfs = ti.read_positionfixes_csv('data/geolife_trajectory.csv', sep=';')
+pfs.as_positionfixes.plot(out_filename='out/geolife_trajectory_positionfixes.png', plot_osm=False)

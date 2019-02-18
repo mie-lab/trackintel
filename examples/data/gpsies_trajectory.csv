@@ -1,4 +1,4 @@
-user;tracked_at;latitude;longitude;elevation;accuracy
+user_id;tracked_at;latitude;longitude;elevation;accuracy
 1;2015-11-27T08:00:00Z;47.37651505;8.548779487;456;1
 1;2015-11-27T08:00:13Z;47.37652;8.54881;456;1
 1;2015-11-27T08:00:26Z;47.37657;8.54879;456;1

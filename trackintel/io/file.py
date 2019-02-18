@@ -17,6 +17,7 @@ def read_positionfixes_csv(*args, **kwargs):
         A GeoDataFrame containing the positionfixes.
     """
     df = pd.read_csv(*args, **kwargs)
+    assert df.as_positionfixes
     df['geom'] = list(zip(df.longitude, df.latitude))
     df['geom'] = df['geom'].apply(Point)
     df['tracked_at'] = df['tracked_at'].apply(dateutil.parser.parse)

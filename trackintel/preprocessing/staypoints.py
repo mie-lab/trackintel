@@ -81,10 +81,12 @@ def extract_staypoints(positionfixes, method='sliding',
                     delta_t = pfs[j]['tracked_at'] - pfs[i]['tracked_at']
                     if delta_t.total_seconds() > time_threshold:
                         staypoint = {}
+                        staypoint['user_id'] = pfs[i]['user_id']
                         staypoint['longitude'] = np.mean([pfs[k]['longitude'] for k in range(i, j)])
                         staypoint['latitude'] = np.mean([pfs[k]['latitude'] for k in range(i, j)])
-                        staypoint['arrival_at'] = pfs[i]['tracked_at']
-                        staypoint['departure_at'] = pfs[j]['tracked_at']
+                        staypoint['elevation'] = np.mean([pfs[k]['elevation'] for k in range(i, j)])
+                        staypoint['started_at'] = pfs[i]['tracked_at']
+                        staypoint['finished_at'] = pfs[j]['tracked_at']
                         ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
                     i = j
                     break

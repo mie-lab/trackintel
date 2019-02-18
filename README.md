@@ -43,7 +43,7 @@ Testing is done using [pytest](https://docs.pytest.org/en/latest). Simply run th
 
 The documentation follws the [pandas resp. numpy docstring standard](https://pandas-docs.github.io/pandas-docs-travis/development/contributing.html#contributing-to-the-documentation). In particular, it uses [Sphinx](http://www.sphinx-doc.org/en/master/) to create the documentation.
 
-You can install Sphinx using `pip install -U sphinx` or `conda install sphinx`. Generate the documentation using `sphinx-quickstart` in the root folder.
+You can install Sphinx using `pip install -U sphinx` or `conda install sphinx`. Generate the documentation using `make html` (resp. `make.bat html` on Windows) in the `doc` folder.
 
 ## Contributors
 
