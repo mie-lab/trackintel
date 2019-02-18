@@ -43,7 +43,7 @@ Testing is done using [pytest](https://docs.pytest.org/en/latest). Simply run th
 
 The documentation follws the [pandas resp. numpy docstring standard](https://pandas-docs.github.io/pandas-docs-travis/development/contributing.html#contributing-to-the-documentation). In particular, it uses [Sphinx](http://www.sphinx-doc.org/en/master/) to create the documentation.
 
-You can install Sphinx using `pip install -U sphinx` or `conda install sphinx`. Generate the documentation using `make html` (resp. `make.bat html` on Windows) in the `doc` folder.
+You can install Sphinx using `pip install -U sphinx` or `conda install sphinx`. Generate the documentation using `python make.py` in the `doc` folder. Attention! This will copy the generated HTML to a folder `trackintel-docs` (containing the documentation repository [https://github.com/mie-lab/trackintel-docs](https://github.com/mie-lab/trackintel-docs)), which must exist in parallel to this repository. After copying, you can push the other repository to update the documentation.
 
 ## Contributors
 
