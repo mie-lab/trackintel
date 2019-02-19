@@ -10,8 +10,7 @@ class PositionfixesAccessor(object):
     will define certain methods and accessors, as well as make sure that the DataFrame
     adheres to some requirements."""
 
-    required_columns = ['user_id', 'started_at', 'finished_at', 
-                        'longitude', 'latitude', 'elevation']
+    required_columns = ['user_id', 'started_at', 'finished_at', 'elevation', 'geometry']
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -23,6 +22,8 @@ class PositionfixesAccessor(object):
             raise AttributeError("To process a DataFrame as a collection of staypoints, " \
                 + "it must have the properties [%s], but it has [%s]." \
                 % (', '.join(PositionfixesAccessor.required_columns), ', '.join(obj.columns)))
+        if obj.shape[0] > 0 and obj['geometry'].geom_type[0] is not 'Point':
+            raise AttributeError("The geometry must be a Point (only first checked).")
 
     @property
     def center(self):
