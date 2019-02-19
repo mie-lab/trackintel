@@ -1,103 +1,61 @@
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+import sklearn
 import shapely
 
 from shapely.geometry import Point
-
-import trackintel.geogr.distances
-from trackintel.geogr.distances import haversine_dist
+from sklearn.cluster import DBSCAN
 
 
-def extract_staypoints(positionfixes, method='sliding', 
-                       dist_threshold=100, time_threshold=5*60, epsilon=100,
-                       dist_func=haversine_dist):
-    """Extract staypoints from positionfixes.
+def cluster_staypoints(staypoints, method='dbscan',
+                       epsilon=100, num_samples=3):
+    """Clusters staypoints to get places.
 
     Parameters
     ----------
-    positionfixes : GeoDataFrame
-        The positionfixes have to follow the standard definition for positionfixes DataFrames.
+    staypoints : GeoDataFrame
+        The staypoints have to follow the standard definition for staypoints DataFrames.
 
-    method : {'sliding' or 'dbscan'}
-        The following methods are available to extract staypoints from positionfixes:
+    method : {'dbscan'}
+        The following methods are available to cluster staypoints into places:
 
-        'sliding' : Applies a sliding window over the data.
-        'dbscan' : Uses the DBSCAN algorithm to find clusters of staypoints.
-
-    dist_threshold : float
-        The distance threshold for the 'sliding' method, i.e., how far someone has to travel to
-        generate a new staypoint.
-
-    time_threshold : float
-        The time threshold for the 'sliding' method in seconds, i.e., how long someone has to 
-        stay within an area to consider it as a staypoint.
+        'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
 
     epsilon : float
         The epsilon for the 'dbscan' method.
 
-    dist_func : function
-        A function that expects (lon_1, lat_1, lon_2, lat_2) and computes a distance in meters.
+    num_samples : int
+        The minimal number of samples in a cluster.
 
     Returns
     -------
     GeoDataFrame
-        A new GeoDataFrame containing points where a person spent some time.
+        A new GeoDataFrame containing places that a person visited multiple times.
 
     Examples
     --------
-    >>> extract_staypoints(...)
-
-    References
-    ----------
-    Zheng, Y. (2015). Trajectory data mining: an overview. ACM Transactions on Intelligent Systems 
-    and Technology (TIST), 6(3), 29.
-
-    Li, Q., Zheng, Y., Xie, X., Chen, Y., Liu, W., & Ma, W. Y. (2008, November). Mining user 
-    similarity based on location history. In Proceedings of the 16th ACM SIGSPATIAL international 
-    conference on Advances in geographic information systems (p. 34). ACM.
+    >>> cluster_staypoints(...)    
     """
-    ret_staypoints = pd.DataFrame(columns=['longitude', 'latitude', 'arrival_at', 'departure_at'])
+    ret_places = pd.DataFrame(columns=['user_id', 'geometry'])
 
-    if method == 'sliding':
-        # Algorithm from Li et al. (2008). For details, please refer to the paper.
-        pfs = positionfixes.sort_values('tracked_at').to_dict('records')
-        num_pfs = len(positionfixes)
+    # TODO We have to make sure that the user_id is taken into account.
+    db = DBSCAN(eps=epsilon, min_samples=num_samples)
+    coordinates = np.array([[g.x, g.y] for g in staypoints['geometry']])
+    labels = db.fit_predict(coordinates)
+    labeled_staypoints = staypoints
+    labeled_staypoints['cluster_id'] = labels
 
-        i = 0
-        j = 1
-        while i < num_pfs:
-            if j == num_pfs:
-                # We're at the end, this can happen if in the last "bin", 
-                # the dist_threshold is never crossed anymore.
-                break
-            else:
-                j = i + 1
-            while j < num_pfs:
-                dist = dist_func(pfs[i]['longitude'], pfs[i]['latitude'], 
-                                 pfs[j]['longitude'], pfs[j]['latitude'])
+    grouped_df = labeled_staypoints.groupby('cluster_id')
+    for cluster_id, group in grouped_df:
+        if cluster_id is not -1:
+            stps = group.to_dict('records')
+            ret_place = {}
+            ret_place['user_id'] = stps[0]['user_id']
+            ret_place['geometry'] = Point(np.mean([k['geometry'].x for k in stps]), 
+                                          np.mean([k['geometry'].y for k in stps]))
+            ret_places = ret_places.append(ret_place, ignore_index=True)
 
-                if dist > dist_threshold:
-                    delta_t = pfs[j]['tracked_at'] - pfs[i]['tracked_at']
-                    if delta_t.total_seconds() > time_threshold:
-                        staypoint = {}
-                        staypoint['user_id'] = pfs[i]['user_id']
-                        staypoint['longitude'] = np.mean([pfs[k]['longitude'] for k in range(i, j)])
-                        staypoint['latitude'] = np.mean([pfs[k]['latitude'] for k in range(i, j)])
-                        staypoint['elevation'] = np.mean([pfs[k]['elevation'] for k in range(i, j)])
-                        staypoint['started_at'] = pfs[i]['tracked_at']
-                        staypoint['finished_at'] = pfs[j]['tracked_at']
-                        ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
-                    i = j
-                    break
-                j = j + 1
+    ret_places = gpd.GeoDataFrame(ret_places, geometry='geometry')
+    return ret_places
 
-    elif method == 'dbscan':
-        pass
-
-
-    ret_staypoints['geom'] = list(zip(ret_staypoints.longitude, ret_staypoints.latitude))
-    ret_staypoints['geom'] = ret_staypoints['geom'].apply(Point)
-    ret_staypoints = gpd.GeoDataFrame(ret_staypoints, geometry='geom')
-
-    return ret_staypoints

@@ -15,10 +15,12 @@ from trackintel.geogr.distances import meters_to_decimal_degrees
 logging.basicConfig(filename='log/preprocessing.log', level=logging.INFO, filemode='w')
 
 # GPSies trajectory.
-pfs = ti.read_positionfixes_csv('data/gpsies_trajectory.csv', sep=';')
+pfs = ti.read_positionfixes_csv('data/geolife_trajectory.csv', sep=';')
 spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=100, time_threshold=5*60)
 spts.as_staypoints.plot(out_filename='out/gpsies_trajectory_staypoints.png',
                         radius=meters_to_decimal_degrees(100, 47.5), positionfixes=pfs, plot_osm=True)
+plcs = spts.as_staypoints.extract_places(method='dbscan', epsilon=0.03, num_samples=3)
+plcs.as_places.plot()
 
 # Geolife trajectory.
 pfs = ti.read_positionfixes_csv('data/geolife_trajectory.csv', sep=';')

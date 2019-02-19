@@ -20,7 +20,7 @@ def read_positionfixes_csv(*args, **kwargs):
     df['geometry'] = list(zip(df.longitude, df.latitude))
     df['geometry'] = df['geometry'].apply(Point)
     df['tracked_at'] = df['tracked_at'].apply(dateutil.parser.parse)
-    df.drop(['longitude', 'latitude'], axis=1)
+    df = df.drop(['longitude', 'latitude'], axis=1)
     gdf = gpd.GeoDataFrame(df, geometry='geometry')
     assert gdf.as_positionfixes
     return gdf

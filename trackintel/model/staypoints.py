@@ -2,6 +2,7 @@ import pandas as pd
 import trackintel as ti
 
 import trackintel.visualization.staypoints
+import trackintel.preprocessing.staypoints
 
 
 @pd.api.extensions.register_dataframe_accessor("as_staypoints")
@@ -31,6 +32,11 @@ class PositionfixesAccessor(object):
         lat = self._obj.latitude
         lon = self._obj.longitude
         return (float(lon.mean()), float(lat.mean()))
+
+    def extract_places(self, *args, **kwargs):
+        """Extracts places from this collection of staypoints.
+        See :func:`trackintel.preprocessing.staypoints.cluster_staypoints`."""
+        return ti.preprocessing.staypoints.cluster_staypoints(self._obj, *args, **kwargs)
 
     def plot(self, *args, **kwargs):
         """Plots this collection of staypoints. 

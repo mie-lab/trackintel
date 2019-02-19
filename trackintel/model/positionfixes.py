@@ -1,7 +1,7 @@
 import pandas as pd
 import trackintel as ti
 
-import trackintel.preprocessing.staypoints
+import trackintel.preprocessing.positionfixes
 import trackintel.visualization.positionfixes
 
 
@@ -35,8 +35,8 @@ class PositionfixesAccessor(object):
 
     def extract_staypoints(self, *args, **kwargs):
         """Extracts staypoints from this collection of positionfixes. 
-        See :func:`trackintel.preprocessing.staypoints.extract_staypoints`."""
-        return ti.preprocessing.staypoints.extract_staypoints(self._obj, *args, **kwargs)
+        See :func:`trackintel.preprocessing.positionfixes.extract_staypoints`."""
+        return ti.preprocessing.positionfixes.extract_staypoints(self._obj, *args, **kwargs)
 
     def plot(self, *args, **kwargs):
         """Plots this collection of positionfixes. 

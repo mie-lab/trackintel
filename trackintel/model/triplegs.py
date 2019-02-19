@@ -4,7 +4,7 @@ import shapely
 
 
 @pd.api.extensions.register_dataframe_accessor("as_triplegs")
-class PositionfixesAccessor(object):
+class TriplegsAccessor(object):
     """A pandas accessor to treat (Geo)DataFrames as collections of triplegs. This
     will define certain methods and accessors, as well as make sure that the DataFrame
     adheres to some requirements."""
@@ -17,10 +17,10 @@ class PositionfixesAccessor(object):
 
     @staticmethod
     def _validate(obj):
-        if any([c not in obj.columns for c in PositionfixesAccessor.required_columns]):
+        if any([c not in obj.columns for c in TriplegsAccessor.required_columns]):
             raise AttributeError("To process a DataFrame as a collection of triplegs, " \
                 + "it must have the properties [%s], but it has [%s]." \
-                % (', '.join(PositionfixesAccessor.required_columns), ', '.join(obj.columns)))
+                % (', '.join(TriplegsAccessor.required_columns), ', '.join(obj.columns)))
         if obj.shape[0] > 0 and obj['geometry'].geom_type[0] is not 'LineString':
             raise AttributeError("The geometry must be a LineString (only first checked).")
 
