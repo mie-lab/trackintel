@@ -1,16 +1,25 @@
-.. trackintel documentation master file, created by
-   sphinx-quickstart on Mon Feb 18 11:17:17 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 The *trackintel* Documentation
 ******************************
+
+Thank you for your interest in trackintel!
 
 Focusing on human mobility data, *trackintel* provides functionalities for data quality 
 enhancement, integrating data from various sources, performing quantitative analysis and 
 mining tasks, and visualizing the data and/or analysis results. In addition to these 
 core functionalities, packages are provided for user mobility profiling and trajectory-based 
-learning analytics.
+learning analytics. It is split into the different steps of a typical processing pipeline, 
+and assumes that data is available adhering to the trackintel data model format:
+
+* Preprocessing (filtering, outlier detection, imputation of missing values)
+* Contextual Augmentation (map matching, trajectory algebra-based context addition)
+* Analysis (extraction of mobility metrics and descriptors, preferences, systematic mobility)
+* Visualization and Communication (generation of maps, charts, etc.)
+* Non-standardized methods and algorithms are explicitly denoted as experimental and 
+  (whenever possible) separated from the standardized methods.
+
+For information about the trackintel data models that are used throughout the framework, 
+please refer to the Data Model page. For a quick deployment to a PostGIS database, you can 
+use the SQL commands given at Data Model page (SQL).
 
 .. toctree::
    :maxdepth: 2
