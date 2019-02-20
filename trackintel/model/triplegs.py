@@ -7,9 +7,17 @@ import shapely
 class TriplegsAccessor(object):
     """A pandas accessor to treat (Geo)DataFrames as collections of triplegs. This
     will define certain methods and accessors, as well as make sure that the DataFrame
-    adheres to some requirements."""
+    adheres to some requirements.
 
-    required_columns = ['user_id', 'started_at', 'finished_at', 'geometry']
+    Requires at least the following columns: 
+    ``['user_id', 'started_at', 'finished_at', 'geom']``
+
+    Examples
+    --------
+    >>> df.as_triplegs.plot()
+    """
+
+    required_columns = ['user_id', 'started_at', 'finished_at', 'geom']
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -21,7 +29,7 @@ class TriplegsAccessor(object):
             raise AttributeError("To process a DataFrame as a collection of triplegs, " \
                 + "it must have the properties [%s], but it has [%s]." \
                 % (', '.join(TriplegsAccessor.required_columns), ', '.join(obj.columns)))
-        if obj.shape[0] > 0 and obj['geometry'].geom_type[0] is not 'LineString':
+        if obj.shape[0] > 0 and obj['geom'].geom_type[0] is not 'LineString':
             raise AttributeError("The geometry must be a LineString (only first checked).")
 
     def plot(self, *args, **kwargs):

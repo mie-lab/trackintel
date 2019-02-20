@@ -9,7 +9,9 @@ from shapely.geometry import Point
 
 def read_positionfixes_csv(*args, **kwargs):
     """Wraps the pandas read_csv function, extracts longitude and latitude and 
-    builds a geopandas GeoDataFrame.
+    builds a geopandas GeoDataFrame. This also validates that the ingested data
+    conforms to the trackintel understanding of positionfixes. 
+    See :doc:`/modules/model`.
 
     Returns
     -------

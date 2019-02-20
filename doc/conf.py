@@ -187,3 +187,7 @@ epub_exclude_files = ['search.html']
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
+
+
+# Prevent that all member and method tables are tables of contents (numpydoc).
+numpydoc_class_members_toctree = False

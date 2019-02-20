@@ -18,14 +18,14 @@ and assumes that data is available adhering to the trackintel data model format:
   (whenever possible) separated from the standardized methods.
 
 For information about the trackintel data models that are used throughout the framework, 
-please refer to the Data Model page. For a quick deployment to a PostGIS database, you can 
-use the SQL commands given at Data Model page (SQL).
+please refer to the :doc:`/modules/model` page. For a quick deployment to a PostGIS database, you can 
+use the SQL commands given at :doc:`/content/data_model_sql` or run the file found 
+`on Github <https://github.com/mie-lab/trackintel/blob/master/sql/create_tables_pg.sql>`_.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents
 
-   introduction
    tutorial
    modules/model
    modules/io

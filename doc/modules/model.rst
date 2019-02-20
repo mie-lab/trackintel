@@ -4,19 +4,50 @@ Model
 In trackintel, **tracking data** is split into several classes. It is not generally 
 assumed that data is already available in all these classes, instead, trackintel
 provides functionality to generate everything starting from the raw GPS positionfix data 
-(consisting of ``(longitude, latitude, accuracy, timestamp, user_id)`` tuples).
+(consisting of at least ``(user_id, tracked_at, longitude, latitude, elevation, accuracy)`` 
+tuples).
 
-* **positionfixes**: Raw GPS data
-* **triplegs**: Segments covered with one mode of transport
-* **trips**: Segments between consecutive staypoints
-* **customer movements**: Sequences of triplegs which use only public transport
+* **positionfixes**: Raw GPS data.
+* **staypoints**: Locations where a user spent a minimal time.
+* **triplegs**: Segments covered with one mode of transport.
+* **trips**: Segments between consecutive activities (special staypoints that are not just waiting points).
+* **customer movements**: Sequences of triplegs which use only public transport.
 * **tours**: Sequences of trips which start and end at the same place (if ``journey`` 
-  is set to ``True``, this place is *home*)
-* **staypoints**: Locations where a user spent a minimal time
-* **places**: Clustered staypoints
+  is set to ``True``, this place is *home*).
+* **places**: Clustered staypoints.
 
-Additionally, some of the more time-consuming functions of trackintel generate logging 
-data, as well as extracted features data, and they assume more data about geographic 
-features or characteristics of transport modes are available. A detailed (and 
-SQL-specific) explanation of the different classes can be found under 
+A detailed (and SQL-specific) explanation of the different classes can be found under 
 :doc:`/content/data_model_sql`.
+
+Some of the more time-consuming functions of trackintel generate logging data, as well as extracted 
+features data, and they assume more data about geographic features or characteristics of transport 
+modes are available. These are not explained here yet.
+
+GeoPandas Implementation
+========================
+
+.. highlight:: python
+
+In trackintel, we assume that all these classes are available as (Geo)Pandas (Geo)DataFrames. While we
+do not extend the given DataFrame constructs, we provide accessors that validate that a given DataFrame
+corresponds to a set of constraints, and make functions available on the DataFrames. For example::
+
+    df = trackintel.read_positionfixes_csv('data.csv')
+    df.as_positionfixes.extract_staypoints()
+
+This will read a CSV into a format compatible with the trackintel understanding of a collection of 
+positionfixes, and the second line will wrap the DataFrame with an accessor providing functions such 
+as ``extract_staypoints()``. 
+
+Available Accessors
+===================
+
+The following accessors are available.
+
+.. autoclass:: trackintel.model.positionfixes.PositionfixesAccessor
+
+.. autoclass:: trackintel.model.staypoints.StaypointsAccessor
+
+.. autoclass:: trackintel.model.triplegs.TriplegsAccessor
+
+.. autoclass:: trackintel.model.places.PlacesAccessor

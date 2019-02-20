@@ -6,12 +6,20 @@ import trackintel.preprocessing.staypoints
 
 
 @pd.api.extensions.register_dataframe_accessor("as_staypoints")
-class PositionfixesAccessor(object):
+class StaypointsAccessor(object):
     """A pandas accessor to treat (Geo)DataFrames as collections of staypoints. This
     will define certain methods and accessors, as well as make sure that the DataFrame
-    adheres to some requirements."""
+    adheres to some requirements.
 
-    required_columns = ['user_id', 'started_at', 'finished_at', 'elevation', 'geometry']
+    Requires at least the following columns: 
+    ``['user_id', 'started_at', 'finished_at', 'elevation', 'geom']``
+
+    Examples
+    --------
+    >>> df.as_staypoints.extract_places()
+    """
+
+    required_columns = ['user_id', 'started_at', 'finished_at', 'elevation', 'geom']
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -19,11 +27,11 @@ class PositionfixesAccessor(object):
 
     @staticmethod
     def _validate(obj):
-        if any([c not in obj.columns for c in PositionfixesAccessor.required_columns]):
+        if any([c not in obj.columns for c in StaypointsAccessor.required_columns]):
             raise AttributeError("To process a DataFrame as a collection of staypoints, " \
                 + "it must have the properties [%s], but it has [%s]." \
-                % (', '.join(PositionfixesAccessor.required_columns), ', '.join(obj.columns)))
-        if obj.shape[0] > 0 and obj['geometry'].geom_type[0] is not 'Point':
+                % (', '.join(StaypointsAccessor.required_columns), ', '.join(obj.columns)))
+        if obj.shape[0] > 0 and obj['geom'].geom_type[0] is not 'Point':
             raise AttributeError("The geometry must be a Point (only first checked).")
 
     @property

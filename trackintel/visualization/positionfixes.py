@@ -10,10 +10,10 @@ def plot_positionfixes(positionfixes, out_filename, plot_osm=False):
 
     Parameters
     ----------
-    positionfixes : float
+    positionfixes : GeoDataFrame
         The positionfixes to plot.
     
-    out_filename : float
+    out_filename : str
         The file to plot to, if this is not set, the plot will simply be shown.
 
     plot_osm : bool

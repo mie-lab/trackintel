@@ -8,4 +8,4 @@ data into richer data sources.
 Staypoints
 ==========
 
-.. autofunction:: trackintel.preprocessing.staypoints.extract_staypoints
+.. autofunction:: trackintel.preprocessing.positionfixes.extract_staypoints
