@@ -30,15 +30,15 @@ def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=No
 
     if plot_osm:
         if positionfixes is not None:
-            west = positionfixes['geometry'].x.min()
-            east = positionfixes['geometry'].x.max()
-            north = positionfixes['geometry'].y.max()
-            south = positionfixes['geometry'].y.min()
+            west = positionfixes['geom'].x.min()
+            east = positionfixes['geom'].x.max()
+            north = positionfixes['geom'].y.max()
+            south = positionfixes['geom'].y.min()
         else:
-            west = staypoints['geometry'].x.min() - 0.03
-            east = staypoints['geometry'].x.max() + 0.03
-            north = staypoints['geometry'].y.max() + 0.03
-            south = staypoints['geometry'].y.min() - 0.03
+            west = staypoints['geom'].x.min() - 0.03
+            east = staypoints['geom'].x.max() + 0.03
+            north = staypoints['geom'].y.max() + 0.03
+            south = staypoints['geom'].y.min() - 0.03
         plot_osm_streets(north, south, east, west, ax)
 
     if positionfixes is not None:
@@ -47,7 +47,7 @@ def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=No
     if radius is None:
         radius = 5
     for pt in staypoints.to_dict('records'):
-        circle = mpatches.Circle((pt['geometry'].x, pt['geometry'].y), radius, 
+        circle = mpatches.Circle((pt['geom'].x, pt['geom'].y), radius, 
                                   facecolor='none', edgecolor='g', zorder=3)
         ax.add_artist(circle)
     if out_filename is not None:

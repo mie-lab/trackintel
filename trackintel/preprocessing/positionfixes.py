@@ -57,7 +57,7 @@ def extract_staypoints(positionfixes, method='sliding',
     similarity based on location history. In Proceedings of the 16th ACM SIGSPATIAL international 
     conference on Advances in geographic information systems (p. 34). ACM.
     """
-    ret_staypoints = pd.DataFrame(columns=['arrival_at', 'departure_at', 'geometry'])
+    ret_staypoints = pd.DataFrame(columns=['arrival_at', 'departure_at', 'geom'])
 
     # TODO We have to make sure that the user_id is taken into account.
 
@@ -76,16 +76,16 @@ def extract_staypoints(positionfixes, method='sliding',
             else:
                 j = i + 1
             while j < num_pfs:
-                dist = dist_func(pfs[i]['geometry'].x, pfs[i]['geometry'].y, 
-                                 pfs[j]['geometry'].x, pfs[j]['geometry'].y)
+                dist = dist_func(pfs[i]['geom'].x, pfs[i]['geom'].y, 
+                                 pfs[j]['geom'].x, pfs[j]['geom'].y)
 
                 if dist > dist_threshold:
                     delta_t = pfs[j]['tracked_at'] - pfs[i]['tracked_at']
                     if delta_t.total_seconds() > time_threshold:
                         staypoint = {}
                         staypoint['user_id'] = pfs[i]['user_id']
-                        staypoint['geometry'] = Point(np.mean([pfs[k]['geometry'].x for k in range(i, j)]), 
-                                                      np.mean([pfs[k]['geometry'].y for k in range(i, j)]))
+                        staypoint['geom'] = Point(np.mean([pfs[k]['geom'].x for k in range(i, j)]), 
+                                                      np.mean([pfs[k]['geom'].y for k in range(i, j)]))
                         staypoint['elevation'] = np.mean([pfs[k]['elevation'] for k in range(i, j)])
                         staypoint['started_at'] = pfs[i]['tracked_at']
                         staypoint['finished_at'] = pfs[j]['tracked_at']
@@ -98,6 +98,6 @@ def extract_staypoints(positionfixes, method='sliding',
         pass
 
 
-    ret_staypoints = gpd.GeoDataFrame(ret_staypoints, geometry='geometry')
+    ret_staypoints = gpd.GeoDataFrame(ret_staypoints, geometry='geom')
 
     return ret_staypoints

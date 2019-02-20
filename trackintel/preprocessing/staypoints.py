@@ -37,11 +37,11 @@ def cluster_staypoints(staypoints, method='dbscan',
     --------
     >>> cluster_staypoints(...)    
     """
-    ret_places = pd.DataFrame(columns=['user_id', 'geometry'])
+    ret_places = pd.DataFrame(columns=['user_id', 'geom'])
 
     # TODO We have to make sure that the user_id is taken into account.
     db = DBSCAN(eps=epsilon, min_samples=num_samples)
-    coordinates = np.array([[g.x, g.y] for g in staypoints['geometry']])
+    coordinates = np.array([[g.x, g.y] for g in staypoints['geom']])
     labels = db.fit_predict(coordinates)
     labeled_staypoints = staypoints
     labeled_staypoints['cluster_id'] = labels
@@ -52,10 +52,10 @@ def cluster_staypoints(staypoints, method='dbscan',
             stps = group.to_dict('records')
             ret_place = {}
             ret_place['user_id'] = stps[0]['user_id']
-            ret_place['geometry'] = Point(np.mean([k['geometry'].x for k in stps]), 
-                                          np.mean([k['geometry'].y for k in stps]))
+            ret_place['geom'] = Point(np.mean([k['geom'].x for k in stps]), 
+                                          np.mean([k['geom'].y for k in stps]))
             ret_places = ret_places.append(ret_place, ignore_index=True)
 
-    ret_places = gpd.GeoDataFrame(ret_places, geometry='geometry')
+    ret_places = gpd.GeoDataFrame(ret_places, geometry='geom')
     return ret_places
 

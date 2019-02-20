@@ -23,10 +23,10 @@ def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False):
     _, ax = regular_figure()
 
     if plot_osm:
-        west = positionfixes['longitude'].min()
-        east = positionfixes['longitude'].max()
-        north = positionfixes['latitude'].max()
-        south = positionfixes['latitude'].min()
+        west = positionfixes['geom'].x.min()
+        east = positionfixes['geom'].x.max()
+        north = positionfixes['geom'].y.max()
+        south = positionfixes['geom'].y.min()
         plot_osm_streets(north, south, east, west, ax)
 
     positionfixes.plot(ax=ax, markersize=0.5)

@@ -10,7 +10,7 @@ def read_positionfixes_postgis(conn_string, table_name, *args, **kwargs):
     ----------
     conn_string : str
         A connection string to connect to a database, e.g., 
-        `'postgresql://username:password@host:socket/database'`.
+        ``postgresql://username:password@host:socket/database``.
     
     table_name : str
         The table to read the positionfixes from.
@@ -32,9 +32,10 @@ def read_positionfixes_postgis(conn_string, table_name, *args, **kwargs):
 
 
 def write_positionfixes_postgis(positionfixes, conn_string, table_name):
-    """Stores positionfixes to PostGIS.
+    """Stores positionfixes to PostGIS. Usually, this is directly called on a positionfixes 
+    dataframe (see example below).
 
-    Attention! This replaces the table if it already exists!
+    **Attention!** This replaces the table if it already exists!
 
     Parameters
     ----------
@@ -43,10 +44,14 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name):
 
     conn_string : str
         A connection string to connect to a database, e.g., 
-        `'postgresql://username:password@host:socket/database'`.
+        ``postgresql://username:password@host:socket/database``.
     
     table_name : str
         The name of the table to write to.
+
+    Examples
+    --------
+    >>> df.as_positionfixes.to_postgis(conn_string, table_name)
     """
     positionfixes['geom'] = positionfixes['geom'].apply(lambda x: WKTElement(x.wkt, srid=4326))
     if 'id' not in positionfixes.columns:

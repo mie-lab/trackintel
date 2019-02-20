@@ -47,6 +47,22 @@ class PositionfixesAccessor(object):
         See :func:`trackintel.preprocessing.positionfixes.extract_staypoints`."""
         return ti.preprocessing.positionfixes.extract_staypoints(self._obj, *args, **kwargs)
 
+    def extract_triplegs(self, *args, **kwargs):
+        """Extracts triplegs from this collection of positionfixes."""
+        raise NotImplementedError
+
+    def extract_staypoints_and_triplegs(self, *args, **kwargs):
+        """Extracts staypoints, uses them to build triplegs, and builds all associations 
+        with the original positionfixes (i.e., returning everything in accordance with the trackintel
+        :doc:`/content/data_model_sql`).
+
+        Returns
+        -------
+        tuple
+            A tuple consisting of (positionfixes, staypoints, triplegs).
+        """
+        raise NotImplementedError
+
     def plot(self, *args, **kwargs):
         """Plots this collection of positionfixes. 
         See :func:`trackintel.visualization.positionfixes.plot_positionfixes`."""
