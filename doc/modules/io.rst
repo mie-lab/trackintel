@@ -14,4 +14,6 @@ CSV File Import
 PostGIS Import
 ==============
 
-Not available yet.
+.. autofunction:: trackintel.io.postgis.read_positionfixes_postgis
+
+.. autofunction:: trackintel.io.postgis.write_positionfixes_postgis

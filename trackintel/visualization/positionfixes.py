@@ -5,7 +5,7 @@ from trackintel.visualization.util import regular_figure, save_fig
 from trackintel.visualization.osm import plot_osm_streets
 
 
-def plot_positionfixes(positionfixes, out_filename, plot_osm=False):
+def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False):
     """Plots positionfixes (optionally to a file).
 
     Parameters

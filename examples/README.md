@@ -23,11 +23,11 @@ The example data (found under `examples/data`) were generated or tracked using d
 Run any example as:
 
 ```bash
-python visualize_trajectories.py
 python preprocessing.py
+python import_export_postgis.py
 ```
 
-Several examples, such as `visualize_trajectories.py` will generate output plots in the `examples/out` directory. For examples involving a database connection, you can adapt the `config.json` file.
+Several examples, such as `preprocessing.py` will generate output plots in the `examples/out` directory. For examples involving a database connection, you can adapt the `config.json` file.
 
 ## References
 

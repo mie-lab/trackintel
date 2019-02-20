@@ -3,6 +3,7 @@ import trackintel as ti
 
 import trackintel.preprocessing.positionfixes
 import trackintel.visualization.positionfixes
+import trackintel.io.postgis
 
 
 @pd.api.extensions.register_dataframe_accessor("as_positionfixes")
@@ -50,3 +51,8 @@ class PositionfixesAccessor(object):
         """Plots this collection of positionfixes. 
         See :func:`trackintel.visualization.positionfixes.plot_positionfixes`."""
         ti.visualization.positionfixes.plot_positionfixes(self._obj, *args, **kwargs)
+
+    def to_postgis(self, conn_string, table_name):
+        """Stores this collection of positionfixes to PostGIS.
+        See :func:`trackintel.io.postgis.store_positionfixes_postgis`."""
+        ti.io.postgis.write_positionfixes_postgis(self._obj, conn_string, table_name)
