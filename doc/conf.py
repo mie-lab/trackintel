@@ -103,7 +103,20 @@ html_static_path = ['_static']
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-# html_sidebars = {}
+html_sidebars = { '**': [
+    'about.html',
+    'navigation.html',
+    'relations.html',
+    'searchbox.html',
+    'donate.html',] }
+
+html_theme_options = {
+    'logo': 'trackintel_logo.png',
+    'description': 'The human mobility analysis toolkit. Ingests GPS tracking data, preprocesses and validates it, provides analysis and visualization.',
+    'github_user': 'mie-lab',
+    'github_repo': 'trackintel',
+    'github_banner': True
+}
 
 
 # -- Options for HTMLHelp output ---------------------------------------------

@@ -8,7 +8,7 @@ The example data (found under `examples/data`) were generated or tracked using d
 
 * `gpsies_trajectory.csv` manually generated using [GPSies](https://www.gpsies.com).
 
-* `posmo_trajectory.csv` automatically tracked using [POSMO Segments](https://posmo.datamap.io/), see also [Android App Store](https://play.google.com/store/apps/details?id=io.datamap.posmo_segments) and [Apple App Store](https://itunes.apple.com/us/app/posmo-segments/id1450602777). 
+* `posmo_trajectory.csv` automatically tracked using [POSMO Segments](https://posmo.datamap.io/), see also [Android App Store](https://play.google.com/store/apps/details?id=io.datamap.posmo_segments) and [Apple App Store](https://itunes.apple.com/us/app/posmo-segments/id1450602777).
 
 * *Not available yet*: `moves_trajectory.csv` automatically tracked using [Moves (discontinued)](https://www.moves-app.com/).
 

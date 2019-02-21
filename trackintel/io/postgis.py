@@ -1,6 +1,6 @@
 import geopandas as gpd
 from geoalchemy2 import Geometry, WKTElement
-from sqlalchemy import *
+from sqlalchemy import create_engine
 
 
 def read_positionfixes_postgis(conn_string, table_name, *args, **kwargs):
