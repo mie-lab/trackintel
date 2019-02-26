@@ -53,7 +53,7 @@ def cluster_staypoints(staypoints, method='dbscan',
             ret_place = {}
             ret_place['user_id'] = stps[0]['user_id']
             ret_place['geom'] = Point(np.mean([k['geom'].x for k in stps]), 
-                                          np.mean([k['geom'].y for k in stps]))
+                                      np.mean([k['geom'].y for k in stps]))
             ret_places = ret_places.append(ret_place, ignore_index=True)
 
     ret_places = gpd.GeoDataFrame(ret_places, geometry='geom')

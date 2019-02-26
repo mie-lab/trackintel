@@ -90,6 +90,16 @@ def extract_staypoints(positionfixes, method='sliding',
                         staypoint['started_at'] = pfs[i]['tracked_at']
                         staypoint['finished_at'] = pfs[j]['tracked_at']
                         ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
+                        # TODO Discussion: Is this last point really a staypoint? As we don't know if the
+                        #      person "moves on" afterwards...
+                        if j == num_pfs - 1:
+                            staypoint = {}
+                            staypoint['user_id'] = pfs[j]['user_id']
+                            staypoint['geom'] = Point(pfs[j]['geom'].x, pfs[j]['geom'].y)
+                            staypoint['elevation'] = pfs[j]['elevation']
+                            staypoint['started_at'] = pfs[j]['tracked_at']
+                            staypoint['finished_at'] = pfs[j]['tracked_at']
+                            ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
                     i = j
                     break
                 j = j + 1
