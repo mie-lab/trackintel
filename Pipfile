@@ -1,12 +1,14 @@
-[requires]
-python_version = '3.7'
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pep8 = "*"
+pydocstyle = "*"
 
 [packages]
-pandas = '*'
-geopandas = '*'
-matplotlib = '*'
-numpy = '*'
-pint = '*'
-shapely = '*'
-networkx = '*'
-geoalchemy2 = '*'
+trackintel = {editable = true,path = "."}
+
+[requires]
+python_version = "3.7"
