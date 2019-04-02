@@ -104,3 +104,6 @@ venv.bak/
 .mypy_cache/
 /.vscode/
 /doc/_build/
+
+# Each developer can have its own Packages
+Pipfile.lock
