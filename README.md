@@ -52,6 +52,8 @@ The documentation follws the [pandas resp. numpy docstring standard](https://pan
 In particular, it uses [Sphinx](http://www.sphinx-doc.org/en/master/) to create the documentation.
 You can install Sphinx using `pip install -U sphinx` or `conda install sphinx`.
 
+If you use additional dependencies during development, do not forget to add them to `autodoc_mock_imports` in `docs/conf.py` for readthedocs.org to work properly.
+
 ## Contributors
 
 trackintel is primarily maintained by the Mobility Information Engineering Lab at ETH Zurich ([mie-lab.ethz.ch](http://mie-lab.ethz.ch)).
