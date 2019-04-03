@@ -2,10 +2,10 @@
 
 ![Version](https://img.shields.io/badge/version-v0.0.1-red.svg)
 
-Focusing on human mobility data, *trackintel* provides functionalities for data quality enhancement, integrating data from various sources, performing quantitative analysis and mining tasks, and visualizing the data and/or analysis results. 
+Focusing on human mobility data, *trackintel* provides functionalities for data quality enhancement, integrating data from various sources, performing quantitative analysis and mining tasks, and visualizing the data and/or analysis results.
 In addition to these core functionalities, packages are provided for user mobility profiling and trajectory-based learning analytics.
 
-You can find the documentation on the [trackintel documentation page](https://mie-lab.github.io/trackintel-docs).
+You can find the documentation on the [trackintel documentation page](https://trackintel.readthedocs.io/en/latest).
 
 ## Target Users
 
@@ -39,21 +39,20 @@ import trackintel
 
 ## Development
 
-You can install *trackintel* locally using `pip install .`. 
+You can install *trackintel* locally using `pip install .`.
 For quick testing, use `trackintel.print_version()`.
 
-Testing is done using [pytest](https://docs.pytest.org/en/latest). 
+Testing is done using [pytest](https://docs.pytest.org/en/latest).
 Simply run the tests using `pytest` in the top-level trackintel folder.
-In case you use `pipenv`, install *pytest* first (`pip install pytest`), then run *pytest* using this version: `python -m pytest`. 
+In case you use `pipenv`, install *pytest* first (`pip install pytest`), then run *pytest* using this version: `python -m pytest`.
 
 ### Documentation
 
-The documentation follws the [pandas resp. numpy docstring standard](https://pandas-docs.github.io/pandas-docs-travis/development/contributing.html#contributing-to-the-documentation). 
+The documentation follws the [pandas resp. numpy docstring standard](https://pandas-docs.github.io/pandas-docs-travis/development/contributing.html#contributing-to-the-documentation).
 In particular, it uses [Sphinx](http://www.sphinx-doc.org/en/master/) to create the documentation.
-
-You can install Sphinx using `pip install -U sphinx` or `conda install sphinx`. Generate the documentation using `python make.py` in the `doc` folder. Attention! This will copy the generated HTML to a folder `trackintel-docs` (containing the documentation repository [https://github.com/mie-lab/trackintel-docs](https://github.com/mie-lab/trackintel-docs)), which must exist in parallel to this repository. After copying, you can push the other repository to update the documentation.
+You can install Sphinx using `pip install -U sphinx` or `conda install sphinx`.
 
 ## Contributors
 
-trackintel is primarily maintained by the Mobility Information Engineering Lab at ETH Zurich ([mie-lab.ethz.ch](http://mie-lab.ethz.ch)). 
+trackintel is primarily maintained by the Mobility Information Engineering Lab at ETH Zurich ([mie-lab.ethz.ch](http://mie-lab.ethz.ch)).
 If you want to contribute, send a pull request and put yourself in the `AUTHORS.md` file.
