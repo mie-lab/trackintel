@@ -54,18 +54,18 @@ install:
   - ECHO "Filesystem C:/GDAL:"
   - ps: "ls \"C:/GDAL\""
 
+  # We need to install numpy and Fiona manually.
+  - cd C:\projects
+  - git clone https://github.com/numpy/numpy.git
+  - git clone https://github.com/Toblerity/Fiona.git
+
+  - cmd: "%CMD_IN_ENV% python -m pip install pytest wheel Cython"
 
   # This is required to install numpy.
-  - cd C:\projects
-  - cmd: "%CMD_IN_ENV% pip install pytest wheel Cython"
-  - git clone https://github.com/numpy/numpy.git
   - cd C:\projects\numpy
   - cmd: "%CMD_IN_ENV% python setup.py install"
 
-
   # This is required to install Fiona.
-  - cd C:\projects
-  - git clone https://github.com/Toblerity/Fiona.git
   - cd C:\projects\fiona
 
   # copy gisinternal gdal librarys into .libs
