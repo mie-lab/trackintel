@@ -58,6 +58,7 @@ install:
   - cd C:\projects
   - git clone https://github.com/Toblerity/Fiona.git
   - cd C:\projects\fiona
+  - cmd: "%CMD_IN_ENV% pip install Cython"
 
   # copy gisinternal gdal librarys into .libs
   - cmd: xcopy C:\gdal\bin\*.dll fiona\.libs\
