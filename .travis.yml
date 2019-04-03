@@ -5,7 +5,7 @@ python:
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get install -y libspatialindex libspatialindex-dev
+  - sudo apt-get install -y libspatialindex-c4v5 libspatialindex-dev
 
 install:
   - pip install pipenv
