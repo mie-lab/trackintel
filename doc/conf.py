@@ -16,6 +16,8 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
+from pkg_resources import get_distribution
+
 autodoc_mock_imports = [
   'descartes',
   'geopandas',
@@ -46,8 +48,6 @@ autodoc_mock_imports = [
   'geoalchemy2'
 ]
 
-import trackintel as ti
-
 
 # -- Project information -----------------------------------------------------
 
@@ -56,7 +56,8 @@ copyright = '2019, Dominik Bucher, Henry Martin'
 author = 'Dominik Bucher, Henry Martin'
 
 # The short X.Y version
-version = str(ti.__version__)
+# version = str(ti.__version__)
+version = get_distribution('trackintel').version
 # The full version, including alpha/beta/rc tags
 release = version
 
@@ -76,7 +77,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.githubpages',
-    'numpydoc',
+    'sphinx.ext.napoleon'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
