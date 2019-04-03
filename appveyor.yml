@@ -6,6 +6,7 @@ environment:
     # /E:ON and /V:ON options are not enabled in the batch script intepreter
     # See: http://stackoverflow.com/a/13751649/163740
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
+    CMD_IN_ENV_EXT: "cmd /E:ON /V:ON /C ..\\trackintel\\appveyor\\run_with_env.cmd"
     GDAL_HOME: "C:\\gdal"
     PYTHON_ARCH: "64"
 
@@ -59,11 +60,12 @@ install:
   - git clone https://github.com/numpy/numpy.git
   - git clone https://github.com/Toblerity/Fiona.git
 
+  - cd C:\projects\trackintel
   - cmd: "%CMD_IN_ENV% python -m pip install pytest wheel Cython"
 
   # This is required to install numpy.
   - cd C:\projects\numpy
-  - cmd: "%CMD_IN_ENV% python setup.py install"
+  - cmd: "%CMD_IN_ENV_EXT% python setup.py install"
 
   # This is required to install Fiona.
   - cd C:\projects\fiona
@@ -73,7 +75,7 @@ install:
   - cmd: xcopy C:\gdal\*.rtf fiona\.libs\licenses\
 
   # build fiona and create a wheel
-  - "%CMD_IN_ENV% python setup.py build_ext -IC:\\gdal\\include -lgdal_i -LC:\\gdal\\lib bdist_wheel --gdalversion %GDAL_VERSION%"
+  - cmd: "%CMD_IN_ENV_EXT% python setup.py build_ext -IC:\\gdal\\include -lgdal_i -LC:\\gdal\\lib bdist_wheel --gdalversion %GDAL_VERSION%"
 
   # install the wheel
   - ps: python -m pip install --upgrade pip
