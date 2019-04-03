@@ -8,9 +8,8 @@ before_install:
   - sudo apt-get install -y libspatialindex-c4v5 libspatialindex-dev
 
 install:
-  - pip install pipenv
-  - pipenv install -e .
-  - pipenv install pytest
+  - pip install .
+  - pip install pytest
 
 script:
   - python -m pytest
