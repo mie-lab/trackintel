@@ -54,6 +54,22 @@ install:
   - ECHO "Filesystem C:/GDAL:"
   - ps: "ls \"C:/GDAL\""
 
+  # This is required to install Fiona.
+  - cd C:\projects
+  - git clone https://github.com/Toblerity/Fiona.git
+  - cd C:\projects\fiona
+
+  # copy gisinternal gdal librarys into .libs
+  - cmd: xcopy C:\gdal\bin\*.dll fiona\.libs\
+  - cmd: xcopy C:\gdal\*.rtf fiona\.libs\licenses\
+
+  # build fiona and create a wheel
+  - "%CMD_IN_ENV% python setup.py build_ext -IC:\\gdal\\include -lgdal_i -LC:\\gdal\\lib bdist_wheel --gdalversion %GDAL_VERSION%"
+
+  # install the wheel
+  - ps: python -m pip install --upgrade pip
+  - ps: python -m pip install --force-reinstall --ignore-installed (gci dist\*.whl | % { "$_" })
+  - ps: move fiona fiona.build
 
   - cd C:\projects\trackintel
   # Upgrade to the latest version of pip to avoid it displaying warnings
