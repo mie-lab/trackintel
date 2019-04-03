@@ -16,6 +16,28 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
+autodoc_mock_imports = [
+  'descartes',
+  'geopandas',
+  'matplotlib',
+  'matplotlib.cm',
+  'matplotlib.collections',
+  'matplotlib.pyplot',
+  'networkx',
+  'numpy',
+  'pandas',
+  'requests',
+  'rtree',
+  'rtree.index',
+  'scipy',
+  'scipy.spatial',
+  'shapely',
+  'shapely.geometry',
+  'shapely.ops',
+  'sklearn',
+  'sklearn.neighbors'
+]
+
 import trackintel as ti
 
 
