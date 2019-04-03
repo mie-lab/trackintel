@@ -58,7 +58,9 @@ install:
   # This is required to install numpy.
   - cd C:\projects
   - git clone https://github.com/numpy/numpy.git
+  - ps: "ls \"C:/projects\""
   - cd C:\projects\numpy
+  - ps: "ls \"C:/projects/numpy\""
   - "%CMD_IN_ENV% pip install pytest wheel Cython"
   - "%CMD_IN_ENV% python setup.py install"
 
