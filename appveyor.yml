@@ -58,7 +58,7 @@ install:
   - cd C:\projects
   - git clone https://github.com/Toblerity/Fiona.git
   - cd C:\projects\fiona
-  - cmd: "%CMD_IN_ENV% pip install Cython"
+  - cmd: "%CMD_IN_ENV% pip install pytest wheel Cython"
 
   # copy gisinternal gdal librarys into .libs
   - cmd: xcopy C:\gdal\bin\*.dll fiona\.libs\
@@ -86,7 +86,6 @@ install:
   # - "%CMD_IN_ENV% pip install -r requirements-dev.txt"
 
   # We need wheel installed to build wheels
-  - "%CMD_IN_ENV% pip install pytest wheel"
   - "%CMD_IN_ENV% pip install ."
 
 build: off
