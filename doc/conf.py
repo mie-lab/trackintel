@@ -16,7 +16,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-from pkg_resources import get_distribution
+import trackintel as ti
 
 
 # -- Project information -----------------------------------------------------
@@ -26,8 +26,7 @@ copyright = '2019, Dominik Bucher, Henry Martin'
 author = 'Dominik Bucher, Henry Martin'
 
 # The short X.Y version
-# version = str(ti.__version__)
-version = get_distribution('trackintel').version
+version = str(ti.__version__)
 # The full version, including alpha/beta/rc tags
 release = version
 
