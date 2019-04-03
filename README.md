@@ -2,7 +2,8 @@
 
 ![Version](https://img.shields.io/badge/version-v0.0.1-red.svg)
 
-Focusing on human mobility data, *trackintel* provides functionalities for data quality enhancement, integrating data from various sources, performing quantitative analysis and mining tasks, and visualizing the data and/or analysis results. In addition to these core functionalities, packages are provided for user mobility profiling and trajectory-based learning analytics.
+Focusing on human mobility data, *trackintel* provides functionalities for data quality enhancement, integrating data from various sources, performing quantitative analysis and mining tasks, and visualizing the data and/or analysis results. 
+In addition to these core functionalities, packages are provided for user mobility profiling and trajectory-based learning analytics.
 
 You can find the documentation on the [trackintel documentation page](https://mie-lab.github.io/trackintel-docs).
 
@@ -26,7 +27,10 @@ You can find the documentation on the [trackintel documentation page](https://mi
 
 ## Installation and Usage
 
-This is not on [pypi.org](https://pypi.org/) yet, so to install you have to `git clone` the repository and install it with `pip install .`.
+This is not on [pypi.org](https://pypi.org/) yet, so to install you have to `git clone` the repository and install it with `pip install .` or `pipenv install -e .`.
+If you choose the second approach and you are on Windows, you might have to install individual wheels (e.g., from https://www.lfd.uci.edu/~gohlke/pythonlibs).
+For this, activate the environment using `pipenv shell` and install everything using `pip install ...` (in particular: `GDAL`, `numpy`, `sklean`, `Rtree`, `fiona` and `osmnx`).
+You can quit this shell at any time using `exit`.
 
 You should then be able to run the examples in the `examples` folder or import trackintel using:
 ```{python}
@@ -35,16 +39,21 @@ import trackintel
 
 ## Development
 
-You can install *trackintel* locally using `pip install .`. For quick testing, use `trackintel.print_version()`.
+You can install *trackintel* locally using `pip install .`. 
+For quick testing, use `trackintel.print_version()`.
 
-Testing is done using [pytest](https://docs.pytest.org/en/latest). Simply run the tests using `pytest` in the top-level trackintel folder.
+Testing is done using [pytest](https://docs.pytest.org/en/latest). 
+Simply run the tests using `pytest` in the top-level trackintel folder.
+In case you use `pipenv`, install *pytest* first (`pip install pytest`), then run *pytest* using this version: `python -m pytest`. 
 
 ### Documentation
 
-The documentation follws the [pandas resp. numpy docstring standard](https://pandas-docs.github.io/pandas-docs-travis/development/contributing.html#contributing-to-the-documentation). In particular, it uses [Sphinx](http://www.sphinx-doc.org/en/master/) to create the documentation.
+The documentation follws the [pandas resp. numpy docstring standard](https://pandas-docs.github.io/pandas-docs-travis/development/contributing.html#contributing-to-the-documentation). 
+In particular, it uses [Sphinx](http://www.sphinx-doc.org/en/master/) to create the documentation.
 
 You can install Sphinx using `pip install -U sphinx` or `conda install sphinx`. Generate the documentation using `python make.py` in the `doc` folder. Attention! This will copy the generated HTML to a folder `trackintel-docs` (containing the documentation repository [https://github.com/mie-lab/trackintel-docs](https://github.com/mie-lab/trackintel-docs)), which must exist in parallel to this repository. After copying, you can push the other repository to update the documentation.
 
 ## Contributors
 
-trackintel is primarily maintained by the Mobility Information Engineering Lab at ETH Zurich ([mie-lab.ethz.ch](http://mie-lab.ethz.ch)). If you want to contribute, send a pull request and put yourself in the `AUTHORS.md` file.
+trackintel is primarily maintained by the Mobility Information Engineering Lab at ETH Zurich ([mie-lab.ethz.ch](http://mie-lab.ethz.ch)). 
+If you want to contribute, send a pull request and put yourself in the `AUTHORS.md` file.

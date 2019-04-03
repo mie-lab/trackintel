@@ -23,7 +23,16 @@ LICENSE = 'MIT'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    # 'requests',
+    'pandas',
+    'geopandas',
+    'matplotlib',
+    'numpy',
+    'pint',
+    'shapely',
+    'networkx',
+    'geoalchemy2',
+    'osmnx',
+    'sklearn'
 ]
 
 # What packages are optional?
