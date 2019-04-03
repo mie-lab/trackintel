@@ -23,6 +23,7 @@ autodoc_mock_imports = [
   'matplotlib.cm',
   'matplotlib.collections',
   'matplotlib.pyplot',
+  'matplotlib.patches',
   'networkx',
   'numpy',
   'pandas',
@@ -35,7 +36,14 @@ autodoc_mock_imports = [
   'shapely.geometry',
   'shapely.ops',
   'sklearn',
-  'sklearn.neighbors'
+  'sklearn.neighbors',
+  'pint',
+  'networkx',
+  'networkx.exception',
+  'osmnx',
+  'sklearn',
+  'sqlalchemy',
+  'geoalchemy2'
 ]
 
 import trackintel as ti
