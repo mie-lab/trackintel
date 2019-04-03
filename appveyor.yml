@@ -85,7 +85,8 @@ install:
   # target Python version and architecture
   # - "%CMD_IN_ENV% pip install -r requirements-dev.txt"
 
-  # We need wheel installed to build wheels
+  # We install Rtree from a repo, as otherwise it will fail :(
+  - "%CMD_IN_ENV% pip install https://download.lfd.uci.edu/pythonlibs/u2hcgva4/Rtree-0.8.3-cp36-cp36m-win_amd64.whl"
   - "%CMD_IN_ENV% pip install ."
 
 build: off
