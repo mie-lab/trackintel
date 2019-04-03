@@ -69,8 +69,8 @@ install:
   # - "%CMD_IN_ENV% pip install -r requirements-dev.txt"
 
   # We need wheel installed to build wheels
-  - "%PYTHON%\\python.exe -m pip install pytest wheel"
-  - "%PYTHON%\\python.exe -m pip install ."
+  - "%CMD_IN_ENV% python -m pip install pytest wheel"
+  - "%CMD_IN_ENV% python -m pip install ."
 
 build: off
 
