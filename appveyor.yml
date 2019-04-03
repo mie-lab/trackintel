@@ -54,11 +54,19 @@ install:
   - ECHO "Filesystem C:/GDAL:"
   - ps: "ls \"C:/GDAL\""
 
+
+  # This is required to install numpy.
+  - cd C:\projects
+  - git clone https://github.com/numpy/numpy.git
+  - cd C:\projects\numpy
+  - cmd: "%CMD_IN_ENV% pip install pytest wheel Cython"
+  - cmd: "%CMD_IN_ENV% python setup.py install"
+
+
   # This is required to install Fiona.
   - cd C:\projects
   - git clone https://github.com/Toblerity/Fiona.git
   - cd C:\projects\fiona
-  - cmd: "%CMD_IN_ENV% pip install pytest wheel Cython numpy"
 
   # copy gisinternal gdal librarys into .libs
   - cmd: xcopy C:\gdal\bin\*.dll fiona\.libs\
@@ -71,6 +79,8 @@ install:
   - ps: python -m pip install --upgrade pip
   - ps: python -m pip install --force-reinstall --ignore-installed (gci dist\*.whl | % { "$_" })
   - ps: move fiona fiona.build
+  
+  - "python -c \"import fiona\""
 
   - cd C:\projects\trackintel
   # Upgrade to the latest version of pip to avoid it displaying warnings
