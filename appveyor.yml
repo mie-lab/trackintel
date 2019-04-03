@@ -61,8 +61,8 @@ install:
   - ps: "ls \"C:/projects\""
   - cd C:\projects\numpy
   - ps: "ls \"C:/projects/numpy\""
-  - "%CMD_IN_ENV% pip install pytest wheel Cython"
-  - "%CMD_IN_ENV% python setup.py install"
+  - cmd: "%CMD_IN_ENV% pip install pytest wheel Cython"
+  - cmd: "%CMD_IN_ENV% python setup.py install"
 
 
   # This is required to install Fiona.
