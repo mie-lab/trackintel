@@ -7,6 +7,7 @@ environment:
     # See: http://stackoverflow.com/a/13751649/163740
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
     CMD_IN_ENV_EXT: "cmd /E:ON /V:ON /C ..\\trackintel\\appveyor\\run_with_env.cmd"
+    CMD_IN_ENV_EXT_2: "cmd /E:ON /V:ON /C C:\\projects\\trackintel\\appveyor\\run_with_env.cmd"
     GDAL_HOME: "C:\\gdal"
     PYTHON_ARCH: "64"
 
@@ -69,10 +70,11 @@ install:
   - cd C:\projects\trackintel
   - ps: "ls \"C:/projects/trackintel\""
   - cmd: "%CMD_IN_ENV% python -m pip install pytest wheel Cython numpy"
+  
   - cd C:\projects\gdal\gdal\swig\python
   - cmd: "@echo GNM_ENABLED=no> setup_vars.ini"
-  - cmd: "%CMD_IN_ENV% python setup.py build_ext -IC:\\gdal\\include -lgdal_i -LC:\\gdal\\lib"
-  - cmd: "%CMD_IN_ENV% python setup.py install -IC:\\gdal\\include -lgdal_i -LC:\\gdal\\lib"
+  - cmd: "%CMD_IN_ENV_EXT_2% python setup.py build_ext -IC:\\gdal\\include -lgdal_i -LC:\\gdal\\lib"
+  - cmd: "%CMD_IN_ENV_EXT_2% python setup.py install -IC:\\gdal\\include -lgdal_i -LC:\\gdal\\lib"
 
   # This is required to install Fiona.
   - cd C:\projects\fiona
