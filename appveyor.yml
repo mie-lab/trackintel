@@ -66,6 +66,7 @@ install:
   - git clone https://github.com/Toblerity/Fiona.git
 
   - cd C:\projects\trackintel
+  - ps: "ls \"C:/projects/trackintel\""
   - cmd: "%CMD_IN_ENV% python -m pip install pytest wheel Cython numpy"
   - cmd: "%CMD_IN_ENV% python -m pip install --global-option=build_ext --global-option=\"-IC:\\gdal\\include\" --global-option=\"-LC:\\gdal\\lib\" GDAL"
 
