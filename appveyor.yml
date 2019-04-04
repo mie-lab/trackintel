@@ -64,11 +64,15 @@ install:
   # We need to install numpy and Fiona manually.
   - cd C:\projects
   - git clone https://github.com/Toblerity/Fiona.git
+  - git clone https://github.com/OSGeo/gdal.git
 
   - cd C:\projects\trackintel
   - ps: "ls \"C:/projects/trackintel\""
   - cmd: "%CMD_IN_ENV% python -m pip install pytest wheel Cython numpy"
-  - cmd: "%CMD_IN_ENV% python -m pip install --global-option=build_ext --global-option=\"-IC:\\gdal\\include\" --global-option=\"-LC:\\gdal\\lib\" GDAL"
+  - cd C:\projects\gdal\gdal\swig\python
+  - cmd: "@echo GNM_ENABLED=no> setup_vars.ini"
+  - cmd: "%CMD_IN_ENV% python setup.py build_ext -IC:\\gdal\\include -lgdal_i -LC:\\gdal\\lib"
+  - cmd: "%CMD_IN_ENV% python setup.py install -IC:\\gdal\\include -lgdal_i -LC:\\gdal\\lib"
 
   # This is required to install Fiona.
   - cd C:\projects\fiona
