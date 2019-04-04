@@ -1,0 +1,135 @@
+# Based on appveyor.yml from https://github.com/Toblerity/Fiona/blob/master/appveyor.yml
+environment:
+
+  global:
+    # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
+    # /E:ON and /V:ON options are not enabled in the batch script intepreter
+    # See: http://stackoverflow.com/a/13751649/163740
+    CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
+    CMD_IN_ENV_EXT: "cmd /E:ON /V:ON /C C:\\projects\\trackintel\\appveyor\\run_with_env.cmd"
+    GDAL_HOME: "C:\\gdal"
+    PYTHON_ARCH: "64"
+
+  matrix:
+
+    # For Python versions available on Appveyor, see
+    # https://www.appveyor.com/docs/windows-images-software/#python
+    # The list here is complete (excluding Python 2.6, which
+    # isn't covered by this document) at the time of writing.
+
+    # Python 3.6, GDAL 2.3
+    - PYTHON: "C:\\Python36-x64"
+      PYTHON_VERSION: "3.6.4"
+      GDAL_VERSION: "2.4.0"
+      GIS_INTERNALS: "release-1911-x64-gdal-2-4-0-mapserver-7-2-2.zip"
+      GIS_INTERNALS_LIBS: "release-1911-x64-gdal-2-4-0-mapserver-7-2-2-libs.zip"
+
+install:
+  - ECHO "Filesystem root:"
+  - ps: "ls \"C:/\""
+
+  - ECHO "Installed SDKs:"
+  - ps: "ls \"C:/Program Files/Microsoft SDKs/Windows\""
+
+  # Prepend newly installed Python to the PATH of this build (this cannot be
+  # done from inside the powershell script as it would require to restart
+  # the parent CMD process).
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - "SET PYTHONPATH=%PYTHON%\\Lib\\site-packages;%PYTHONPATH%"
+
+  # Check that we have the expected version and architecture for Python
+  - "python --version"
+  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+
+  - ps: mkdir C:\build | out-null
+  - ps: mkdir C:\gdal | out-null
+
+  - curl http://download.gisinternals.com/sdk/downloads/%GIS_INTERNALS% --output gdalbin.zip
+  - 7z x gdalbin.zip -oC:\gdal
+  - curl http://download.gisinternals.com/sdk/downloads/%GIS_INTERNALS_LIBS% --output gdallibs.zip
+  - 7z x gdallibs.zip -oC:\gdal
+  - "SET PATH=C:\\gdal;C:\\gdal\\bin;C:\\gdal\\data;C:\\gdal\\bin\\gdal\\apps;%PATH%"
+  - "SET GDAL_DATA=C:\\gdal\\bin\\gdal-data"
+  - "SET PACKAGE_DATA=1"
+
+  - ECHO "Filesystem C:/GDAL:"
+  - ps: "ls \"C:/GDAL\""
+
+  # Upgrade to the latest version of pip to avoid it displaying warnings
+  # about it being out of date.
+  - cmd: python -m pip install --disable-pip-version-check --user --upgrade pip
+
+  - cmd: pip --version
+
+  # We need to install numpy and Fiona manually.
+  #- cd C:\projects
+  #- git clone https://github.com/Toblerity/Fiona.git
+  #- git clone https://github.com/OSGeo/gdal.git
+
+  - cd C:\projects\trackintel
+  #- ps: "ls \"C:/projects/trackintel\""
+  - cmd: "%CMD_IN_ENV% python -m pip install pytest wheel Cython numpy"
+
+  #- cd C:\projects\gdal\gdal\swig\python
+  #- cmd: "@echo GNM_ENABLED=no> setup_vars.ini"
+  #- cmd: "%CMD_IN_ENV_EXT% python setup.py build_ext -IC:\\gdal\\include -lgdal_i -LC:\\gdal\\lib"
+  #- cmd: "%CMD_IN_ENV_EXT% python setup.py install -IC:\\gdal\\include -lgdal_i -LC:\\gdal\\lib"
+
+  # This is required to install Fiona.
+  #- cd C:\projects\fiona
+
+  # copy gisinternal gdal librarys into .libs
+  #- cmd: xcopy C:\gdal\bin\*.dll fiona\.libs\
+  #- cmd: xcopy C:\gdal\*.rtf fiona\.libs\licenses\
+
+  # build fiona and create a wheel
+  #- cmd: "%CMD_IN_ENV_EXT% python setup.py build_ext -IC:\\gdal\\include -lgdal_i -LC:\\gdal\\lib bdist_wheel --gdalversion %GDAL_VERSION%"
+
+  # install the wheel
+  #- ps: python -m pip install --upgrade pip
+  #- ps: python -m pip install --force-reinstall --ignore-installed (gci dist\*.whl | % { "$_" })
+  #- ps: move fiona fiona.build
+  
+  #- "python -c \"import fiona; print(fiona.__version__)\""
+
+  #- cd C:\projects\trackintel
+  # Install the build dependencies of the project. If some dependencies contain
+  # compiled extensions and are not provided as pre-built wheel packages,
+  # pip will build them from source using the MSVC compiler matching the
+  # target Python version and architecture
+  # - "%CMD_IN_ENV% pip install -r requirements-dev.txt"
+
+  # We install Rtree from a repo, as otherwise it will fail :(
+  - "%CMD_IN_ENV% pip install https://download.lfd.uci.edu/pythonlibs/u2hcgva4/Rtree-0.8.3-cp36-cp36m-win_amd64.whl"
+  - "%CMD_IN_ENV% pip install https://download.lfd.uci.edu/pythonlibs/u2hcgva4/GDAL-2.4.1-cp36-cp36m-win_amd64.whl"
+  - "%CMD_IN_ENV% pip install https://download.lfd.uci.edu/pythonlibs/u2hcgva4/Fiona-1.8.6-cp36-cp36m-win_amd64.whl"
+  - "%CMD_IN_ENV% pip install https://download.lfd.uci.edu/pythonlibs/u2hcgva4/Shapely-1.6.4.post1-cp36-cp36m-win_amd64.whl"
+  - "%CMD_IN_ENV% pip install ."
+
+build: off
+
+test_script:
+  # Put your test command here.
+  # If you don't need to build C extensions on 64-bit Python 3.3 or 3.4,
+  # you can remove "build.cmd" from the front of the command, as it's
+  # only needed to support those cases.
+  # Note that you must use the environment variable %PYTHON% to refer to
+  # the interpreter you're using - Appveyor does not do anything special
+  # to put the Python version you want to use on PATH.
+  - "%PYTHON%\\python.exe -m pytest"
+
+after_test:
+  # This step builds your wheels.
+  # Again, you only need build.cmd if you're building C extensions for
+  # 64-bit Python 3.3/3.4. And you need to use %PYTHON% to get the correct
+  # interpreter
+  - "%PYTHON%\\python.exe setup.py bdist_wheel"
+
+artifacts:
+  # bdist_wheel puts your built wheel in the dist directory
+  - path: dist\*
+
+#on_success:
+#  You can use this step to upload your artifacts to a public website.
+#  See Appveyor's documentation for more details. Or you can simply
+#  access your wheels from the Appveyor "artifacts" tab for your build.

@@ -1,4 +1,15 @@
+dist: xenial
 language: python
 python:
   - 3.6
-  - 3.7
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install -y libspatialindex-c4v5 libspatialindex-dev
+
+install:
+  - pip install .
+  - pip install pytest
+
+script:
+  - python -m pytest
