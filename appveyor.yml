@@ -67,7 +67,7 @@ install:
 
   - cd C:\projects\trackintel
   - cmd: "%CMD_IN_ENV% python -m pip install pytest wheel Cython numpy"
-  - cms: "%CMD_IN_ENV% python -m pip install --global-option=build_ext --global-option=\"-IC:\\gdal\\include\" --global-option=\"-LC:\\gdal\\lib\" GDAL"
+  - cmd: "%CMD_IN_ENV% python -m pip install --global-option=build_ext --global-option=\"-IC:\\gdal\\include\" --global-option=\"-LC:\\gdal\\lib\" GDAL"
 
   # This is required to install Fiona.
   - cd C:\projects\fiona
