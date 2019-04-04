@@ -55,17 +55,18 @@ install:
   - ECHO "Filesystem C:/GDAL:"
   - ps: "ls \"C:/GDAL\""
 
+  # Upgrade to the latest version of pip to avoid it displaying warnings
+  # about it being out of date.
+  - cmd: python -m pip install --disable-pip-version-check --user --upgrade pip
+
+  - cmd: pip --version
+
   # We need to install numpy and Fiona manually.
   - cd C:\projects
-  - git clone https://github.com/numpy/numpy.git
   - git clone https://github.com/Toblerity/Fiona.git
 
   - cd C:\projects\trackintel
-  - cmd: "%CMD_IN_ENV% python -m pip install pytest wheel Cython"
-
-  # This is required to install numpy.
-  - cd C:\projects\numpy
-  - cmd: "%CMD_IN_ENV_EXT% python setup.py install"
+  - cmd: "%CMD_IN_ENV% python -m pip install pytest wheel Cython numpy GDAL"
 
   # This is required to install Fiona.
   - cd C:\projects\fiona
@@ -82,15 +83,9 @@ install:
   - ps: python -m pip install --force-reinstall --ignore-installed (gci dist\*.whl | % { "$_" })
   - ps: move fiona fiona.build
   
-  - "python -c \"import fiona\""
+  - "python -c \"import fiona; print(fiona.__version__)\""
 
   - cd C:\projects\trackintel
-  # Upgrade to the latest version of pip to avoid it displaying warnings
-  # about it being out of date.
-  - cmd: python -m pip install --disable-pip-version-check --user --upgrade pip
-
-  - cmd: pip --version
-
   # Install the build dependencies of the project. If some dependencies contain
   # compiled extensions and are not provided as pre-built wheel packages,
   # pip will build them from source using the MSVC compiler matching the
