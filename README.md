@@ -2,22 +2,21 @@
 
 ![Version](https://img.shields.io/badge/version-v0.0.1-red.svg)
 [![Build Status](https://travis-ci.org/mie-lab/trackintel.svg?branch=master)](https://travis-ci.org/mie-lab/trackintel)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/trackintel?svg=true)](https://ci.appveyor.com/api/projects/status/github/trackintel?svg=true)
-
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/mie-lab/trackintel?svg=true)](https://ci.appveyor.com/api/projects/status/github/mie-lab/trackintel?svg=true)
 
 Focusing on human mobility data, *trackintel* provides functionalities for data quality enhancement, integrating data from various sources, performing quantitative analysis and mining tasks, and visualizing the data and/or analysis results.
 In addition to these core functionalities, packages are provided for user mobility profiling and trajectory-based learning analytics.
 
 You can find the documentation on the [trackintel documentation page](https://trackintel.readthedocs.io/en/latest).
 
-## Target Users
+## Target Users and Assumptions
 
 *trackintel* is intended for use mainly by researchers with:
 
 * Programming experience in Python
 * Proficiency in movement data mining and analysis
 
-## Assumptions
+These assumptions concern your data:
 
 * Movement data exists in csv, (geo)json, gpx or PostGIS format
 * Movement data consists of points with x,y-coordinates, a time stamp, an optional accuracy and a user ID
@@ -48,6 +47,12 @@ For quick testing, use `trackintel.print_version()`.
 Testing is done using [pytest](https://docs.pytest.org/en/latest).
 Simply run the tests using `pytest` in the top-level trackintel folder.
 In case you use `pipenv`, install *pytest* first (`pip install pytest`), then run *pytest* using this version: `python -m pytest`.
+The use of [fixtures](https://pypi.org/project/fixtures/) for data generation (e.g., trips and trackpoints) is still an open todo.
+As for now, there are some smaller datasets in the `tests` folder.
+
+Versions use [semantic numbering](https://semver.org/).
+Commits follow the standard of [Conventional Commits](https://www.conventionalcommits.org).
+You can generate them easily using [Commitizen](https://github.com/commitizen/cz-cli).
 
 ### Documentation
 
@@ -56,6 +61,12 @@ In particular, it uses [Sphinx](http://www.sphinx-doc.org/en/master/) to create 
 You can install Sphinx using `pip install -U sphinx` or `conda install sphinx`.
 
 If you use additional dependencies during development, do not forget to add them to `autodoc_mock_imports` in `docs/conf.py` for readthedocs.org to work properly.
+
+### Continuous Integration
+
+There are travis and appveyor CIs set up for Unix/Windows builds.
+You can find the corresponding scripts in `.travis.yml` and `appveyor.yml`.
+Adding [Coveralls](https://coveralls.io) is an open todo.
 
 ## Contributors
 
