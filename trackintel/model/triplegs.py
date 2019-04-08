@@ -2,6 +2,8 @@ import pandas as pd
 import trackintel as ti
 import shapely
 
+import trackintel.visualization.triplegs
+
 
 @pd.api.extensions.register_dataframe_accessor("as_triplegs")
 class TriplegsAccessor(object):
@@ -33,5 +35,6 @@ class TriplegsAccessor(object):
             raise AttributeError("The geometry must be a LineString (only first checked).")
 
     def plot(self, *args, **kwargs):
-        """Plots this collection of triplegs."""
-        raise NotImplementedError
+        """Plots this collection of triplegs. 
+        See :func:`trackintel.visualization.triplegs.plot_triplegs`."""
+        ti.visualization.triplegs.plot_triplegs(self._obj, *args, **kwargs)
