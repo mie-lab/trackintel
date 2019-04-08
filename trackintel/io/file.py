@@ -26,3 +26,22 @@ def read_positionfixes_csv(*args, **kwargs):
     gdf = gpd.GeoDataFrame(df, geometry='geom')
     assert gdf.as_positionfixes
     return gdf
+
+
+def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
+    """Wraps the pandas to_csv function, but strips the geometry column ('geom') and 
+    stores the longitude and latitude in respective columns.
+
+    Parameters
+    ----------
+    positionfixes : GeoDataFrame
+        The positionfixes to store to the CSV file.
+    
+    filename : str
+        The file to write to.
+    """
+    gdf = positionfixes.copy()
+    gdf['longitude'] = positionfixes['geom'].apply(lambda p: p.coords[0][0])
+    gdf['latitude'] = positionfixes['geom'].apply(lambda p: p.coords[0][1])
+    gdf = gdf.drop('geom', axis=1)
+    gdf.to_csv(filename, index=False, *args, **kwargs)
