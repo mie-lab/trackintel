@@ -3,6 +3,8 @@ import trackintel as ti
 
 import trackintel.visualization.staypoints
 import trackintel.preprocessing.staypoints
+import trackintel.io.postgis
+import trackintel.io.file
 
 
 @pd.api.extensions.register_dataframe_accessor("as_staypoints")
@@ -50,3 +52,13 @@ class StaypointsAccessor(object):
         """Plots this collection of staypoints. 
         See :func:`trackintel.visualization.staypoints.plot_staypoints`."""
         ti.visualization.staypoints.plot_staypoints(self._obj, *args, **kwargs)
+
+    def to_csv(self, filename, *args, **kwargs):
+        """Stores this collection of staypoints as a CSV file.
+        See :func:`trackintel.io.file.write_staypoints_csv`."""
+        ti.io.file.write_staypoints_csv(self._obj, filename, *args, **kwargs)
+
+    def to_postgis(self, conn_string, table_name):
+        """Stores this collection of staypoints to PostGIS.
+        See :func:`trackintel.io.postgis.write_staypoints_postgis`."""
+        ti.io.postgis.write_staypoints_postgis(self._obj, conn_string, table_name)

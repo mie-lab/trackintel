@@ -4,6 +4,7 @@ import trackintel as ti
 import trackintel.preprocessing.positionfixes
 import trackintel.visualization.positionfixes
 import trackintel.io.postgis
+import trackintel.io.file
 
 
 @pd.api.extensions.register_dataframe_accessor("as_positionfixes")
@@ -68,7 +69,12 @@ class PositionfixesAccessor(object):
         See :func:`trackintel.visualization.positionfixes.plot_positionfixes`."""
         ti.visualization.positionfixes.plot_positionfixes(self._obj, *args, **kwargs)
 
+    def to_csv(self, filename, *args, **kwargs):
+        """Stores this collection of trackpoints as a CSV file.
+        See :func:`trackintel.io.file.write_positionfixes_csv`."""
+        ti.io.file.write_positionfixes_csv(self._obj, filename, *args, **kwargs)
+
     def to_postgis(self, conn_string, table_name):
         """Stores this collection of positionfixes to PostGIS.
-        See :func:`trackintel.io.postgis.store_positionfixes_postgis`."""
+        See :func:`trackintel.io.postgis.write_positionfixes_postgis`."""
         ti.io.postgis.write_positionfixes_postgis(self._obj, conn_string, table_name)
