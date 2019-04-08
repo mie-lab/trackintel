@@ -30,4 +30,4 @@ class TestIO:
         stps = ti.read_staypoints_csv('tests/data/staypoints.csv', sep=';')
         stps.as_staypoints.plot(out_filename=tmp_file, radius=0.01, positionfixes=pfs, plot_osm=False)
         assert os.path.exists(tmp_file)
-        #os.remove(tmp_file)
+        os.remove(tmp_file)
