@@ -37,3 +37,18 @@ class TestIO:
     def test_triplegs_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
+
+    def test_staypoints_from_to_csv(self):
+        orig_file = 'tests/data/staypoints.csv'
+        tmp_file = 'tests/data/staypoints_test.csv'
+        pfs = ti.read_staypoints_csv(orig_file, sep=';')
+        pfs['started_at'] = pfs['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
+        pfs['finished_at'] = pfs['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
+        ti.write_staypoints_csv(pfs, tmp_file, sep=';', 
+            columns=['user_id', 'started_at', 'finished_at', 'elevation', 'geom'])
+        assert filecmp.cmp(orig_file, tmp_file)
+        os.remove(tmp_file)
+        
+    def test_staypoints_from_to_postgis(self):
+        # TODO Implement some tests for PostGIS.
+        pass

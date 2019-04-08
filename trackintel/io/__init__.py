@@ -5,3 +5,6 @@ from .postgis import write_positionfixes_postgis
 
 from .file import read_triplegs_csv
 from .file import write_triplegs_csv
+
+from .file import read_staypoints_csv
+from .file import write_staypoints_csv
