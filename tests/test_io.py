@@ -16,7 +16,7 @@ class TestIO:
         pfs['tracked_at'] = pfs['tracked_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
         pfs.as_positionfixes.to_csv(tmp_file, sep=';', 
             columns=['user_id', 'tracked_at', 'latitude', 'longitude', 'elevation', 'accuracy'])
-        assert filecmp.cmp(orig_file, tmp_file)
+        assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
         
     def test_positionfixes_from_to_postgis(self):
@@ -31,7 +31,7 @@ class TestIO:
         tpls['finished_at'] = tpls['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
         tpls.as_triplegs.to_csv(tmp_file, sep=';', 
             columns=['user_id', 'started_at', 'finished_at', 'geom'])
-        assert filecmp.cmp(orig_file, tmp_file)
+        assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
         
     def test_triplegs_from_to_postgis(self):
@@ -46,7 +46,7 @@ class TestIO:
         stps['finished_at'] = stps['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
         stps.as_staypoints.to_csv(tmp_file, sep=';', 
             columns=['user_id', 'started_at', 'finished_at', 'elevation', 'geom'])
-        assert filecmp.cmp(orig_file, tmp_file)
+        assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
         
     def test_staypoints_from_to_postgis(self):
