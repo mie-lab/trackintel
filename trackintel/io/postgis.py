@@ -3,7 +3,7 @@ from geoalchemy2 import Geometry, WKTElement
 from sqlalchemy import create_engine
 
 
-def read_positionfixes_postgis(conn_string, table_name, *args, **kwargs):
+def read_positionfixes_postgis(conn_string, table_name, geom_col='geom', *args, **kwargs):
     """Reads positionfixes from a PostGIS database.
 
     Parameters
@@ -15,6 +15,9 @@ def read_positionfixes_postgis(conn_string, table_name, *args, **kwargs):
     table_name : str
         The table to read the positionfixes from.
 
+    geom_col : str
+        The geometry column of the table. Default ist 'geom'
+
     Returns
     -------
     GeoDataFrame
@@ -24,7 +27,8 @@ def read_positionfixes_postgis(conn_string, table_name, *args, **kwargs):
     conn = engine.connect()
     try:
         pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, 
-                                            geom_col='geom', index_col='id')
+                                            geom_col=geom_col, index_col='id',
+                                            *args, **kwargs)
     finally:
         conn.close()
     assert pfs.as_positionfixes
@@ -66,7 +70,7 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name):
         conn.close()
 
 
-def read_triplegs_postgis(conn_string, table_name, *args, **kwargs):
+def read_triplegs_postgis(conn_string, table_name, geom_col='geom', *args, **kwargs):
     """Reads triplegs from a PostGIS database.
 
     Parameters
@@ -78,6 +82,9 @@ def read_triplegs_postgis(conn_string, table_name, *args, **kwargs):
     table_name : str
         The table to read the triplegs from.
 
+    geom_col : str
+        The geometry column of the table. Default ist 'geom'
+
     Returns
     -------
     GeoDataFrame
@@ -87,7 +94,8 @@ def read_triplegs_postgis(conn_string, table_name, *args, **kwargs):
     conn = engine.connect()
     try:
         pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, 
-                                            geom_col='geom', index_col='id')
+                                            geom_col=geom_col, index_col='id',
+                                            *args, **kwargs)
     finally:
         conn.close()
     assert pfs.as_triplegs
@@ -129,7 +137,7 @@ def write_triplegs_postgis(triplegs, conn_string, table_name):
         conn.close()
 
 
-def read_staypoints_postgis(conn_string, table_name, *args, **kwargs):
+def read_staypoints_postgis(conn_string, table_name, geom_col='geom', *args, **kwargs):
     """Reads staypoints from a PostGIS database.
 
     Parameters
@@ -141,6 +149,9 @@ def read_staypoints_postgis(conn_string, table_name, *args, **kwargs):
     table_name : str
         The table to read the staypoints from.
 
+    geom_col : str
+        The geometry column of the table. Default ist 'geom'
+
     Returns
     -------
     GeoDataFrame
@@ -150,7 +161,8 @@ def read_staypoints_postgis(conn_string, table_name, *args, **kwargs):
     conn = engine.connect()
     try:
         pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, 
-                                            geom_col='geom', index_col='id')
+                                            geom_col=geom_col, index_col='id',
+                                            *args, **kwargs)
     finally:
         conn.close()
     assert pfs.as_staypoints
