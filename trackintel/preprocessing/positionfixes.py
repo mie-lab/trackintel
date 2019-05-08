@@ -57,7 +57,7 @@ def extract_staypoints(positionfixes, method='sliding',
     similarity based on location history. In Proceedings of the 16th ACM SIGSPATIAL international 
     conference on Advances in geographic information systems (p. 34). ACM.
     """
-    ret_staypoints = pd.DataFrame(columns=['arrival_at', 'departure_at', 'geom'])
+    ret_staypoints = pd.DataFrame(columns=['started_at', 'finished_at', 'geom'])
 
     # TODO We have to make sure that the user_id is taken into account.
 
