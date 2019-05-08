@@ -12,14 +12,14 @@ class PlacesAccessor(object):
     adheres to some requirements.
 
     Requires at least the following columns: 
-    ``['user_id', 'geom']``
+    ``['user_id', 'center', geom']``
 
     Examples
     --------
     >>> df.as_places.plot()
     """
 
-    required_columns = ['user_id', 'geom']
+    required_columns = ['user_id', 'center', 'geom']
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -31,8 +31,8 @@ class PlacesAccessor(object):
             raise AttributeError("To process a DataFrame as a collection of staypoints, " \
                 + "it must have the properties [%s], but it has [%s]." \
                 % (', '.join(PlacesAccessor.required_columns), ', '.join(obj.columns)))
-        if obj.shape[0] > 0 and obj['geom'].geom_type[0] is not 'Point':
-            raise AttributeError("The geometry must be a Point (only first checked).")
+        if obj.shape[0] > 0 and obj['geom'].geom_type[0] is not 'Polygon':
+            raise AttributeError("The geometry must be a Polygon (only first checked).")
 
     def plot(self, *args, **kwargs):
         """Plots this collection of places. 
