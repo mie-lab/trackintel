@@ -31,10 +31,12 @@ class PlacesAccessor(object):
             raise AttributeError("To process a DataFrame as a collection of staypoints, " \
                 + "it must have the properties [%s], but it has [%s]." \
                 % (', '.join(PlacesAccessor.required_columns), ', '.join(obj.columns)))
-        if obj.shape[0] > 0 and obj['geom'].geom_type[0] is not 'Polygon':
+        if not (obj.shape[0] > 0 and obj.geometry[0].geom_type is 'Polygon'):
+            # todo: We could think about allowing both geometry types for places (point and polygon)
+            # One for extend and one for the center
             raise AttributeError("The geometry must be a Polygon (only first checked).")
 
     def plot(self, *args, **kwargs):
         """Plots this collection of places. 
         See :func:`trackintel.visualization.places.plot_places`."""
-        ti.visualization.places.plot_places(self._obj, *args, **kwargs)
+        ti.visualization.places.plot_center_of_places(self._obj, *args, **kwargs)

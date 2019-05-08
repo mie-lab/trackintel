@@ -70,6 +70,6 @@ def cluster_staypoints(staypoints, method='dbscan',
             ret_places = ret_places.append(ret_place, ignore_index=True)
 
     ret_places = gpd.GeoDataFrame(ret_places, geometry='geom')
-    ret_places = ret_places.astype({'place_id': 'int'})
+    ret_places['place_id'] = ret_places['place_id'].astype('int')
     return ret_places
 

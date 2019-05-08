@@ -5,7 +5,7 @@ from trackintel.visualization.util import regular_figure, save_fig
 from trackintel.visualization.osm import plot_osm_streets
 
 
-def plot_places(places, out_filename=None, radius=None, positionfixes=None, 
+def plot_center_of_places(places, out_filename=None, radius=None, positionfixes=None, 
                 staypoints=None, staypoints_radius=None, plot_osm=False):
     """Plots places (optionally to a file).
 
@@ -39,10 +39,10 @@ def plot_places(places, out_filename=None, radius=None, positionfixes=None,
             north = positionfixes['geom'].y.max()
             south = positionfixes['geom'].y.min()
         else:
-            west = places['geom'].x.min() - 0.03
-            east = places['geom'].x.max() + 0.03
-            north = places['geom'].y.max() + 0.03
-            south = places['geom'].y.min() - 0.03
+            west = places['center'].x.min() - 0.03
+            east = places['center'].x.max() + 0.03
+            north = places['center'].y.max() + 0.03
+            south = places['center'].y.min() - 0.03
         plot_osm_streets(north, south, east, west, ax)
 
     if positionfixes is not None:
@@ -59,7 +59,7 @@ def plot_places(places, out_filename=None, radius=None, positionfixes=None,
     if radius is None:
         radius = 5
     for pt in places.to_dict('records'):
-        circle = mpatches.Circle((pt['geom'].x, pt['geom'].y), radius, 
+        circle = mpatches.Circle((pt['center'].x, pt['center'].y), radius, 
                                   facecolor='none', edgecolor='r', zorder=4)
         ax.add_artist(circle)
     if out_filename is not None:
