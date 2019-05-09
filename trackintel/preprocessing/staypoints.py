@@ -65,11 +65,11 @@ def cluster_staypoints(staypoints, method='dbscan',
             ret_place['center'] = Point(group.geometry.x.mean(),
                  group.geometry.y.mean())
             # polygon geometry of place
-            ret_place['geom'] = MultiPoint(points=group['geom'].to_list()).convex_hull
+            ret_place['extent'] = MultiPoint(points=list(group.geometry)).convex_hull
 
             ret_places = ret_places.append(ret_place, ignore_index=True)
 
-    ret_places = gpd.GeoDataFrame(ret_places, geometry='geom')
+    ret_places = gpd.GeoDataFrame(ret_places, geometry='center')
     ret_places['place_id'] = ret_places['place_id'].astype('int')
     return ret_places
 

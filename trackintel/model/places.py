@@ -19,7 +19,7 @@ class PlacesAccessor(object):
     >>> df.as_places.plot()
     """
 
-    required_columns = ['user_id', 'center', 'geom']
+    required_columns = ['user_id', 'center', 'extent']
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -31,10 +31,10 @@ class PlacesAccessor(object):
             raise AttributeError("To process a DataFrame as a collection of staypoints, " \
                 + "it must have the properties [%s], but it has [%s]." \
                 % (', '.join(PlacesAccessor.required_columns), ', '.join(obj.columns)))
-        if not (obj.shape[0] > 0 and obj.geometry[0].geom_type is 'Polygon'):
+        if not (obj.shape[0] > 0 and obj['center'][0].geom_type is 'Point'):
             # todo: We could think about allowing both geometry types for places (point and polygon)
             # One for extend and one for the center
-            raise AttributeError("The geometry must be a Polygon (only first checked).")
+            raise AttributeError("The center geometry must be a Point (only first checked).")
 
     def plot(self, *args, **kwargs):
         """Plots this collection of places. 
