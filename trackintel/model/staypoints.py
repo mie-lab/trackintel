@@ -33,7 +33,7 @@ class StaypointsAccessor(object):
             raise AttributeError("To process a DataFrame as a collection of staypoints, " \
                 + "it must have the properties [%s], but it has [%s]." \
                 % (', '.join(StaypointsAccessor.required_columns), ', '.join(obj.columns)))
-        if not (obj.shape[0] > 0 and obj.geometry[0].geom_type is 'Point'):
+        if not (obj.shape[0] > 0 and obj.geometry.iloc[0].geom_type is 'Point'):
             raise AttributeError("The geometry must be a Point (only first checked).")
 
     @property
