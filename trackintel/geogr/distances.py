@@ -1,6 +1,8 @@
 from math import radians, cos, sin, asin, sqrt, pi
 import numpy as np
-
+from scipy.spatial.distance import euclidean as euclidean_dist
+from sklearn.metrics import pairwise_distances
+from scipy.spatial.distance import cdist
 # todo: calculate distance matrix
 #def distance_matrix():
 #   pass
@@ -12,32 +14,59 @@ import numpy as np
 
 # todo: check the sklearn format for distances matrices and try to use it
 def calculate_distance_matrix(points, dist_metric='haversine', *args, **kwds):
+    """
+    Calculate a distance matrix based on a specific distance metric.
+    
+    Parameters
+    ----------
+    points : geopandas dataframe
+        geopandas dataframe in trackintel staypoints format
+    dist_metric : str, optional
+        ('haversine', 'euclidean')
+    *args
+        Description
+    **kwds
+        Description
+    
+    Returns
+    -------
+    TYPE
+        Description
+    """
+    x = points.geometry.x.values
+    y = points.geometry.x.values
+    xy = np.concatenate((x.reshape(-1,1),y.reshape(-1,1)),axis=1)
+    
+    if dist_metric == 'euclidean':
+        D = pairwise_distances(xy)
+        
+    elif dist_metric == 'haversine':
+        D = cdist(xy, xy, metric=haversine_dist_cdist)
+        
+    else:
+        D = pairwise_distances(xy, metric=dist_metric)
 
-    x = points.geometry.x
-    y = points.geometry.x
-
-    n = len(x)
-
-    for i in range(n):
-        for j in range(n - i):
-            x_1.append(x[i])
-            y_1.append(y[i])
-            x_2.append(x[j])
-            y_2.append(y[j])
-
-    if dist_metric == 'haversine':
-        d = haversine_dist(x1, y1, x2, y2)
-
-
-    # rebuild matrix from vector
-    D = np.zeros(n,n)
-    for i in range(n):
-        for j in range(n - i):
-            D[i,j] = d[i+j]
 
     return D
     
-
+def haversine_dist_cdist(XA, XB):
+    """Applies the haversine_dist function for the scipy cdist function.
+    
+    Parameters
+    ----------
+    XA : numpy array
+        2d numpy array with [lon1,lat1]
+    XB : TYPE
+        2d numpy array with [lon2,lat2]
+    
+    Returns
+    -------
+    float
+        haversine distance between two points
+    """
+    
+    
+    return haversine_dist(XA[0], XA[1], XB[0], XB[1])
 
 def haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000):
     """Computes the great circle or haversine distance between two coordinates in WGS84.
