@@ -48,7 +48,7 @@ def cluster_staypoints(staypoints, method='dbscan',
     --------
     >>> cluster_staypoints(...)    
     """
-    ret_places = pd.DataFrame(columns=['user_id', 'place_id','geom'])
+    ret_places = pd.DataFrame(columns=['user_id', 'place_id','center', 'extent'])
 
     if method=='dbscan':
 
