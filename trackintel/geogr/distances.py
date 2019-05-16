@@ -13,7 +13,7 @@ from scipy.spatial.distance import cdist
 #
 
 # todo: check the sklearn format for distances matrices and try to use it
-def calculate_distance_matrix(points, dist_metric='haversine', *args, **kwds):
+def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=0, *args, **kwds):
     """
     Calculate a distance matrix based on a specific distance metric.
     
@@ -44,7 +44,7 @@ def calculate_distance_matrix(points, dist_metric='haversine', *args, **kwds):
         D = cdist(xy, xy, metric=haversine_dist_cdist)
         
     else:
-        D = pairwise_distances(xy, metric=dist_metric)
+        D = pairwise_distances(xy, metric=dist_metric, n_jobs=n_jobs)
 
 
     return D
