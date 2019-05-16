@@ -72,7 +72,7 @@ def extract_staypoints(positionfixes, method='sliding',
             num_pfs = len(pfs)
 
             staypoint_id_counter = 0
-            staypoint_id_posfix_matching = {}
+            posfix_staypoint_matching = {}
 
             i = 0
             j = 1 # todo: should be 0?, see referenced paper
@@ -128,10 +128,12 @@ def extract_staypoints(positionfixes, method='sliding',
 
         # add matching to original positionfixes
         positionfixes['staypoint_id'] = -1 # this marks all that are not part of a SP
-        for staypoints_id, posfix_list in posfix_staypoint_matching.items()
+        for staypoints_id, posfix_list in posfix_staypoint_matching.items():
             # note that we use .iloc because above we iterate the position fixe with
             # their absolute position (not their index)
-            positionfixes.iloc[posfix_list,'staypoint_id'] = staypoint_id
+            positionfixes.iloc[posfix_list, 
+                               positionfixes.columns.get_loc('staypoint_id')
+                               ]= staypoints_id
 
 
     elif method == 'dbscan':

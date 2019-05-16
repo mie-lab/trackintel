@@ -31,11 +31,8 @@ class PlacesAccessor(object):
             raise AttributeError("To process a DataFrame as a collection of staypoints, " \
                 + "it must have the properties [%s], but it has [%s]." \
                 % (', '.join(PlacesAccessor.required_columns), ', '.join(obj.columns)))
-<<<<<<< HEAD
-        if not (obj.shape[0] > 0 and obj['center'][0].geom_type is 'Point'):
-=======
+
         if not (obj.shape[0] > 0 and obj['center'].iloc[0].geom_type is 'Point'):
->>>>>>> major_update
             # todo: We could think about allowing both geometry types for places (point and polygon)
             # One for extend and one for the center
             raise AttributeError("The center geometry must be a Point (only first checked).")

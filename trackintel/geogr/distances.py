@@ -1,5 +1,5 @@
 from math import radians, cos, sin, asin, sqrt, pi
-
+import numpy as np
 
 # todo: calculate distance matrix
 #def distance_matrix():
@@ -11,7 +11,7 @@ from math import radians, cos, sin, asin, sqrt, pi
 #
 
 # todo: check the sklearn format for distances matrices and try to use it
-def calculate_distance_matrix(points, dist_metric='haversine', *args, **kwds)
+def calculate_distance_matrix(points, dist_metric='haversine', *args, **kwds):
 
     x = points.geometry.x
     y = points.geometry.x
@@ -80,10 +80,10 @@ def haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000):
     https://stackoverflow.com/questions/19413259/efficient-way-to-calculate-distance-matrix-given-latitude-and-longitude-data-in
     """ 
     
-    lon_1 = lon_1.ravel() * np.pi / 180
-    lat_1 = lat_1.ravel() * np.pi / 180
-    lon_2 = lon_2.ravel() * np.pi / 180
-    lat_2 = lat_2.ravel() * np.pi / 180
+    lon_1 = np.asarray(lon_1).ravel() * np.pi / 180
+    lat_1 = np.asarray(lat_1).ravel() * np.pi / 180
+    lon_2 = np.asarray(lon_2).ravel() * np.pi / 180
+    lat_2 = np.asarray(lat_2).ravel() * np.pi / 180
     
     cos_lat1 = np.cos(lat_1)
     cos_lat2 = np.cos(lat_2)

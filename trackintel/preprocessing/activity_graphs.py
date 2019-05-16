@@ -33,14 +33,14 @@ def weights_transition_count(staypoints):
     # transitions between two clusters e.g., 1 -> -1 -> 2 as direct transitions
     # between two clusters!
     # E.g., 1 -> 2
-    staypoints_a = staypoints_a.loc[staypoints_a['cluster_id'] != -1]
+    staypoints_a = staypoints_a.loc[staypoints_a['place_id'] != -1]
 
     # count transitions between cluster
-    staypoints_a["cluster_id_end"] = staypoints_a.groupby("user_id"
+    staypoints_a["place_id_end"] = staypoints_a.groupby("user_id"
                                                           )[
-        "cluster_id"].shift(-1)
-    counts = staypoints_a.groupby(by=['user_id', 'cluster_id',
-                                      'cluster_id_end']
+        "place_id"].shift(-1)
+    counts = staypoints_a.groupby(by=['user_id', 'place_id',
+                                      'place_id_end']
                                   ).size().reset_index(name='counts')
 
     # create Adjacency matrix
@@ -76,8 +76,8 @@ def create_adjacency_matrix_from_counts(counts, user_list):
     for user_id in user_list:
         counts_user = counts.loc[counts['user_id'] == user_id]
 
-        row_ix = counts_user['cluster_id'].values.astype('int')
-        col_ix = counts_user['cluster_id_end'].values.astype('int')
+        row_ix = counts_user['place_id'].values.astype('int')
+        col_ix = counts_user['place_id_end'].values.astype('int')
         values = counts_user['counts'].values
 
         if len(values) == 0:
