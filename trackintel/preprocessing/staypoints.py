@@ -39,27 +39,36 @@ def cluster_staypoints(staypoints, method='dbscan',
     """
     ret_places = pd.DataFrame(columns=['user_id', 'place_id','geom'])
 
+
     db = DBSCAN(eps=epsilon, min_samples=num_samples)
     for user_id_this in staypoints["user_id"].unique():
 
         user_staypoints = staypoints[staypoints["user_id"] == user_id_this] #this is not a copy!
+
+        # todo: enable transformations to temporary (metric) system
+        transform_crs = None
+        if transform_crs is not None:
+            pass
+
+        # todo: allow to pass a distance metric. This is important to cluster points in meters
+        # even if they are distributed over a large geographic area
 
         # get place matching
         coordinates = np.array([[g.x, g.y] for g in user_staypoints['geom']])
         labels = db.fit_predict(coordinates)
 
         # add staypoint - place matching to original staypoints
-        staypoints.loc[user_staypoints.index,'cluster_id'] = labels
+        staypoints.loc[user_staypoints.index,'place_id'] = labels
 
     # create places as grouped staypoints
-    grouped_df = staypoints.groupby(['user_id','cluster_id'])
+    grouped_df = staypoints.groupby(['user_id','place_id'])
     for combined_id, group in grouped_df:
-        user_id, cluster_id = combined_id
+        user_id, place_id = combined_id
 
-        if int(cluster_id) != -1:
+        if int(place_id) != -1:
             ret_place = {}
             ret_place['user_id'] = user_id
-            ret_place['place_id'] = cluster_id
+            ret_place['place_id'] = place_id
             
             # point geometry of place
             ret_place['center'] = Point(group.geometry.x.mean(),
