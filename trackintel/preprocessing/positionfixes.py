@@ -12,7 +12,7 @@ from trackintel.geogr.distances import haversine_dist
 
 def extract_staypoints(positionfixes, method='sliding', 
                        dist_threshold=100, time_threshold=5*60, epsilon=100,
-                       dist_func=haversine_dist):
+                       dist_func=haversine_dist, eps=None, num_samples=None):
     """Extract staypoints from positionfixes.
 
     Parameters
@@ -58,7 +58,7 @@ def extract_staypoints(positionfixes, method='sliding',
     similarity based on location history. In Proceedings of the 16th ACM SIGSPATIAL international 
     conference on Advances in geographic information systems (p. 34). ACM.
     """
-    ret_staypoints = pd.DataFrame(columns=['started_at', 'finished_at', 'geom', 'staypoint_id'])
+    ret_staypoints = pd.DataFrame(columns=['started_at', 'finished_at', 'geom', 'id'])
 
     if method == 'sliding':
         # Algorithm from Li et al. (2008). For details, please refer to the paper.
@@ -98,7 +98,7 @@ def extract_staypoints(positionfixes, method='sliding',
                             staypoint['elevation'] = np.mean([pfs[k]['elevation'] for k in range(i, j)])
                             staypoint['started_at'] = pfs[i]['tracked_at']
                             staypoint['finished_at'] = pfs[j]['tracked_at'] # todo: should this not be j-1? because j is not part of the staypoint
-                            staypoint['staypoint_id'] = staypoint_id_counter
+                            staypoint['id'] = staypoint_id_counter
                                                         
                             # store matching 
                             posfix_staypoint_matching[staypoint_id_counter] = [k for k in range(i, j)]
@@ -116,7 +116,7 @@ def extract_staypoints(positionfixes, method='sliding',
                                 staypoint['elevation'] = pfs[j]['elevation']
                                 staypoint['started_at'] = pfs[j]['tracked_at']
                                 staypoint['finished_at'] = pfs[j]['tracked_at']
-                                staypoint['staypoint_id'] = staypoint_id_counter
+                                staypoint['id'] = staypoint_id_counter
 
                                 # store matching
                                 posfix_staypoint_matching[staypoint_id_counter] = [k for k in range(i, j)]
@@ -165,19 +165,19 @@ def extract_staypoints(positionfixes, method='sliding',
             user_id, staypoint_id = combined_id
 
             if int(staypoint_id) != -1:
-                ret_staypoint = {}
-                ret_staypoint['user_id'] = user_id
-                ret_staypoint['staypoint_id'] = staypoint_id
+                staypoint = {}
+                staypoint['user_id'] = user_id
+                staypoint['id'] = staypoint_id
                 
                 # point geometry of staypoint
-                ret_staypoint['geom'] = Point(group.geometry.x.mean(),
+                staypoint['geom'] = Point(group.geometry.x.mean(),
                      group.geometry.y.mean())
 
-                ret_staypoints = ret_staypoints.append(ret_staypoint, ignore_index=True)
+                ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
         
 
 
     ret_staypoints = gpd.GeoDataFrame(ret_staypoints, geometry='geom')
-    ret_staypoints['staypoint_id'] = ret_staypoints['staypoint_id'].astype('int')
+    ret_staypoints['id'] = ret_staypoints['id'].astype('int')
 
     return ret_staypoints
