@@ -62,7 +62,8 @@ def extract_staypoints(positionfixes, method='sliding',
 
     if method == 'sliding':
         # Algorithm from Li et al. (2008). For details, please refer to the paper.
-    
+        staypoint_id_counter = 0
+        
         for user_id_this in  positionfixes['user_id'].unique():
 
             positionfixes_user_this = positionfixes.loc[
@@ -71,7 +72,7 @@ def extract_staypoints(positionfixes, method='sliding',
             pfs = positionfixes_user_this.sort_values('tracked_at').to_dict('records')
             num_pfs = len(pfs)
 
-            staypoint_id_counter = 0
+            
             posfix_staypoint_matching = {}
 
             i = 0

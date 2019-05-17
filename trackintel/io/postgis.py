@@ -289,7 +289,7 @@ def write_places_postgis(places, conn_string, table_name, schema=None):
         places_postgis.to_sql(table_name, engine, schema=schema,
                               if_exists='replace', index=False, 
                         dtype={'center': Geometry('POINT', srid=4326),
-                               'extent': Geometry('POLYGON', srid=4326)})
+                               'extent': Geometry('GEOMETRY', srid=4326)})
     finally:
         conn.close()
 
