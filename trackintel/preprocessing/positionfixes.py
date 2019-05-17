@@ -178,7 +178,8 @@ def extract_staypoints(positionfixes, method='sliding',
         
 
 
-    ret_staypoints = gpd.GeoDataFrame(ret_staypoints, geometry='geom')
+    ret_staypoints = gpd.GeoDataFrame(ret_staypoints, geometry='geom',
+                                      crs=positionfixes.crs)
     ret_staypoints['id'] = ret_staypoints['id'].astype('int')
 
     return ret_staypoints

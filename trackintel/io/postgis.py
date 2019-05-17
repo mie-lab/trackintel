@@ -60,8 +60,10 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
     
     # make a copy in order to avoid changing the geometry of the original array
     positionfixes_postgis = positionfixes.copy()
+    
+    srid = int(positionfixes_postgis.crs['init'].split(':')[1])
     positionfixes_postgis['geom'] = \
-    positionfixes_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=4326))
+    positionfixes_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     if 'id' not in positionfixes_postgis.columns:
         positionfixes_postgis['id'] = positionfixes_postgis.index
 
@@ -70,7 +72,7 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
     try:
         positionfixes_postgis.to_sql(table_name, engine, schema=schema,
                                      if_exists='replace', index=False,  
-                                     dtype={'geom': Geometry('POINT', srid=4326)})
+                                     dtype={'geom': Geometry('POINT', srid=srid)})
     finally:
         conn.close()
 
@@ -132,8 +134,10 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None):
     
     # make a copy in order to avoid changing the geometry of the original array
     triplegs_postgis = triplegs.copy()
+    
+    srid = int(triplegs_postgis.crs['init'].split(':')[1])
     triplegs_postgis['geom'] = \
-        triplegs_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=4326))
+        triplegs_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     if 'id' not in triplegs_postgis.columns:
         triplegs_postgis['id'] = triplegs_postgis.index
 
@@ -142,7 +146,7 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None):
     try:
         triplegs_postgis.to_sql(table_name, engine, schema=schema,
                                 if_exists='replace', index=False, 
-                        dtype={'geom': Geometry('LINESTRING', srid=4326)})
+                        dtype={'geom': Geometry('LINESTRING', srid=srid)})
     finally:
         conn.close()
 
@@ -204,8 +208,10 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None):
     
     # make a copy in order to avoid changing the geometry of the original array
     staypoints_postgis = staypoints.copy()
+    
+    srid = int(staypoints_postgis.crs['init'].split(':')[1])
     staypoints_postgis['geom'] = \
-        staypoints_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=4326))
+        staypoints_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     if 'id' not in staypoints_postgis.columns:
         staypoints_postgis['id'] = staypoints_postgis.index
 
@@ -214,7 +220,7 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None):
     try:
         staypoints_postgis.to_sql(table_name, engine, schema=schema,
                                   if_exists='replace', index=False, 
-                        dtype={'geom': Geometry('POINT', srid=4326)})
+                        dtype={'geom': Geometry('POINT', srid=srid)})
     finally:
         conn.close()
         
@@ -276,10 +282,12 @@ def write_places_postgis(places, conn_string, table_name, schema=None):
     
     # make a copy in order to avoid changing the geometry of the original array
     places_postgis = places.copy()
+    
+    srid = int(places_postgis.crs['init'].split(':')[1])
     places_postgis['center'] = \
-        places_postgis['center'].apply(lambda x: WKTElement(x.wkt, srid=4326))
+        places_postgis['center'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     places_postgis['extent'] = \
-        places_postgis['extent'].apply(lambda x: WKTElement(x.wkt, srid=4326))
+        places_postgis['extent'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     if 'id' not in places_postgis.columns:
         places_postgis['id'] = places_postgis.index
 
@@ -288,8 +296,8 @@ def write_places_postgis(places, conn_string, table_name, schema=None):
     try:
         places_postgis.to_sql(table_name, engine, schema=schema,
                               if_exists='replace', index=False, 
-                        dtype={'center': Geometry('POINT', srid=4326),
-                               'extent': Geometry('GEOMETRY', srid=4326)})
+                        dtype={'center': Geometry('POINT', srid=srid),
+                               'extent': Geometry('GEOMETRY', srid=srid)})
     finally:
         conn.close()
 

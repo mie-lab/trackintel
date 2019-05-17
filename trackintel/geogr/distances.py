@@ -34,7 +34,7 @@ def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=0, *args, 
         Description
     """
     x = points.geometry.x.values
-    y = points.geometry.x.values
+    y = points.geometry.y.values
     xy = np.concatenate((x.reshape(-1,1),y.reshape(-1,1)),axis=1)
     
     if dist_metric == 'euclidean':
@@ -78,10 +78,17 @@ def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=0, *args, 
         for i in range(D.shape[0]):
             for j in range(i, D.shape[1]):
                 D[j][i] = D[i][j]
+                
+    elif dist_metric == 'test_haversine':
+         D = cdist(xy,xy,metric=haversine_dist_cdist)
         
         
     else:
         D = pairwise_distances(xy, metric=dist_metric, n_jobs=n_jobs)
+        
+     
+         
+         
 
 
     return D

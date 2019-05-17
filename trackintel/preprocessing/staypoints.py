@@ -58,6 +58,8 @@ def cluster_staypoints(staypoints, method='dbscan',
         else:    
             db = DBSCAN(eps=epsilon, min_samples=num_samples)
             
+        place_id_counter = 0
+            
         for user_id_this in staypoints["user_id"].unique():
             # Slice staypoints array by user. This is not a copy!
             user_staypoints = staypoints[staypoints["user_id"] == user_id_this]  
@@ -70,9 +72,16 @@ def cluster_staypoints(staypoints, method='dbscan',
             else:  
                 coordinates = np.array([[g.x, g.y] for g in user_staypoints['geom']])
                 labels = db.fit_predict(coordinates)
-    
+                
+            # enforce unique lables across all users without changing noise
+            # labels
+            labels[labels != -1] = labels[labels != -1] + place_id_counter +1
+            place_id_counter = place_id_counter + max(labels)
+            
             # add staypoint - place matching to original staypoints
             staypoints.loc[user_staypoints.index,'place_id'] = labels
+
+            
     
         # create places as grouped staypoints
         grouped_df = staypoints.groupby(['user_id','place_id'])
@@ -92,7 +101,8 @@ def cluster_staypoints(staypoints, method='dbscan',
     
                 ret_places = ret_places.append(ret_place, ignore_index=True)
     
-        ret_places = gpd.GeoDataFrame(ret_places, geometry='center')
+        ret_places = gpd.GeoDataFrame(ret_places, geometry='center',
+                                      crs=staypoints.crs)
         ret_places['place_id'] = ret_places['place_id'].astype('int')
         
     return ret_places
