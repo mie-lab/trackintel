@@ -27,7 +27,7 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col='geom', *args, 
     conn = engine.connect()
     try:
         pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, 
-                                            geom_col=geom_col, index_col='id',
+                                            geom_col=geom_col,
                                             *args, **kwargs)
     finally:
         conn.close()
