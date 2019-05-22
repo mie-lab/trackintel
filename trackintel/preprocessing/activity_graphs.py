@@ -1,6 +1,7 @@
 from scipy.sparse import coo_matrix
 import networkx as nx
 import numpy as np
+import pandas as pd
 
 
 def weights_transition_count(staypoints):
@@ -38,11 +39,17 @@ def weights_transition_count(staypoints):
     # count transitions between cluster
     staypoints_a["place_id_end"] = staypoints_a.groupby("user_id"
                                                           )[
-        "place_id"].shift(-1)
-    counts = staypoints_a.groupby(by=['user_id', 'place_id',
-                                      'place_id_end']
-                                  ).size().reset_index(name='counts')
-
+                                                    "place_id"].shift(-1)
+    try:
+        
+        counts = staypoints_a.groupby(by=['user_id', 'place_id',
+                                          'place_id_end']
+                                      ).size().reset_index(name='counts')
+    except ValueError:
+        # If there are only rows with nans, groupby throws an error but should
+        # return an empty dataframe
+        counts = pd.DataFrame(columns=['user_id', 'place_id', 'place_id_end',
+                                       'counts'])
     # create Adjacency matrix
     adjacency_dict = create_adjacency_matrix_from_counts(counts, all_users)
 
@@ -75,19 +82,39 @@ def create_adjacency_matrix_from_counts(counts, user_list):
 
     for user_id in user_list:
         counts_user = counts.loc[counts['user_id'] == user_id]
-
+        
         row_ix = counts_user['place_id'].values.astype('int')
         col_ix = counts_user['place_id_end'].values.astype('int')
         values = counts_user['counts'].values
-
+             
         if len(values) == 0:
-            adjacency_dict[user_id] = coo_matrix((0, 0))
+            adjacency_dict[user_id] = {'A': coo_matrix((0, 0)),
+                                        'place_id_order': np.asarray([])}
 
         else:
+            # start adjacency matrix at (ij) = (0,0)
+#            min_id = np.min([np.min(row_ix), np.min(col_ix)])
+#            row_ix = row_ix - min_id
+#            col_ix = col_ix - min_id
+            
+            # ix transformation
+            org_ix = np.unique(np.concatenate((row_ix, col_ix)))
+            new_ix = np.arange(0,len(org_ix))
+            ix_tranformation = dict(zip(org_ix,new_ix))
+            ix_backtranformation = dict(zip(new_ix,org_ix))
+            
+            row_ix = [ix_tranformation[row_ix_this] for row_ix_this in row_ix]
+            row_ix = np.asarray(row_ix)
+            col_ix = [ix_tranformation[col_ix_this] for col_ix_this in col_ix]
+            col_ix = np.asarray(col_ix)
+            
+            # set shape and create sparse matrix
             max_ix = np.max([np.max(row_ix), np.max(col_ix)]) + 1
             shape = (max_ix, max_ix)
-            adjacency_dict[user_id] = coo_matrix((values, (row_ix, col_ix)),
-                                                 shape=shape)
+            adjacency_dict[user_id] = {'A': coo_matrix((values,
+                                              (row_ix, col_ix)),shape=shape),
+                                        'place_id_order': org_ix}
+
 
     return adjacency_dict
 
@@ -120,17 +147,24 @@ def generate_activity_graphs(places, adjacency_dict):
 
     G_dict = {}
     for user_id_this in places['user_id'].unique():
-        A = adjacency_dict[user_id_this]
+        if user_id_this not in adjacency_dict:
+            continue
+            
+            
+        A = adjacency_dict[user_id_this]['A']
+        place_id_order = adjacency_dict[user_id_this]['place_id_order']
         G = nx.from_scipy_sparse_matrix(A)
 
         # add graph information
         G.graph["user_id"] = user_id_this
 
+        places_user_view = places.loc[places['user_id'] == user_id_this]
+        places_user_view = places_user_view.sort_values('place_id')
+        
         # add node information
-        node_ids = list(
-            places.loc[places['user_id'] == user_id_this, 'place_id'])
-        node_features = places.loc[places['user_id'] == user_id_this,
-                                   ['geom', 'center']].to_dict('records')
+        node_ids = np.arange(len(places_user_view))
+        node_features = places_user_view.loc[:,
+                ['place_id','extent', 'center']].to_dict('records')
 
         node_dict = dict(zip(node_ids, node_features))
         nx.set_node_attributes(G, node_dict)
