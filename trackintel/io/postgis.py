@@ -35,7 +35,8 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col='geom', *args, 
     return pfs
 
 
-def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=None):
+def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=None,
+                                sql_chunksize=None):
     """Stores positionfixes to PostGIS. Usually, this is directly called on a positionfixes 
     dataframe (see example below).
 
@@ -72,7 +73,8 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
     try:
         positionfixes_postgis.to_sql(table_name, engine, schema=schema,
                                      if_exists='replace', index=False,  
-                                     dtype={'geom': Geometry('POINT', srid=srid)})
+                                     dtype={'geom': Geometry('POINT', srid=srid)},
+                                     chunksize=sql_chunksize)
     finally:
         conn.close()
 
@@ -109,7 +111,8 @@ def read_triplegs_postgis(conn_string, table_name, geom_col='geom', *args, **kwa
     return pfs
 
 
-def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None):
+def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None,
+                           sql_chunksize=None):
     """Stores triplegs to PostGIS. Usually, this is directly called on a triplegs 
     dataframe (see example below).
 
@@ -146,7 +149,8 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None):
     try:
         triplegs_postgis.to_sql(table_name, engine, schema=schema,
                                 if_exists='replace', index=False, 
-                        dtype={'geom': Geometry('LINESTRING', srid=srid)})
+                        dtype={'geom': Geometry('LINESTRING', srid=srid)},
+                        chunksize=sql_chunksize)
     finally:
         conn.close()
 
@@ -183,7 +187,8 @@ def read_staypoints_postgis(conn_string, table_name, geom_col='geom', *args, **k
     return pfs
 
 
-def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None):
+def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
+                             sql_chunksize=None):
     """Stores staypoints to PostGIS. Usually, this is directly called on a staypoints 
     dataframe (see example below).
 
@@ -220,7 +225,8 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None):
     try:
         staypoints_postgis.to_sql(table_name, engine, schema=schema,
                                   if_exists='replace', index=False, 
-                        dtype={'geom': Geometry('POINT', srid=srid)})
+                        dtype={'geom': Geometry('POINT', srid=srid)},
+                        chunksize=sql_chunksize)
     finally:
         conn.close()
         
@@ -257,7 +263,8 @@ def read_places_postgis(conn_string, table_name, geom_col='geom', *args, **kwarg
     return plcs
 
 
-def write_places_postgis(places, conn_string, table_name, schema=None):
+def write_places_postgis(places, conn_string, table_name, schema=None,
+                         sql_chunksize=None):
     """Stores staypoints to PostGIS. Usually, this is directly called on a staypoints 
     dataframe (see example below).
 
@@ -297,7 +304,8 @@ def write_places_postgis(places, conn_string, table_name, schema=None):
         places_postgis.to_sql(table_name, engine, schema=schema,
                               if_exists='replace', index=False, 
                         dtype={'center': Geometry('POINT', srid=srid),
-                               'extent': Geometry('GEOMETRY', srid=srid)})
+                               'extent': Geometry('GEOMETRY', srid=srid)},
+                               chunksize=sql_chunksize)
     finally:
         conn.close()
 
