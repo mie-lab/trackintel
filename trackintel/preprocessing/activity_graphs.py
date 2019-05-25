@@ -4,7 +4,10 @@ import numpy as np
 import pandas as pd
 from trackintel.geogr.distances import calculate_distance_matrix
 from sklearn.neighbors import NearestNeighbors
-
+import scipy.spatial 
+from activity_graphs_utils import draw_smopy_basemap, nx_coordinate_layout_smopy
+import matplotlib.pyplot as plt
+from scipy.spatial.qhull import QhullError
 
 def weights_transition_count(staypoints, adjacency_dict=None):
     """
@@ -129,7 +132,7 @@ def create_adjacency_matrix_from_counts(counts, user_list, adjacency_dict):
 
     return adjacency_dict
 
-def weights_n_distances(places, n, distance_matrix_metric='haversine',adjacency_dict=None):
+def weights_n_neighbors(places, n, distance_matrix_metric='haversine',adjacency_dict=None):
     """
     Calculate the distance of the n nearest places as graph weights.
 
@@ -164,14 +167,13 @@ def weights_n_distances(places, n, distance_matrix_metric='haversine',adjacency_
     if adjacency_dict is None:
         adjacency_dict = {}
     
-
     
     for user_id_this in all_users:
         row_ixs = []
         col_ixs = []
         values = []
         
-        user_places = places[places["user_id"] == user_id_this]
+        user_places = places[places["user_id"] == user_id_this].sort_values('place_id')
         
         places_distance_matrix = calculate_distance_matrix(
                 user_places,
@@ -182,23 +184,30 @@ def weights_n_distances(places, n, distance_matrix_metric='haversine',adjacency_
         
         # for every row, keep only the n smallest elements
         for row_ix_this in range(shape[0]):
-            row_this = places_distance_matrix[row_ix_this,(1+row_ix_this):]
+            row_this = places_distance_matrix[row_ix_this,:]
             
-            min_ixs = np.argsort(row_this)[0:n]
+            min_ixs = np.argsort(row_this)[0:n+1] 
             
             col_ixs = col_ixs + list(min_ixs)
             row_ixs = row_ixs + [row_ix_this for x in range(len(min_ixs))]
             values = values + list(row_this[min_ixs])
-        
+            
+
+        # enforce symmetry: 
+        col_ixs_temp = col_ixs.copy()
+        col_ixs = col_ixs + row_ixs
+        row_ixs = row_ixs + col_ixs_temp
+        values = values + values
         
         A = coo_matrix((values,(row_ixs, col_ixs)),shape=shape)
+        a = A.todense()
         place_id_order = org_ixs
         edge_name = '{}_distant'.format(n)
         
         if user_id_this not in adjacency_dict:
             adjacency_dict[user_id_this] = {'A': [A],
                                             'place_id_order': [place_id_order],
-                                            'edge-name': [edge_name]}
+                                            'edge_name': [edge_name]}
         else:
             adjacency_dict[user_id_this]['A'].append(A)
             adjacency_dict[user_id_this]['place_id_order'].append(place_id_order)
@@ -254,6 +263,7 @@ def generate_activity_graphs(places, adjacency_dict, node_feature_names=[]):
         
         for ix in range(len(A_list)):
             A = A_list[ix]
+            a = A.todense()
             place_id_order = place_id_order_list[ix]
             edge_name = edge_name_list[ix]
             # todo: assert place_id_order
@@ -276,6 +286,85 @@ def generate_activity_graphs(places, adjacency_dict, node_feature_names=[]):
 
     return G_dict
 
+def weights_delaunay(places, to_crs=None, distance_matrix_metric='haversine',
+                        adjacency_dict=None):
+
+
+    all_users = places["user_id"].unique()
+    if adjacency_dict is None:
+        adjacency_dict = {}
+    
+    for user_id_this in all_users:
+    
+        user_places = places[places["user_id"] == user_id_this].sort_values('place_id')
+        org_ixs = user_places['place_id'].values
+        place_id_order = org_ixs
+        edge_name = 'delaunay'
+    
+        if to_crs is not None:
+            geometry = user_places['center'].to_crs(to_crs)
+        else:
+            geometry = user_places['center']
+            
+        # import point data as xy coordinates 
+        # nx graph from scipy.spatial.Delaunay:
+        # https://groups.google.com/forum/#!topic/networkx-discuss/D7fMmuzVBAw
+        points = list(zip(geometry.x,geometry.y))
+        # -------------------------------------- 
+    
+        # make a Delaunay triangulation of the point data 
+        try:
+            delTri = scipy.spatial.Delaunay(points) 
+        
+            # create a set for edges that are indexes of the points 
+            edges = set() 
+            # for each Delaunay triangle 
+            for n in range(delTri.nsimplex): 
+                # for each edge of the triangle 
+                # sort the vertices 
+                # (sorting avoids duplicated edges being added to the set) 
+                # and add to the edges set 
+                edge = sorted([delTri.vertices[n,0], delTri.vertices[n,1]]) 
+                edges.add((edge[0], edge[1])) 
+                edge = sorted([delTri.vertices[n,0], delTri.vertices[n,2]]) 
+                edges.add((edge[0], edge[1])) 
+                edge = sorted([delTri.vertices[n,1], delTri.vertices[n,2]]) 
+                edges.add((edge[0], edge[1])) 
+        
+            # add distances to edges
+            places_distance_matrix = calculate_distance_matrix(
+                        user_places,
+                        dist_metric=distance_matrix_metric)
+            
+            edges = [(u, v, places_distance_matrix[u,v]) for u,v in edges]
+            row_ixs, col_ixs, values = map(list, zip(*edges))
+            
+            # enforce symmetry: 
+            col_ixs_temp = col_ixs.copy()
+            col_ixs = col_ixs + row_ixs
+            row_ixs = row_ixs + col_ixs_temp
+            values = values + values
+            
+            # create adjacency matrix
+            shape = places_distance_matrix.shape
+            A = coo_matrix((values,(row_ixs, col_ixs)),shape=shape)
+        
+        except QhullError:    
+            A =  coo_matrix((0, 0))
+            place_id_order = np.asarray([])
+        
+        
+        if user_id_this not in adjacency_dict:
+            adjacency_dict[user_id_this] = {'A': [A],
+                                            'place_id_order': [place_id_order],
+                                            'edge_name': [edge_name]}
+        else:
+            adjacency_dict[user_id_this]['A'].append(A)
+            adjacency_dict[user_id_this]['place_id_order'].append(place_id_order)
+            adjacency_dict[user_id_this]['edge_name'].append(edge_name)
+
+    return adjacency_dict
+
 
 def initialize_multigraph(user_id_this, places_user_view, node_feature_names):
     
@@ -291,7 +380,6 @@ def initialize_multigraph(user_id_this, places_user_view, node_feature_names):
 
     node_tuple = tuple(zip(node_ids, node_features))
     G.add_nodes_from(node_tuple)
-        
     return G
 
 
