@@ -5,7 +5,6 @@ import pandas as pd
 from trackintel.geogr.distances import calculate_distance_matrix
 from sklearn.neighbors import NearestNeighbors
 import scipy.spatial 
-from activity_graphs_utils import draw_smopy_basemap, nx_coordinate_layout_smopy
 import matplotlib.pyplot as plt
 from scipy.spatial.qhull import QhullError
 
