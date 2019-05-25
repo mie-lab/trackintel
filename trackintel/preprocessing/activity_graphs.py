@@ -131,7 +131,7 @@ def create_adjacency_matrix_from_counts(counts, user_list, adjacency_dict):
 
     return adjacency_dict
 
-def weights_n_neighbors(places, n, distance_matrix_metric='haversine',adjacency_dict=None):
+def weights_n_neighbors(places, n=None, distance_matrix_metric='haversine',adjacency_dict=None):
     """
     Calculate the distance of the n nearest places as graph weights.
 
@@ -161,7 +161,8 @@ def weights_n_neighbors(places, n, distance_matrix_metric='haversine',adjacency_
     """
     # todo: check if cluster id is missing
     # todo: check if adjacency matrix is symmetric?
-
+    # todo: What if n is too large?
+    
     all_users = places["user_id"].unique()
     if adjacency_dict is None:
         adjacency_dict = {}
@@ -180,28 +181,35 @@ def weights_n_neighbors(places, n, distance_matrix_metric='haversine',adjacency_
         org_ixs = user_places['place_id'].values
         
         shape = places_distance_matrix.shape
-        
-        # for every row, keep only the n smallest elements
-        for row_ix_this in range(shape[0]):
-            row_this = places_distance_matrix[row_ix_this,:]
-            
-            min_ixs = np.argsort(row_this)[0:n+1] 
-            
-            col_ixs = col_ixs + list(min_ixs)
-            row_ixs = row_ixs + [row_ix_this for x in range(len(min_ixs))]
-            values = values + list(row_this[min_ixs])
-            
-
-        # enforce symmetry: 
-        col_ixs_temp = col_ixs.copy()
-        col_ixs = col_ixs + row_ixs
-        row_ixs = row_ixs + col_ixs_temp
-        values = values + values
-        
-        A = coo_matrix((values,(row_ixs, col_ixs)),shape=shape)
-        a = A.todense()
         place_id_order = org_ixs
-        edge_name = '{}_distant'.format(n)
+        
+        
+        if n is None or n == 'fconn':
+            A = coo_matrix(places_distance_matrix)
+            edge_name = 'fconn_distant'
+            
+        else:
+        
+            # for every row, keep only the n smallest elements
+            for row_ix_this in range(shape[0]):
+                row_this = places_distance_matrix[row_ix_this,:]
+                
+                min_ixs = np.argsort(row_this)[0:n+1] 
+                
+                col_ixs = col_ixs + list(min_ixs)
+                row_ixs = row_ixs + [row_ix_this for x in range(len(min_ixs))]
+                values = values + list(row_this[min_ixs])
+                
+    
+            # enforce symmetry: 
+            col_ixs_temp = col_ixs.copy()
+            col_ixs = col_ixs + row_ixs
+            row_ixs = row_ixs + col_ixs_temp
+            values = values + values
+            
+            A = coo_matrix((values,(row_ixs, col_ixs)),shape=shape)
+            a = A.todense()
+            edge_name = '{}_distant'.format(n)
         
         if user_id_this not in adjacency_dict:
             adjacency_dict[user_id_this] = {'A': [A],
