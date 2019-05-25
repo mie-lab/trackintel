@@ -75,9 +75,10 @@ def cluster_staypoints(staypoints, method='dbscan',
                 
             # enforce unique lables across all users without changing noise
             # labels
-            max_label = max(labels)
+            max_label = np.max(labels)
             labels[labels != -1] = labels[labels != -1] + place_id_counter +1
-            place_id_counter = place_id_counter + max_label
+            if max_label > -1:
+                place_id_counter = place_id_counter + max_label + 1
             
             # add staypoint - place matching to original staypoints
             staypoints.loc[user_staypoints.index,'place_id'] = labels
