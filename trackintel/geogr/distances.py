@@ -3,6 +3,7 @@ import numpy as np
 from scipy.spatial.distance import euclidean as euclidean_dist
 from sklearn.metrics import pairwise_distances
 from scipy.spatial.distance import cdist
+from scipy.sparse import coo_matrix
 # todo: calculate distance matrix
 #def distance_matrix():
 #   pass
@@ -33,57 +34,52 @@ def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=0, *args, 
     TYPE
         Description
     """
-    x = points.geometry.x.values
-    y = points.geometry.y.values
-    xy = np.concatenate((x.reshape(-1,1),y.reshape(-1,1)),axis=1)
+    
+    try: 
+        x = points['long'].values
+        y = points['lat'].values
+    except KeyError:    
+        x = points.geometry.x.values
+        y = points.geometry.y.values
+    
     
     if dist_metric == 'euclidean':
-        D = pairwise_distances(xy)
+        xy = np.concatenate((x.reshape(-1,1),y.reshape(-1,1)),axis=1)
+        D = pairwise_distances(xy, n_jobs=n_jobs)
         
 #    # super slow!
 #    elif dist_metric == 'haversine':
 #        D = cdist(xy, xy, metric=haversine_dist_cdist)
         
-    elif dist_metric == 'haversine':
-#        x = points.geometry.x
-#        y = points.geometry.x
-    
+    elif dist_metric == 'haversine':   
         # create point pairs to calculate distance from
         n = len(x)
-        x1 = []
-        y1 = []
-        x2 = []
-        y2 = []
-    
-        for i in range(n):
-            for j in np.arange(i+1,n):
-                x1.append(x[i])
-                y1.append(y[i])
-                x2.append(x[j])
-                y2.append(y[j])
         
+        ix_1, ix_2 = np.triu_indices(n, k=1)
+        trilix =    np.tril_indices(n, k=-1)
+        
+        x1 = x[ix_1]
+        y1 = y[ix_1]
+        x2 = x[ix_2]
+        y2 = y[ix_2]
+       
         d = haversine_dist(x1, y1, x2, y2)
         
-        # rebuild matrix from vector
         D = np.zeros((n,n))
-        k = 0
-        for i in range(n):
-            for j in np.arange(i+1,n):
-                D[i,j] = d[k]
-                k = k+1
-                
+       
+        D[(ix_1,ix_2)] = d
+        
         # mirror triangle matrix to be conform with scikit-learn format and to 
         # allow for non-symmetric distances in the future
-        
-        for i in range(D.shape[0]):
-            for j in range(i, D.shape[1]):
-                D[j][i] = D[i][j]
-                
+        D[trilix] = D.T[trilix]
+
     elif dist_metric == 'test_haversine':
+         xy = np.concatenate((x.reshape(-1,1),y.reshape(-1,1)),axis=1)
          D = cdist(xy,xy,metric=haversine_dist_cdist)
         
         
     else:
+        xy = np.concatenate((x.reshape(-1,1),y.reshape(-1,1)),axis=1)
         D = pairwise_distances(xy, metric=dist_metric, n_jobs=n_jobs)
         
      
