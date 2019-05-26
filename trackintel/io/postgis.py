@@ -36,7 +36,7 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col='geom', *args, 
 
 
 def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=None,
-                                sql_chunksize=None):
+                                sql_chunksize=None,  if_exists='replace'):
     """Stores positionfixes to PostGIS. Usually, this is directly called on a positionfixes 
     dataframe (see example below).
 
@@ -72,7 +72,7 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
     conn = engine.connect()
     try:
         positionfixes_postgis.to_sql(table_name, engine, schema=schema,
-                                     if_exists='replace', index=False,  
+                                     if_exists=if_exists, index=False,  
                                      dtype={'geom': Geometry('POINT', srid=srid)},
                                      chunksize=sql_chunksize)
     finally:
@@ -188,7 +188,7 @@ def read_staypoints_postgis(conn_string, table_name, geom_col='geom', *args, **k
 
 
 def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
-                             sql_chunksize=None):
+                             sql_chunksize=None, if_exists='replace'):
     """Stores staypoints to PostGIS. Usually, this is directly called on a staypoints 
     dataframe (see example below).
 
@@ -211,6 +211,11 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
     >>> df.as_staypoints.to_postgis(conn_string, table_name)
     """
     
+    # todo: Think about a conecpt for the indices. At the moment, an index 
+    # column is required when downloading. This means, that the ID column is 
+    # taken as pandas index. When uploading the default is "no index" and
+    # thereby the index column is lost
+    
     # make a copy in order to avoid changing the geometry of the original array
     staypoints_postgis = staypoints.copy()
     
@@ -224,7 +229,7 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
     conn = engine.connect()
     try:
         staypoints_postgis.to_sql(table_name, engine, schema=schema,
-                                  if_exists='replace', index=False, 
+                                  if_exists=if_exists, index=False, 
                         dtype={'geom': Geometry('POINT', srid=srid)},
                         chunksize=sql_chunksize)
     finally:
@@ -264,7 +269,7 @@ def read_places_postgis(conn_string, table_name, geom_col='geom', *args, **kwarg
 
 
 def write_places_postgis(places, conn_string, table_name, schema=None,
-                         sql_chunksize=None):
+                         sql_chunksize=None, if_exists='replace'):
     """Stores staypoints to PostGIS. Usually, this is directly called on a staypoints 
     dataframe (see example below).
 
@@ -302,7 +307,7 @@ def write_places_postgis(places, conn_string, table_name, schema=None,
     conn = engine.connect()
     try:
         places_postgis.to_sql(table_name, engine, schema=schema,
-                              if_exists='replace', index=False, 
+                              if_exists=if_exists, index=False, 
                         dtype={'center': Geometry('POINT', srid=srid),
                                'extent': Geometry('GEOMETRY', srid=srid)},
                                chunksize=sql_chunksize)
