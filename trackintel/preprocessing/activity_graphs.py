@@ -167,17 +167,23 @@ def weights_n_neighbors(places, n=None, distance_matrix_metric='haversine',adjac
     if adjacency_dict is None:
         adjacency_dict = {}
     
+    sorted_places = places.set_index('user_id', drop=False)
+    sorted_places.index.name = 'user_id_ix'
+    sorted_places.sort_index(inplace=True)
     
     for user_id_this in all_users:
         row_ixs = []
         col_ixs = []
         values = []
         
-        user_places = places[places["user_id"] == user_id_this].sort_values('place_id')
+        user_places = sorted_places[sorted_places.index == user_id_this]
         
         places_distance_matrix = calculate_distance_matrix(
                 user_places,
                 dist_metric=distance_matrix_metric)
+        # invert such that close nodes have a high weight
+        places_distance_matrix = np.reciprocal(places_distance_matrix, 
+                                               where=places_distance_matrix != 0)
         org_ixs = user_places['place_id'].values
         
         shape = places_distance_matrix.shape
@@ -190,15 +196,15 @@ def weights_n_neighbors(places, n=None, distance_matrix_metric='haversine',adjac
             
         else:
         
-            # for every row, keep only the n smallest elements
+            # for every row, keep only the n largest elements
             for row_ix_this in range(shape[0]):
                 row_this = places_distance_matrix[row_ix_this,:]
                 
-                min_ixs = np.argsort(row_this)[0:n+1] 
+                max_ixs = np.argsort(row_this)[::-1][0:n+1] 
                 
-                col_ixs = col_ixs + list(min_ixs)
-                row_ixs = row_ixs + [row_ix_this for x in range(len(min_ixs))]
-                values = values + list(row_this[min_ixs])
+                col_ixs = col_ixs + list(max_ixs)
+                row_ixs = row_ixs + [row_ix_this for x in range(len(max_ixs))]
+                values = values + list(row_this[max_ixs])
                 
     
             # enforce symmetry: 
@@ -253,12 +259,16 @@ def generate_activity_graphs(places, adjacency_dict, node_feature_names=[]):
     #  type?
 
     G_dict = {}
+    
+    sorted_places = places.set_index('user_id', drop=False)
+    sorted_places.index.name = 'user_id_ix'
+    sorted_places.sort_index(inplace=True)
+    
     for user_id_this in places['user_id'].unique():
         if user_id_this not in adjacency_dict:
             continue
         
-        places_user_view = places.loc[places['user_id'] == user_id_this]
-        places_user_view = places_user_view.sort_values('place_id')
+        places_user_view = sorted_places.loc[sorted_places.index == user_id_this]
         
         G = initialize_multigraph(user_id_this, places_user_view,
                                   node_feature_names)
@@ -300,23 +310,33 @@ def weights_delaunay(places, to_crs=None, distance_matrix_metric='haversine',
     all_users = places["user_id"].unique()
     if adjacency_dict is None:
         adjacency_dict = {}
+        
+    sorted_places = places.set_index('user_id', drop=False)
+    sorted_places.index.name = 'user_id_ix'
+    sorted_places.sort_index(inplace=True)
     
     for user_id_this in all_users:
     
-        user_places = places[places["user_id"] == user_id_this].sort_values('place_id')
+        user_places = sorted_places[sorted_places.index == user_id_this]
         org_ixs = user_places['place_id'].values
         place_id_order = org_ixs
         edge_name = 'delaunay'
     
         if to_crs is not None:
             geometry = user_places['center'].to_crs(to_crs)
+            points = list(zip(geometry.x,geometry.y))
         else:
-            geometry = user_places['center']
+            try:
+                points = list(zip(places['long'],places['lat']))
+            
+            except KeyError:
+                geometry = user_places['center']
+                points = list(zip(geometry.x,geometry.y))
             
         # import point data as xy coordinates 
         # nx graph from scipy.spatial.Delaunay:
         # https://groups.google.com/forum/#!topic/networkx-discuss/D7fMmuzVBAw
-        points = list(zip(geometry.x,geometry.y))
+        
         # -------------------------------------- 
     
         # make a Delaunay triangulation of the point data 
@@ -342,6 +362,11 @@ def weights_delaunay(places, to_crs=None, distance_matrix_metric='haversine',
             places_distance_matrix = calculate_distance_matrix(
                         user_places,
                         dist_metric=distance_matrix_metric)
+            
+            # invert distance matrix, so that close places have a high weight
+            places_distance_matrix = np.reciprocal(places_distance_matrix, 
+                                               where=places_distance_matrix != 0)
+            
             
             edges = [(u, v, places_distance_matrix[u,v]) for u,v in edges]
             row_ixs, col_ixs, values = map(list, zip(*edges))

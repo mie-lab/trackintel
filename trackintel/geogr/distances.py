@@ -14,7 +14,7 @@ from scipy.sparse import coo_matrix
 #
 
 # todo: check the sklearn format for distances matrices and try to use it
-def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=0, *args, **kwds):
+def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=None, *args, **kwds):
     """
     Calculate a distance matrix based on a specific distance metric.
     
