@@ -8,6 +8,25 @@ in case you want to quickly set up a database.
 
 .. highlight:: sql
 
+The **users** table contains additional information about individual users::
+
+    CREATE TABLE users (
+        -- Common to all tables.
+        id bigint NOT NULL,
+
+        -- Specific attributes.
+        -- The attributes contain additional information that might be given for each user. This
+        -- could be demographic information, such as age, gender, or income. 
+        attributes json,
+
+        -- Spatial attributes.
+        geom_home geometry(Point, 4326),
+        geom_work geometry(Point, 4326),
+
+        -- Constraints.
+        CONSTRAINT users_pkey PRIMARY KEY (id)
+    );
+
 The **positionfixes** table contains all positionfixes of all users. They are not 
 only linked to a user, but also to a trip leg or a staypoint::
 
@@ -24,10 +43,14 @@ only linked to a user, but also to a trip leg or a staypoint::
         tracked_at timestamp without time zone NOT NULL,
 
         -- Specific attributes.
-        elevation double precision,
         accuracy double precision,
+        tracking_tech character(12),
+        -- The context contains additional information that might be filled in by trackintel.
+        -- This could include things such as the temperature, public transport stops in vicinity, etc.
+        context json,
 
         -- Spatial attributes.
+        elevation double precision,
         geom geometry(Point, 4326),
 
         -- Constraints.
@@ -35,30 +58,43 @@ only linked to a user, but also to a trip leg or a staypoint::
     );
 
 The **staypoints** table contains all stay points, i.e., places where a user stayed
-for a certain amount of time. They are linked to both a user, as well as a previous
-and a next trip. Depending on the purpose and time spent, a staypoint can be an activity,
+for a certain amount of time. They are linked to a user, as well as (potentially) to a trip
+and place. Depending on the purpose and time spent, a staypoint can be an *activity*,
 i.e., a meaningful destination of movement::
 
     CREATE TABLE staypoints (
+        -- Common to all tables.
         id bigint NOT NULL,
         user_id bigint NOT NULL,
 
+        -- References to foreign tables.
         trip_id bigint,
         place_id bigint,
 
+        -- Temporal attributes.
         started_at timestamp without time zone NOT NULL,
         finished_at timestamp without time zone NOT NULL,
         
-        activity boolean,
-
+        -- Attributes related to the activity performed at the staypoint.
         purpose_detected character varying,
         purpose_validated character varying,
         validated boolean,
         validated_at timestamp without time zone,
+        activity boolean,
 
-        geom_raw geometry(Point, 4326),
+        -- Specific attributes.
+        -- The radius is an approximation of how far the positionfixes that made up this staypoint
+        -- are scattered around the center (geom) of it.
+        radius double precision,
+        -- The context contains additional information that might be filled in by trackintel.
+        -- This could include things such as the temperature, public transport stops in vicinity, etc.
+        context json,
+
+        -- Spatial attributes.
+        elevation double precision,
         geom geometry(Point, 4326),
 
+        -- Constraints.
         CONSTRAINT staypoints_pkey PRIMARY KEY (id)
     );
 
@@ -67,109 +103,115 @@ with a single mode of transport. They are linked to both a user, as well as a tr
 and if applicable, a public transport case::
 
     CREATE TABLE triplegs (
+        -- Common to all tables.
         id bigint NOT NULL,
         user_id bigint NOT NULL,
 
+        -- References to foreign tables.
         trip_id bigint,
-        cust_movements_id bigint,
 
+        -- Temporal attributes.
         started_at timestamp without time zone NOT NULL,
         finished_at timestamp without time zone NOT NULL,
 
+        -- Attributes related to the transport mode used for this trip leg.
         mode_detected character varying,
         mode_validated character varying,
         validated boolean,
         validated_at timestamp without time zone,
 
+        -- Specific attributes.
+        -- The context contains additional information that might be filled in by trackintel.
+        -- This could include things such as the temperature, public transport stops in vicinity, etc.
+        context json,
+
+        -- Spatial attributes.
+        -- The raw geometry is unprocessed, directly made up from the positionfixes. The column
+        -- 'geom' contains processed (e.g., smoothened, map matched, etc.) data.
         geom_raw geometry(Linestring, 4326),
         geom geometry(Linestring, 4326),
 
+        -- Constraints.
         CONSTRAINT triplegs_pkey PRIMARY KEY (id)
-    );
-
-The **trips** table contains all trips, i.e., collection of trip legs going from one 
-activity (staypoint with ``activity==True``) to another. They are simply linked to a user.
-They also have attributes (origin_id & destination_id) to link them to a table with place IDs.
-Further, they can be part of one or more tours::
-
-    CREATE TABLE trips (
-        id bigint NOT NULL,
-        user_id integer NOT NULL,
-
-        origin_id bigint,
-        destination_id bigint,
-        tour_id BIGINT[],
-
-        started_at timestamp without time zone NOT NULL,
-        finished_at timestamp without time zone NOT NULL,
-
-        CONSTRAINT trips_pkey PRIMARY KEY (id)
-    );
-
-The **customer movements** table contains all customer movements [1], i.e., sequence of triplegs 
-which use only public transport (by the provider specified as ``provider``). They are linked to 
-a user and a trip::
-
-    CREATE TABLE cust_movements (
-        id bigint NOT NULL,
-        user_id integer NOT NULL,
-
-        trip_id bigint NOT NULL,
-
-        started_at timestamp without time zone NOT NULL,
-        finished_at timestamp without time zone NOT NULL,
-
-        provider varchar,
-
-        CONSTRAINT cust_movements_pkey PRIMARY KEY (id)
-    );
-
-The **tours** table contains all tours (tours and journeys), i.e., sequence of trips 
-which start and end at the same place (in case of ``journey==True`` this place is *home*). 
-They are linked to a user::
-
-    CREATE TABLE tours (
-        id bigint NOT NULL,
-        user_id integer NOT NULL,
-
-        origin_destination_id bigint,
-
-        started_at timestamp without time zone NOT NULL,
-        finished_at timestamp without time zone NOT NULL,
-        
-        journey bool,
-
-        CONSTRAINT tours_pkey PRIMARY KEY (id)
     );
 
 The **places** table contains all places, i.e., somehow created (e.g., from clustering
 staypoints) meaningful locations::
 
     CREATE TABLE places (
+        -- Common to all tables.
         id bigint NOT NULL,
         user_id bigint,
 
-        purpose VARCHAR,
+        -- Specific attributes.
+        -- The radius is an approximation of how far the staypoints that made up this place
+        -- are scattered around the center (geom) of it.
+        radius double precision,
+        -- The context contains additional information that might be filled in by trackintel.
+        -- This could include things such as the temperature, public transport stops in vicinity, etc.
+        context json,
         
+        -- Spatial attributes.
+        elevation double precision,
         geom geometry(Polygon, 4326),
 
+        -- Constraints.
         CONSTRAINT places_pkey PRIMARY KEY (id)
     );
 
-The **users** table contains additional information about individual users::
+The **trips** table contains all trips, i.e., collection of trip legs going from one 
+activity (staypoint with ``activity==True``) to another. They are simply linked to a user::
 
-    CREATE TABLE users (
+    CREATE TABLE trips (
+        -- Common to all tables.
         id bigint NOT NULL,
+        user_id integer NOT NULL,
 
-        geom_home geometry(Point, 4326),
-        geom_work geometry(Point, 4326),
+        -- References to foreign tables.
+        origin_staypoint_id bigint,
+        destination_staypoint_id bigint,
 
-        CONSTRAINT users_pkey PRIMARY KEY (id)
+        -- Temporal attributes.
+        started_at timestamp without time zone NOT NULL,
+        finished_at timestamp without time zone NOT NULL,
+        
+        -- Specific attributes.
+        -- The context contains additional information that might be filled in by trackintel.
+        -- This could include things such as the temperature, public transport stops in vicinity, etc.
+        context json,
+
+        -- Constraints.
+        CONSTRAINT trips_pkey PRIMARY KEY (id)
+    );
+
+The **tours** table contains all tours, i.e., sequence of trips which start and end 
+at the same place (in case of ``journey==True`` this place is *home*). 
+They are linked to a user::
+
+    CREATE TABLE tours (
+        -- Common to all tables.
+        id bigint NOT NULL,
+        user_id integer NOT NULL,
+
+        -- References to foreign tables.
+        origin_destination_place_id bigint,
+
+        -- Temporal attributes.
+        started_at timestamp without time zone NOT NULL,
+        finished_at timestamp without time zone NOT NULL,
+        
+        -- Specific attributes.
+        journey bool,
+        -- The context contains additional information that might be filled in by trackintel.
+        -- This could include things such as the temperature, public transport stops in vicinity, etc.
+        context json,
+
+        -- Constraints.
+        CONSTRAINT tours_pkey PRIMARY KEY (id)
     );
 
 
 References
 ==========
 
-[1] Schönfelder S, Axhausen K. Urban rhythms and travel behaviour. Urban rhythms and travel 
-behaviour. Surrey: Ashgate Publishing Ltd.; 2010.
+None.

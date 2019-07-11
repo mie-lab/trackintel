@@ -64,6 +64,9 @@ You can install Sphinx using `pip install -U sphinx` or `conda install sphinx`.
 
 If you use additional dependencies during development, do not forget to add them to `autodoc_mock_imports` in `docs/conf.py` for readthedocs.org to work properly.
 
+You can then generate the documentation using `sphinx-build -b html docs docs.gen`.
+This will put the documentation in `docs.gen`, which is in `.gitignore`.
+
 ### Continuous Integration
 
 There are travis and appveyor CIs set up for Unix/Windows builds.
