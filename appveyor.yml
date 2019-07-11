@@ -100,10 +100,10 @@ install:
   # - "%CMD_IN_ENV% pip install -r requirements-dev.txt"
 
   # We install Rtree from a repo, as otherwise it will fail :(
-  - "%CMD_IN_ENV% pip install https://download.lfd.uci.edu/pythonlibs/u2hcgva4/Rtree-0.8.3-cp36-cp36m-win_amd64.whl"
-  - "%CMD_IN_ENV% pip install https://download.lfd.uci.edu/pythonlibs/u2hcgva4/GDAL-2.4.1-cp36-cp36m-win_amd64.whl"
-  - "%CMD_IN_ENV% pip install https://download.lfd.uci.edu/pythonlibs/u2hcgva4/Fiona-1.8.6-cp36-cp36m-win_amd64.whl"
-  - "%CMD_IN_ENV% pip install https://download.lfd.uci.edu/pythonlibs/u2hcgva4/Shapely-1.6.4.post1-cp36-cp36m-win_amd64.whl"
+  - "%CMD_IN_ENV% pip install https://polybox.ethz.ch/index.php/s/xLiZFpwe74CoUpG/download" # Rtree-0.8.3-cp36-cp36m-win_amd64.whl
+  - "%CMD_IN_ENV% pip install https://polybox.ethz.ch/index.php/s/izPyaEdgx79kIYq/download" # GDAL-2.4.1-cp36-cp36m-win_amd64.whl
+  - "%CMD_IN_ENV% pip install https://polybox.ethz.ch/index.php/s/spVnjqY1RfMdFD6/download" # Fiona-1.8.6-cp36-cp36m-win_amd64.whl
+  - "%CMD_IN_ENV% pip install https://polybox.ethz.ch/index.php/s/gm8fQHLMpNdHE8l/download" # Shapely-1.6.4.post2-cp36-cp36m-win_amd64.whl
   - "%CMD_IN_ENV% pip install ."
 
 build: off
