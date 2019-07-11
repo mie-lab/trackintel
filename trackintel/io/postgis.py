@@ -61,8 +61,12 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
     
     # make a copy in order to avoid changing the geometry of the original array
     positionfixes_postgis = positionfixes.copy()
-    
-    srid = int(positionfixes_postgis.crs['init'].split(':')[1])
+
+    # If this GeoDataFrame already has an SRID, we use it, otherwise we default to WGS84.
+    if (positionfixes_postgis.crs is not None):
+        srid = int(positionfixes_postgis.crs['init'].split(':')[1])
+    else:
+        srid = 4326
     positionfixes_postgis['geom'] = \
     positionfixes_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     if 'id' not in positionfixes_postgis.columns:
