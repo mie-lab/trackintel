@@ -14,14 +14,17 @@ class PositionfixesAccessor(object):
     adheres to some requirements.
 
     Requires at least the following columns: 
-    ``['user_id', 'tracked_at', 'elevation', 'accuracy', 'geom']``
+    ``['user_id', 'tracked_at', 'geom']``
+
+    For several usecases, the following additional columns are required:
+    ``['elevation', 'accuracy', 'tracking_tech', 'context']``
 
     Examples
     --------
     >>> df.as_positionfixes.extract_staypoints()
     """
 
-    required_columns = ['user_id', 'tracked_at', 'elevation', 'accuracy', 'geom']
+    required_columns = ['user_id', 'tracked_at', 'geom']
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -74,7 +77,9 @@ class PositionfixesAccessor(object):
         See :func:`trackintel.io.file.write_positionfixes_csv`."""
         ti.io.file.write_positionfixes_csv(self._obj, filename, *args, **kwargs)
 
-    def to_postgis(self, conn_string, table_name):
+    def to_postgis(self, conn_string, table_name, schema=None,
+            sql_chunksize=None, if_exists='replace'):
         """Stores this collection of positionfixes to PostGIS.
         See :func:`trackintel.io.postgis.write_positionfixes_postgis`."""
-        ti.io.postgis.write_positionfixes_postgis(self._obj, conn_string, table_name)
+        ti.io.postgis.write_positionfixes_postgis(self._obj, conn_string, table_name, 
+            schema, sql_chunksize, if_exists)

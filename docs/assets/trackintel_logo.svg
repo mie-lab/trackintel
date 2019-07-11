@@ -25,16 +25,16 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35"
-     inkscape:cx="205.1435"
-     inkscape:cy="1106.3476"
+     inkscape:zoom="0.49497475"
+     inkscape:cx="465.2568"
+     inkscape:cy="1113.175"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:snap-global="false"
      inkscape:window-width="2560"
      inkscape:window-height="1417"
-     inkscape:window-x="5552"
+     inkscape:window-x="2992"
      inkscape:window-y="-8"
      inkscape:window-maximized="1" />
   <metadata
@@ -130,7 +130,7 @@
            style="font-style:normal;font-weight:normal;font-size:123.61361694px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:3.09034038">
           <path
              d="m 130.31397,124.66187 c 8.52483,-10.25158 22.89984,-27.529231 26.90391,-32.191351 0.12302,-0.14324 -1.3951,0.62058 -1.28026,0.48733 1.96266,-2.27733 4.38141,-3.86931 4.38141,-3.86931 0,0 -1.58699,3.25951 -2.90279,4.95673 -0.12262,0.15816 0.25144,-1.44894 0.12006,-1.28016 -4.98791,6.40756 -19.11257,23.758041 -26.37115,32.864081 -7.25858,9.10604 -20.88503,21.32446 -41.122648,21.33224 -20.237621,0.008 -28.960102,-8.29636 -28.960102,-8.29636 0,0 11.270469,7.07845 29.252241,7.17018 17.981769,0.0917 31.454499,-10.9218 39.979329,-21.17338 z"
-             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Italianno;-inkscape-font-specification:Italianno;fill:#2980b9;fill-opacity:1;stroke-width:3.09034038"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Italianno;-inkscape-font-specification:Italianno;fill:#62e0ff;fill-opacity:1;stroke-width:3.09034038"
              id="path4528"
              inkscape:connector-curvature="0"
              sodipodi:nodetypes="zccccczzczz" />
@@ -149,7 +149,7 @@
              sodipodi:nodetypes="zccccczzczz"
              inkscape:connector-curvature="0"
              id="path4534"
-             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Italianno;-inkscape-font-specification:Italianno;fill:#e67e22;fill-opacity:1;stroke-width:3.09034038"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Italianno;-inkscape-font-specification:Italianno;fill:#f0ee7c;fill-opacity:1;stroke-width:3.09034038"
              d="m 133.52677,135.62318 c 5.10187,-6.07045 22.89984,-27.52923 26.90391,-32.19135 0.12302,-0.14324 -1.3951,0.62058 -1.28026,0.48733 1.96266,-2.27733 4.38141,-3.86931 4.38141,-3.86931 0,0 -1.58699,3.25951 -2.90279,4.95673 -0.12262,0.15816 0.25144,-1.44894 0.12006,-1.28016 -4.98791,6.40756 -22.98831,28.80348 -26.37115,32.86408 -3.38284,4.0606 -7.06434,12.18494 -4.86598,14.74687 2.19836,2.56193 12.47895,-3.38999 12.47895,-3.38999 0,0 -10.36062,7.1307 -13.19469,4.27034 -2.83406,-2.86035 -0.37133,-10.52409 4.73054,-16.59454 z" />
         </g>
         <text
@@ -165,5 +165,12 @@
              style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'TeX Gyre Pagella';-inkscape-font-specification:'TeX Gyre Pagella';fill:#1a1a1a;fill-opacity:1;stroke-width:2.15762186">trackintel</tspan></text>
       </g>
     </g>
+    <rect
+       style="font-style:normal;font-weight:normal;font-size:123.61361694px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;opacity:1;fill:#2d7fb8;fill-opacity:1;stroke:none;stroke-width:5;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect4617"
+       width="168.91434"
+       height="144.86009"
+       x="239.4735"
+       y="-178.47249" />
   </g>
 </svg>

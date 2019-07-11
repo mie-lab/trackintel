@@ -12,14 +12,17 @@ class PlacesAccessor(object):
     adheres to some requirements.
 
     Requires at least the following columns: 
-    ``['user_id', 'center', geom']``
+    ``['user_id', 'center']``
+
+    For several usecases, the following additional columns are required:
+    ``['elevation', 'context', 'extent']``
 
     Examples
     --------
     >>> df.as_places.plot()
     """
 
-    required_columns = ['user_id', 'center', 'extent']
+    required_columns = ['user_id', 'center']
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)

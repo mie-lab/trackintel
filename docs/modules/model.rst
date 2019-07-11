@@ -43,6 +43,8 @@ Available Accessors
 
 The following accessors are available.
 
+.. autoclass:: trackintel.model.users.UsersAccessor
+
 .. autoclass:: trackintel.model.positionfixes.PositionfixesAccessor
 
 .. autoclass:: trackintel.model.staypoints.StaypointsAccessor
@@ -50,3 +52,7 @@ The following accessors are available.
 .. autoclass:: trackintel.model.triplegs.TriplegsAccessor
 
 .. autoclass:: trackintel.model.places.PlacesAccessor
+
+.. autoclass:: trackintel.model.trips.TripsAccessor
+
+.. autoclass:: trackintel.model.tours.ToursAccessor
