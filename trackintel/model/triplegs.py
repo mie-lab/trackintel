@@ -33,7 +33,7 @@ class TriplegsAccessor(object):
             raise AttributeError("To process a DataFrame as a collection of triplegs, " \
                 + "it must have the properties [%s], but it has [%s]." \
                 % (', '.join(TriplegsAccessor.required_columns), ', '.join(obj.columns)))
-        if obj.shape[0] > 0 and obj['geom'].geom_type[0] is not 'LineString':
+        if obj.shape[0] > 0 and obj.geometry.iloc[0].geom_type is not 'LineString':
             raise AttributeError("The geometry must be a LineString (only first checked).")
 
     def plot(self, *args, **kwargs):

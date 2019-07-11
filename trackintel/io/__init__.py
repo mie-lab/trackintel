@@ -12,3 +12,6 @@ from .file import read_staypoints_csv
 from .file import write_staypoints_csv
 from .postgis import read_staypoints_postgis
 from .postgis import write_staypoints_postgis
+
+from .postgis import read_places_postgis
+from .postgis import write_places_postgis
