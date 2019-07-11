@@ -54,6 +54,8 @@ Versions use [semantic numbering](https://semver.org/).
 Commits follow the standard of [Conventional Commits](https://www.conventionalcommits.org).
 You can generate them easily using [Commitizen](https://github.com/commitizen/cz-cli).
 
+You can find the development roadmap under `ROADMAP.md`. 
+
 ### Documentation
 
 The documentation follws the [pandas resp. numpy docstring standard](https://pandas-docs.github.io/pandas-docs-travis/development/contributing.html#contributing-to-the-documentation).

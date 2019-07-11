@@ -11,7 +11,7 @@ def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=No
     Parameters
     ----------
     staypoints : GeoDataFrame
-        The positionfixes to plot.
+        The staypoints to plot.
     
     out_filename : str
         The file to plot to, if this is not set, the plot will simply be shown.
@@ -28,17 +28,18 @@ def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=No
     """
     _, ax = regular_figure()
 
+    if positionfixes is not None:
+        west = positionfixes['geom'].x.min() - 0.01
+        east = positionfixes['geom'].x.max() + 0.01
+        north = positionfixes['geom'].y.max() + 0.01
+        south = positionfixes['geom'].y.min() - 0.01
+    else:
+        west = staypoints['geom'].x.min() - 0.03
+        east = staypoints['geom'].x.max() + 0.03
+        north = staypoints['geom'].y.max() + 0.03
+        south = staypoints['geom'].y.min() - 0.03
+
     if plot_osm:
-        if positionfixes is not None:
-            west = positionfixes['geom'].x.min()
-            east = positionfixes['geom'].x.max()
-            north = positionfixes['geom'].y.max()
-            south = positionfixes['geom'].y.min()
-        else:
-            west = staypoints['geom'].x.min() - 0.03
-            east = staypoints['geom'].x.max() + 0.03
-            north = staypoints['geom'].y.max() + 0.03
-            south = staypoints['geom'].y.min() - 0.03
         plot_osm_streets(north, south, east, west, ax)
 
     if positionfixes is not None:
@@ -50,6 +51,10 @@ def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=No
         circle = mpatches.Circle((pt['geom'].x, pt['geom'].y), radius, 
                                   facecolor='none', edgecolor='g', zorder=3)
         ax.add_artist(circle)
+
+    ax.set_xlim([west, east])
+    ax.set_ylim([south, north])
+
     if out_filename is not None:
         save_fig(out_filename, formats=['png'])
     else:
