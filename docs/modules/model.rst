@@ -4,17 +4,16 @@ Model
 In trackintel, **tracking data** is split into several classes. It is not generally 
 assumed that data is already available in all these classes, instead, trackintel
 provides functionality to generate everything starting from the raw GPS positionfix data 
-(consisting of at least ``(user_id, tracked_at, longitude, latitude, elevation, accuracy)`` 
-tuples).
+(consisting of at least ``(user_id, tracked_at, longitude, latitude)`` tuples).
 
+* **users**: The users for which data is available.
 * **positionfixes**: Raw GPS data.
 * **staypoints**: Locations where a user spent a minimal time.
 * **triplegs**: Segments covered with one mode of transport.
+* **places**: Clustered staypoints.
 * **trips**: Segments between consecutive activities (special staypoints that are not just waiting points).
-* **customer movements**: Sequences of triplegs which use only public transport.
 * **tours**: Sequences of trips which start and end at the same place (if ``journey`` 
   is set to ``True``, this place is *home*).
-* **places**: Clustered staypoints.
 
 A detailed (and SQL-specific) explanation of the different classes can be found under 
 :doc:`/content/data_model_sql`.

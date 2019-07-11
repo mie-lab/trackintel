@@ -57,7 +57,9 @@ author = 'Dominik Bucher, Henry Martin'
 
 # The short X.Y version
 # version = str(ti.__version__)
-version = get_distribution('trackintel').version
+import trackintel
+version = trackintel.__version__.__version__
+# version = get_distribution('trackintel').version
 # The full version, including alpha/beta/rc tags
 release = version
 
@@ -72,12 +74,12 @@ release = version
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.napoleon',
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.githubpages',
-    'sphinx.ext.napoleon'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -113,7 +115,7 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -148,6 +150,8 @@ html_theme_options = {
     'github_repo': 'trackintel',
     'github_banner': True
 }
+
+html_logo = '_static/trackintel_logo_squash.png'
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
