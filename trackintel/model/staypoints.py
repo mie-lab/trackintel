@@ -39,8 +39,8 @@ class StaypointsAccessor(object):
     @property
     def center(self):
         """Returns the center coordinate of this collection of staypoints."""
-        lat = self._obj.latitude
-        lon = self._obj.longitude
+        lat = self._obj.geometry.y
+        lon = self._obj.geometry.x
         return (float(lon.mean()), float(lat.mean()))
 
     def extract_places(self, *args, **kwargs):
