@@ -122,16 +122,14 @@ CREATE TABLE places (
     user_id bigint,
 
     -- Specific attributes.
-    -- The radius is an approximation of how far the staypoints that made up this place
-    -- are scattered around the center (geom) of it.
-    radius double precision,
     -- The context contains additional information that might be filled in by trackintel.
     -- This could include things such as the temperature, public transport stops in vicinity, etc.
     context json,
     
     -- Spatial attributes.
     elevation double precision,
-    geom geometry(Polygon, 4326),
+    extent geometry(Polygon, 4326),
+    center geometry(Point, 4326),
 
     -- Constraints.
     CONSTRAINT places_pkey PRIMARY KEY (id)

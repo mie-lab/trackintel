@@ -15,8 +15,11 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col='geom', *args, 
     table_name : str
         The table to read the positionfixes from.
 
-    geom_col : str
-        The geometry column of the table. Default ist 'geom'
+    geom_col : str, default 'geom'
+        The geometry column of the table.
+
+    *args, **kwargs
+        Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
 
     Returns
     -------
@@ -36,7 +39,7 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col='geom', *args, 
 
 
 def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=None,
-                                sql_chunksize=None,  if_exists='replace'):
+                                sql_chunksize=None, if_exists='replace'):
     """Stores positionfixes to PostGIS. Usually, this is directly called on a positionfixes 
     dataframe (see example below).
 
@@ -53,6 +56,15 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
     
     table_name : str
         The name of the table to write to.
+
+    schema : str, optional
+        The schema (if the database supports this) where the table resides.
+
+    sql_chunksize : int, optional
+        How many entries should be written at the same time.
+
+    if_exists : str, {'fail', 'replace', 'append'}, default 'replace'
+        What should happen if the table already exists.
 
     Examples
     --------

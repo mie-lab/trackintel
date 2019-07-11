@@ -25,6 +25,7 @@ Run any example as:
 ```bash
 python preprocessing.py
 python import_export_postgis.py
+python setup_example_database.py
 ```
 
 Several examples, such as `preprocessing.py` will generate output plots in the `examples/out` directory. For examples involving a database connection, you can adapt the `config.json` file.
