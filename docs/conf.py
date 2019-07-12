@@ -55,12 +55,17 @@ project = 'trackintel'
 copyright = '2019, Dominik Bucher, Henry Martin'
 author = 'Dominik Bucher, Henry Martin'
 
+# This always leads to errors. Simply update the version by hand here.
+
 # The short X.Y version
 # version = str(ti.__version__)
-import trackintel
-version = trackintel.__version__.__version__
+#import trackintel
+#version = trackintel.__version__.__version__
 # version = get_distribution('trackintel').version
 # The full version, including alpha/beta/rc tags
+#release = version
+
+version = '0.2.0'
 release = version
 
 
