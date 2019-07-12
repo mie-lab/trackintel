@@ -1,6 +1,6 @@
 # The trackintel Framework
 
-![Version](https://img.shields.io/badge/version-v0.0.1-red.svg)
+![Version](https://img.shields.io/badge/version-v0.2.0-red.svg)
 [![Build Status](https://travis-ci.org/mie-lab/trackintel.svg?branch=master)](https://travis-ci.org/mie-lab/trackintel)
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/github/mie-lab/trackintel?svg=true)](https://ci.appveyor.com/api/projects/status/github/mie-lab/trackintel?svg=true)
 
