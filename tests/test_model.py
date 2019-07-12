@@ -15,7 +15,7 @@ class TestModel:
         pfs = ti.read_positionfixes_csv(orig_file, sep=';')
         assert pfs.as_positionfixes
 
-        pfs = pfs.drop(['elevation'], axis=1)
+        pfs = pfs.drop(['geom'], axis=1)
         with pytest.raises(AttributeError):
             pfs.as_positionfixes
 
@@ -29,7 +29,7 @@ class TestModel:
         stps = ti.read_staypoints_csv(orig_file, sep=';')
         assert stps.as_staypoints
 
-        stps = stps.drop(['elevation'], axis=1)
+        stps = stps.drop(['geom'], axis=1)
         with pytest.raises(AttributeError):
             stps.as_staypoints
 
