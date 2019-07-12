@@ -18,9 +18,8 @@ def cluster_staypoints(staypoints, method='dbscan',
     staypoints : GeoDataFrame
         The staypoints have to follow the standard definition for staypoints DataFrames.
 
-    method : {'dbscan'}
+    method : str, {'dbscan'}, default 'dbscan'
         The following methods are available to cluster staypoints into places:
-
         'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
 
     epsilon : float
@@ -33,20 +32,17 @@ def cluster_staypoints(staypoints, method='dbscan',
         When given, dbscan will work on a precomputed a distance matrix that is
         created using the staypoints based on the given metric. Possible metrics
         are: {'haversine', 'euclidean'} or any mentioned in: 
-            https://scikit-learn.org/stable/modules/generated/
-            sklearn.metrics.pairwise_distances.html
-        
+        https://scikit-learn.org/stable/modules/generated/
+        sklearn.metrics.pairwise_distances.html
 
     Returns
     -------
     GeoDataFrame
         A new GeoDataFrame containing places that a person visited multiple times.
         
-    
-
     Examples
     --------
-    >>> cluster_staypoints(...)    
+    >>> spts.as_staypoints.cluster_staypoints(method='dbscan', epsilon=50, num_samples=3)
     """
     ret_places = pd.DataFrame(columns=['user_id', 'place_id','center', 'extent'])
 
