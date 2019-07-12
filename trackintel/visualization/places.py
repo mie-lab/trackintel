@@ -6,29 +6,35 @@ from trackintel.visualization.osm import plot_osm_streets
 
 
 def plot_center_of_places(places, out_filename=None, radius=None, positionfixes=None, 
-                staypoints=None, staypoints_radius=None, plot_osm=False):
-    """Plots places (optionally to a file).
+                          staypoints=None, staypoints_radius=None, plot_osm=False):
+    """Plots places (optionally to a file). Optionally, you can specify several other
+    datasets to be plotted beneath the places.
 
     Parameters
     ----------
     places : GeoDataFrame
         The places to plot.
     
-    out_filename : str
+    out_filename : str, optional
         The file to plot to, if this is not set, the plot will simply be shown.
 
-    radius : float
+    radius : float, optional
         The radius with which circles around places should be drawn.
 
-    positionfixes : GeoDataFrame
+    positionfixes : GeoDataFrame, optional
         If available, some positionfixes that can additionally be plotted.
 
-    staypoints : GeoDataFrame
+    staypoints : GeoDataFrame, optional
         If available, some staypoints that can additionally be plotted.
 
-    plot_osm : bool
+    plot_osm : bool, default False
         If this is set to True, it will download an OSM street network and plot 
         below the staypoints.
+
+    Examples
+    --------
+    >>> df.as_places.plot('output.png', radius=10, positionfixes=pdf, 
+    >>>                   staypoints=spf, staypoints_radius=8, plot_osm=True)
     """
     _, ax = regular_figure()
 

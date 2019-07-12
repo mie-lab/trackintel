@@ -6,19 +6,25 @@ from trackintel.visualization.osm import plot_osm_streets
 
 
 def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False):
-    """Plots positionfixes (optionally to a file).
+    """Plots positionfixes (optionally to a file). If you specify ``plot_osm=True``
+    this will use ``osmnx`` to plot streets below the positionfixes. Depending on
+    the extent of your data, this might take a long time. 
 
     Parameters
     ----------
     positionfixes : GeoDataFrame
         The positionfixes to plot.
     
-    out_filename : str
+    out_filename : str, optional
         The file to plot to, if this is not set, the plot will simply be shown.
 
-    plot_osm : bool
+    plot_osm : bool, default False
         If this is set to True, it will download an OSM street network and plot 
         below the staypoints.
+
+    Examples
+    --------
+    >>> df.as_positionfixes.plot('output.png', plot_osm=True)
     """
     _, ax = regular_figure()
 

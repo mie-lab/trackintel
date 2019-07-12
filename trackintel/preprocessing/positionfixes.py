@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 import shapely
+from shapely.geometry import LineString
 
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
@@ -14,6 +15,8 @@ def extract_staypoints(positionfixes, method='sliding',
                        dist_threshold=100, time_threshold=5*60, epsilon=100,
                        dist_func=haversine_dist, eps=None, num_samples=None):
     """Extract staypoints from positionfixes.
+
+    This function modifies the positionfixes and adds staypoint_ids.
 
     Parameters
     ----------
@@ -47,7 +50,7 @@ def extract_staypoints(positionfixes, method='sliding',
 
     Examples
     --------
-    >>> extract_staypoints(...)
+    >>> psfs.as_positionfixes.extract_staypoints('sliding', dist_threshold=100)
 
     References
     ----------
@@ -64,19 +67,18 @@ def extract_staypoints(positionfixes, method='sliding',
         # Algorithm from Li et al. (2008). For details, please refer to the paper.
         staypoint_id_counter = 0
         
-        for user_id_this in  positionfixes['user_id'].unique():
+        for user_id_this in positionfixes['user_id'].unique():
 
             positionfixes_user_this = positionfixes.loc[
-                                positionfixes["user_id"] == user_id_this] # this is no copy
+                                positionfixes['user_id'] == user_id_this] # this is no copy
 
             pfs = positionfixes_user_this.sort_values('tracked_at').to_dict('records')
             num_pfs = len(pfs)
-
             
             posfix_staypoint_matching = {}
 
             i = 0
-            j = 1 # todo: should be 0?, see referenced paper
+            j = 1 # TODO: should be 0?, see referenced paper
             while i < num_pfs:
                 if j == num_pfs:
                     # We're at the end, this can happen if in the last "bin", 
@@ -85,7 +87,7 @@ def extract_staypoints(positionfixes, method='sliding',
                 else:
                     j = i + 1
                 while j < num_pfs:
-                    # todo: Can we make distance function independent of projection?
+                    # TODO: Can we make distance function independent of projection?
                     dist = dist_func(pfs[i]['geom'].x, pfs[i]['geom'].y, 
                                      pfs[j]['geom'].x, pfs[j]['geom'].y)
 
@@ -98,7 +100,7 @@ def extract_staypoints(positionfixes, method='sliding',
                                                           np.mean([pfs[k]['geom'].y for k in range(i, j)]))
                             staypoint['elevation'] = np.mean([pfs[k]['elevation'] for k in range(i, j)])
                             staypoint['started_at'] = pfs[i]['tracked_at']
-                            staypoint['finished_at'] = pfs[j]['tracked_at'] # todo: should this not be j-1? because j is not part of the staypoint
+                            staypoint['finished_at'] = pfs[j - 1]['tracked_at'] # TODO: should this not be j-1? because j is not part of the staypoint. DB: Changed.
                             staypoint['id'] = staypoint_id_counter
                                                         
                             # store matching 
@@ -120,7 +122,7 @@ def extract_staypoints(positionfixes, method='sliding',
                                 staypoint['id'] = staypoint_id_counter
 
                                 # store matching
-                                posfix_staypoint_matching[staypoint_id_counter] = [k for k in range(i, j)]
+                                posfix_staypoint_matching[staypoint_id_counter] = [j]
                                 staypoint_id_counter += 1 
                                 ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
                         i = j
@@ -134,21 +136,20 @@ def extract_staypoints(positionfixes, method='sliding',
             # their absolute position (not their index)
             positionfixes.iloc[posfix_list, 
                                positionfixes.columns.get_loc('staypoint_id')
-                               ]= staypoints_id
+                              ] = staypoints_id
 
 
     elif method == 'dbscan':
-
-        # todo: Make sure time information is included in the clustering!
+        # TODO: Make sure time information is included in the clustering!
         # time information is in the column 'started at', however the user should be able to
         # adjust the distance metric e.g. chebychev
 
         db = DBSCAN(eps=epsilon, min_samples=num_samples)
-        for user_id_this in positionfixes["user_id"].unique():
+        for user_id_this in positionfixes['user_id'].unique():
 
-            user_positionfixes = positionfixes[positionfixes["user_id"] == user_id_this] #this is not a copy!
+            user_positionfixes = positionfixes[positionfixes['user_id'] == user_id_this] # this is not a copy!
 
-            # todo: enable transformations to temporary (metric) system
+            # TODO: enable transformations to temporary (metric) system
             transform_crs = None
             if transform_crs is not None:
                 pass
@@ -175,11 +176,153 @@ def extract_staypoints(positionfixes, method='sliding',
                      group.geometry.y.mean())
 
                 ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
-        
-
 
     ret_staypoints = gpd.GeoDataFrame(ret_staypoints, geometry='geom',
                                       crs=positionfixes.crs)
     ret_staypoints['id'] = ret_staypoints['id'].astype('int')
 
     return ret_staypoints
+
+
+def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
+    """Extract triplegs from positionfixes. A tripleg is (for now) defined as anything
+    that happens between two consecutive staypoints.
+
+    **Attention**: This function requires either a column ``staypoint_id`` on the 
+    positionfixes or passing some staypoints that correspond to the positionfixes! 
+    This means you usually should call ``extract_staypoints()`` first.
+
+    This function modifies the positionfixes and adds a ``tripleg_id``.
+
+    Parameters
+    ----------
+    positionfixes : GeoDataFrame
+        The positionfixes have to follow the standard definition for positionfixes DataFrames.
+
+    staypoints : GeoDataFrame, optional
+        The staypoints (corresponding to the positionfixes). If this is not passed, the 
+        positionfixes need staypoint_ids associated with them.
+
+    Returns
+    -------
+    GeoDataFrame
+        A new GeoDataFrame containing triplegs.
+
+    Examples
+    --------
+    >>> psfs.as_positionfixes.extract_triplegs(staypoints)
+    """
+    # Check that data adheres to contract.
+    if staypoints is None and len(positionfixes['staypoint_id'].unique()) < 2:
+        raise ValueError("If staypoints is not defined, positionfixes must have more than 1 staypoint_id.")
+
+    # if staypoints is not None:
+    #     raise NotImplementedError("Splitting up positionfixes by timestamp is not available yet. " + \
+    #         "Use extract_staypoints and the thus generated staypoint_ids.")
+
+    ret_triplegs = pd.DataFrame(columns=['id', 'user_id', 'started_at', 'finished_at', 'geom'])
+    curr_tripleg_id = 0
+    # Do this for each user.
+    for user_id_this in positionfixes['user_id'].unique():
+
+        positionfixes_user_this = positionfixes.loc[
+                            positionfixes['user_id'] == user_id_this] # this is no copy
+        pfs = positionfixes_user_this.sort_values('tracked_at')
+
+        # TODO Not so efficient, always matching on the time (as things are sorted anyways).
+        generated_triplegs = []
+        if staypoints is not None:
+            stps = staypoints.loc[positionfixes['user_id'] == user_id_this].sort_values('started_at')
+            stps = stps.to_dict('records')
+            for stp1, stp2 in zip(list(stps), list(stps)[1:]):
+                # Get all positionfixes that lie between these two staypoints.
+                pfs_tripleg = pfs[(stp1['finished_at'] <= pfs['tracked_at']) & \
+                    (pfs['tracked_at'] <= stp2['started_at'])].sort_values('tracked_at')
+
+                coords = list(pfs_tripleg['geom'].apply(lambda r: (r.x, r.y)))
+                if len(coords) > 1:
+                    generated_triplegs.append({
+                            'id': curr_tripleg_id,
+                            'user_id': user_id_this,
+                            'started_at': pfs_tripleg['tracked_at'].iloc[0],
+                            'finished_at': pfs_tripleg['tracked_at'].iloc[-1],
+                            'geom': LineString(list(pfs_tripleg['geom'].apply(lambda r: (r.x, r.y))))
+                    })
+                    curr_tripleg_id += 1
+        else:
+            prev_pf = None
+            curr_tripleg = {
+                'id': curr_tripleg_id,
+                'user_id': user_id_this,
+                'started_at': pfs['tracked_at'].iloc[0],
+                'finished_at': None,
+                'coords': []
+            }
+            for idx, pf in pfs.iterrows():
+                if prev_pf is not None and prev_pf['staypoint_id'] == -1 and pf['staypoint_id'] != -1:
+                    # This tripleg ends. 
+                    pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
+                    curr_tripleg['finished_at'] = pf['tracked_at']
+                    curr_tripleg['coords'].append((pf['geom'].x, pf['geom'].y))
+
+                elif (prev_pf is not None and prev_pf['staypoint_id'] != -1 and pf['staypoint_id'] == -1):
+                    # A new tripleg starts (due to a staypoint_id switch from -1 to x).
+                    if len(curr_tripleg['coords']) > 1:
+                        curr_tripleg['geom'] = LineString(curr_tripleg['coords'])
+                        del curr_tripleg['coords']
+                        generated_triplegs.append(curr_tripleg)
+                        curr_tripleg_id += 1
+                        
+                    curr_tripleg = {
+                        'id': curr_tripleg_id,
+                        'user_id': user_id_this,
+                        'started_at': None,
+                        'finished_at': None,
+                        'coords': []
+                    }
+                    prev_pf['tripleg_id'] = curr_tripleg_id
+                    pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
+                    curr_tripleg['started_at'] = pf['tracked_at']
+                    curr_tripleg['coords'].append((pf['geom'].x, pf['geom'].y))
+
+                elif prev_pf is not None and prev_pf['staypoint_id'] != -1 and \
+                    pf['staypoint_id'] != -1 and prev_pf['staypoint_id'] != pf['staypoint_id']:
+                    # A new tripleg starts (due to a staypoint_id switch from x to y).
+                    pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
+                    curr_tripleg['finished_at'] = pf['tracked_at']
+                    curr_tripleg['coords'].append((pf['geom'].x, pf['geom'].y))
+
+                    if len(curr_tripleg['coords']) > 1:
+                        curr_tripleg['geom'] = LineString(curr_tripleg['coords'])
+                        del curr_tripleg['coords']
+                        generated_triplegs.append(curr_tripleg)
+                        curr_tripleg_id += 1
+
+                    curr_tripleg = {
+                        'id': curr_tripleg_id,
+                        'user_id': user_id_this,
+                        'started_at': None,
+                        'finished_at': None,
+                        'coords': []
+                    }
+                    prev_pf['tripleg_id'] = curr_tripleg_id
+                    pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
+                    curr_tripleg['started_at'] = pf['tracked_at']
+                    curr_tripleg['coords'].append((pf['geom'].x, pf['geom'].y))
+                    
+                elif prev_pf is not None and prev_pf['staypoint_id'] != -1 and \
+                    prev_pf['staypoint_id'] == pf['staypoint_id']:
+                    # This is still "at the same staypoint". Do nothing.
+                    pass
+
+                else:
+                    pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
+                    curr_tripleg['coords'].append((pf['geom'].x, pf['geom'].y))
+
+                prev_pf = pf
+        ret_triplegs = ret_triplegs.append(generated_triplegs)
+
+    ret_triplegs = gpd.GeoDataFrame(ret_triplegs, geometry='geom', crs=positionfixes.crs)
+    ret_triplegs['id'] = ret_triplegs['id'].astype('int')
+
+    return ret_triplegs

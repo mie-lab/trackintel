@@ -6,25 +6,31 @@ from trackintel.visualization.osm import plot_osm_streets
 
 
 def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=None, plot_osm=False):
-    """Plots staypoints (optionally to a file).
+    """Plots staypoints (optionally to a file). You can specify the radius with which 
+    each staypoint should be drawn, as well as if underlying positionfixes and OSM streets
+    should be drawn.
 
     Parameters
     ----------
     staypoints : GeoDataFrame
         The staypoints to plot.
     
-    out_filename : str
+    out_filename : str, optional
         The file to plot to, if this is not set, the plot will simply be shown.
 
-    radius : float
+    radius : float, optional
         The radius with which circles around staypoints should be drawn.
 
-    positionfixes : GeoDataFrame
+    positionfixes : GeoDataFrame, optional
         If available, some positionfixes that can additionally be plotted.
 
-    plot_osm : bool
+    plot_osm : bool, default False
         If this is set to True, it will download an OSM street network and plot 
         below the staypoints.
+
+    Examples
+    --------
+    >>> df.as_staypoints.plot('output.png', radius=10, positionfixes=pdf, plot_osm=True)
     """
     _, ax = regular_figure()
 

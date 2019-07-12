@@ -8,16 +8,16 @@ Steps until we get to version 1.0.0.
 
 ### v0.1.0
 
-* Read *positionfixes*, *triplegs*, *staypoints*, *places*, *trips* from CSV files.
-* Read *positionfixes*, *triplegs*, *staypoints*, *places*, *trips* from PostGIS.
-* Write *positionfixes*, *triplegs*, *staypoints*, *places*, *trips* to CSV files.
-* Write *positionfixes*, *triplegs*, *staypoints*, *places*, *trips* to PostGIS.
-* Visualize *positionfixes*, *triplegs*, *staypoints* geographically.
+* :heavy_check_mark: Read *positionfixes*, *triplegs*, *staypoints*, *places*, *trips* from CSV files.
+* :heavy_check_mark: Read *positionfixes*, *triplegs*, *staypoints*, *places*, *trips* from PostGIS.
+* :heavy_check_mark: Write *positionfixes*, *triplegs*, *staypoints*, *places*, *trips* to CSV files.
+* :heavy_check_mark: Write *positionfixes*, *triplegs*, *staypoints*, *places*, *trips* to PostGIS.
+* :heavy_check_mark: Visualize *positionfixes*, *triplegs*, *staypoints* geographically.
 
 ### v0.2.0
 
-* Extract *triplegs* and *staypoints* from *positionfixes*.
-* Functions for smoothening tripleg data (e.g., Douglas-Peucker). 
+* :heavy_check_mark: Extract *triplegs* and *staypoints* from *positionfixes*.
+* Functions for smoothening tripleg data (e.g., Douglas-Peucker).
 
 ### v0.3.0
 
@@ -30,9 +30,9 @@ Steps until we get to version 1.0.0.
 
 ### v0.4.0
 
-* Create transition graphs from *places*.
-* Provide and visualize a range of (transition) graph measures.
-* Add context data to movement trajectories (using spatio-temporal map algebra). 
+* :heavy_check_mark: Create transition graphs from *places*.
+* :heavy_check_mark: Provide and visualize a range of (transition) graph measures.
+* Add context data to movement trajectories (using spatio-temporal map algebra).
 
 ### v0.5.0
 
@@ -58,7 +58,7 @@ Steps until we get to version 1.0.0.
 * Mobility behavior (and its changes): automatic detection of uncharacteristic changes in mobility patterns.
 * User profiling and clustering.
 
-### v1.0.0
+### Final Steps for v1.0.0
 
 * Documentation and examples.
 
@@ -67,9 +67,11 @@ Steps until we get to version 1.0.0.
 Ideas for a later version.
 
 Augment tracking data:
+
 * Short walks to/from cars/buses/etc.: These are often not recognized by the tracking applications.
 
-Implement *tours* (starting and ending at a persons home location) and *customermovements* (consecutive triplegs with using transport provided by a single provider (e.g., a local bus company)). 
+Implement *tours* (starting and ending at a persons home location) and *customermovements* (consecutive triplegs with using transport provided by a single provider (e.g., a local bus company)).
+
 * Read *customermovements*, *tours* from files.
 * Read *customermovements*, *tours* from PostGIS.
 * Write *customermovements*, *tours* to files.

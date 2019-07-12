@@ -14,14 +14,18 @@ class StaypointsAccessor(object):
     adheres to some requirements.
 
     Requires at least the following columns: 
-    ``['user_id', 'started_at', 'finished_at', 'elevation', 'geom']``
+    ``['user_id', 'started_at', 'finished_at', 'geom']``
+
+    For several usecases, the following additional columns are required:
+    ``['elevation', 'radius', 'context', 'purpose_detected', 'purpose_validated',``
+    ``'validated', 'validated_at', 'activity']``
 
     Examples
     --------
     >>> df.as_staypoints.extract_places()
     """
 
-    required_columns = ['user_id', 'started_at', 'finished_at', 'elevation', 'geom']
+    required_columns = ['user_id', 'started_at', 'finished_at', 'geom']
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -39,8 +43,8 @@ class StaypointsAccessor(object):
     @property
     def center(self):
         """Returns the center coordinate of this collection of staypoints."""
-        lat = self._obj.latitude
-        lon = self._obj.longitude
+        lat = self._obj.geometry.y
+        lon = self._obj.geometry.x
         return (float(lon.mean()), float(lat.mean()))
 
     def extract_places(self, *args, **kwargs):
