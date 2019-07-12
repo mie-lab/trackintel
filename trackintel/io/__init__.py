@@ -13,5 +13,12 @@ from .file import write_staypoints_csv
 from .postgis import read_staypoints_postgis
 from .postgis import write_staypoints_postgis
 
+from .file import read_places_csv
+from .file import write_places_csv
 from .postgis import read_places_postgis
 from .postgis import write_places_postgis
+
+from .file import read_trips_csv
+from .file import write_trips_csv
+from .postgis import read_trips_postgis
+from .postgis import write_trips_postgis

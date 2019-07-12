@@ -36,12 +36,13 @@ corresponds to a set of constraints, and make functions available on the DataFra
 
 This will read a CSV into a format compatible with the trackintel understanding of a collection of 
 positionfixes, and the second line will wrap the DataFrame with an accessor providing functions such 
-as ``extract_staypoints()``. 
+as ``extract_staypoints()``. You can read up more on Pandas accessors in `the Pandas documentation 
+<https://pandas.pydata.org/pandas-docs/stable/development/extending.html>`_.
 
 Available Accessors
 ===================
 
-The following accessors are available.
+The following accessors are available within *trackintel*.
 
 .. autoclass:: trackintel.model.users.UsersAccessor
 

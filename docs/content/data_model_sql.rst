@@ -4,11 +4,14 @@ Data Model (SQL)
 For a general description of the data model, please refer to the 
 :doc:`/modules/model`. You can download the 
 `complete SQL script here <https://github.com/mie-lab/trackintel/blob/master/sql/create_tables_pg.sql>`_ 
-in case you want to quickly set up a database.
+in case you want to quickly set up a database. Also take a look at the `example on github 
+<https://github.com/mie-lab/trackintel/blob/master/examples/setup_example_database.py>`_.
 
 .. highlight:: sql
 
-The **users** table contains additional information about individual users::
+The **users** table contains information about individual users for which mobility data is available 
+(i.e., each ``user_id`` appearing in the tables below should have a corresponding user in the ``users``
+table)::
 
     CREATE TABLE users (
         -- Common to all tables.
@@ -27,8 +30,9 @@ The **users** table contains additional information about individual users::
         CONSTRAINT users_pkey PRIMARY KEY (id)
     );
 
-The **positionfixes** table contains all positionfixes of all users. They are not 
-only linked to a user, but also to a trip leg or a staypoint::
+The **positionfixes** table contains all positionfixes (i.e., all individual GPS trackpoints, 
+consisting of longitude, latitude and timestamp) of all users. They are not only linked to 
+a user, but also (potentially, if this link has already been made) to a trip leg or a staypoint::
 
     CREATE TABLE positionfixes (
         -- Common to all tables.

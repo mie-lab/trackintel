@@ -1,3 +1,4 @@
+import pandas as pd
 import geopandas as gpd
 from geoalchemy2 import Geometry, WKTElement
 from sqlalchemy import create_engine
@@ -18,7 +19,10 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col='geom', *args, 
     geom_col : str, default 'geom'
         The geometry column of the table.
 
-    *args, **kwargs
+    *args
+        Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
+    
+    **kwargs
         Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
 
     Returns
@@ -41,7 +45,7 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col='geom', *args, 
 def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=None,
                                 sql_chunksize=None, if_exists='replace'):
     """Stores positionfixes to PostGIS. Usually, this is directly called on a positionfixes 
-    dataframe (see example below).
+    DataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
 
@@ -107,8 +111,8 @@ def read_triplegs_postgis(conn_string, table_name, geom_col='geom', *args, **kwa
     table_name : str
         The table to read the triplegs from.
 
-    geom_col : str
-        The geometry column of the table. Default ist 'geom'
+    geom_col : str, default 'geom'
+        The geometry column of the table. 
 
     Returns
     -------
@@ -128,9 +132,9 @@ def read_triplegs_postgis(conn_string, table_name, geom_col='geom', *args, **kwa
 
 
 def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None,
-                           sql_chunksize=None):
+                           sql_chunksize=None, if_exists='replace'):
     """Stores triplegs to PostGIS. Usually, this is directly called on a triplegs 
-    dataframe (see example below).
+    DataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
 
@@ -145,6 +149,15 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None,
     
     table_name : str
         The name of the table to write to.
+
+    schema : str, optional
+        The schema (if the database supports this) where the table resides.
+
+    sql_chunksize : int, optional
+        How many entries should be written at the same time.
+
+    if_exists : str, {'fail', 'replace', 'append'}, default 'replace'
+        What should happen if the table already exists.
 
     Examples
     --------
@@ -164,9 +177,9 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None,
     conn = engine.connect()
     try:
         triplegs_postgis.to_sql(table_name, engine, schema=schema,
-                                if_exists='replace', index=False, 
-                        dtype={'geom': Geometry('LINESTRING', srid=srid)},
-                        chunksize=sql_chunksize)
+                                if_exists=if_exists, index=False, 
+                                dtype={'geom': Geometry('LINESTRING', srid=srid)},
+                                chunksize=sql_chunksize)
     finally:
         conn.close()
 
@@ -183,8 +196,8 @@ def read_staypoints_postgis(conn_string, table_name, geom_col='geom', *args, **k
     table_name : str
         The table to read the staypoints from.
 
-    geom_col : str
-        The geometry column of the table. Default ist 'geom'
+    geom_col : str, default 'geom'
+        The geometry column of the table. 
 
     Returns
     -------
@@ -206,7 +219,7 @@ def read_staypoints_postgis(conn_string, table_name, geom_col='geom', *args, **k
 def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
                              sql_chunksize=None, if_exists='replace'):
     """Stores staypoints to PostGIS. Usually, this is directly called on a staypoints 
-    dataframe (see example below).
+    DataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
 
@@ -221,6 +234,15 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
     
     table_name : str
         The name of the table to write to.
+
+    schema : str, optional
+        The schema (if the database supports this) where the table resides.
+
+    sql_chunksize : int, optional
+        How many entries should be written at the same time.
+
+    if_exists : str, {'fail', 'replace', 'append'}, default 'replace'
+        What should happen if the table already exists.
 
     Examples
     --------
@@ -246,8 +268,8 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
     try:
         staypoints_postgis.to_sql(table_name, engine, schema=schema,
                                   if_exists=if_exists, index=False, 
-                        dtype={'geom': Geometry('POINT', srid=srid)},
-                        chunksize=sql_chunksize)
+                                  dtype={'geom': Geometry('POINT', srid=srid)},
+                                  chunksize=sql_chunksize)
     finally:
         conn.close()
         
@@ -264,13 +286,13 @@ def read_places_postgis(conn_string, table_name, geom_col='geom', *args, **kwarg
     table_name : str
         The table to read the places from.
 
-    geom_col : str
-        The geometry column of the table. Default ist 'geom'
+    geom_col : str, default 'geom'
+        The geometry column of the table. 
 
     Returns
     -------
     GeoDataFrame
-        A GeoDataFrame containing the staypoints.
+        A GeoDataFrame containing the places.
     """
     engine = create_engine(conn_string)
     conn = engine.connect()
@@ -286,15 +308,15 @@ def read_places_postgis(conn_string, table_name, geom_col='geom', *args, **kwarg
 
 def write_places_postgis(places, conn_string, table_name, schema=None,
                          sql_chunksize=None, if_exists='replace'):
-    """Stores staypoints to PostGIS. Usually, this is directly called on a staypoints 
-    dataframe (see example below).
+    """Stores places to PostGIS. Usually, this is directly called on a places 
+    GeoDataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
 
     Parameters
     ----------
-    staypoints : GeoDataFrame
-        The staypoints to store to the database.
+    places : GeoDataFrame
+        The places to store to the database.
 
     conn_string : str
         A connection string to connect to a database, e.g., 
@@ -303,9 +325,18 @@ def write_places_postgis(places, conn_string, table_name, schema=None,
     table_name : str
         The name of the table to write to.
 
+    schema : str, optional
+        The schema (if the database supports this) where the table resides.
+
+    sql_chunksize : int, optional
+        How many entries should be written at the same time.
+
+    if_exists : str, {'fail', 'replace', 'append'}, default 'replace'
+        What should happen if the table already exists.
+
     Examples
     --------
-    >>> df.as_staypoints.to_postgis(conn_string, table_name)
+    >>> df.as_places.to_postgis(conn_string, table_name)
     """
     
     # make a copy in order to avoid changing the geometry of the original array
@@ -324,10 +355,92 @@ def write_places_postgis(places, conn_string, table_name, schema=None,
     try:
         places_postgis.to_sql(table_name, engine, schema=schema,
                               if_exists=if_exists, index=False, 
+                              dtype={'center': Geometry('POINT', srid=srid),
+                                     'extent': Geometry('GEOMETRY', srid=srid)},
+                              chunksize=sql_chunksize)
+    finally:
+        conn.close()
+
+        
+def read_trips_postgis(conn_string, table_name, *args, **kwargs):
+    """Reads trips from a PostGIS database.
+
+    Parameters
+    ----------
+    conn_string : str
+        A connection string to connect to a database, e.g., 
+        ``postgresql://username:password@host:socket/database``.
+    
+    table_name : str
+        The table to read the trips from.
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame containing the trips.
+    """
+    engine = create_engine(conn_string)
+    conn = engine.connect()
+    try:
+        trps = pd.read_sql("SELECT * FROM %s" % table_name, conn, index_col='id',
+                           *args, **kwargs)
+    finally:
+        conn.close()
+    assert trps.as_trips
+    return trps
+
+
+def write_trips_postgis(trips, conn_string, table_name, schema=None,
+                         sql_chunksize=None, if_exists='replace'):
+    """Stores trips to PostGIS. Usually, this is directly called on a trips 
+    DataFrame (see example below).
+
+    **Attention!** This replaces the table if it already exists!
+
+    Parameters
+    ----------
+    trips : DataFrame
+        The trips to store to the database.
+
+    conn_string : str
+        A connection string to connect to a database, e.g., 
+        ``postgresql://username:password@host:socket/database``.
+    
+    table_name : str
+        The name of the table to write to.
+
+    schema : str, optional
+        The schema (if the database supports this) where the table resides.
+
+    sql_chunksize : int, optional
+        How many entries should be written at the same time.
+
+    if_exists : str, {'fail', 'replace', 'append'}, default 'replace'
+        What should happen if the table already exists.
+
+    Examples
+    --------
+    >>> df.as_trips.to_postgis(conn_string, table_name)
+    """
+    
+    # make a copy in order to avoid changing the geometry of the original array
+    trips_postgis = trips.copy()
+    
+    srid = int(trips_postgis.crs['init'].split(':')[1])
+    trips_postgis['center'] = \
+        trips_postgis['center'].apply(lambda x: WKTElement(x.wkt, srid=srid))
+    trips_postgis['extent'] = \
+        trips_postgis['extent'].apply(lambda x: WKTElement(x.wkt, srid=srid))
+    if 'id' not in trips_postgis.columns:
+        trips_postgis['id'] = trips_postgis.index
+
+    engine = create_engine(conn_string)
+    conn = engine.connect()
+    try:
+        trips_postgis.to_sql(table_name, engine, schema=schema,
+                              if_exists=if_exists, index=False, 
                         dtype={'center': Geometry('POINT', srid=srid),
                                'extent': Geometry('GEOMETRY', srid=srid)},
                                chunksize=sql_chunksize)
     finally:
         conn.close()
-
-        

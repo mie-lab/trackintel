@@ -44,3 +44,15 @@ class PlacesAccessor(object):
         """Plots this collection of places. 
         See :func:`trackintel.visualization.places.plot_places`."""
         ti.visualization.places.plot_center_of_places(self._obj, *args, **kwargs)
+
+    def to_csv(self, filename, *args, **kwargs):
+        """Stores this collection of places as a CSV file.
+        See :func:`trackintel.io.file.write_places_csv`."""
+        ti.io.file.write_places_csv(self._obj, filename, *args, **kwargs)
+
+    def to_postgis(self, conn_string, table_name, schema=None,
+            sql_chunksize=None, if_exists='replace'):
+        """Stores this collection of places to PostGIS.
+        See :func:`trackintel.io.postgis.write_places_postgis`."""
+        ti.io.postgis.write_places_postgis(self._obj, conn_string, table_name, 
+            schema, sql_chunksize, if_exists)
