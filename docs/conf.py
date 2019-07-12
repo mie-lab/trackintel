@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.abspath('..'))
 from pkg_resources import get_distribution
 
 autodoc_mock_imports = [
+  'dateutil',
   'descartes',
   'geopandas',
   'matplotlib',
