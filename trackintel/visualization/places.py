@@ -6,7 +6,7 @@ from trackintel.visualization.osm import plot_osm_streets
 
 
 def plot_center_of_places(places, out_filename=None, radius=None, positionfixes=None, 
-                staypoints=None, staypoints_radius=None, plot_osm=False):
+                          staypoints=None, staypoints_radius=None, plot_osm=False):
     """Plots places (optionally to a file). Optionally, you can specify several other
     datasets to be plotted beneath the places.
 
