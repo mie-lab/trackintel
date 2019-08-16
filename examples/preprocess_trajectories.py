@@ -28,6 +28,12 @@ plcs.as_places.plot(out_filename='out/gpsies_trajectory_places.png', radius=mete
                     positionfixes=pfs, staypoints=spts, staypoints_radius=meters_to_decimal_degrees(100, 47.5), 
                     plot_osm=True)
 
+tpls = pfs.as_positionfixes.extract_triplegs()
+tpls.as_triplegs.plot(out_filename='out/gpsies_trajectory_triplegs.png', staypoints=spts, 
+                      staypoints_radius=meters_to_decimal_degrees(100, 47.5))
+
+sys.exit(0)
+
 # Geolife trajectory.
 pfs = ti.read_positionfixes_csv('data/geolife_trajectory.csv', sep=';')
 pfs.as_positionfixes.plot(out_filename='out/geolife_trajectory_positionfixes.png', plot_osm=False)

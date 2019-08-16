@@ -4,17 +4,16 @@ Model
 In trackintel, **tracking data** is split into several classes. It is not generally 
 assumed that data is already available in all these classes, instead, trackintel
 provides functionality to generate everything starting from the raw GPS positionfix data 
-(consisting of at least ``(user_id, tracked_at, longitude, latitude, elevation, accuracy)`` 
-tuples).
+(consisting of at least ``(user_id, tracked_at, longitude, latitude)`` tuples).
 
+* **users**: The users for which data is available.
 * **positionfixes**: Raw GPS data.
 * **staypoints**: Locations where a user spent a minimal time.
 * **triplegs**: Segments covered with one mode of transport.
+* **places**: Clustered staypoints.
 * **trips**: Segments between consecutive activities (special staypoints that are not just waiting points).
-* **customer movements**: Sequences of triplegs which use only public transport.
 * **tours**: Sequences of trips which start and end at the same place (if ``journey`` 
   is set to ``True``, this place is *home*).
-* **places**: Clustered staypoints.
 
 A detailed (and SQL-specific) explanation of the different classes can be found under 
 :doc:`/content/data_model_sql`.
@@ -37,12 +36,15 @@ corresponds to a set of constraints, and make functions available on the DataFra
 
 This will read a CSV into a format compatible with the trackintel understanding of a collection of 
 positionfixes, and the second line will wrap the DataFrame with an accessor providing functions such 
-as ``extract_staypoints()``. 
+as ``extract_staypoints()``. You can read up more on Pandas accessors in `the Pandas documentation 
+<https://pandas.pydata.org/pandas-docs/stable/development/extending.html>`_.
 
 Available Accessors
 ===================
 
-The following accessors are available.
+The following accessors are available within *trackintel*.
+
+.. autoclass:: trackintel.model.users.UsersAccessor
 
 .. autoclass:: trackintel.model.positionfixes.PositionfixesAccessor
 
@@ -51,3 +53,7 @@ The following accessors are available.
 .. autoclass:: trackintel.model.triplegs.TriplegsAccessor
 
 .. autoclass:: trackintel.model.places.PlacesAccessor
+
+.. autoclass:: trackintel.model.trips.TripsAccessor
+
+.. autoclass:: trackintel.model.tours.ToursAccessor

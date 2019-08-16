@@ -52,3 +52,32 @@ class TestIO:
     def test_staypoints_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
+
+    def test_places_from_to_csv(self):
+        orig_file = 'tests/data/places.csv'
+        tmp_file = 'tests/data/places_test.csv'
+        plcs = ti.read_places_csv(orig_file, sep=';')
+        plcs.as_places.to_csv(tmp_file, sep=';', 
+            columns=['user_id', 'elevation', 'center', 'extent'])
+        assert filecmp.cmp(orig_file, tmp_file, shallow=False)
+        os.remove(tmp_file)
+        
+    def test_places_from_to_postgis(self):
+        # TODO Implement some tests for PostGIS.
+        pass
+
+    def test_trips_from_to_csv(self):
+        orig_file = 'tests/data/trips.csv'
+        tmp_file = 'tests/data/trips_test.csv'
+        tpls = ti.read_trips_csv(orig_file, sep=';')
+        tpls['started_at'] = tpls['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
+        tpls['finished_at'] = tpls['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
+        tpls.as_trips.to_csv(tmp_file, sep=';', 
+            columns=['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'destination_staypoint_id'])
+        assert filecmp.cmp(orig_file, tmp_file, shallow=False)
+        os.remove(tmp_file)
+        
+    def test_trips_from_to_postgis(self):
+        # TODO Implement some tests for PostGIS.
+        pass
+

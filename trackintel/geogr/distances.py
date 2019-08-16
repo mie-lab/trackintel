@@ -20,10 +20,12 @@ def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=None, *arg
     
     Parameters
     ----------
-    points : geopandas dataframe
-        geopandas dataframe in trackintel staypoints format
-    dist_metric : str, optional
-        ('haversine', 'euclidean')
+    points : GeoDataFrame
+        GeoPandas DataFrame in trackintel staypoints format.
+    dist_metric : str, {'haversine', 'euclidean'}, default 'haversine'
+        The distance metric to be used for caltulating the matrix.
+    n_jobs : int, optional
+        Number of jobs to be passed to the ``sklearn.metrics`` function ``pairwise_distances``.
     *args
         Description
     **kwds
@@ -31,8 +33,8 @@ def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=None, *arg
     
     Returns
     -------
-    TYPE
-        Description
+    array
+        An array of size [n_points, n_points].
     """
     
     try: 
@@ -90,19 +92,19 @@ def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=None, *arg
     return D
     
 def haversine_dist_cdist(XA, XB):
-    """Applies the haversine_dist function for the scipy cdist function.
+    """Applies the ``haversine_dist`` function for the scipy cdist function.
     
     Parameters
     ----------
     XA : numpy array
         2d numpy array with [lon1,lat1]
-    XB : TYPE
+    XB : numpy array
         2d numpy array with [lon2,lat2]
     
     Returns
     -------
     float
-        haversine distance between two points
+        The haversine distance between two points.
     """
     
     

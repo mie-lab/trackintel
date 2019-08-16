@@ -14,14 +14,17 @@ class PositionfixesAccessor(object):
     adheres to some requirements.
 
     Requires at least the following columns: 
-    ``['user_id', 'tracked_at', 'elevation', 'accuracy', 'geom']``
+    ``['user_id', 'tracked_at', 'geom']``
+
+    For several usecases, the following additional columns are required:
+    ``['elevation', 'accuracy', 'tracking_tech', 'context']``
 
     Examples
     --------
     >>> df.as_positionfixes.extract_staypoints()
     """
 
-    required_columns = ['user_id', 'tracked_at', 'elevation', 'accuracy', 'geom']
+    required_columns = ['user_id', 'tracked_at', 'geom']
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -39,8 +42,8 @@ class PositionfixesAccessor(object):
     @property
     def center(self):
         """Returns the center coordinate of this collection of positionfixes."""
-        lat = self._obj.latitude
-        lon = self._obj.longitude
+        lat = self._obj.geometry.y
+        lon = self._obj.geometry.x
         return (float(lon.mean()), float(lat.mean()))
 
     def extract_staypoints(self, *args, **kwargs):
@@ -48,21 +51,26 @@ class PositionfixesAccessor(object):
         See :func:`trackintel.preprocessing.positionfixes.extract_staypoints`."""
         return ti.preprocessing.positionfixes.extract_staypoints(self._obj, *args, **kwargs)
 
-    def extract_triplegs(self, *args, **kwargs):
-        """Extracts triplegs from this collection of positionfixes."""
-        raise NotImplementedError
+    def extract_triplegs(self, staypoints=None, *args, **kwargs):
+        """Extracts triplegs from this collection of positionfixes.
+        See :func:`trackintel.preprocessing.positionfixes.extract_triplegs`.
+        """
+        return ti.preprocessing.positionfixes.extract_triplegs(self._obj, staypoints, *args, **kwargs)
 
     def extract_staypoints_and_triplegs(self, *args, **kwargs):
         """Extracts staypoints, uses them to build triplegs, and builds all associations 
         with the original positionfixes (i.e., returning everything in accordance with the trackintel
         :doc:`/content/data_model_sql`).
+        
+        Might never be implemented as you can just manually first call ``extract_staypoints`` and then
+        ``extract_triplegs``.
 
         Returns
         -------
         tuple
             A tuple consisting of (positionfixes, staypoints, triplegs).
         """
-        raise NotImplementedError
+        return NotImplementedError
 
     def plot(self, *args, **kwargs):
         """Plots this collection of positionfixes. 
@@ -74,7 +82,9 @@ class PositionfixesAccessor(object):
         See :func:`trackintel.io.file.write_positionfixes_csv`."""
         ti.io.file.write_positionfixes_csv(self._obj, filename, *args, **kwargs)
 
-    def to_postgis(self, conn_string, table_name):
+    def to_postgis(self, conn_string, table_name, schema=None,
+            sql_chunksize=None, if_exists='replace'):
         """Stores this collection of positionfixes to PostGIS.
         See :func:`trackintel.io.postgis.write_positionfixes_postgis`."""
-        ti.io.postgis.write_positionfixes_postgis(self._obj, conn_string, table_name)
+        ti.io.postgis.write_positionfixes_postgis(self._obj, conn_string, table_name, 
+            schema, sql_chunksize, if_exists)

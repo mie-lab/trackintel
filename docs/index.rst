@@ -1,7 +1,7 @@
 The *trackintel* Documentation
 ******************************
 
-.. image:: https://img.shields.io/badge/version-v0.0.1-red.svg
+.. image:: https://img.shields.io/badge/version-v0.2.0-red.svg
 
 Focusing on human mobility data, *trackintel* provides functionalities for data quality 
 enhancement, integrating data from various sources, performing quantitative analysis and 
