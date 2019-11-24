@@ -1,0 +1,44 @@
+name: example-environment
+channels:
+  - conda-forge
+dependencies:
+  - numpy
+  - matplotlib
+  - pandas
+  - geopandas
+  - scikit-learn
+  - networkx 
+  - pint 
+  - geoalchemy2 
+  - osmnx 
+  - psycopg2
+  - gdal
+  - imageio
+  - pip:
+    - area
+    - bokeh
+    - cython
+    - dask-rasterio
+    - descartes
+    - folium
+    - geeup
+    - geojsonio
+    - geopandas
+    - geoplot
+    - geopy
+    - gpdvega
+    - h5py
+    - peartree
+    - plotly
+    - pygdal
+    - pygis
+    - pymap3d
+    - pyModis
+    - pysal
+    - pycsw
+    - pywps
+    - rasterio
+    - rasterstats
+    - requests
+    - rtree
+    - seaborn
