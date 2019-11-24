@@ -1,2 +1,3 @@
-update
-libspatialindex-c4v5 libspatialindex-dev
+libspatialindex-dev
+libproj-dev
+libgeos-dev
