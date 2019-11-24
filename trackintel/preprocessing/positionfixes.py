@@ -12,7 +12,7 @@ from trackintel.geogr.distances import haversine_dist
 
 
 def extract_staypoints(positionfixes, method='sliding', 
-                       dist_threshold=100, time_threshold=5*60, epsilon=100,
+                       dist_threshold=50, time_threshold=5*60, epsilon=100,
                        dist_func=haversine_dist, eps=None, num_samples=None):
     """Extract staypoints from positionfixes.
 
@@ -61,12 +61,16 @@ def extract_staypoints(positionfixes, method='sliding',
     similarity based on location history. In Proceedings of the 16th ACM SIGSPATIAL international 
     conference on Advances in geographic information systems (p. 34). ACM.
     """
+    if 'id' not in positionfixes.columns:
+        positionfixes['id'] = positionfixes.index
+
     ret_staypoints = pd.DataFrame(columns=['started_at', 'finished_at', 'geom', 'id'])
 
     if method == 'sliding':
         # Algorithm from Li et al. (2008). For details, please refer to the paper.
         staypoint_id_counter = 0
-        
+        positionfixes['staypoint_id'] = -1 # this marks all that are not part of a SP
+
         for user_id_this in positionfixes['user_id'].unique():
 
             positionfixes_user_this = positionfixes.loc[
@@ -78,7 +82,7 @@ def extract_staypoints(positionfixes, method='sliding',
             posfix_staypoint_matching = {}
 
             i = 0
-            j = 1 # TODO: should be 0?, see referenced paper
+            j = 0 # is zero because it gets incremented in the beginning
             while i < num_pfs:
                 if j == num_pfs:
                     # We're at the end, this can happen if in the last "bin", 
@@ -104,7 +108,7 @@ def extract_staypoints(positionfixes, method='sliding',
                             staypoint['id'] = staypoint_id_counter
                                                         
                             # store matching 
-                            posfix_staypoint_matching[staypoint_id_counter] = [k for k in range(i, j)]
+                            posfix_staypoint_matching[staypoint_id_counter] = [pfs[k]['id'] for k in range(i, j)]
                             staypoint_id_counter += 1 
 
                             # add staypoint
@@ -129,14 +133,12 @@ def extract_staypoints(positionfixes, method='sliding',
                         break
                     j = j + 1
 
-        # add matching to original positionfixes
-        positionfixes['staypoint_id'] = -1 # this marks all that are not part of a SP
-        for staypoints_id, posfix_list in posfix_staypoint_matching.items():
-            # note that we use .iloc because above we iterate the position fixe with
-            # their absolute position (not their index)
-            positionfixes.iloc[posfix_list, 
-                               positionfixes.columns.get_loc('staypoint_id')
-                              ] = staypoints_id
+            # add matching to original positionfixes (for every user)
+            
+            for staypoints_id, posfix_idlist in posfix_staypoint_matching.items():
+                # note that we use .loc because above we have saved the id 
+                # of the positionfixes not thier absolut position
+                positionfixes.loc[posfix_idlist,'staypoint_id'] = staypoints_id
 
 
     elif method == 'dbscan':
@@ -228,11 +230,51 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
         positionfixes_user_this = positionfixes.loc[
                             positionfixes['user_id'] == user_id_this] # this is no copy
         pfs = positionfixes_user_this.sort_values('tracked_at')
-
-        # TODO Not so efficient, always matching on the time (as things are sorted anyways).
         generated_triplegs = []
-        if staypoints is not None:
-            stps = staypoints.loc[positionfixes['user_id'] == user_id_this].sort_values('started_at')
+
+        # Case 1: Staypoints exist and are connected to positionfixes by user id
+        if staypoints is not None and "staypoint_id" in pfs:
+            stps = staypoints.loc[staypoints['user_id'] == user_id_this].sort_values('started_at')
+            stps = stps.to_dict('records')
+            for stp1, stp2 in zip(list(stps), list(stps)[1:]):
+                # Get all positionfixes that lie between these two staypoints.
+
+                # get the last posfix of the first staypoint
+                index_first_posfix_tl = pfs[pfs.staypoint_id==stp1['id']].index[-1]
+                position_first_posfix_tl  = pfs.index.get_loc(index_first_posfix_tl)
+                # get first posfix of the second staypoint
+                index_last_posfix_tl = pfs[pfs.staypoint_id==stp2['id']].index[0]
+                position_last_posfix_tl  = pfs.index.get_loc(index_last_posfix_tl)
+
+                pfs_tripleg = pfs.iloc[position_first_posfix_tl:position_last_posfix_tl+1]
+
+                # include every positionfix that brings you closer to the center 
+                # of the staypoint
+
+
+                posfix_before, started_at = propagate_tripleg(pfs,stp1, position_first_posfix_tl, direction=-1)
+                posfix_before = posfix_before[::-1]
+                # add geometry of staypoint and correct the direction
+                
+                posfix_after, finished_at = propagate_tripleg(pfs,stp2, position_last_posfix_tl, direction=1)
+
+                coords = list(pfs_tripleg['geom'].apply(lambda r: (r.x, r.y)))
+                coords = posfix_before + coords + posfix_after
+
+                if len(coords) > 1:
+                    generated_triplegs.append({
+                            'id': curr_tripleg_id,
+                            'user_id': user_id_this,
+                            'started_at': started_at, #pfs_tripleg['tracked_at'].iloc[0],
+                            'finished_at': finished_at, #pfs_tripleg['tracked_at'].iloc[-1],
+                            'geom': LineString(coords)
+                    })
+                    curr_tripleg_id += 1
+
+        # Case 2: Staypoints exist but there is no user_id given
+        # TODO Not so efficient, always matching on the time (as things are sorted anyways).
+        elif staypoints is not None:
+            stps = staypoints.loc[staypoints['user_id'] == user_id_this].sort_values('started_at')
             stps = stps.to_dict('records')
             for stp1, stp2 in zip(list(stps), list(stps)[1:]):
                 # Get all positionfixes that lie between these two staypoints.
@@ -249,6 +291,8 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                             'geom': LineString(list(pfs_tripleg['geom'].apply(lambda r: (r.x, r.y))))
                     })
                     curr_tripleg_id += 1
+
+        # case 3: Only positionfixes with staypoint id for tripleg generation
         else:
             prev_pf = None
             curr_tripleg = {
@@ -326,3 +370,46 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
     ret_triplegs['id'] = ret_triplegs['id'].astype('int')
 
     return ret_triplegs
+
+
+
+def propagate_tripleg(pfs,stp, position_edge_posfix_tl, direction=1):
+
+    # propagate backwards at start
+    posfix_to_add = []
+    i = direction
+
+    geom_stp = stp['geom']
+
+    geom_edge_posfix_tl = pfs.iloc[position_edge_posfix_tl].geom
+    geom_candidate_posfix = pfs.iloc[position_edge_posfix_tl+i].geom
+
+    dist_edge_psf_stp = geom_stp.distance(geom_edge_posfix_tl)
+
+    # new posfix must be closer to the center of the staypoint then the current one
+    cond1 = (geom_stp.distance(geom_candidate_posfix) < dist_edge_psf_stp)
+
+    # new posfix must be closer then the center of the staypoint to qualify
+    cond2 = (geom_edge_posfix_tl.distance(geom_candidate_posfix) < dist_edge_psf_stp)
+
+    closer = cond1 and cond2
+
+    while(closer):
+        # todo: sanity check if i addresses an existing item
+        # insert new posfix
+        posfix_to_add.append((geom_candidate_posfix.x, geom_candidate_posfix.y))
+
+        # update variables
+        geom_edge_posfix_tl = pfs.iloc[position_edge_posfix_tl+i].geom
+        i = i + direction
+        geom_candidate_posfix = pfs.iloc[position_edge_posfix_tl+i].geom
+
+        # update closer
+        dist_edge_psf_stp = geom_stp.distance(geom_edge_posfix_tl)
+        cond1 = (geom_stp.distance(geom_candidate_posfix) < dist_edge_psf_stp)
+        cond2 = (geom_edge_posfix_tl.distance(geom_candidate_posfix) < dist_edge_psf_stp)
+        closer = cond1 and cond2
+
+    tracked_at = pfs.iloc[position_edge_posfix_tl+i].tracked_at
+    # posfix_to_add.append((geom_stp.x, geom_stp.y))
+    return posfix_to_add, tracked_at
