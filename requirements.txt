@@ -8,7 +8,4 @@ pint
 geoalchemy2 
 osmnx 
 psycopg2
-fiona
-shapely
-rtree
-pyproj
+imageio
