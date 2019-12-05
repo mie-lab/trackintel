@@ -1,0 +1,11 @@
+numpy
+matplotlib
+pandas
+geopandas
+scikit-learn
+networkx 
+pint 
+geoalchemy2 
+osmnx 
+psycopg2
+imageio

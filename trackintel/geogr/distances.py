@@ -10,11 +10,11 @@ from scipy.sparse import coo_matrix
 # for all that is euclidean (or minkowski) we can use scipy.spatial.distance_matrix
 #
 # There is a sklearn function that supports many different metrics:
-# sklearn.metrics.pairwise_distances(X, Y=None, metric=’euclidean’, n_jobs=None, **kwargs)
+# sklearn.metrics.pairwise_distances(X, Y=None, metric=’euclidean’, n_jobs=None, **kwds)
 #
 
 # todo: check the sklearn format for distances matrices and try to use it
-def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=None, *args, **kwargs):
+def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=None, *args, **kwds):
     """
     Calculate a distance matrix based on a specific distance metric.
     
@@ -27,9 +27,9 @@ def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=None, *arg
     n_jobs : int, optional
         Number of jobs to be passed to the ``sklearn.metrics`` function ``pairwise_distances``.
     *args
-        Not used yet.
-    **kwargs
-        Not used yet.
+        Description
+    **kwds
+        Description
     
     Returns
     -------
@@ -79,13 +79,18 @@ def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=None, *arg
          xy = np.concatenate((x.reshape(-1,1),y.reshape(-1,1)),axis=1)
          D = cdist(xy,xy,metric=haversine_dist_cdist)
         
+        
     else:
         xy = np.concatenate((x.reshape(-1,1),y.reshape(-1,1)),axis=1)
         D = pairwise_distances(xy, metric=dist_metric, n_jobs=n_jobs)
         
+     
+         
+         
+
+
     return D
     
-
 def haversine_dist_cdist(XA, XB):
     """Applies the ``haversine_dist`` function for the scipy cdist function.
     
@@ -101,8 +106,9 @@ def haversine_dist_cdist(XA, XB):
     float
         The haversine distance between two points.
     """
+    
+    
     return haversine_dist(XA[0], XA[1], XB[0], XB[1])
-
 
 def haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000):
     """Computes the great circle or haversine distance between two coordinates in WGS84.
@@ -125,7 +131,7 @@ def haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000):
     lat_2 : float or numpy.array of shape (-1,)
         The latitude of the second point.
 
-    r : float
+    r     : float
         Radius of the reference sphere for the calculation. 
         The average Earth radius is 6'371'000 m. 
 

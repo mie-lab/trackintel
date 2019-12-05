@@ -33,10 +33,11 @@ def plot_triplegs(triplegs, out_filename=None, positionfixes=None, staypoints=No
             north = positionfixes['geom'].y.max()
             south = positionfixes['geom'].y.min()
         else:
-            west = triplegs['geom'].x.min() - 0.03
-            east = triplegs['geom'].x.max() + 0.03
-            north = triplegs['geom'].y.max() + 0.03
-            south = triplegs['geom'].y.min() - 0.03
+            triplegs_bounds = triplegs.bounds 
+            west = min(triplegs_bounds.minx) - 0.03 #TODO: maybe a relative value instead of 0.03
+            east = max(triplegs_bounds.maxx) + 0.03
+            north = max(triplegs_bounds.maxy) + 0.03
+            south = min(triplegs_bounds.miny) - 0.03
         plot_osm_streets(north, south, east, west, ax)
 
     if positionfixes is not None:
