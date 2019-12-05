@@ -6,7 +6,7 @@ from trackintel.preprocessing import positionfixes
 from trackintel.preprocessing import staypoints
 
 
-class TestPreprocessing:
+class TestPreprocessing():
     def test_extract_staypoints_sliding_min(self):
         pfs = ti.read_positionfixes_csv('tests/data/positionfixes.csv', sep=';')
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
@@ -39,3 +39,6 @@ class TestPreprocessing:
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         clusters = spts.as_staypoints.extract_places(method='dbscan', epsilon=1e18, num_samples=1000)
         assert len(clusters) == 0, "With large hyperparameters, everything is an outlier"
+
+
+
