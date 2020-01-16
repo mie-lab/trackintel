@@ -1,3 +1,5 @@
+import copy
+
 import pytest
 import sys
 import os
@@ -6,7 +8,10 @@ import filecmp
 import trackintel as ti
 from trackintel.preprocessing import positionfixes
 from trackintel.preprocessing import staypoints
-
+from trackintel.preprocessing.triplegs import smoothen_triplegs
+import pandas as pd
+import numpy as np
+from matplotlib import pyplot
 
 class TestIO:
     def test_positionfixes_from_to_csv(self):
@@ -33,7 +38,41 @@ class TestIO:
             columns=['user_id', 'started_at', 'finished_at', 'geom'])
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
-        
+
+    def test_Douglas_Peucker_Algorithm_reduces_triplet_length(self):
+        def plot_line(ax, ob):
+            x, y = ob.xy
+            ax.plot(x, y, alpha=0.7, linewidth=3, solid_capstyle='round', zorder=2)
+
+        pd.set_option('display.max_columns', 10)
+        pd.set_option('display.max_rows', 10)
+        orig_file = 'tests/data/triplegs_with_too_many_points_test.csv'
+        tpls = ti.read_triplegs_csv(orig_file, sep=';')
+        tpls_smoothed = smoothen_triplegs(tpls, epsilon=0.0001)
+        line1 = tpls.iloc[0].geom
+        line1_smoothed = tpls_smoothed.iloc[0].geom
+        line2 = tpls.iloc[1].geom
+        line2_smoothed = tpls_smoothed.iloc[1].geom
+
+        print(line1)
+        print(line1_smoothed)
+        assert line1.length == line1_smoothed.length
+        assert line2.length == line2_smoothed.length
+        assert len(line1.coords) == 10
+        assert len(line2.coords) == 7
+        assert len(line1_smoothed.coords) == 4
+        assert len(line2_smoothed.coords) == 3
+
+    def test_test_Douglas_Peucker_Algorithm_has_no_side_effects(self):
+        orig_file = 'tests/data/triplegs_with_too_many_points_test.csv'
+        tpls = ti.read_triplegs_csv(orig_file, sep=';')
+        tpls_copy = copy.deepcopy(tpls)
+        tpls_smoothed = smoothen_triplegs(tpls, epsilon=0.0001)
+
+        assert np.all(tpls == tpls_copy)
+
+
+
     def test_triplegs_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
