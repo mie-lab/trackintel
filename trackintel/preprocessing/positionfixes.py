@@ -211,6 +211,9 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
     -------
     GeoDataFrame
         A new GeoDataFrame containing triplegs.
+        
+    GeoDataFrame
+        A copy of the input GDF of all Positionfixes with added tripleg_id.
 
     Examples
     --------
@@ -226,11 +229,14 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
 
     ret_triplegs = pd.DataFrame(columns=['id', 'user_id', 'started_at', 'finished_at', 'geom'])
     curr_tripleg_id = 0
+    
+    positionfixes.insert(6, 'tripleg_id', -1*ones(pfs.shape[0]])) #inserts the tripleg_id field, set to -1 initially
     # Do this for each user.
     for user_id_this in positionfixes['user_id'].unique():
 
         positionfixes_user_this = positionfixes.loc[
             positionfixes['user_id'] == user_id_this]  # this is no copy
+        
         pfs = positionfixes_user_this.sort_values('tracked_at')
         generated_triplegs = []
 
@@ -270,7 +276,10 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                         'finished_at': finished_at,  # pfs_tripleg['tracked_at'].iloc[-1],
                         'geom': LineString(coords)
                     })
+                    positionfixes.loc[posfix_before:posfix_after, ('tripleg_id')]=curr_tripleg_id   #Writes the tripleg_id into the positionfixes
                     curr_tripleg_id += 1
+                    
+        
 
         # Case 2: Staypoints exist but there is no user_id given
         # TODO Not so efficient, always matching on the time (as things are sorted anyways).
@@ -291,6 +300,7 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                         'finished_at': pfs_tripleg['tracked_at'].iloc[-1],
                         'geom': LineString(list(pfs_tripleg['geom'].apply(lambda r: (r.x, r.y))))
                     })
+                    positionfixes.loc[pfs_tripleg['id'][:], ('tripleg_id')]=curr_tripleg_id   #Writes the tripleg_id into the positionfixes
                     curr_tripleg_id += 1
 
         # case 3: Only positionfixes with staypoint id for tripleg generation
@@ -365,7 +375,7 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
     ret_triplegs = gpd.GeoDataFrame(ret_triplegs, geometry='geom', crs=positionfixes.crs)
     ret_triplegs['id'] = ret_triplegs['id'].astype('int')
 
-    return ret_triplegs
+    return ret_triplegs, positionfixes
 
 
 def propagate_tripleg(pfs, stp, position_edge_posfix_tl, direction=1):
