@@ -230,7 +230,7 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
     ret_triplegs = pd.DataFrame(columns=['id', 'user_id', 'started_at', 'finished_at', 'geom'])
     curr_tripleg_id = 0
     
-    positionfixes.insert(6, 'tripleg_id', -1*ones(pfs.shape[0]])) #inserts the tripleg_id field, set to -1 initially
+    positionfixes.insert(6, 'tripleg_id', -1*ones(pfs.shape[0])) #inserts the tripleg_id field, set to -1 initially
     # Do this for each user.
     for user_id_this in positionfixes['user_id'].unique():
 
