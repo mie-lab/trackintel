@@ -257,7 +257,7 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
     # make a copy in order to avoid changing the geometry of the original array
     staypoints_postgis = staypoints.copy()
     
-    srid = int(staypoints_postgis.crs['init'].split(':')[1])
+    srid = int(staypoints_postgis.crs.to_epsg())
     staypoints_postgis['geom'] = \
         staypoints_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     if 'id' not in staypoints_postgis.columns:
@@ -342,7 +342,7 @@ def write_places_postgis(places, conn_string, table_name, schema=None,
     # make a copy in order to avoid changing the geometry of the original array
     places_postgis = places.copy()
     
-    srid = int(places_postgis.crs['init'].split(':')[1])
+    srid = int(places_postgis.crs.to_epsg())
     places_postgis['center'] = \
         places_postgis['center'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     places_postgis['extent'] = \
@@ -426,7 +426,7 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None,
     # make a copy in order to avoid changing the geometry of the original array
     trips_postgis = trips.copy()
     
-    srid = int(trips_postgis.crs['init'].split(':')[1])
+    srid = int(trips_postgis.crs.to_epsg())
     trips_postgis['center'] = \
         trips_postgis['center'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     trips_postgis['extent'] = \
