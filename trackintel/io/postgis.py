@@ -80,7 +80,7 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
 
     # If this GeoDataFrame already has an SRID, we use it, otherwise we default to WGS84.
     if (positionfixes_postgis.crs is not None):
-        srid = int(positionfixes_postgis.crs['init'].split(':')[1])
+        srid = int(positionfixes_postgis.geom.to_epsg())
     else:
         srid = 4326
     positionfixes_postgis['geom'] = \
@@ -167,7 +167,7 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None,
     # make a copy in order to avoid changing the geometry of the original array
     triplegs_postgis = triplegs.copy()
     
-    srid = int(triplegs_postgis.crs['init'].split(':')[1])
+    srid = int(triplegs_postgis.crs.to_epsg())
     triplegs_postgis['geom'] = \
         triplegs_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     if 'id' not in triplegs_postgis.columns:
