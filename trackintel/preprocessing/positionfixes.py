@@ -370,6 +370,7 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                     curr_tripleg['coords'].append((pf['geom'].x, pf['geom'].y))
 
                 prev_pf = pf
+                positionfixes.loc[pf['id'], ('tripleg_id')]=curr_tripleg_id
         ret_triplegs = ret_triplegs.append(generated_triplegs)
 
     ret_triplegs = gpd.GeoDataFrame(ret_triplegs, geometry='geom', crs=positionfixes.crs)
