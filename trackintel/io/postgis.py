@@ -80,7 +80,7 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
 
     # If this GeoDataFrame already has an SRID, we use it, otherwise we default to WGS84.
     if (positionfixes_postgis.crs is not None):
-        srid = int(positionfixes_postgis.crs['init'].split(':')[1])
+        srid = int(positionfixes_postgis.geom.to_epsg())
     else:
         srid = 4326
     positionfixes_postgis['geom'] = \
