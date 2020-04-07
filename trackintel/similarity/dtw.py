@@ -11,8 +11,8 @@ def e_dtw(t0, t1):
     """
     Usage
     -----
-    The Dynamic-Time Warping distance between trajectory t0 and t1. The time information
-    in the GeoDataFrames is not (yet) considered.
+    The Dynamic-Time Warping distance between trajectory t0 and t1. The timestamps
+    in the GeoDataFrames are not (yet) considered.
 
     Parameters
     ----------
