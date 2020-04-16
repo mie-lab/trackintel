@@ -5,6 +5,12 @@ import numpy as np
 from ti.similarity.detection import similarity_detection
 
 class testSimilarityDetection:
+    def test_similarity_detection_general(self):
+        false_data = None #some test data
+        with pytest.raises(Exception):
+            similarity_detection(false_data)
+            
+    
     def test_similarity_detection_trsh(self):
         
         pfs = None #some test data
@@ -21,6 +27,7 @@ class testSimilarityDetection:
         
         sim = similarity_detection(pfs)
         assert isinstance(sim, np.ndarray)
-        assert sim()
+        assert sim[a,b]== #some value
+        assert (sim == sim.transpose()).all()
     
         

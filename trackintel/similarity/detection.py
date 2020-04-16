@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-from scipy.sparse import dok_matrix
+from trackintel.similarity import dtw as dtw
 
 def similarity_detection(method="dtw", data, trsh=None):
     """Method detects similar trajectories in a data set.
@@ -25,7 +24,10 @@ def similarity_detection(method="dtw", data, trsh=None):
         assert 'tripleg_id' in data.columns
     except: print('Input data format must be positionfixes with added tripleg_id')
         
-    
+    file = None
+    if method is 'dtw':
+        file = 'dtw'
+        met = 'e_dtw'
     n = data.loc[data['tripleg_id']].max() #number of trajectories +1 in the DataFrame
     
     if trsh is None:             #If trehshold is not set, all distances are saved in to a matrix
@@ -33,20 +35,23 @@ def similarity_detection(method="dtw", data, trsh=None):
     
         for i in range(n):
             tp1 = data.loc[data['tripleg_id']==i]
-            for j in range(1,n):
+            for j in range(i,n):
                 tp2 = data.loc[data['tripleg_id']==j]
-                s = dtw(tp1,tp2)
+                s = getattr(file,met)(tp1,tp2)
                 sim[i,j] = s
+                sim[j,i] = s
     else:
         sim = {}
         for i in range(n):
             tp1 = data.loc[data['tripleg_id']==i]
-            for j in range(1,n):
+            for j in range(i,n):
                 tp2 = data.loc[data['tripleg_id']==j]
-                s = dtw(tp1,tp2)
+                
+                s = getattr(file,met)(tp1,tp2)
                 
                 if s <= trsh:
                     sim.update({(i,j):s})
+                    sim.update({(j,i):s})
     
         
     return sim
