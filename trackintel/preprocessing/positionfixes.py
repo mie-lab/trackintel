@@ -212,8 +212,7 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
     GeoDataFrame
         A new GeoDataFrame containing triplegs.
         
-    GeoDataFrame
-        A copy of the input GDF of all Positionfixes with added tripleg_id.
+   In the original Positionfixes DataFrame, tripleg_ids are added
 
     Examples
     --------
@@ -276,7 +275,7 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                         'finished_at': finished_at,  # pfs_tripleg['tracked_at'].iloc[-1],
                         'geom': LineString(coords)
                     })
-                    positionfixes.loc[index_first_posfix_tl:index_last_posfix_tl, ('tripleg_id')]=curr_tripleg_id   #Writes the tripleg_id into the positionfixes
+                    positionfixes.loc[index_first_posfix_tl+1:index_last_posfix_tl-1, ('tripleg_id')]=curr_tripleg_id   #Writes the tripleg_id into the positionfixes
                     curr_tripleg_id += 1
                     
         
@@ -376,7 +375,7 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
     ret_triplegs = gpd.GeoDataFrame(ret_triplegs, geometry='geom', crs=positionfixes.crs)
     ret_triplegs['id'] = ret_triplegs['id'].astype('int')
 
-    return ret_triplegs, positionfixes
+    return ret_triplegs
 
 
 def propagate_tripleg(pfs, stp, position_edge_posfix_tl, direction=1):

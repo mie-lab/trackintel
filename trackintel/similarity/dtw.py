@@ -32,6 +32,6 @@ def e_dtw(t0, t1):
     c[0, 1:] = float('inf')
     for i in np.arange(n0) + 1:
         for j in np.arange(n1) + 1:
-            c[i, j] = t0.loc[i - 1, 'geom'].distance(t1[i - 1, 'geom']) + min(c[i, j - 1], c[i - 1, j - 1], c[i - 1, j])
+            c[i, j] = t0.iloc[i - 1]['geom'].distance(t1.iloc[j - 1]['geom']) + min(c[i, j - 1], c[i - 1, j - 1], c[i - 1, j])
     dtw = c[n0, n1]
     return dtw

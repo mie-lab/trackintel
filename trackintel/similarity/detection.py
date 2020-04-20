@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from trackintel.similarity import dtw as dtw
+import numpy as np
+from scipy.sparse import dok_matrix
 
-def similarity_detection(method="dtw", data, trsh=None):
+def similarity_detection(data, method="dtw", trsh=None):
     """Method detects similar trajectories in a data set.
     
     INPUT:
@@ -20,38 +22,37 @@ def similarity_detection(method="dtw", data, trsh=None):
             
         """
     try:
-        assert data.as_positionfixes._validate()
-        assert 'tripleg_id' in data.columns
+        #assert data.as_positionfixes._validate()
+        #assert 'tripleg_id' in data.columns
+        pass
     except: print('Input data format must be positionfixes with added tripleg_id')
         
-    file = None
-    if method is 'dtw':
-        file = 'dtw'
-        met = 'e_dtw'
-    n = data.loc[data['tripleg_id']].max() #number of trajectories +1 in the DataFrame
-    
-    if trsh is None:             #If trehshold is not set, all distances are saved in to a matrix
-        sim = np.ones(n,n)*np.inf 
-    
-        for i in range(n):
-            tp1 = data.loc[data['tripleg_id']==i]
-            for j in range(i,n):
-                tp2 = data.loc[data['tripleg_id']==j]
-                s = getattr(file,met)(tp1,tp2)
-                sim[i,j] = s
-                sim[j,i] = s
-    else:
-        sim = {}
-        for i in range(n):
-            tp1 = data.loc[data['tripleg_id']==i]
-            for j in range(i,n):
-                tp2 = data.loc[data['tripleg_id']==j]
-                
-                s = getattr(file,met)(tp1,tp2)
-                
-                if s <= trsh:
-                    sim.update({(i,j):s})
-                    sim.update({(j,i):s})
-    
+   
+    if method == 'dtw':
+        it = data['tripleg_id'].unique()
+        it = it[it != -1] #array with all tripleg_ids to iterate over
+        if trsh is None:             #If trehshold is not set, all distances are saved in to a matrix
+            sim = np.ones((it.length, it.length))*np.inf 
+        
+            for i in it:
+                tp1 = data.loc[data['tripleg_id']==i]
+                for j in it[int(i):]:
+                    tp2 = data.loc[data['tripleg_id']==j]
+                    s = dtw.e_dtw(tp1,tp2)
+                    sim[i,j] = s
+                    sim[j,i] = s
+        else:
+            sim = {}
+            for i in it:
+                tp1 = data.loc[data['tripleg_id']==i]
+                for j in it[int(i):]:
+                    tp2 = data.loc[data['tripleg_id']==j]
+                    
+                    s = dtw.e_dtw(tp1,tp2)
+                    
+                    if s <= trsh:
+                        sim.update({(i,j):s})
+                        sim.update({(j,i):s})
+        
         
     return sim
