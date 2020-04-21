@@ -275,7 +275,7 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                         'finished_at': finished_at,  # pfs_tripleg['tracked_at'].iloc[-1],
                         'geom': LineString(coords)
                     })
-                    positionfixes.loc[index_first_posfix_tl+1:index_last_posfix_tl-1, ('tripleg_id')]=curr_tripleg_id   #Writes the tripleg_id into the positionfixes
+                    positionfixes.loc[pfs_tripleg['id'].to_list(),'tripleg_id']=curr_tripleg_id   #Writes the tripleg_id into the positionfixes
                     curr_tripleg_id += 1
                     
         
