@@ -2,7 +2,7 @@
 
 import trackintel as ti
 import numpy as np
-from ti.similarity.detection import similarity_detection
+from trackintel.similarity.detection import similarity_detection
 
 class testSimilarityDetection:
     def test_similarity_detection_general(self):
@@ -27,7 +27,7 @@ class testSimilarityDetection:
         
         sim = similarity_detection(pfs)
         assert isinstance(sim, np.ndarray)
-        assert sim[a,b]== #some value
+#        assert sim[a,b]== #some value
         assert (sim == sim.transpose()).all()
     
         
