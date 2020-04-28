@@ -2,6 +2,8 @@
 from trackintel.similarity import dtw as dtw
 import numpy as np
 from scipy.sparse import dok_matrix
+from console_progressbar import ProgressBar
+
 
 def min_dist_first_points(tp1,tp2):
     p10 = tp1.iloc[0]['geom']
@@ -19,26 +21,26 @@ def similarity_detection(data, method="dtw", trsh=1000):   #ToDo: Default Tresho
     
     INPUT:
         method:         type of similarity measure (for instance only dtw)
-        data:           a GDF with positionfixes and tripleg_id
-        treshold:       trajectories wich are more similar than the treshold will be marked as similar
-                        if treshold is none, a distance matrix of all trajectories will be calculated
+        data:           a positionfixes GDF with tripleg_ids
+        trsh:           for 2 trajectories with a bigger distance than the treshold the similarity will be set to zero
         
     RETURN: 
         sim:            sparse similarity matrix (inverted distances of trajectories)
-            
-            
+                        Be aware that also non existing tripleg_ids have similarity zero in the sim matrix!
         """
     try:
         assert data.as_positionfixes
         assert 'tripleg_id' in data.columns
-    except: print('Input data format must be positionfixes with added tripleg_id')
+    except: 
+        raise Exception('Input data format must be positionfixes with added tripleg_id')
         
-   
+        
+    
     if method == 'dtw':
         it = data['tripleg_id'].unique()  
         it = it[it != -1] #array with all tripleg_ids to iterate over
-        sim = dok_matrix((len(it),len(it)))
-    
+        sim = dok_matrix((int(max(it)+1),int(max(it)+1)))
+        bar = ProgressBar(total=len(it))
         for i in range(len(it)):
             tp1 = data.loc[data['tripleg_id']==it[i]].sort_values('tracked_at')  #slice dataframe to extract a tripleg
             for j in range(int(i)+1,len(it)):
@@ -54,7 +56,10 @@ def similarity_detection(data, method="dtw", trsh=1000):   #ToDo: Default Tresho
                          
                 sim[i,j] = s
                 sim[j,i] = s
-     
+            bar.print_progress_bar(i)
+        sim.setdiag(np.inf)
+        bar.finish()
+        
     return sim
 
 
