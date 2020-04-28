@@ -20,10 +20,9 @@ class TestPreprocessing():
         
     def test_extract_triplegs_staypoint(self):
         pfs = ti.read_positionfixes_csv('tests/data/positionfixes.csv', sep=';')
-        pfs2=pfs.copy()
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         tpls1 = pfs.as_positionfixes.extract_triplegs()
-        tpls2 = pfs2.as_positionfixes.extract_triplegs(spts)
+        tpls2 = pfs.as_positionfixes.extract_triplegs(spts)
         assert len(tpls1) > 0, "There should be more than zero triplegs"
         assert len(tpls2) > 0, "There should be more than zero triplegs"
         assert len(tpls1) == len(tpls2), "If we extract the staypoints in the same way, it should lead to " + \
