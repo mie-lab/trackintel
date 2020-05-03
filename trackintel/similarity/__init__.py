@@ -1,2 +1,2 @@
-from .dtw import e_dtw
+from .measures import *
 from .detection import *

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from trackintel.similarity import dtw as dtw
+from trackintel.similarity import measures
 import numpy as np
 from scipy.sparse import dok_matrix
 from console_progressbar import ProgressBar
@@ -16,11 +16,11 @@ def min_dist_first_points(tp1,tp2):
     d = p11.distance(p21)
     return min(a,b,c,d)
 
-def similarity_detection(data, method="dtw", trsh=1000):   #ToDo: Default Treshold calculation
+def similarity_detection(data, method, trsh=1000):   #ToDo: Default Treshold calculation
     """Method detects similar trajectories in a data set.
     
     INPUT:
-        method:         type of similarity measure (for instance only dtw)
+        method:         type of similarity measure, available: DynamicTimeWarping (dtw), Edit Distance on real Sequence (edr)
         data:           a positionfixes GDF with tripleg_ids
         trsh:           for 2 trajectories with a bigger distance than the treshold the similarity will be set to zero
         
@@ -34,9 +34,14 @@ def similarity_detection(data, method="dtw", trsh=1000):   #ToDo: Default Tresho
     except: 
         raise Exception('Input data format must be positionfixes with added tripleg_id')
         
-        
+    calc_dist = None
     
     if method == 'dtw':
+        calc_dist = getattr(measures, 'e_dtw')
+    elif method == 'edr':
+        calc_dist = getattr(measures, 'e_edr')
+        
+        
         it = data['tripleg_id'].unique()  
         it = it[it != -1] #array with all tripleg_ids to iterate over
         sim = dok_matrix((int(max(it)+1),int(max(it)+1)))
@@ -48,7 +53,7 @@ def similarity_detection(data, method="dtw", trsh=1000):   #ToDo: Default Tresho
                 if min_dist_first_points(tp1,tp2)>trsh:
                     s=0
                 else:
-                    d = dtw.e_dtw(tp1,tp2)
+                    d = calc_dist(tp1,tp2)
                     if d==0:
                         s=np.inf #avoid division by zero
                     else:       #in all other cases the inverted trajectory distance is stored
