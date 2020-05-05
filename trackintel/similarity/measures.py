@@ -5,6 +5,7 @@ Algorithm adapted from https://github.com/bguillouet/traj-dist
 
 
 import numpy as np
+import geopandas as gpd
 
 
 def e_dtw(t0, t1):
@@ -70,6 +71,43 @@ def e_edr(t0, t1, eps):
     return edr
 
 
+def start_end_sim(data, dist_trsh, time_trsh, field='tripleg_id', **kwargs):
+    try:
+        assert data.as_positionfixes
+        assert field in data.columns
+    except:
+        raise Exception('data must be positionfixes with ' + field + ' in columns')
+    
+    if 'id_to_compare' in kwargs:
+        id_to_compare = kwargs.get('id_to_compare')
+        tpl= data[data[field]==id_to_compare]
+        start = tpl.iloc[0].geom
+        start_time = tpl.iloc[0]['tracked_at']
+        end = tpl.iloc[-1].geom
+        end_time = tpl.iloc[-1]['tracked_at']
+        
+    else:
+        try:
+            assert all('start' and 'end' and 'end_time' in kwargs) #check syntax
+        except:
+            raise Exception('Function needs an id of the tripleg to compare or start- and end coordinates and end_time')
+        start = kwargs.get('start')
+        end =   kwargs.get('end')
+        end_time = kwargs.get('end_time')
+        
+    start_buffer = start.buffer(dist_trsh)
+    end_buffer = end.buffer(dist_trsh)
+    start_neighbours = gpd.overlay(start_buffer, data, how='intersection')
+    end_neighbours = gpd.overlay(end_buffer, data, how='intersection')
+    traj_ids = []
+    
+    for i in start_neighbours.id:
+        if (i in end_neighbours.id and abs(end_time-data[data[field]==i:
+            traj_ids.append(i)
+            
+    
+    
+    return None
 
 
 

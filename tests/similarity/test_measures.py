@@ -13,7 +13,7 @@ class TestMeasures:
        
         
         
-        assert e_dtw(t1,t2)
+        assert e_dtw(t1,t2) is float
         assert e_dtw(t1,t1) == e_dtw(t2,t2) == 0
 #        assert dtw(t1,t2) == 0
 #        assert False
@@ -24,6 +24,6 @@ class TestMeasures:
         eps = ti.geogr.distances.meters_to_decimal_degrees(20, tp1.geom.y.mean())
         assert e_edr(tp1,tp2,eps) == 1/len(tp1) #only one point of the two trajectories is really different
         
-        pass
+        
         
         
