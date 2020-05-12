@@ -83,9 +83,9 @@ def similarity_detection(data, method, field='tripleg_id', trsh=None, eps=None, 
             
             if dist:
                 d = calc_dist(tp1,tp2)
-                sim[it[i],it[j]] = d
-                sim[it[j],it[i]] = d
-                sim[it[i],it[i]] = 0
+                sim[int(it[i]),int(it[j])] = d
+                sim[int(it[j]),int(it[i])] = d
+                sim[int(it[i]),int(it[i])] = 0
             else:
                 if e_dist_tuples(tp1.as_positionfixes.center, tp2.as_positionfixes.center)>trsh:
                     s=0
