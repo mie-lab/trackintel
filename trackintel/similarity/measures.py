@@ -1,5 +1,5 @@
 """
-Algorithm adapted from https://github.com/bguillouet/traj-dist
+Algorithms e_dtw and e_edr adapted from https://github.com/bguillouet/traj-dist
 
 """
 
@@ -70,73 +70,101 @@ def e_edr(t0, t1, eps):
     edr = float(C[n0][n1]) / max([n0, n1])
     return edr
 
-#
-#def start_end_sim(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.4, 0.4, 0.2], matrix=False **kwargs):
-#    try:
-#        assert data.as_positionfixes
-#        assert field in data.columns
-#    except:
-#        raise Exception('data must be positionfixes with ' + field + ' in columns')
-#    
-#    if matrix:
-#        it = data[field].unique()
-#        for tpl in it:
-#             start, start_time, end, end_time = ses_extract(tpl)
-#             
-#             
-#    if 'id_to_compare' in kwargs:
-#        id_to_compare = kwargs.get('id_to_compare')
-#        tpl = data[data[field]==id_to_compare]
-#        start, start_time, end, end_time = ses_extract(tpl)
-#        
-#    elif all('start' and 'end' and 'end_time' in kwargs): #check syntax:
-#        start = kwargs.get('start')
-#        start_time = kwargs.get('start_time')
-#        end =   kwargs.get('end')
-#        end_time = kwargs.get('end_time')
-#        
-#        
-#    start_buffer = start.buffer(dist_trsh)
-#    end_buffer = end.buffer(dist_trsh)
-#    start_neighbours = data[data.intersects(start_buffer)]
-#    end_neighbours = data[data.intersects(end_buffer)]
-#    traj_ids = []
-#    
-#    for i in list(start_neighbours[field].unique()).remove(-1):
-#        if i in end_neighbours[field]:
-#            neighbour_points_start_this_tpl = start_neighbours[start_neighbours[field]==i]
-#            neighbour_points_end_this_tpl = end_neighbours[end_neighbours[field]==i]
-#            start_dist = min(neighbour_points_start_this_tpl.geom.distance(start))
-#            end_dist = min(neighbour_points_end_this_tpl.geom.distance(end))
-#            
-#                
-#                time_diff = 
-#                d = w[0]*start_diff+w[1]*end_diff+w[2]*
-#                traj_ids.append(start_neighbours.iloc[i][field])
-#     traj_ids = list(set(traj_ids))       
-#    
-#    
-#    return traj_ids
-#
-#
-#
-#def ses_extract(tpl):
-#    start = tpl.iloc[0].geom
-#    start_time = tpl.iloc[0]['tracked_at']
-#    end = tpl.iloc[-1].geom
-#    end_time = tpl.iloc[-1]['tracked_at']
-#    return start, start_time, end, end_time
-#
+
+def start_end_sim(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.35, 0.35, 0.1,  0.2], **kwargs):
+    """
+    TBD
+    """
+    
+    try:
+        assert data.as_positionfixes
+        assert field in data.columns
+       
+    except:
+        raise Exception('data must be positionfixes with ' + field + ' in columns')
+             
+    try:
+         assert data['tracked_at'].dtype == np.dtype('<M8[ns]') 
+    except:
+        raise Exception('data[tracked_at] must be dtype Timestamp, you may need to call data[tracked_at].dt.tz_localize(None)') #check other data types
+        
+             
+    if 'id_to_compare' in kwargs:
+        id_to_compare = kwargs.get('id_to_compare')
+        tpl = data[data[field]==id_to_compare]
+        start, start_time, end, end_time = ses_extract(tpl)
+        
+    elif all('start' and 'end' and 'start_time' and 'end_time' in kwargs): #check syntax:
+        start = kwargs.get('start')
+        start_time = kwargs.get('start_time')
+        end =   kwargs.get('end')
+        end_time = kwargs.get('end_time')
+        
+    else:
+        raise Exception('id_to_compare or start, end, start_time and end_time must be specified')
+        
+        
+    start_buffer = start.buffer(dist_trsh)
+    end_buffer = end.buffer(dist_trsh)
+    start_neighbours = data[data.intersects(start_buffer)]
+    end_neighbours = data[data.intersects(end_buffer)]
+    traj_dist = np.ones((len(data[field].unique())))*np.inf
+    
+    it = start_neighbours[field].unique().tolist()
+    
+    try:
+       it.remove(-1) #catch case where all points belong to a tripleg
+    except KeyError:
+        pass
+    it.remove(id_to_compare) 
+            
+    
+    for i in it:
+        if i in end_neighbours[field]:
+            neighbour_points_start_this_tpl = start_neighbours[start_neighbours[field]==i]
+            neighbour_points_end_this_tpl = end_neighbours[end_neighbours[field]==i]
+            start_distances = neighbour_points_start_this_tpl.geom.distance(start)
+            end_distances = neighbour_points_end_this_tpl.geom.distance(end)
+            start_min_dist_id = start_distances.argmin()
+            end_min_dist_id = end_distances.argmin()
+            
+            start_diff = start_distances[start_min_dist_id]
+            end_diff = end_distances[end_min_dist_id]
+            
+            
+            start_time_diff = (start_time - neighbour_points_start_this_tpl[start_min_dist_id]['tracked_at']).seconds
+            end_time_diff = (end_time - neighbour_points_end_this_tpl[end_min_dist_id]['tracked_at']).seconds
+            
+            rel_start_diff = start_diff/dist_trsh
+            rel_end_diff = end_diff/dist_trsh
+            rel_start_time_diff = start_time_diff/time_trsh
+            rel_end_time_diff = end_time_diff/time_trsh
+            
+            d = w[0]*rel_start_diff+w[1]*rel_end_diff+w[2]*rel_start_time_diff+w[3]*rel_end_time_diff
+            traj_dist[i] = d    
+    
+    
+    return traj_dist
+
+
+
+def ses_extract(tpl):
+    start = tpl.iloc[0].geom
+    start_time = tpl.iloc[0]['tracked_at']
+    end = tpl.iloc[-1].geom
+    end_time = tpl.iloc[-1]['tracked_at']
+    return start, start_time, end, end_time
+
 #def ses_calc(start, start_t, end, end_t, dist_trsh, time_trsh, w):
-#    
-#
-#
-#
-#
-#
-#
-#
-#
+    
+
+
+
+
+
+
+
+
 
 
 

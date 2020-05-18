@@ -61,47 +61,53 @@ def similarity_detection(data, method, field='tripleg_id', trsh=None, eps=None, 
         except: 
             raise Exception('EDR requires epsilon parameter')
         calc_dist = getattr(measures, 'e_edr')
+        
+    elif method == 'ses':
+        calc_dist = getattr(measures, 'ses')
     else:
         raise NotImplementedError
         
       
         
+    if not method == 'ses':
         
+        it = data[field].unique()  
+        it = it[it != -1] #array with all tripleg_ids to iterate over
         
-    it = data[field].unique()  
-    it = it[it != -1] #array with all tripleg_ids to iterate over
-    
-    if dist:
-        sim = np.ones((int(max(it)+1),int(max(it)+1)))*np.inf
-    else:
-        sim = dok_matrix((int(max(it)+1),int(max(it)+1)))
-    bar = ProgressBar(total=len(it))
-    for i in range(len(it)):
-        tp1 = data.loc[data[field]==it[i]].sort_values('tracked_at')  #slice dataframe to extract a tripleg
-        for j in range(int(i)+1,len(it)):
-            tp2 = data.loc[data[field]==it[j]].sort_values('tracked_at')
-            
-            if dist:
-                d = calc_dist(tp1,tp2)
-                sim[int(it[i]),int(it[j])] = d
-                sim[int(it[j]),int(it[i])] = d
-                sim[int(it[i]),int(it[i])] = 0
-            else:
-                if e_dist_tuples(tp1.as_positionfixes.center, tp2.as_positionfixes.center)>trsh:
-                    s=0
-                    
-                else:
+        if dist:
+            sim = np.ones((int(max(it)+1),int(max(it)+1)))*np.inf
+        else:
+            sim = dok_matrix((int(max(it)+1),int(max(it)+1)))
+        bar = ProgressBar(total=len(it))
+        for i in range(len(it)):
+            tp1 = data.loc[data[field]==it[i]].sort_values('tracked_at')  #slice dataframe to extract a tripleg
+            for j in range(int(i)+1,len(it)):
+                tp2 = data.loc[data[field]==it[j]].sort_values('tracked_at')
+                
+                if dist:
                     d = calc_dist(tp1,tp2)
-                    if d==0:
-                        s=np.inf #avoid division by zero
-                    else:       #in all other cases the inverted trajectory distance is stored
-                        s=1/d
-                         
-                sim[it[i],it[j]] = s
-                sim[it[j],it[i]] = s
-                sim[it[i],it[i]] = np.inf
-        bar.print_progress_bar(i)
+                    sim[int(it[i]),int(it[j])] = d
+                    sim[int(it[j]),int(it[i])] = d
+                    sim[int(it[i]),int(it[i])] = 0
+                else:
+                    if e_dist_tuples(tp1.as_positionfixes.center, tp2.as_positionfixes.center)>trsh:
+                        s=0
+                        
+                    else:
+                        d = calc_dist(tp1,tp2)
+                        if d==0:
+                            s=np.inf #avoid division by zero
+                        else:       #in all other cases the inverted trajectory distance is stored
+                            s=1/d
+                             
+                    sim[it[i],it[j]] = s
+                    sim[it[j],it[i]] = s
+                    sim[it[i],it[i]] = np.inf
+            bar.print_progress_bar(i)
     
+    
+    else:
+        sim = None #ToDo
         
     return sim
 
