@@ -71,9 +71,32 @@ def e_edr(t0, t1, eps):
     return edr
 
 
-def start_end_sim(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.35, 0.35, 0.1,  0.2], **kwargs):
+def start_end_dist(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.35, 0.35, 0.1,  0.2], **kwargs):
     """
-    TBD
+    Method that calculates the start_end_distance of either two points or a trajectory to all trajectories of a data set.
+    
+    INPUT:
+        data            GeoDataFrame of positionfixes with a field (e.g. tripleg_id) to distinguish the trajectories
+        dist_trsh       Threshold for points to be considered as near to the start or end. Unit dependent of projection of data.
+        time_trsh       Threshold for time differences in seconds.
+        
+        field           The field of data to distinguish the trajectories
+        w               Weighting function [start distance, end distance, start time difference, end time difference]
+        
+    OPTIONS:
+        id_to_compare   The id (in data.field) of the trajectory to compare
+        
+        OR
+        
+        start           The origin of a trajectory to compare, that is not in data. [point]
+        end             The destination "           "               "               [point]
+        start_time      The timestamp of start                                      
+        end_time        The timestamp of end
+        
+    OUTPUT:
+        traj_dist       Array of length max(field.values)+1 with the trajectory distances weighted by w. 
+                        Be aware that also non existing ids have distance inf. If possible the ids of field should be continuous.
+        
     """
     
     try:
@@ -108,19 +131,20 @@ def start_end_sim(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.35, 0.35,
     end_buffer = end.buffer(dist_trsh)
     start_neighbours = data[data.intersects(start_buffer)]
     end_neighbours = data[data.intersects(end_buffer)]
-    traj_dist = np.ones((len(data[field].unique())))*np.inf
+    traj_dist = np.ones((int(max(data[field].unique())+1)))*np.inf
     
     it = start_neighbours[field].unique().tolist()
-    
-    try:
-       it.remove(-1) #catch case where all points belong to a tripleg
-    except KeyError:
-        pass
-    it.remove(id_to_compare) 
+    if not it:
+        try:
+           it.remove(-1) #catch case where all points belong to a tripleg
+        except KeyError:
+            pass
+        it.remove(id_to_compare)
+        
             
     
     for i in it:
-        if i in end_neighbours[field]:
+        if i in end_neighbours[field].values:
             neighbour_points_start_this_tpl = start_neighbours[start_neighbours[field]==i]
             neighbour_points_end_this_tpl = end_neighbours[end_neighbours[field]==i]
             start_distances = neighbour_points_start_this_tpl.geom.distance(start)
@@ -128,12 +152,12 @@ def start_end_sim(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.35, 0.35,
             start_min_dist_id = start_distances.argmin()
             end_min_dist_id = end_distances.argmin()
             
-            start_diff = start_distances[start_min_dist_id]
-            end_diff = end_distances[end_min_dist_id]
+            start_diff = start_distances.iloc[start_min_dist_id]
+            end_diff = end_distances.iloc[end_min_dist_id]
             
             
-            start_time_diff = (start_time - neighbour_points_start_this_tpl[start_min_dist_id]['tracked_at']).seconds
-            end_time_diff = (end_time - neighbour_points_end_this_tpl[end_min_dist_id]['tracked_at']).seconds
+            start_time_diff = (start_time - neighbour_points_start_this_tpl.iloc[start_min_dist_id]['tracked_at']).seconds
+            end_time_diff = (end_time - neighbour_points_end_this_tpl.iloc[end_min_dist_id]['tracked_at']).seconds
             
             rel_start_diff = start_diff/dist_trsh
             rel_end_diff = end_diff/dist_trsh
@@ -141,9 +165,9 @@ def start_end_sim(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.35, 0.35,
             rel_end_time_diff = end_time_diff/time_trsh
             
             d = w[0]*rel_start_diff+w[1]*rel_end_diff+w[2]*rel_start_time_diff+w[3]*rel_end_time_diff
-            traj_dist[i] = d    
+            traj_dist[int(i)] = d    
     
-    
+    traj_dist[int(id_to_compare)]=0
     return traj_dist
 
 

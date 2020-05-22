@@ -19,7 +19,7 @@ def min_dist_first_points(tp1,tp2):
 def e_dist_tuples(c1,c2):
     return np.sqrt((c1[0]-c2[0])**2 + (c1[1]-c2[1])**2)
 
-def similarity_detection(data, method, field='tripleg_id', trsh=None, eps=None, dist=False):   #ToDo: Default Treshold calculation
+def similarity_detection(data, method, field='tripleg_id', trsh=None, eps=None, dist=False, **kwargs):   #ToDo: Default Treshold calculation
     """Method calculates similarity (/distance) matrix of trajectories in a data set.
     
     INPUT:
@@ -63,29 +63,33 @@ def similarity_detection(data, method, field='tripleg_id', trsh=None, eps=None, 
         calc_dist = getattr(measures, 'e_edr')
         
     elif method == 'ses':
-        calc_dist = getattr(measures, 'ses')
+        try:
+            time_trsh = kwargs.get('time_trsh')
+        except:
+            raise Exception('for start end similarity, also a time treshold has to be defined. (time_trsh=someNumber)')
+        
+        calc_dist = getattr(measures, 'start_end_sim')
     else:
         raise NotImplementedError
         
       
-        
+    it = data[field].unique()  
+    it = it[it != -1]
+    bar = ProgressBar(total=len(it))#array with all tripleg_ids to iterate over
+    
+    if dist:
+        sim = np.ones((int(max(it)+1),int(max(it)+1)))*np.inf
+    else:
+        sim = dok_matrix((int(max(it)+1),int(max(it)+1)))
     if not method == 'ses':
-        
-        it = data[field].unique()  
-        it = it[it != -1] #array with all tripleg_ids to iterate over
-        
-        if dist:
-            sim = np.ones((int(max(it)+1),int(max(it)+1)))*np.inf
-        else:
-            sim = dok_matrix((int(max(it)+1),int(max(it)+1)))
-        bar = ProgressBar(total=len(it))
         for i in range(len(it)):
             tp1 = data.loc[data[field]==it[i]].sort_values('tracked_at')  #slice dataframe to extract a tripleg
             for j in range(int(i)+1,len(it)):
                 tp2 = data.loc[data[field]==it[j]].sort_values('tracked_at')
                 
+                d = calc_dist(tp1,tp2)
+                
                 if dist:
-                    d = calc_dist(tp1,tp2)
                     sim[int(it[i]),int(it[j])] = d
                     sim[int(it[j]),int(it[i])] = d
                     sim[int(it[i]),int(it[i])] = 0
@@ -93,12 +97,10 @@ def similarity_detection(data, method, field='tripleg_id', trsh=None, eps=None, 
                     if e_dist_tuples(tp1.as_positionfixes.center, tp2.as_positionfixes.center)>trsh:
                         s=0
                         
-                    else:
-                        d = calc_dist(tp1,tp2)
-                        if d==0:
-                            s=np.inf #avoid division by zero
-                        else:       #in all other cases the inverted trajectory distance is stored
-                            s=1/d
+                    elif d==0:
+                        s=np.inf #avoid division by zero
+                    else:       #in all other cases the inverted trajectory distance is stored
+                        s=1/d
                              
                     sim[it[i],it[j]] = s
                     sim[it[j],it[i]] = s
@@ -107,7 +109,12 @@ def similarity_detection(data, method, field='tripleg_id', trsh=None, eps=None, 
     
     
     else:
-        sim = None #ToDo
+        if dist:
+            for i in range(len(it)):
+                sim [it[i],:] = calc_dist(data, trsh, time_trsh, id_to_compare=it[i])
+        else:
+            for i in range(len(it)):
+                sim[it[i],:] = 1/calc_dist(data, trsh, time_trsh, id_to_compare=it[i])
         
     return sim
 
