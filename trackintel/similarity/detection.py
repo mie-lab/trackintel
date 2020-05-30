@@ -68,7 +68,7 @@ def similarity_detection(data, method, field='tripleg_id', trsh=None, eps=None, 
         except:
             raise Exception('for start end similarity, also a time treshold has to be defined. (time_trsh=someNumber)')
         
-        calc_dist = getattr(measures, 'start_end_sim')
+        calc_dist = getattr(measures, 'start_end_dist')
     else:
         raise NotImplementedError
         
@@ -87,7 +87,7 @@ def similarity_detection(data, method, field='tripleg_id', trsh=None, eps=None, 
             for j in range(int(i)+1,len(it)):
                 tp2 = data.loc[data[field]==it[j]].sort_values('tracked_at')
                 
-                d = calc_dist(tp1,tp2)
+                d = calc_dist(tp1,tp2,eps=eps)
                 
                 if dist:
                     sim[int(it[i]),int(it[j])] = d

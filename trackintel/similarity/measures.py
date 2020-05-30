@@ -8,7 +8,7 @@ import numpy as np
 import geopandas as gpd
 
 
-def e_dtw(t0, t1):
+def e_dtw(t0, t1,**kwargs):
     """
     Usage
     -----
@@ -117,7 +117,7 @@ def start_end_dist(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.35, 0.35
         tpl = data[data[field]==id_to_compare]
         start, start_time, end, end_time = ses_extract(tpl)
         
-    elif all('start' and 'end' and 'start_time' and 'end_time' in kwargs): #check syntax:
+    elif ('start' in kwargs and 'end' in kwargs and 'start_time' in kwargs and 'end_time' in kwargs): 
         start = kwargs.get('start')
         start_time = kwargs.get('start_time')
         end =   kwargs.get('end')
@@ -167,7 +167,10 @@ def start_end_dist(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.35, 0.35
             d = w[0]*rel_start_diff+w[1]*rel_end_diff+w[2]*rel_start_time_diff+w[3]*rel_end_time_diff
             traj_dist[int(i)] = d    
     
-    traj_dist[int(id_to_compare)]=0
+    try:
+        traj_dist[int(id_to_compare)]=0
+    except UnboundLocalError:
+        pass
     return traj_dist
 
 
