@@ -12,13 +12,19 @@ def e_dtw(t0, t1,**kwargs):
     """
     Usage
     -----
-    The Dynamic-Time Warping distance between trajectory t0 and t1. The timestamps
-    in the GeoDataFrames are not (yet) considered.
+    The Dynamic-Time Warping distance between trajectory t0 and t1.
+    Distance Function: Euclidian Distance
+    
+    Properties:
+        - DTW is affected by outliers in the data
+        - DTW can deal with different sampling rates, but therefore not distinguish different movement speeds
+        - DTW distance is normalized by the (bigger) number of trajectory points
+    
 
     Parameters
     ----------
-    param t0 : GeoDataFrame with n0 Points
-    param t1 : GeoDataFrame with n1 Points
+    t0 : GeoDataFrame with n0 Points
+    t1 : GeoDataFrame with n1 Points
 
     Returns
     -------
@@ -43,13 +49,15 @@ def e_edr(t0, t1, eps):
     """
     Usage
     -----
-    The Edit Distance on Real sequence between trajectory t0 and t1.
+    The Edit Distance on Real sequence between trajectory t0 and t1. 
+    Distance Function: Euclidian Distance
 
     Parameters
     ----------
-    param t0 : len(t0)x2 numpy_array
-    param t1 : len(t1)x2 numpy_array
+    t0 : GeoDataFrame with n0 Points
+    t1 : GeoDataFrame with n1 Points
     eps : float
+        threshold for two points to be considered as equal (Epsilon parameter)
 
     Returns
     -------
@@ -58,7 +66,7 @@ def e_edr(t0, t1, eps):
     """
     n0 = t0.shape[0]
     n1 = t1.shape[0]
-    # An (m+1) times (n+1) matrix
+    
     C = [[0] * (n1 + 1) for _ in range(n0 + 1)]
     for i in range(1, n0 + 1):
         for j in range(1, n1 + 1):
@@ -75,7 +83,8 @@ def start_end_dist(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.35, 0.35
     """
     Method that calculates the start_end_distance of either two points or a trajectory to all trajectories of a data set.
     
-    INPUT:
+    Parameters
+    ----------
         data            GeoDataFrame of positionfixes with a field (e.g. tripleg_id) to distinguish the trajectories
         dist_trsh       Threshold for points to be considered as near to the start or end. Unit dependent of projection of data.
         time_trsh       Threshold for time differences in seconds.
@@ -83,7 +92,8 @@ def start_end_dist(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.35, 0.35
         field           The field of data to distinguish the trajectories
         w               Weighting function [start distance, end distance, start time difference, end time difference]
         
-    OPTIONS:
+    OPTIONS
+    -------
         id_to_compare   The id (in data.field) of the trajectory to compare
         
         OR
@@ -93,7 +103,8 @@ def start_end_dist(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.35, 0.35
         start_time      The timestamp of start                                      
         end_time        The timestamp of end
         
-    OUTPUT:
+    Returns
+    -------
         traj_dist       Array of length max(field.values)+1 with the trajectory distances weighted by w. 
                         Be aware that also non existing ids have distance inf. If possible the ids of field should be continuous.
         
@@ -112,12 +123,12 @@ def start_end_dist(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.35, 0.35
         raise Exception('data[tracked_at] must be dtype Timestamp, you may need to call data[tracked_at].dt.tz_localize(None)') #check other data types
         
              
-    if 'id_to_compare' in kwargs:
+    if 'id_to_compare' in kwargs: #case the tripleg to compare is in the data set
         id_to_compare = kwargs.get('id_to_compare')
         tpl = data[data[field]==id_to_compare]
         start, start_time, end, end_time = ses_extract(tpl)
         
-    elif ('start' in kwargs and 'end' in kwargs and 'start_time' in kwargs and 'end_time' in kwargs): 
+    elif ('start' in kwargs and 'end' in kwargs and 'start_time' in kwargs and 'end_time' in kwargs):  #case the start, end, etc. are set manually
         start = kwargs.get('start')
         start_time = kwargs.get('start_time')
         end =   kwargs.get('end')
@@ -143,9 +154,9 @@ def start_end_dist(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.35, 0.35
         
             
     
-    for i in it:
-        if i in end_neighbours[field].values:
-            neighbour_points_start_this_tpl = start_neighbours[start_neighbours[field]==i]
+    for i in it: #iterate over all triplegs within the start_buffer
+        if i in end_neighbours[field].values: #only continue with triplegs that have also a point in the end_buffer
+            neighbour_points_start_this_tpl = start_neighbours[start_neighbours[field]==i] #extract the points in the start_buffer
             neighbour_points_end_this_tpl = end_neighbours[end_neighbours[field]==i]
             start_distances = neighbour_points_start_this_tpl.geom.distance(start)
             end_distances = neighbour_points_end_this_tpl.geom.distance(end)
@@ -168,7 +179,7 @@ def start_end_dist(data, dist_trsh, time_trsh, field='tripleg_id', w=[0.35, 0.35
             traj_dist[int(i)] = d    
     
     try:
-        traj_dist[int(id_to_compare)]=0
+        traj_dist[int(id_to_compare)]=0 #depending on the method chosen by the user
     except UnboundLocalError:
         pass
     return traj_dist

@@ -13,10 +13,9 @@ class TestMeasures:
        
         
         
-        assert e_dtw(t1,t2) is float
+        assert type(e_dtw(t1,t2)) is float
         assert e_dtw(t1,t1) == e_dtw(t2,t2) == 0
-#        assert dtw(t1,t2) == 0
-#        assert False
+
         
     def test_edr(self):
         tp1 = ti.io.file.read_positionfixes_csv(os.path.join('tests','data','test_edr_no.csv'))

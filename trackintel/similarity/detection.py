@@ -4,28 +4,17 @@ import numpy as np
 from scipy.sparse import dok_matrix
 from console_progressbar import ProgressBar
 
-#used in a previous phase
-def min_dist_first_points(tp1,tp2):
-    p10 = tp1.iloc[0]['geom']
-    p11 = tp1.iloc[1]['geom']
-    p20 = tp2.iloc[0]['geom']
-    p21 = tp2.iloc[1]['geom']
-    a = p10.distance(p20)
-    b = p10.distance(p21)
-    c = p11.distance(p20)
-    d = p11.distance(p21)
-    return min(a,b,c,d)
 
 def e_dist_tuples(c1,c2):
     return np.sqrt((c1[0]-c2[0])**2 + (c1[1]-c2[1])**2)
 
-def similarity_detection(data, method, field='tripleg_id', trsh=None, eps=None, dist=False, **kwargs):   #ToDo: Default Treshold calculation
+def similarity_matrix(data, method, field='tripleg_id', trsh=None, eps=None, dist=False, **kwargs):   
     """Method calculates similarity (/distance) matrix of trajectories in a data set.
     
     INPUT:
         data:           a positionfixes GDF with tripleg_ids, recommended: Use tripleg_ids in range(0,n) to avoid oversize of similarity/distanc matrices.
-        method:         type of similarity measure, available: DynamicTimeWarping (dtw), Edit Distance on real Sequence (edr). See doc for details.
-        field:          Which field of the GDF should be used to determine the trajectories
+        method:         type of similarity measure, available: DynamicTimeWarping (dtw), Edit Distance on real Sequence (edr). Start End Distance (sed) See doc for details.
+        field:          Which field of the GDF should be used to distinguish the trajectories
         trsh:           value to pre-check the distance. If the distance of the two trajectory centers (mean of all points) is greater than trsh, the calculation
                         will not be performed and the similarity will be set to zero.
         eps:            Epsilon parameter for EDR. Points closer to eachother than eps are considered as equal.
@@ -41,6 +30,7 @@ def similarity_detection(data, method, field='tripleg_id', trsh=None, eps=None, 
                         Be aware that also non existing tripleg_ids have distance inf in the distance matrix!
                         
         Pay attention on the projection of your data. Parameters as trsh, eps may have to be converted!
+        To convert a value in meters to decimal degrees, the method geogr.distances.meters_to_decimal_degrees can be used.
         """
     try:
         assert data.as_positionfixes
@@ -87,20 +77,23 @@ def similarity_detection(data, method, field='tripleg_id', trsh=None, eps=None, 
             for j in range(int(i)+1,len(it)):
                 tp2 = data.loc[data[field]==it[j]].sort_values('tracked_at')
                 
-                d = calc_dist(tp1,tp2,eps=eps)
+                
                 
                 if dist:
+                    d = calc_dist(tp1,tp2,eps=eps)
                     sim[int(it[i]),int(it[j])] = d
                     sim[int(it[j]),int(it[i])] = d
                     sim[int(it[i]),int(it[i])] = 0
                 else:
-                    if e_dist_tuples(tp1.as_positionfixes.center, tp2.as_positionfixes.center)>trsh:
+                    if e_dist_tuples(tp1.as_positionfixes.center, tp2.as_positionfixes.center)>trsh:   #pre check the trajectories, if the distance of the centers exceeds the threshold
                         s=0
+                    else:
+                        d = calc_dist(tp1,tp2,eps=eps)
                         
-                    elif d==0:
-                        s=np.inf #avoid division by zero
-                    else:       #in all other cases the inverted trajectory distance is stored
-                        s=1/d
+                        if d==0:
+                            s=np.inf #avoid division by zero
+                        else:       #in all other cases the inverted trajectory distance is stored
+                            s=1/d
                              
                     sim[it[i],it[j]] = s
                     sim[it[j],it[i]] = s
@@ -115,7 +108,8 @@ def similarity_detection(data, method, field='tripleg_id', trsh=None, eps=None, 
         else:
             for i in range(len(it)):
                 sim[it[i],:] = 1/calc_dist(data, trsh, time_trsh, id_to_compare=it[i])
-        
+                
+    bar.print_progress_bar(len(it))    
     return sim
 
 

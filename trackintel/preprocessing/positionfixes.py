@@ -261,11 +261,11 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                 # include every positionfix that brings you closer to the center 
                 # of the staypoint
 
-                posfix_before, started_at = propagate_tripleg(pfs, stp1, position_first_posfix_tl, direction=-1)
+                posfix_before, posfix_pos_before, started_at = propagate_tripleg(pfs, stp1, position_first_posfix_tl, direction=-1)
                 posfix_before = posfix_before[::-1]
                 # add geometry of staypoint and correct the direction
 
-                posfix_after, finished_at = propagate_tripleg(pfs, stp2, position_last_posfix_tl, direction=1)
+                posfix_after, posfix_pos_after, finished_at = propagate_tripleg(pfs, stp2, position_last_posfix_tl, direction=1)
 
                 coords = list(pfs_tripleg['geom'].apply(lambda r: (r.x, r.y)))
                 coords = posfix_before + coords + posfix_after
@@ -278,7 +278,11 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                         'finished_at': finished_at,  # pfs_tripleg['tracked_at'].iloc[-1],
                         'geom': LineString(coords)
                     })
+                    posfix_ids_before = pfs.iloc[posfix_pos_before]['id']
+                    posfix_ids_after = pfs.iloc[posfix_pos_after]['id']
                     positionfixes.loc[pfs_tripleg['id'].to_list(),'tripleg_id']=curr_tripleg_id   #Writes the tripleg_id into the positionfixes
+                    positionfixes.loc[posfix_ids_before,'tripleg_id']=curr_tripleg_id
+                    positionfixes.loc[posfix_ids_after,'tripleg_id']=curr_tripleg_id
                     curr_tripleg_id += 1
                     
         
@@ -384,10 +388,11 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
 def propagate_tripleg(pfs, stp, position_edge_posfix_tl, direction=1):
     # propagate backwards at start
     posfix_to_add = []
+    posfix_ids_to_add = []
     i = direction
 
     if (position_edge_posfix_tl + i) >= len(pfs) or (position_edge_posfix_tl + i)  < 0:
-        return posfix_to_add, pfs.iloc[position_edge_posfix_tl].tracked_at
+        return posfix_to_add, posfix_ids_to_add, pfs.iloc[position_edge_posfix_tl].tracked_at
 
     geom_stp = stp['geom']
 
@@ -410,7 +415,7 @@ def propagate_tripleg(pfs, stp, position_edge_posfix_tl, direction=1):
 
         # insert new posfix
         posfix_to_add.append((geom_candidate_posfix.x, geom_candidate_posfix.y))
-
+        posfix_ids_to_add.append(position_edge_posfix_tl+i)
         # update variables
         geom_edge_posfix_tl = pfs.iloc[position_edge_posfix_tl + i,:].geom
         i = i + direction
@@ -424,4 +429,4 @@ def propagate_tripleg(pfs, stp, position_edge_posfix_tl, direction=1):
 
     tracked_at = pfs.iloc[position_edge_posfix_tl + i].tracked_at
     # posfix_to_add.append((geom_stp.x, geom_stp.y))
-    return posfix_to_add, tracked_at
+    return posfix_to_add, posfix_ids_to_add, tracked_at
