@@ -77,14 +77,15 @@ def cluster_staypoints(staypoints, method='dbscan',
                 place_id_counter = place_id_counter + max_label + 1
             
             # add staypoint - place matching to original staypoints
-            staypoints.loc[user_staypoints.index,'place_id'] = labels
+            staypoints.loc[user_staypoints.index, 'place_id'] = labels
 
             
     
         # create places as grouped staypoints
-        grouped_df = staypoints.groupby(['user_id','place_id'])
+        grouped_df = staypoints.groupby(['user_id', 'place_id'])
         for combined_id, group in grouped_df:
             user_id, place_id = combined_id
+            group.set_geometry(staypoints.geometry.name, inplace=True)
     
             if int(place_id) != -1:
                 ret_place = {}
