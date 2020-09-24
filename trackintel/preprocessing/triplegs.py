@@ -18,3 +18,18 @@ def smoothen_triplegs(triplegs, method='douglas-peucker', epsilon = 1.0):
     input_copy.geom = [LineString(ast.literal_eval(str(simplify_coords(input_copy.geom[i].coords, epsilon))))
                        for i in range(len(input_copy.geom))]
     return input_copy
+
+def generate_trips():
+    """
+
+    Returns
+    -------
+
+    """
+
+    # Todo: What about first and last trip?
+
+    # sort triplegs and staypoints
+    #
+
+

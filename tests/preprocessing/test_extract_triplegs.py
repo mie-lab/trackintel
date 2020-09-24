@@ -21,12 +21,12 @@ from trackintel.io.dataset_reader import read_geolife
 class TestExtractTriplegs:
     def test_extract_triplegs_global(self):
         # generate triplegs from raw-data
-        pfs = read_geolife(os.path.join('tests','data','geolife_testdata'))
+        pfs = read_geolife(os.path.join('tests', 'data', 'geolife'))
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
         tpls = pfs.as_positionfixes.extract_triplegs(spts)
 
         # load pregenerated test-triplegs
-        tpls_test = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife_triplegs_test.csv'))
+        tpls_test = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs_short.csv'))
 
         assert len(tpls) > 0
 
