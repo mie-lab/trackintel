@@ -6,7 +6,6 @@ before_install:
   - sudo apt-get install -y libspatialindex-c4v5 libspatialindex-dev
 
 install:
-  - pip install requirements.txt
   - pip install .
   - pip install pytest
 
