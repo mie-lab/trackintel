@@ -1,15 +1,21 @@
-dist: xenial
-language: python
-python:
-  - 3.6
+name: trackintel
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+- numpy
+- matplotlib
+- pandas
+- geopandas
+- scikit-learn
+- networkx 
+- pint
+- pip 
+- geoalchemy2 
+- osmnx 
+- psycopg2
+- imageio
+- pip:
+  - simplification
 
-before_install:
-  - sudo apt-get update
-  - sudo apt-get install -y libspatialindex-c4v5 libspatialindex-dev
-
-install:
-  - pip install .
-  - pip install pytest
-
-script:
-  - python -m pytest
+  
