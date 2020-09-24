@@ -1,21 +1,15 @@
-name: test
-channels:
-  - conda-forge
-  - defaults
-dependencies:
-- numpy
-- matplotlib
-- pandas
-- geopandas
-- scikit-learn
-- networkx 
-- pint
-- pip 
-- geoalchemy2 
-- osmnx 
-- psycopg2
-- imageio
-- pytest
-- pip:
-  - simplification
+dist: xenial
+dist: xenial
+language: python
+python:
+  - 3.6
 
+# command to install dependencies
+
+install:
+  - pip install -r requirements.txt
+  - pip install .
+  - pip install pytest
+# command to run tests
+script:
+  - python -m pytest
