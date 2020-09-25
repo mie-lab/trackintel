@@ -13,4 +13,4 @@ script:
   - python -m pytest
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - bash <(curl -s https://codecov.io/bash) -t edb4fbc4-a1d9-40b9-ab10-9c9b48e37df5
