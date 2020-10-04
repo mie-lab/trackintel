@@ -9,3 +9,8 @@ René Buffat: [@rbuffat (Github)](https://github.com/rbuffat).
 # Previous Authors, Advisors, Visionaries
 
 David Jonietz: [@DavidJonietz (Github)](https://github.com/DavidJonietz).
+
+# Additional Work
+
+Christof Leutenegger (bachelor thesis)
+Sven Ruf (bachelor thesis)
