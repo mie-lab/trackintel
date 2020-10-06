@@ -128,7 +128,7 @@ def extract_staypoints(positionfixes, method='sliding',
                                 # store matching
                                 posfix_staypoint_matching[staypoint_id_counter] = [
                                     pfs[j]['id']]  # rather [k for k in range(i, j)]?
-
+                                
                                 staypoint_id_counter += 1
                                 ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
                         i = j
