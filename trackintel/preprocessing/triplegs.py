@@ -1,7 +1,9 @@
-from shapely.geometry import LineString
-from simplification.cutil import simplify_coords#, simplify_coordsvw
-import copy
 import ast
+import copy
+
+from shapely.geometry import LineString
+from simplification.cutil import simplify_coords  # , simplify_coordsvw
+
 
 def smoothen_triplegs(triplegs, method='douglas-peucker', epsilon = 1.0):
     """reduces number of points while retaining structure of tripleg
@@ -18,41 +20,4 @@ def smoothen_triplegs(triplegs, method='douglas-peucker', epsilon = 1.0):
     input_copy.geom = [LineString(ast.literal_eval(str(simplify_coords(input_copy.geom[i].coords, epsilon))))
                        for i in range(len(input_copy.geom))]
     return input_copy
-
-def generate_trips(trpls, stps):
-    """
-
-    Returns
-    -------
-
-    """
-
-    # Definition of trips: All movement and waiting between two activities
-    # assert staypoints have activities
-    # trip id counter
-
-    # fields for trips = [id, user_id, started_at, finished_at, origin, destination]
-
-    # create table with relevant information from triplegs and staypoints.
-    # sort table by start time
-
-    # loop user_id
-
-        # get next staypoint ID
-
-        # get all triplegs between old and new ID
-
-        # check temporal gaps
-
-
-
-
-
-    # Todo: What about first and last trip?
-
-
-    # sort triplegs and staypoints
-    #
-    # sort by index again
-    # return
 

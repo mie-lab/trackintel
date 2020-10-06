@@ -27,11 +27,14 @@ class TestExtractTriplegs:
         for i in range(len(tpls)):
             distance = tpls.geom.iloc[i].distance(tpls_test.geom.iloc[i])
             distance_sum = distance_sum + distance
-            assert_almost_equal(distance_sum, 0.0)
+        assert_almost_equal(distance_sum, 0.0)
 
     def test_check_overlap(self):
         """
-        Triplegs and staypoints should not overlap when generated using the default extract triplegs method
+        Triplegs and staypoints should not overlap when generated using the default extract triplegs method.
+        This test extracts triplegs and staypoints from positionfixes and stores them in a single dataframe.
+        The dataframe is sorted by date, then we check if the staypoint/tripleg from the row before was finished when
+        the next one started.
         """
         pfs = read_geolife(os.path.join('tests', 'data', 'geolife_long'))
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)

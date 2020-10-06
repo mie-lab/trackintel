@@ -127,7 +127,8 @@ def extract_staypoints(positionfixes, method='sliding',
 
                                 # store matching
                                 posfix_staypoint_matching[staypoint_id_counter] = [
-                                    j]  # rather [k for k in range(i, j)]?
+                                    pfs[j]['id']]  # rather [k for k in range(i, j)]?
+
                                 staypoint_id_counter += 1
                                 ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
                         i = j
@@ -356,7 +357,8 @@ def extract_triplegs(positionfixes, staypoints=None, do_propagate_tripleg=False,
                     curr_tripleg['coords'].append((pf['geom'].x, pf['geom'].y))
 
                 prev_pf = pf
-        ret_triplegs = ret_triplegs.append(generated_triplegs)
+        if len(generated_triplegs) > 0:
+            ret_triplegs = ret_triplegs.append(generated_triplegs)
 
     ret_triplegs = gpd.GeoDataFrame(ret_triplegs, geometry='geom', crs=positionfixes.crs)
     ret_triplegs['id'] = ret_triplegs['id'].astype('int')
