@@ -1,8 +1,7 @@
+import geopandas as gpd
 import numpy as np
 import pandas as pd
-import geopandas as gpd
 from shapely.geometry import LineString
-
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
 
@@ -129,6 +128,7 @@ def extract_staypoints(positionfixes, method='sliding',
                                 # store matching
                                 posfix_staypoint_matching[staypoint_id_counter] = [
                                     pfs[j]['id']]  # rather [k for k in range(i, j)]?
+
                                 staypoint_id_counter += 1
                                 ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
                         i = j
@@ -188,7 +188,7 @@ def extract_staypoints(positionfixes, method='sliding',
     return ret_staypoints
 
 
-def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
+def extract_triplegs(positionfixes, staypoints=None, do_propagate_tripleg=False, *args, **kwargs):
     """Extract triplegs from positionfixes. A tripleg is (for now) defined as anything
     that happens between two consecutive staypoints.
 
@@ -244,6 +244,7 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                 # get the last posfix of the first staypoint
                 index_first_posfix_tl = pfs[pfs.staypoint_id == stp1['id']].index[-1]
                 position_first_posfix_tl = pfs.index.get_loc(index_first_posfix_tl)
+
                 # get first posfix of the second staypoint
                 index_last_posfix_tl = pfs[pfs.staypoint_id == stp2['id']].index[0]
                 position_last_posfix_tl = pfs.index.get_loc(index_last_posfix_tl)
@@ -253,14 +254,10 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                 # include every positionfix that brings you closer to the center 
                 # of the staypoint
 
-                posfix_before, started_at = propagate_tripleg(pfs, stp1, position_first_posfix_tl, direction=-1)
-                posfix_before = posfix_before[::-1]
-                # add geometry of staypoint and correct the direction
-
-                posfix_after, finished_at = propagate_tripleg(pfs, stp2, position_last_posfix_tl, direction=1)
+                started_at = pfs_tripleg['tracked_at'].iloc[0]
+                finished_at = pfs_tripleg['tracked_at'].iloc[-1]
 
                 coords = list(pfs_tripleg['geom'].apply(lambda r: (r.x, r.y)))
-                coords = posfix_before + coords + posfix_after
 
                 if len(coords) > 1:
                     generated_triplegs.append({
@@ -367,49 +364,3 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
     ret_triplegs['id'] = ret_triplegs['id'].astype('int')
 
     return ret_triplegs
-
-
-def propagate_tripleg(pfs, stp, position_edge_posfix_tl, direction=1):
-    # propagate backwards at start
-    posfix_to_add = []
-    i = direction
-
-    if (position_edge_posfix_tl + i) >= len(pfs) or (position_edge_posfix_tl + i)  < 0:
-        return posfix_to_add, pfs.iloc[position_edge_posfix_tl].tracked_at
-
-    geom_stp = stp['geom']
-
-    geom_edge_posfix_tl = pfs.iloc[position_edge_posfix_tl].geom
-    geom_candidate_posfix = pfs.iloc[position_edge_posfix_tl + i].geom
-
-    dist_edge_psf_stp = geom_stp.distance(geom_edge_posfix_tl)
-
-    # new posfix must be closer to the center of the staypoint then the current one
-    cond1 = (geom_stp.distance(geom_candidate_posfix) < dist_edge_psf_stp)
-
-    # new posfix must be closer then the center of the staypoint to qualify
-    cond2 = (geom_edge_posfix_tl.distance(geom_candidate_posfix) < dist_edge_psf_stp)
-
-    closer = cond1 and cond2
-
-    while (closer):
-        if (position_edge_posfix_tl + i + direction) > len(pfs) or (position_edge_posfix_tl + i + direction)  < 0:
-            break
-
-        # insert new posfix
-        posfix_to_add.append((geom_candidate_posfix.x, geom_candidate_posfix.y))
-
-        # update variables
-        geom_edge_posfix_tl = pfs.iloc[position_edge_posfix_tl + i,:].geom
-        i = i + direction
-        geom_candidate_posfix = pfs.iloc[position_edge_posfix_tl + i,:].geom
-
-        # update closer
-        dist_edge_psf_stp = geom_stp.distance(geom_edge_posfix_tl)
-        cond1 = (geom_stp.distance(geom_candidate_posfix) < dist_edge_psf_stp)
-        cond2 = (geom_edge_posfix_tl.distance(geom_candidate_posfix) < dist_edge_psf_stp)
-        closer = cond1 and cond2
-
-    tracked_at = pfs.iloc[position_edge_posfix_tl + i].tracked_at
-    # posfix_to_add.append((geom_stp.x, geom_stp.y))
-    return posfix_to_add, tracked_at
