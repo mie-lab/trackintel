@@ -1,7 +1,5 @@
 dist: xenial
 language: python
-python:
-  - 3.6
 
 before_install:
   - sudo apt-get update
@@ -10,6 +8,10 @@ before_install:
 install:
   - pip install .
   - pip install pytest
-
+  - pip install codecov
+  - pip install pytest-cov
 script:
-  - python -m pytest
+  - pytest --cov=./
+
+after_success:
+  - codecov
