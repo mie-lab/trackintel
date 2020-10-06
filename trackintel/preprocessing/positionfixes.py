@@ -188,7 +188,7 @@ def extract_staypoints(positionfixes, method='sliding',
     return ret_staypoints
 
 
-def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
+def extract_triplegs(positionfixes, staypoints=None, do_propagate_tripleg=False, *args, **kwargs):
     """Extract triplegs from positionfixes. A tripleg is (for now) defined as anything
     that happens between two consecutive staypoints.
 
@@ -243,21 +243,27 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
 
                 # get the last posfix of the first staypoint
                 index_first_posfix_tl = pfs[pfs.staypoint_id == stp1['id']].index[-1]
-                position_first_posfix_tl = pfs.index.get_loc(index_first_posfix_tl)
+                position_first_posfix_tl = pfs.index.get_loc(index_first_posfix_tl)  + 1 # +1 was added untestet...
                 # get first posfix of the second staypoint
                 index_last_posfix_tl = pfs[pfs.staypoint_id == stp2['id']].index[0]
-                position_last_posfix_tl = pfs.index.get_loc(index_last_posfix_tl)
+                position_last_posfix_tl = pfs.index.get_loc(index_last_posfix_tl) - 1 # -1 was added untestet
 
                 pfs_tripleg = pfs.iloc[position_first_posfix_tl:position_last_posfix_tl + 1]
 
                 # include every positionfix that brings you closer to the center 
                 # of the staypoint
 
-                posfix_before, started_at = propagate_tripleg(pfs, stp1, position_first_posfix_tl, direction=-1)
-                posfix_before = posfix_before[::-1]
-                # add geometry of staypoint and correct the direction
+                posfix_after = []
+                posfix_before = []
+                started_at,  = pfs_tripleg['tracked_at'].iloc[0],
+                finished_at,  = pfs_tripleg['tracked_at'].iloc[-1],
 
-                posfix_after, finished_at = propagate_tripleg(pfs, stp2, position_last_posfix_tl, direction=1)
+                if do_propagate_tripleg:
+                    posfix_before, started_at = propagate_tripleg(pfs, stp1, position_first_posfix_tl, direction=-1)
+                    posfix_before = posfix_before[::-1]
+                    # add geometry of staypoint and correct the direction
+
+                    posfix_after, finished_at = propagate_tripleg(pfs, stp2, position_last_posfix_tl, direction=1)
 
                 coords = list(pfs_tripleg['geom'].apply(lambda r: (r.x, r.y)))
                 coords = posfix_before + coords + posfix_after
