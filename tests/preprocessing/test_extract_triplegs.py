@@ -1,20 +1,10 @@
-import pytest
-import sys
-
-import trackintel as ti
-from trackintel.preprocessing import positionfixes
-from trackintel.preprocessing import staypoints
-from numpy.testing import assert_almost_equal
+import datetime
 import os
-import sys
 
 import numpy as np
-import pandas as pd
-import geopandas as gpd
-import matplotlib.pyplot as plt
+from numpy.testing import assert_almost_equal
 
 import trackintel as ti
-from trackintel.geogr.distances import meters_to_decimal_degrees
 from trackintel.io.dataset_reader import read_geolife
 
 
@@ -33,20 +23,31 @@ class TestExtractTriplegs:
         assert len(tpls) == len(tpls)
 
         distance_sum = 0
-        distance = tpls.geom.iloc[i].distance(tpls_test.geom.iloc[i])
-        distance_sum = distance_sum + distance
 
         for i in range(len(tpls)):
-            assert True
-                # assert_almost_equal(distance_sum, 0.0)
-
-
+            distance = tpls.geom.iloc[i].distance(tpls_test.geom.iloc[i])
+            distance_sum = distance_sum + distance
+            assert_almost_equal(distance_sum, 0.0)
 
     def test_check_overlap(self):
-        pfs = read_geolife(os.path.join('tests', 'data', 'geolife'))
+        """
+        Triplegs and staypoints should not overlap when generated using the default extract triplegs method
+        """
+        pfs = read_geolife(os.path.join('tests', 'data', 'geolife_long'))
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
         tpls = pfs.as_positionfixes.extract_triplegs(spts)
 
-        assert True
+        spts_tpls = spts[['started_at', 'finished_at', 'user_id']].append(
+            tpls[['started_at', 'finished_at', 'user_id']])
 
+        spts_tpls.sort_values(by=['user_id', 'started_at'], inplace=True)
 
+        for user_id_this in spts['user_id'].unique():
+            spts_tpls_this = spts_tpls[spts_tpls['user_id'] == user_id_this]
+            diff = spts_tpls_this['started_at'] - spts_tpls_this['finished_at'].shift(1)
+
+            # transform to numpy array and drop first values (always nan due to shift operation)
+            diff = diff.values[1:]
+
+            # all values have to greater or equal to zero. Otherwise there is an overlap
+            assert all(diff >= np.timedelta64(datetime.timedelta()))
