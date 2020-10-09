@@ -97,9 +97,11 @@ def generate_trips(tpls_input, stps_input, gap_threshold=15, id_offset=0):
 
     spts_tpls.sort_values(by='started_at',
                           inplace=True)  # TODO: make sure that this stays sorted after filtering for users
+    spts_tpls = spts_tpls.sort_values(by=['user_id', 'started_at'])
     spts_tpls['started_at_next'] = spts_tpls['started_at'].shift(-1)
     spts_tpls['activity_next'] = spts_tpls['activity'].shift(-1)
 
+    spts_tpls.to_csv('spts_tpls.csv')
     trips_of_user_list = []
     for user_id_this in spts_tpls['user_id'].unique():
 
@@ -111,6 +113,7 @@ def generate_trips(tpls_input, stps_input, gap_threshold=15, id_offset=0):
         destination_activity = None
         assert (spts_tpls_this['started_at'].is_monotonic)  # this is expensive and should be replaced
         temp_trip_stack = []
+        before_first_trip = True
 
         for _, row in spts_tpls_this.iterrows():
 
@@ -121,6 +124,12 @@ def generate_trips(tpls_input, stps_input, gap_threshold=15, id_offset=0):
             #     continue
             # else:
             #     before_first_trip = False
+
+            if before_first_trip:
+                if not row['activity']:
+                    continue
+
+
 
             # if we are currently not recording a new trip, then skip everything until the next entry is not an activity
             if origin_activity is None and not row['activity']:
