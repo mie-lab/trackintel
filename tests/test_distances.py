@@ -10,7 +10,7 @@ from trackintel.geogr import distances
 from trackintel.geogr.distances import haversine_dist
 
 
-class Test_haversine_dist:
+class TestHaversineDist:
     def test_haversine_dist(self):
 
         # input_latlng saves different combinations of haversine-distances in meters and the longitude & latitudes from
