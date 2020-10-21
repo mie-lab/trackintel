@@ -1,7 +1,6 @@
 import ast
 import copy
 import datetime
-
 import pandas as pd
 from shapely.geometry import LineString
 from simplification.cutil import simplify_coords  # , simplify_coordsvw
