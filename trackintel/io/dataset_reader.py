@@ -60,7 +60,15 @@ def read_geolife(geolife_path):
 
     df_list_users = []
 
+    if len(user_folder) == 0:
+        raise NameError('No folders found with working directory {} and path {}'.format(os.getcwd(), geolife_path))
+
     for user_folder_this in user_folder:
+
+        # skip files
+        if not os.path.isdir(user_folder_this):
+            continue
+
         # extract user id from path
         _, tail = ntpath.split(user_folder_this)
         user_id = int(tail)
