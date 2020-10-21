@@ -6,7 +6,6 @@ import pandas as pd
 from shapely.geometry import LineString
 from simplification.cutil import simplify_coords  # , simplify_coordsvw
 
-
 def smoothen_triplegs(triplegs, method='douglas-peucker', epsilon = 1.0):
     """reduces number of points while retaining structure of tripleg
     Parameters
@@ -22,7 +21,6 @@ def smoothen_triplegs(triplegs, method='douglas-peucker', epsilon = 1.0):
     input_copy.geom = [LineString(ast.literal_eval(str(simplify_coords(input_copy.geom[i].coords, epsilon))))
                        for i in range(len(input_copy.geom))]
     return input_copy
-
 
 def _temp_trip_stack_has_tripleg(temp_trip_stack):
     """
