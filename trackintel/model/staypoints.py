@@ -52,6 +52,13 @@ class StaypointsAccessor(object):
         See :func:`trackintel.preprocessing.staypoints.cluster_staypoints`."""
         return ti.preprocessing.staypoints.cluster_staypoints(self._obj, *args, **kwargs)
 
+    def create_activity_flag(self, *args, **kwargs):
+        """Sets a flag if a staypoint is also an activity.
+        See :func:`trackintel.preprocessing.staypoints.create_activity_flag`."""
+        return ti.preprocessing.staypoints.create_activity_flag(self._obj, *args, **kwargs)
+
+
+
     def plot(self, *args, **kwargs):
         """Plots this collection of staypoints. 
         See :func:`trackintel.visualization.staypoints.plot_staypoints`."""

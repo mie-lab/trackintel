@@ -32,7 +32,8 @@ REQUIRED = [
     'networkx',
     'geoalchemy2',
     'osmnx',
-    'scikit-learn'
+    'scikit-learn',
+    'simplification'
 ]
 
 # What packages are optional?
