@@ -47,7 +47,7 @@ autodoc_mock_imports = [
   'sklearn',
   'sqlalchemy',
   'geoalchemy2',
-  'simplification'
+  'simplification',
 ]
 
 

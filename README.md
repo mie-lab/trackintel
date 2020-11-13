@@ -5,6 +5,7 @@
 [![Build Status](https://travis-ci.org/mie-lab/trackintel.svg?branch=master)](https://travis-ci.org/mie-lab/trackintel)
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/github/mie-lab/trackintel?svg=true)](https://ci.appveyor.com/api/projects/status/github/mie-lab/trackintel?svg=true)
 [![codecov.io](https://codecov.io/gh/mie-lab/trackintel/coverage.svg?branch=master)](https://codecov.io/gh/mie-lab/trackintel)
+[![Sphinx](https://trackintel.readthedocs.io/en/latest/?badge=latest)]
 
 Focusing on human mobility data, *trackintel* provides functionalities for data quality enhancement, integrating data from various sources, performing quantitative analysis and mining tasks, and visualizing the data and/or analysis results.
 In addition to these core functionalities, packages are provided for user mobility profiling and trajectory-based learning analytics.
