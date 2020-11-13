@@ -46,7 +46,8 @@ autodoc_mock_imports = [
   'osmnx',
   'sklearn',
   'sqlalchemy',
-  'geoalchemy2'
+  'geoalchemy2',
+  'simplification'
 ]
 
 
