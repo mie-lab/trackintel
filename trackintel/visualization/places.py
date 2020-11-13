@@ -1,8 +1,8 @@
-import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 
-from trackintel.visualization.util import regular_figure, save_fig
 from trackintel.visualization.osm import plot_osm_streets
+from trackintel.visualization.util import regular_figure, save_fig
 
 
 def plot_center_of_places(places, out_filename=None, radius=None, positionfixes=None, 
@@ -40,10 +40,10 @@ def plot_center_of_places(places, out_filename=None, radius=None, positionfixes=
 
     if plot_osm:
         if positionfixes is not None:
-            west = positionfixes['geom'].x.min()
-            east = positionfixes['geom'].x.max()
-            north = positionfixes['geom'].y.max()
-            south = positionfixes['geom'].y.min()
+            west = positionfixes.geometry.x.min()
+            east = positionfixes.geometry.x.max()
+            north = positionfixes.geometry.y.max()
+            south = positionfixes.geometry.y.min()
         else:
             west = places['center'].x.min() - 0.03
             east = places['center'].x.max() + 0.03
@@ -58,8 +58,8 @@ def plot_center_of_places(places, out_filename=None, radius=None, positionfixes=
         if staypoints_radius is None:
             staypoints_radius = 3
         for pt in staypoints.to_dict('records'):
-            circle = mpatches.Circle((pt['geom'].x, pt['geom'].y), staypoints_radius, 
-                                      facecolor='none', edgecolor='c', zorder=3)
+            circle = mpatches.Circle((pt.geometry.x, pt.geometry.y), staypoints_radius,
+                                     facecolor='none', edgecolor='c', zorder=3)
             ax.add_artist(circle)
 
     if radius is None:

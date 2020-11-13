@@ -1,14 +1,9 @@
 import pytest
-import sys
-import os
-import filecmp
 
-import pandas as pd
 import trackintel as ti
-from trackintel.preprocessing import positionfixes
-from trackintel.preprocessing import staypoints
 
-class TestModel:
+
+class TestPositionfixes:
     def test_as_positionfixes_accessor(self):
         orig_file = 'tests/data/positionfixes.csv'
         pfs = ti.read_positionfixes_csv(orig_file, sep=';')
@@ -23,7 +18,9 @@ class TestModel:
         pfs = ti.read_positionfixes_csv(orig_file, sep=';')
         assert len(pfs.as_positionfixes.center) == 2
 
-    def test_as_staypoints_accessor(self):        
+
+class TestStaypoints:
+    def test_as_staypoints_accessor(self):
         orig_file = 'tests/data/staypoints.csv'
         stps = ti.read_staypoints_csv(orig_file, sep=';')
         assert stps.as_staypoints
@@ -32,8 +29,7 @@ class TestModel:
         with pytest.raises(AttributeError):
             stps.as_staypoints
 
-    def test_staypoints_center(self):     
+    def test_staypoints_center(self):
         orig_file = 'tests/data/staypoints.csv'
         stps = ti.read_staypoints_csv(orig_file, sep=';')
         assert len(stps.as_staypoints.center) == 2
-
