@@ -4,31 +4,8 @@
 ![Version](https://img.shields.io/badge/version-v0.2.0-red.svg)
 [![Build Status](https://travis-ci.org/mie-lab/trackintel.svg?branch=master)](https://travis-ci.org/mie-lab/trackintel)
 [![codecov.io](https://codecov.io/gh/mie-lab/trackintel/coverage.svg?branch=master)](https://codecov.io/gh/mie-lab/trackintel)
-    [![Documentation Status](https://readthedocs.org/projects/trackintel/badge/?version=latest)](https://trackintel.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/trackintel/badge/?version=latest)](https://trackintel.readthedocs.io/en/latest/?badge=latest)
           
-
-    HTML
-
-    <a href='https://trackintel.readthedocs.io/en/latest/?badge=latest'>
-        <img src='https://readthedocs.org/projects/trackintel/badge/?version=latest' alt='Documentation Status' />
-    </a>
-          
-
-Tags
-
-Project has no tags. Add some in your project settings.
-Short URLs
-
-trackintel.readthedocs.io
-trackintel.rtfd.io
-Default Version
-
-latest
-'latest' Version
-
-master
-
-
 Focusing on human mobility data, *trackintel* provides functionalities for data quality enhancement, integrating data from various sources, performing quantitative analysis and mining tasks, and visualizing the data and/or analysis results.
 In addition to these core functionalities, packages are provided for user mobility profiling and trajectory-based learning analytics.
 
