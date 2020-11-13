@@ -4,20 +4,21 @@ channels:
   - defaults
 dependencies:
 - python=3.8
-- numpy
+- numpy=1.19.4
 - matplotlib
-- pandas
-- geopandas
-- scikit-learn
-- networkx
-- pint
-- pip
-- geoalchemy2
-- osmnx
+- pandas=1.1.4
+- geopandas=0.8.1
+- gdal=3.1.4
+- rtree=0.9.4
+- scikit-learn=0.23.2
+- networkx=2.5
+- pint=0.16.1
+- pip=20.2.4
+- geoalchemy2=0.6.3
+- osmnx=0.16.1
 - psycopg2
-- imageio
-- sphinx
-- pydata-sphinx-theme
+- imageio=2.9.0
+- sphinx=3.2.1
+- sphinx_rtd_theme=0.4.3
 - pip:
-  - simplification
-  - sphinx-toggleprompt
+  - simplification==0.5.7
