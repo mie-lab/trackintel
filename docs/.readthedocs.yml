@@ -4,6 +4,8 @@
 
 # Required
 version: 2
+conda:
+  environment: docs/environment.yml
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
@@ -23,5 +25,3 @@ formats:
 #  install:
 #    - requirements: docs/requirements.txt
 
-conda:
-  environment: docs/environment.yml
