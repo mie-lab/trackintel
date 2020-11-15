@@ -92,16 +92,16 @@ class TestIO:
         # TODO Implement some tests for PostGIS.
         pass
 
-    def test_places_from_to_csv(self):
-        orig_file = 'tests/data/places.csv'
-        tmp_file = 'tests/data/places_test.csv'
-        plcs = ti.read_places_csv(orig_file, sep=';')
-        plcs.as_places.to_csv(tmp_file, sep=';', 
+    def test_locations_from_to_csv(self):
+        orig_file = 'tests/data/locations.csv'
+        tmp_file = 'tests/data/locations_test.csv'
+        plcs = ti.read_locations_csv(orig_file, sep=';')
+        plcs.as_locations.to_csv(tmp_file, sep=';', 
             columns=['user_id', 'elevation', 'center', 'extent'])
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
         
-    def test_places_from_to_postgis(self):
+    def test_locations_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
 
