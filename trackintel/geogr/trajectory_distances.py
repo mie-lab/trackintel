@@ -6,7 +6,7 @@ import numpy as np
 
 
 def _c(ca, i, j, P, Q):
-    """
+    r"""
     https://github.com/cjekel/similarity_measures/blob/master/similaritymeasures/similaritymeasures.py
     Recursive caller for discrete Frechet distance
     This is the recursive caller as as defined in [1]_.

@@ -11,9 +11,10 @@ import multiprocessing
 import geopandas as gpd
 from shapely.geometry import Point
 
+
 # todo: check the sklearn format for distances matrices and try to use it
 # todo: think about possibilities for efficient implementation for sparse point distance matrices using knn (or geopy?)
-def calculate_distance_matrix(x, y=None, dist_metric='haversine', n_jobs=0, **kwds):
+def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kwds):
     """
     Calculate a distance matrix based on a specific distance metric.
     
@@ -41,33 +42,43 @@ def calculate_distance_matrix(x, y=None, dist_metric='haversine', n_jobs=0, **kw
     array
         An array of size [n_points, n_points].
     """
-    
-    if y is None:
-        y = x
-    geom_type = x.geometry.iat[0].geom_type
-    assert x.geometry.iat[0].geom_type == y.geometry.iat[0].geom_type, "x and y need same geometry type " \
+
+    geom_type = X.geometry.iat[0].geom_type
+    if Y is None:
+        Y = X
+    assert Y.geometry.iat[0].geom_type == Y.geometry.iat[0].geom_type, "x and y need same geometry type " \
                                                                        "(only first column checked)"
     # todo: check if metrics are valid for input geom type
 
     if geom_type == 'Point':
-        x = x.geometry.x.values
-        y = y.geometry.y.values
+        x1 = X.geometry.x.values
+        y1 = X.geometry.y.values
+        x2 = Y.geometry.x.values
+        y2 = Y.geometry.y.values
+
 
         if dist_metric == 'haversine':
+            # create point pairs for distance calculation
+            nx = len(X)
+            ny = len(Y)
 
-            # create point pairs to calculate distance from
-            n = len(x)
-            ix_1, ix_2 = np.triu_indices(n, k=1)
-            trilix = np.tril_indices(n, k=-1)
 
-            x1 = x[ix_1]
-            y1 = y[ix_1]
-            x2 = x[ix_2]
-            y2 = y[ix_2]
+            # if y != x they could have different dimensions
+            if ny >= nx:
+                ix_1, ix_2 = np.triu_indices(nx, k=1, m=ny)
+                trilix = np.tril_indices(nx, k=-1, m=ny)
+            else:
+                ix_1, ix_2 = np.tril_indices(nx, k=-1, m=ny)
+                trilix = np.triu_indices(nx, k=1, m=ny)
+
+            x1 = x1[ix_1]
+            y1 = y1[ix_1]
+            x2 = x2[ix_2]
+            y2 = y2[ix_2]
 
             d = haversine_dist(x1, y1, x2, y2)
 
-            D = np.zeros((n, n))
+            D = np.zeros((nx, ny))
             D[(ix_1, ix_2)] = d
 
             # mirror triangle matrix to be conform with scikit-learn format and to
@@ -75,8 +86,13 @@ def calculate_distance_matrix(x, y=None, dist_metric='haversine', n_jobs=0, **kw
             D[trilix] = D.T[trilix]
 
         else:
+            xy1 = np.concatenate((x1.reshape(-1, 1), y1.reshape(-1, 1)), axis=1)
 
-            D = pairwise_distances(x=x, y=y, metric=dist_metric, n_jobs=n_jobs)
+            if Y is not None:
+                xy2 = np.concatenate((x2.reshape(-1, 1), y2.reshape(-1, 1)), axis=1)
+                D = cdist(xy1, xy2, metric=dist_metric, **kwds)
+            else:
+                D = pairwise_distances(xy1, metric=dist_metric, n_jobs=n_jobs)
 
         return D
 
@@ -92,12 +108,18 @@ def calculate_distance_matrix(x, y=None, dist_metric='haversine', n_jobs=0, **kw
                 d_fun = partial(frechet_dist, **kwds)
 
             # get combinations of distances that have to be calculated
-            n = len(x)
-            ix_1, ix_2 = np.triu_indices(n, k=1)
-            trilix = np.tril_indices(n, k=-1)
+            nx = len(X)
+            ny = len(Y)
 
-            left = list(x.iloc[ix_1].geometry)
-            right = list(y.iloc[ix_2].geometry)
+            if ny >= nx:
+                ix_1, ix_2 = np.triu_indices(nx, k=1, m=ny)
+                trilix = np.tril_indices(nx, k=-1, m=ny)
+            else:
+                ix_1, ix_2 = np.tril_indices(nx, k=-1, m=ny)
+                trilix = np.triu_indices(nx, k=1, m=ny)
+
+            left = list(X.iloc[ix_1].geometry)
+            right = list(Y.iloc[ix_2].geometry)
 
             # map the combinations to the distance function
             if n_jobs == -1 or n_jobs > 1:
@@ -110,10 +132,9 @@ def calculate_distance_matrix(x, y=None, dist_metric='haversine', n_jobs=0, **kw
                 d = np.array(list(map(d_fun, left, right)))
 
             # write results to (symmetric) distance matrix
-            D = np.zeros((n, n))
+            D = np.zeros((nx, ny))
             D[(ix_1, ix_2)] = d
             D[trilix] = D.T[trilix]
-
             return D
 
         else:
@@ -174,3 +195,4 @@ def meters_to_decimal_degrees(meters, latitude):
 #     V = D[D <= radius]
 #     return sparse.coo_matrix((V, (I, J)), shape=(N, N)).tocsr()
 # # https://ripser.scikit-tda.org/notebooks/Sparse%20Distance%20Matrices.html
+
