@@ -1,18 +1,17 @@
-import numpy as np
-import pandas as pd
-import geopandas as gpd
-import sklearn
-import shapely
 import datetime
 
+import geopandas as gpd
+import numpy as np
+import pandas as pd
 from shapely.geometry import Point, MultiPoint
 from sklearn.cluster import DBSCAN
 
-from trackintel.geogr.distances import calculate_distance_matrix
+from trackintel.geogr.distances import calculate_distance_matrix, meters_to_decimal_degrees
+
 
 def cluster_staypoints(staypoints, method='dbscan',
-                       epsilon=100, num_samples=3, distance_matrix_metric=None):
-    """Clusters staypoints to get places.
+                       epsilon=100, num_samples=1, distance_matrix_metric=None):
+    """Clusters staypoints to get locations.
 
     Parameters
     ----------
@@ -20,7 +19,7 @@ def cluster_staypoints(staypoints, method='dbscan',
         The staypoints have to follow the standard definition for staypoints DataFrames.
 
     method : str, {'dbscan'}, default 'dbscan'
-        The following methods are available to cluster staypoints into places:
+        The following methods are available to cluster staypoints into locations:
         'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
 
     epsilon : float
@@ -39,14 +38,14 @@ def cluster_staypoints(staypoints, method='dbscan',
     Returns
     -------
     GeoDataFrame
-        A new GeoDataFrame containing places that a person visited multiple times.
+        A new GeoDataFrame containing locations that a person visited multiple times.
         
     Examples
     --------
-    >>> spts.as_staypoints.cluster_staypoints(method='dbscan', epsilon=50, num_samples=3)
+    >>> spts.as_staypoints.cluster_staypoints(method='dbscan', epsilon=100, num_samples=1)
     """
-    ret_places = pd.DataFrame(columns=['user_id', 'place_id','center', 'extent'])
-
+    
+    ret_staypoints = staypoints.copy()
     if method=='dbscan':
 
         if distance_matrix_metric is not None:
@@ -55,57 +54,65 @@ def cluster_staypoints(staypoints, method='dbscan',
         else:    
             db = DBSCAN(eps=epsilon, min_samples=num_samples)
             
-        place_id_counter = 0
+        location_id_counter = 0
             
-        for user_id_this in staypoints["user_id"].unique():
+        for user_id_this in ret_staypoints["user_id"].unique():
             # Slice staypoints array by user. This is not a copy!
-            user_staypoints = staypoints[staypoints["user_id"] == user_id_this]  
+            user_staypoints = ret_staypoints[ret_staypoints["user_id"] == user_id_this]  
             
             if distance_matrix_metric is not None:
                 sp_distance_matrix = calculate_distance_matrix(
-                        user_staypoints, dist_metric=distance_matrix_metric)
+                    user_staypoints, dist_metric=distance_matrix_metric)
                 labels = db.fit_predict(sp_distance_matrix)
-            
-            else:  
-                coordinates = np.array([[g.x, g.y] for g in user_staypoints['geom']])
+
+            else:
+                coordinates = np.array([[g.x, g.y] for g in user_staypoints.geometry])
                 labels = db.fit_predict(coordinates)
                 
             # enforce unique lables across all users without changing noise
             # labels
             max_label = np.max(labels)
-            labels[labels != -1] = labels[labels != -1] + place_id_counter +1
+            labels[labels != -1] = labels[labels != -1] + location_id_counter +1
             if max_label > -1:
-                place_id_counter = place_id_counter + max_label + 1
+                location_id_counter = location_id_counter + max_label + 1
             
-            # add staypoint - place matching to original staypoints
-            staypoints.loc[user_staypoints.index, 'place_id'] = labels
+            # add staypoint - location matching to original staypoints
+            ret_staypoints.loc[user_staypoints.index, 'location_id'] = labels
 
-            
-    
-        # create places as grouped staypoints
-        grouped_df = staypoints.groupby(['user_id', 'place_id'])
-        for combined_id, group in grouped_df:
-            user_id, place_id = combined_id
-            group.set_geometry(staypoints.geometry.name, inplace=True)
-    
-            if int(place_id) != -1:
-                ret_place = {}
-                ret_place['user_id'] = user_id
-                ret_place['place_id'] = place_id
-                
-                # point geometry of place
-                ret_place['center'] = Point(group.geometry.x.mean(),
-                     group.geometry.y.mean())
-                # polygon geometry of place
-                ret_place['extent'] = MultiPoint(points=list(group.geometry)).convex_hull
-    
-                ret_places = ret_places.append(ret_place, ignore_index=True)
-    
-        ret_places = gpd.GeoDataFrame(ret_places, geometry='center',
-                                      crs=staypoints.crs)
-        ret_places['place_id'] = ret_places['place_id'].astype('int')
+
+        # create locations as grouped staypoints
+        temp_sp = ret_staypoints[['user_id', 'location_id', ret_staypoints.geometry.name]]
+        ret_loc = temp_sp.dissolve(by=['user_id', 'location_id'],as_index=False)
+        # filter outlier
+        ret_loc = ret_loc.loc[ret_loc['location_id'] != -1]
         
-    return ret_places
+        # locations with only one staypoints is of type "Point"
+        point_idx = ret_loc.geom_type == 'Point'
+        ret_loc['center'] = 0 # initialize
+        ret_loc.loc[point_idx, 'center'] = ret_loc.loc[point_idx, 'geom']
+        # locations with multiple staypoints is of type "MultiPoint"
+        ret_loc.loc[~point_idx, 'center'] = ret_loc.loc[~point_idx, 'geom'].apply(lambda p: Point(np.array(p)[:,0].mean(), 
+                                                                                                np.array(p)[:,1].mean()))
+        
+        # extent is the convex hull of the geometry
+        ret_loc['extent'] = ret_loc['geom'].apply(lambda p: p.convex_hull)                                                                                        
+        # convex_hull of one point would be a Point and two points a Linestring, 
+        # we change them into Polygon by creating a buffer of epsilon around them.
+        pointLine_idx = (ret_loc['extent'].geom_type == 'LineString') | (ret_loc['extent'].geom_type == 'Point')
+        
+        # Perform meter to decimal conversion if the distance metric is haversine
+        if distance_matrix_metric == 'haversine':
+            ret_loc.loc[pointLine_idx, 'extent'] = ret_loc.loc[pointLine_idx].apply(
+                lambda p: p['extent'].buffer(meters_to_decimal_degrees(epsilon, p['center'].y)), axis=1)
+        else:
+            ret_loc.loc[pointLine_idx, 'extent'] = ret_loc.loc[pointLine_idx].apply(
+                lambda p: p['extent'].buffer(epsilon), axis=1)
+        
+        ret_loc = ret_loc.set_geometry('center')
+        ret_loc = ret_loc[['user_id', 'location_id', 'center', 'extent']]
+        ret_loc['location_id'] = ret_loc['location_id'].astype('int')
+        
+    return ret_staypoints, ret_loc
 
 
 def create_activity_flag(staypoints, method='time_threshold', time_threshold=5, activity_column_name='activity'):
