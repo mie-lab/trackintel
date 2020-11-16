@@ -19,7 +19,7 @@ class LocationsAccessor(object):
 
     Examples
     --------
-    >>> df.as_places.plot()
+    >>> df.as_locations.plot()
     """
 
     required_columns = ['user_id', 'center']

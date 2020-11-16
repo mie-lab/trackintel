@@ -315,7 +315,7 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None,
 
     Parameters
     ----------
-    places : GeoDataFrame
+    locations : GeoDataFrame
         The locations to store to the database.
 
     conn_string : str

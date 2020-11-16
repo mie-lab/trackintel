@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import os
-import ntpath
 import glob
-import pandas as pd
+import ntpath
+import os
+
 import geopandas as gpd
+import numpy as np
+import pandas as pd
 from shapely.geometry import Point
 
 FEET2METER = 0.3048
@@ -104,8 +106,9 @@ def read_geolife(geolife_path):
         df_list_users.append(df_user_this)
 
     df = pd.concat(df_list_users, axis=0, ignore_index=True)
-    df["accuracy"] = None
     gdf = gpd.GeoDataFrame(df, geometry="geom", crs=CRS_WGS84)
-    gdf["accuracy"] = None
+    gdf["accuracy"] = np.nan
+
+    gdf.index.name = 'id'
 
     return gdf

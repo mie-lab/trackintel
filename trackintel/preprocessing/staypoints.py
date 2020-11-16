@@ -19,7 +19,7 @@ def cluster_staypoints(staypoints, method='dbscan',
         The staypoints have to follow the standard definition for staypoints DataFrames.
 
     method : str, {'dbscan'}, default 'dbscan'
-        The following methods are available to cluster staypoints into places:
+        The following methods are available to cluster staypoints into locations:
         'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
 
     epsilon : float
@@ -54,7 +54,7 @@ def cluster_staypoints(staypoints, method='dbscan',
         else:    
             db = DBSCAN(eps=epsilon, min_samples=num_samples)
             
-        place_id_counter = 0
+        location_id_counter = 0
             
         for user_id_this in ret_staypoints["user_id"].unique():
             # Slice staypoints array by user. This is not a copy!
@@ -72,19 +72,19 @@ def cluster_staypoints(staypoints, method='dbscan',
             # enforce unique lables across all users without changing noise
             # labels
             max_label = np.max(labels)
-            labels[labels != -1] = labels[labels != -1] + place_id_counter +1
+            labels[labels != -1] = labels[labels != -1] + location_id_counter +1
             if max_label > -1:
-                place_id_counter = place_id_counter + max_label + 1
+                location_id_counter = location_id_counter + max_label + 1
             
-            # add staypoint - place matching to original staypoints
-            ret_staypoints.loc[user_staypoints.index, 'place_id'] = labels
+            # add staypoint - location matching to original staypoints
+            ret_staypoints.loc[user_staypoints.index, 'location_id'] = labels
 
 
-        # create places as grouped staypoints
-        temp_sp = ret_staypoints[['user_id', 'place_id', ret_staypoints.geometry.name]]
-        ret_loc = temp_sp.dissolve(by=['user_id', 'place_id'],as_index=False)
+        # create locations as grouped staypoints
+        temp_sp = ret_staypoints[['user_id', 'location_id', ret_staypoints.geometry.name]]
+        ret_loc = temp_sp.dissolve(by=['user_id', 'location_id'],as_index=False)
         # filter outlier
-        ret_loc = ret_loc.loc[ret_loc['place_id'] != -1]
+        ret_loc = ret_loc.loc[ret_loc['location_id'] != -1]
         
         # locations with only one staypoints is of type "Point"
         point_idx = ret_loc.geom_type == 'Point'
@@ -109,8 +109,8 @@ def cluster_staypoints(staypoints, method='dbscan',
                 lambda p: p['extent'].buffer(epsilon), axis=1)
         
         ret_loc = ret_loc.set_geometry('center')
-        ret_loc = ret_loc[['user_id', 'place_id', 'center', 'extent']]
-        ret_loc['place_id'] = ret_loc['place_id'].astype('int')
+        ret_loc = ret_loc[['user_id', 'location_id', 'center', 'extent']]
+        ret_loc['location_id'] = ret_loc['location_id'].astype('int')
         
     return ret_staypoints, ret_loc
 
