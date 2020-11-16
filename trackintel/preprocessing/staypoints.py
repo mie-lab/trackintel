@@ -101,8 +101,8 @@ def cluster_staypoints(staypoints, method='dbscan',
         # we change them into Polygon by creating a buffer of epsilon around them.
         pointLine_idx = (ret_loc['extent'].geom_type == 'LineString') | (ret_loc['extent'].geom_type == 'Point')
         
-        # TODO: how to know if the crs is geodetic or projection?
-        if ret_loc.crs == 'epsg:4326':
+        # Perform meter to decimal conversion if the distance metric is haversine
+        if distance_matrix_metric == 'haversine':
             ret_loc.loc[pointLine_idx, 'extent'] = ret_loc.loc[pointLine_idx].apply(
                 lambda p: p['extent'].buffer(meters_to_decimal_degrees(epsilon, p['center'].y)), axis=1)
         else:
