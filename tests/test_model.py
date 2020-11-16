@@ -8,7 +8,6 @@ import trackintel as ti
 from trackintel.preprocessing import positionfixes
 from trackintel.preprocessing import staypoints
 
-
 class TestModel:
     def test_as_positionfixes_accessor(self):
         orig_file = 'tests/data/positionfixes.csv'

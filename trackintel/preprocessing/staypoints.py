@@ -3,6 +3,7 @@ import pandas as pd
 import geopandas as gpd
 import sklearn
 import shapely
+import datetime
 
 from shapely.geometry import Point, MultiPoint
 from sklearn.cluster import DBSCAN
@@ -77,14 +78,15 @@ def cluster_staypoints(staypoints, method='dbscan',
                 place_id_counter = place_id_counter + max_label + 1
             
             # add staypoint - place matching to original staypoints
-            staypoints.loc[user_staypoints.index,'place_id'] = labels
+            staypoints.loc[user_staypoints.index, 'place_id'] = labels
 
             
     
         # create places as grouped staypoints
-        grouped_df = staypoints.groupby(['user_id','place_id'])
+        grouped_df = staypoints.groupby(['user_id', 'place_id'])
         for combined_id, group in grouped_df:
             user_id, place_id = combined_id
+            group.set_geometry(staypoints.geometry.name, inplace=True)
     
             if int(place_id) != -1:
                 ret_place = {}
@@ -105,3 +107,27 @@ def cluster_staypoints(staypoints, method='dbscan',
         
     return ret_places
 
+
+def create_activity_flag(staypoints, method='time_threshold', time_threshold=5, activity_column_name='activity'):
+    """
+
+    Parameters
+    ----------
+    staypoints
+    method
+    time_threshold
+    activity_column_name
+
+    Returns
+    -------
+
+    """
+
+
+    if method == 'time_threshold':
+        staypoints[activity_column_name] = staypoints['finished_at'] - staypoints['started_at'] \
+                                           > datetime.timedelta(minutes=time_threshold)
+    else:
+        raise NameError("Method {} is not known".format(method))
+
+    return staypoints

@@ -33,6 +33,7 @@ REQUIRED = [
     'geoalchemy2',
     'osmnx',
     'scikit-learn',
+    'simplification',
     'console_progressbar',
     'scipy'
 ]

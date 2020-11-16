@@ -9,5 +9,6 @@ geoalchemy2
 osmnx 
 psycopg2
 imageio
+simplification
 console_progressbar
 scipy
