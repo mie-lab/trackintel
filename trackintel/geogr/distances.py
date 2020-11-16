@@ -3,18 +3,17 @@ import numpy as np
 from scipy.spatial.distance import euclidean as euclidean_dist
 from sklearn.metrics import pairwise_distances
 from scipy.spatial.distance import cdist
+from trackintel.geogr.point_distances import haversine_dist
+from trackintel.geogr.trajectory_distances import dtw, frechet_dist
 from scipy.sparse import coo_matrix
-# todo: calculate distance matrix
-#def distance_matrix():
-#   pass
-# for all that is euclidean (or minkowski) we can use scipy.spatial.distance_matrix
-#
-# There is a sklearn function that supports many different metrics:
-# sklearn.metrics.pairwise_distances(X, Y=None, metric=’euclidean’, n_jobs=None, **kwds)
-#
+from functools import partial
+import multiprocessing
+import geopandas as gpd
+from shapely.geometry import Point
 
 # todo: check the sklearn format for distances matrices and try to use it
-def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=None, *args, **kwds):
+# todo: think about possibilities for efficient implementation for sparse point distance matrices using knn (or geopy?)
+def calculate_distance_matrix(x, y=None, dist_metric='haversine', n_jobs=0, **kwds):
     """
     Calculate a distance matrix based on a specific distance metric.
     
@@ -23,7 +22,13 @@ def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=None, *arg
     points : GeoDataFrame
         GeoPandas DataFrame in trackintel staypoints format.
     dist_metric : str, {'haversine', 'euclidean'}, default 'haversine'
-        The distance metric to be used for caltulating the matrix.
+        The distance metric to be used for calculating the matrix. This function wratps around the ``pairwise_distance``
+        function from scikit-learn. Therefore the following metrics are also accepted:
+        via scikit-learn: [‘cityblock’, ‘cosine’, ‘euclidean’, ‘l1’, ‘l2’, ‘manhattan’]
+        via scipy.spatial.distance: [‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘correlation’, ‘dice’, ‘hamming’, ‘jaccard’,
+         ‘kulsinski’, ‘mahalanobis’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’,
+          ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]
+
     n_jobs : int, optional
         Number of jobs to be passed to the ``sklearn.metrics`` function ``pairwise_distances``.
     *args
@@ -37,131 +42,86 @@ def calculate_distance_matrix(points, dist_metric='haversine', n_jobs=None, *arg
         An array of size [n_points, n_points].
     """
     
-    try: 
-        x = points['long'].values
-        y = points['lat'].values
-    except KeyError:    
-        x = points.geometry.x.values
-        y = points.geometry.y.values
-    
-    
-    if dist_metric == 'euclidean':
-        xy = np.concatenate((x.reshape(-1,1),y.reshape(-1,1)),axis=1)
-        D = pairwise_distances(xy, n_jobs=n_jobs)
-        
-#    # super slow!
-#    elif dist_metric == 'haversine':
-#        D = cdist(xy, xy, metric=haversine_dist_cdist)
-        
-    elif dist_metric == 'haversine':   
-        # create point pairs to calculate distance from
-        n = len(x)
-        
-        ix_1, ix_2 = np.triu_indices(n, k=1)
-        trilix =    np.tril_indices(n, k=-1)
-        
-        x1 = x[ix_1]
-        y1 = y[ix_1]
-        x2 = x[ix_2]
-        y2 = y[ix_2]
-       
-        d = haversine_dist(x1, y1, x2, y2)
-        
-        D = np.zeros((n,n))
-       
-        D[(ix_1,ix_2)] = d
-        
-        # mirror triangle matrix to be conform with scikit-learn format and to 
-        # allow for non-symmetric distances in the future
-        D[trilix] = D.T[trilix]
+    if y is None:
+        y = x
+    geom_type = x.geometry.iat[0].geom_type
+    assert x.geometry.iat[0].geom_type == y.geometry.iat[0].geom_type, "x and y need same geometry type " \
+                                                                       "(only first column checked)"
+    # todo: check if metrics are valid for input geom type
 
-    elif dist_metric == 'test_haversine':
-         xy = np.concatenate((x.reshape(-1,1),y.reshape(-1,1)),axis=1)
-         D = cdist(xy,xy,metric=haversine_dist_cdist)
-        
-        
+    if geom_type == 'Point':
+        x = x.geometry.x.values
+        y = y.geometry.y.values
+
+        if dist_metric == 'haversine':
+
+            # create point pairs to calculate distance from
+            n = len(x)
+            ix_1, ix_2 = np.triu_indices(n, k=1)
+            trilix = np.tril_indices(n, k=-1)
+
+            x1 = x[ix_1]
+            y1 = y[ix_1]
+            x2 = x[ix_2]
+            y2 = y[ix_2]
+
+            d = haversine_dist(x1, y1, x2, y2)
+
+            D = np.zeros((n, n))
+            D[(ix_1, ix_2)] = d
+
+            # mirror triangle matrix to be conform with scikit-learn format and to
+            # allow for non-symmetric distances in the future
+            D[trilix] = D.T[trilix]
+
+        else:
+
+            D = pairwise_distances(x=x, y=y, metric=dist_metric, n_jobs=n_jobs)
+
+        return D
+
+    elif geom_type == 'LineString':
+
+        if dist_metric in ['dtw', 'frechet']:
+            # these are the preparation steps for all distance functions based only on coordinates
+
+            if dist_metric == 'dtw':
+                d_fun = partial(dtw, **kwds)
+
+            elif dist_metric == 'frechet':
+                d_fun = partial(frechet_dist, **kwds)
+
+            # get combinations of distances that have to be calculated
+            n = len(x)
+            ix_1, ix_2 = np.triu_indices(n, k=1)
+            trilix = np.tril_indices(n, k=-1)
+
+            left = list(x.iloc[ix_1].geometry)
+            right = list(y.iloc[ix_2].geometry)
+
+            # map the combinations to the distance function
+            if n_jobs == -1 or n_jobs > 1:
+                if n_jobs == -1:
+                    n_jobs = multiprocessing.cpu_count()
+                with multiprocessing.Pool(processes=n_jobs) as pool:
+                    left_right = list(zip(left, right))
+                    d = np.array(list(pool.starmap(d_fun, left_right)))
+            else:
+                d = np.array(list(map(d_fun, left, right)))
+
+            # write results to (symmetric) distance matrix
+            D = np.zeros((n, n))
+            D[(ix_1, ix_2)] = d
+            D[trilix] = D.T[trilix]
+
+            return D
+
+        else:
+            raise AttributeError("Metric unknown. We only support ['dtw', 'frechet'] for LineStrings. "
+                                 f"You passed {dist_metric}")
     else:
-        xy = np.concatenate((x.reshape(-1,1),y.reshape(-1,1)),axis=1)
-        D = pairwise_distances(xy, metric=dist_metric, n_jobs=n_jobs)
-        
-     
-         
-         
+        raise AttributeError(f"We only support 'Point' and 'LineString'. Your geometry is {geom_type}")
 
-
-    return D
-    
-def haversine_dist_cdist(XA, XB):
-    """Applies the ``haversine_dist`` function for the scipy cdist function.
-    
-    Parameters
-    ----------
-    XA : numpy array
-        2d numpy array with [lon1,lat1]
-    XB : numpy array
-        2d numpy array with [lon2,lat2]
-    
-    Returns
-    -------
-    float
-        The haversine distance between two points.
-    """
-    
-    
-    return haversine_dist(XA[0], XA[1], XB[0], XB[1])
-
-def haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000):
-    """Computes the great circle or haversine distance between two coordinates in WGS84.
-
-    # todo: test different input formats, especially different vector
-    shapes
-    # define output format. 
-
-    Parameters
-    ----------
-    lon_1 : float or numpy.array of shape (-1,)
-        The longitude of the first point.
-    
-    lat_1 : float or numpy.array of shape (-1,)
-        The latitude of the first point.
-        
-    lon_2 : float or numpy.array of shape (-1,)
-        The longitude of the second point.
-    
-    lat_2 : float or numpy.array of shape (-1,)
-        The latitude of the second point.
-
-    r     : float
-        Radius of the reference sphere for the calculation. 
-        The average Earth radius is 6'371'000 m. 
-
-    Returns
-    -------
-    float
-        An approximation of the distance between two points in WGS84 given in meters.
-
-    Examples
-    --------
-    >>> haversine_dist(8.5, 47.3, 8.7, 47.2)
-    18749.056277719905
-
-    References
-    ----------
-    https://en.wikipedia.org/wiki/Haversine_formula
-    https://stackoverflow.com/questions/19413259/efficient-way-to-calculate-distance-matrix-given-latitude-and-longitude-data-in
-    """ 
-    
-    lon_1 = np.asarray(lon_1).ravel() * np.pi / 180
-    lat_1 = np.asarray(lat_1).ravel() * np.pi / 180
-    lon_2 = np.asarray(lon_2).ravel() * np.pi / 180
-    lat_2 = np.asarray(lat_2).ravel() * np.pi / 180
-    
-    cos_lat1 = np.cos(lat_1)
-    cos_lat2 = np.cos(lat_2)
-    cos_lat_d = np.cos(lat_1 - lat_2)
-    cos_lon_d = np.cos(lon_1 - lon_2)
-
-    return r * np.arccos(cos_lat_d - cos_lat1 * cos_lat2 * (1 - cos_lon_d))
 
 
 def meters_to_decimal_degrees(meters, latitude):
@@ -182,3 +142,35 @@ def meters_to_decimal_degrees(meters, latitude):
         An approximation of a distance (given in meters) in degrees.
     """
     return meters / (111.32 * 1000.0 * cos(latitude * (pi / 180.0)))
+
+
+# # Todo: support sparse trajectory distances with prefiltering (maybe based on the center of the trajectory?:
+# # Todo: or using a top-k approach using knn
+# def makeSparseDM(x, y=None, radius=None, reference='center', metric='euclidean'):
+#     if y is None:
+#         y = x
+#
+#     if radius is None:
+#         raise AttributeError("threshold parameter has to be provided for prefiltering")
+#
+#     if reference == 'first':
+#         points_x = [Point(line.coords[0]) for line in x]
+#         points_y = [Point(line.coords[0]) for line in y]
+#     elif reference == 'last':
+#         points_x = [Point(line.coords[0]) for line in x]
+#         points_y = [Point(line.coords[0]) for line in y]
+#     else:
+#         points_x = [Point(line.centroids) for line in x]
+#         points_y = [Point(line.centroids) for line in y]
+#
+#     points_x = gpd.GeoDataFrame(geometry=points_x)
+#     points_y = gpd.GeoDataFrame(geometry=points_y)
+#
+#     D = calculate_distance_matrix(X, metric=metric)
+#
+#     [I, J] = np.meshgrid(np.arange(N), np.arange(N))
+#     I = I[D <= radius]
+#     J = J[D <= radius]
+#     V = D[D <= radius]
+#     return sparse.coo_matrix((V, (I, J)), shape=(N, N)).tocsr()
+# # https://ripser.scikit-tda.org/notebooks/Sparse%20Distance%20Matrices.html
