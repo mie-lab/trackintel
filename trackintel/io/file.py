@@ -129,42 +129,42 @@ def write_staypoints_csv(staypoints, filename, *args, **kwargs):
     gdf.to_csv(filename, index=False, *args, **kwargs)
 
 
-def read_places_csv(*args, **kwargs):
-    """Wraps the pandas read_csv function, extracts a WKT for the place 
+def read_locations_csv(*args, **kwargs):
+    """Wraps the pandas read_csv function, extracts a WKT for the location 
     center (and extent) and builds a geopandas GeoDataFrame. This also 
     validates that the ingested data conforms to the trackintel understanding 
-    of places (see :doc:`/modules/model`).
+    of locations (see :doc:`/modules/model`).
 
     Returns
     -------
     GeoDataFrame
-        A GeoDataFrame containing the places.
+        A GeoDataFrame containing the locations.
     """
     df = pd.read_csv(*args, **kwargs)
     df['center'] = df['center'].apply(wkt.loads)
     if 'extent' in df.columns:
         df['extent'] = df['extent'].apply(wkt.loads)
     gdf = gpd.GeoDataFrame(df, geometry='center')
-    assert gdf.as_places
+    assert gdf.as_locations
     return gdf
 
 
-def write_places_csv(places, filename, *args, **kwargs):
+def write_locations_csv(locations, filename, *args, **kwargs):
     """Wraps the pandas to_csv function, but transforms the center (and 
     extent) into WKT before writing.
 
     Parameters
     ----------
-    places : GeoDataFrame
-        The places to store to the CSV file.
+    locations : GeoDataFrame
+        The locations to store to the CSV file.
     
     filename : str
         The file to write to.
     """
-    gdf = places.copy()
-    gdf['center'] = places['center'].apply(wkt.dumps)
+    gdf = locations.copy()
+    gdf['center'] = locations['center'].apply(wkt.dumps)
     if 'extent' in gdf.columns:
-        gdf['extent'] = places['extent'].apply(wkt.dumps)
+        gdf['extent'] = locations['extent'].apply(wkt.dumps)
     gdf.to_csv(filename, index=False, *args, **kwargs)
 
 

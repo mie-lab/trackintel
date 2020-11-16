@@ -47,8 +47,8 @@ class StaypointsAccessor(object):
         lon = self._obj.geometry.x
         return (float(lon.mean()), float(lat.mean()))
 
-    def extract_places(self, *args, **kwargs):
-        """Extracts places from this collection of staypoints.
+    def extract_locations(self, *args, **kwargs):
+        """Extracts locations from this collection of staypoints.
         See :func:`trackintel.preprocessing.staypoints.cluster_staypoints`."""
         return ti.preprocessing.staypoints.cluster_staypoints(self._obj, *args, **kwargs)
 

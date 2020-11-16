@@ -31,13 +31,13 @@ class TestPreprocessing():
     def test_cluster_staypoints_dbscan_min(self):
         pfs = ti.read_positionfixes_csv('tests/data/positionfixes.csv', sep=';')
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
-        clusters = spts.as_staypoints.extract_places(method='dbscan', epsilon=1e-18, num_samples=0)
+        _, clusters = spts.as_staypoints.extract_locations(method='dbscan', epsilon=1e-18, num_samples=0)
         assert len(clusters) == len(spts), "With small hyperparameters, clustering should not reduce the number"
 
     def test_cluster_staypoints_dbscan_max(self):
         pfs = ti.read_positionfixes_csv('tests/data/positionfixes.csv', sep=';')
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
-        clusters = spts.as_staypoints.extract_places(method='dbscan', epsilon=1e18, num_samples=1000)
+        _, clusters = spts.as_staypoints.extract_locations(method='dbscan', epsilon=1e18, num_samples=1000)
         assert len(clusters) == 0, "With large hyperparameters, everything is an outlier"
 
 
