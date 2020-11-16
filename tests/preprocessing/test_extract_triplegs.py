@@ -21,10 +21,6 @@ class TestExtractTriplegs:
         assert len(tpls) > 0
 
         assert len(tpls) == len(tpls)
-        
-        tsamp = tpls.sample(1)
-        assert list(tsamp.iloc[0]['geom'].coords) == list(pfs.loc[pfs['tripleg_id']==tsamp.iloc[0].id].geom.apply(lambda x: (x.x,x.y)))
-           
 
         distance_sum = 0
 
