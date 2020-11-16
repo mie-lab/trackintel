@@ -1,7 +1,4 @@
 import pandas as pd
-import trackintel as ti
-
-import trackintel.visualization.staypoints
 
 
 @pd.api.extensions.register_dataframe_accessor("as_tours")
@@ -11,8 +8,15 @@ class ToursAccessor(object):
     Requires at least the following columns: 
     ``['user_id', 'started_at', 'finished_at', 'origin_destination_place_id', 'journey']``
 
+    The ``index`` of the GeoDataFrame will be treated as unique identifier of the `trips`
+
     For several usecases, the following additional columns are required:
     ``['context']``
+
+    Notes
+    --------
+    Tours are an aggregation level in transport planning that summarize all trips until a person returns to the
+    same location. Tours starting and ending at home (=journey) are especially important.
 
     Examples
     --------
