@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 
-from trackintel.visualization.util import regular_figure, save_fig
 from trackintel.visualization.osm import plot_osm_streets
+from trackintel.visualization.util import regular_figure, save_fig
 
 
 def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False):
@@ -29,10 +28,10 @@ def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False):
     _, ax = regular_figure()
 
     if plot_osm:
-        west = positionfixes['geom'].x.min()
-        east = positionfixes['geom'].x.max()
-        north = positionfixes['geom'].y.max()
-        south = positionfixes['geom'].y.min()
+        west = positionfixes.geometry.x.min()
+        east = positionfixes.geometry.x.max()
+        north = positionfixes.geometry.y.max()
+        south = positionfixes.geometry.y.min()
         plot_osm_streets(north, south, east, west, ax)
 
     positionfixes.plot(ax=ax, markersize=0.5)

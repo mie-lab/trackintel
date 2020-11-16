@@ -1,8 +1,8 @@
-import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 
-from trackintel.visualization.util import regular_figure, save_fig
 from trackintel.visualization.osm import plot_osm_streets
+from trackintel.visualization.util import regular_figure, save_fig
 
 
 def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=None, plot_osm=False):
@@ -33,17 +33,18 @@ def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=No
     >>> df.as_staypoints.plot('output.png', radius=10, positionfixes=pdf, plot_osm=True)
     """
     _, ax = regular_figure()
+    name_geocol = staypoints.geometry.name
 
     if positionfixes is not None:
-        west = positionfixes['geom'].x.min() - 0.01
-        east = positionfixes['geom'].x.max() + 0.01
-        north = positionfixes['geom'].y.max() + 0.01
-        south = positionfixes['geom'].y.min() - 0.01
+        west = positionfixes.geometry.x.min() - 0.01
+        east = positionfixes.geometry.x.max() + 0.01
+        north = positionfixes.geometry.y.max() + 0.01
+        south = positionfixes.geometry.y.min() - 0.01
     else:
-        west = staypoints['geom'].x.min() - 0.03
-        east = staypoints['geom'].x.max() + 0.03
-        north = staypoints['geom'].y.max() + 0.03
-        south = staypoints['geom'].y.min() - 0.03
+        west = staypoints.geometry.x.min() - 0.03
+        east = staypoints.geometry.x.max() + 0.03
+        north = staypoints.geometry.y.max() + 0.03
+        south = staypoints.geometry.y.min() - 0.03
 
     if plot_osm:
         plot_osm_streets(north, south, east, west, ax)
@@ -54,8 +55,8 @@ def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=No
     if radius is None:
         radius = 5
     for pt in staypoints.to_dict('records'):
-        circle = mpatches.Circle((pt['geom'].x, pt['geom'].y), radius, 
-                                  facecolor='none', edgecolor='g', zorder=3)
+        circle = mpatches.Circle((pt[name_geocol].x, pt[name_geocol].y), radius,
+                                 facecolor='none', edgecolor='g', zorder=3)
         ax.add_artist(circle)
 
     ax.set_xlim([west, east])

@@ -1,7 +1,6 @@
 import pandas as pd
-import trackintel as ti
 
-import trackintel.visualization.staypoints
+import trackintel as ti
 
 
 @pd.api.extensions.register_dataframe_accessor("as_trips")
@@ -13,13 +12,30 @@ class TripsAccessor(object):
     Requires at least the following columns: 
     ``['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'destination_staypoint_id']``
 
+    The ``index`` of the GeoDataFrame will be treated as unique identifier of the `trips`
+
     For several usecases, the following additional columns are required:
-    ``['context']``
+    ``['context', 'origin_activity', 'destination_activity', 'modes', 'primary_mode']``
+
+    Notes
+    --------
+    Trips are an aggregation level in transport planning that summarize all movement and all non-essential actions
+    (e.g., waiting) between two relevant activities.
+    The function returns altered versions of the input staypoints and triplegs. Staypoints receive the fields
+    [`trip_id` `prev_trip_id` and `next_trip_id`], triplegs receive the field [`trip_id`].
+    The following assumptions are implemented
+        - All movement before the first and after the last activity is omitted
+        - If we do not record a person for more than `gap_threshold` minutes, we assume that the person performed an
+            activity in the recording gap and split the trip at the gap.
+        - Trips that start/end in a recording gap can have an unknown origin/destination
+        - There are no trips without a (recored) tripleg
 
     Examples
     --------
     >>> df.as_trips.plot()
     """
+
+    # ToDo primary mode of transport
 
     required_columns = ['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'destination_staypoint_id']
 

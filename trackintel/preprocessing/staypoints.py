@@ -1,14 +1,13 @@
-import numpy as np
-import pandas as pd
-import geopandas as gpd
-import sklearn
-import shapely
 import datetime
 
+import geopandas as gpd
+import numpy as np
+import pandas as pd
 from shapely.geometry import Point, MultiPoint
 from sklearn.cluster import DBSCAN
 
 from trackintel.geogr.distances import calculate_distance_matrix, meters_to_decimal_degrees
+
 
 def cluster_staypoints(staypoints, method='dbscan',
                        epsilon=100, num_samples=1, distance_matrix_metric=None):
@@ -63,11 +62,11 @@ def cluster_staypoints(staypoints, method='dbscan',
             
             if distance_matrix_metric is not None:
                 sp_distance_matrix = calculate_distance_matrix(
-                        user_staypoints, dist_metric=distance_matrix_metric)
+                    user_staypoints, dist_metric=distance_matrix_metric)
                 labels = db.fit_predict(sp_distance_matrix)
-            
-            else:  
-                coordinates = np.array([[g.x, g.y] for g in user_staypoints['geom']])
+
+            else:
+                coordinates = np.array([[g.x, g.y] for g in user_staypoints.geometry])
                 labels = db.fit_predict(coordinates)
                 
             # enforce unique lables across all users without changing noise

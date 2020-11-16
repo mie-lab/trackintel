@@ -2,6 +2,7 @@ import ast
 import copy
 import datetime
 import pandas as pd
+import pandas as pd
 from shapely.geometry import LineString
 from simplification.cutil import simplify_coords  # , simplify_coordsvw
 
@@ -17,8 +18,8 @@ def smoothen_triplegs(triplegs, method='douglas-peucker', epsilon = 1.0):
         slack parameter, higher epsilon means removing more points
     """
     input_copy = copy.deepcopy(triplegs)
-    input_copy.geom = [LineString(ast.literal_eval(str(simplify_coords(input_copy.geom[i].coords, epsilon))))
-                       for i in range(len(input_copy.geom))]
+    input_copy.geometry = [LineString(ast.literal_eval(str(simplify_coords(input_copy.geometry[i].coords, epsilon))))
+                           for i in range(len(input_copy.geometry))]
     return input_copy
 
 def _temp_trip_stack_has_tripleg(temp_trip_stack):
@@ -82,8 +83,8 @@ def _create_trip_from_stack(temp_trip_stack, origin_activity, destination_activi
                        'user_id': origin_activity['user_id'],
                        'started_at': first_trip_element['started_at'],
                        'finished_at': last_trip_element['finished_at'],
-                       'origin': origin_activity['id'],
-                       'destination': destination_activity['id']}
+                       'origin_staypoint_id': origin_activity['id'],
+                       'destination_staypoint_id': destination_activity['id']}
 
     return trip_dict_entry
 

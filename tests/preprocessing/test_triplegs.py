@@ -15,6 +15,8 @@ class TestGenerate_trips():
         trips_loaded = pd.read_csv(os.path.join('tests', 'data', 'geolife_long', 'trips.csv'))
         trips_loaded['started_at'] = pd.to_datetime(trips_loaded['started_at'])
         trips_loaded['finished_at'] = pd.to_datetime(trips_loaded['finished_at'])
+        trips_loaded.rename(columns={'origin': 'origin_staypoint_id',
+                                     'destination': 'destination_staypoint_id'}, inplace=True)
 
         # create trips from geolife (based on positionfixes)
         pfs = read_geolife(os.path.join('tests', 'data', 'geolife_long'))
