@@ -1,9 +1,11 @@
 import ast
 import copy
 import datetime
+
 import pandas as pd
 from shapely.geometry import LineString
 from simplification.cutil import simplify_coords  # , simplify_coordsvw
+
 
 def smoothen_triplegs(triplegs, method='douglas-peucker', epsilon = 1.0):
     """reduces number of points while retaining structure of tripleg
@@ -114,14 +116,14 @@ def _return_ids_to_df(temp_trip_stack, origin_activity, destination_activity, sp
         Function alters the staypoint and tripleg GeoDataFrames inplace
     """
 
-    spts.loc[spts['id'] == origin_activity['id'], ['next_trip_id']] = trip_id_counter
-    spts.loc[spts['id'] == destination_activity['id'], ['prev_trip_id']] = trip_id_counter
+    spts.loc[spts.index == origin_activity['id'], ['next_trip_id']] = trip_id_counter
+    spts.loc[spts.index == destination_activity['id'], ['prev_trip_id']] = trip_id_counter
 
     for row in temp_trip_stack:
         if row['type'] == 'tripleg':
-            tpls.loc[tpls['id'] == row['id'], ['trip_id']] = trip_id_counter
+            tpls.loc[tpls.index == row['id'], ['trip_id']] = trip_id_counter
         elif row['type'] == 'staypoint':
-            spts.loc[spts['id'] == row['id'], ['trip_id']] = trip_id_counter
+            spts.loc[spts.index == row['id'], ['trip_id']] = trip_id_counter
 
 
 def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_progress=False):
@@ -182,8 +184,11 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     dont_print_list = []
 
     # create table with relevant information from triplegs and staypoints.
-    spts_tpls = spts[['started_at', 'finished_at', 'user_id', 'id', 'type', 'activity']].append(
-        tpls[['started_at', 'finished_at', 'user_id', 'id', 'type']])
+    spts_tpls = spts[['started_at', 'finished_at', 'user_id', 'type', 'activity']].append(
+        tpls[['started_at', 'finished_at', 'user_id', 'type']])
+
+    # create ID field from index
+    spts_tpls['id'] = spts_tpls.index
 
     # transform nan to bool
     spts_tpls['activity'] = spts_tpls['activity'] == True
