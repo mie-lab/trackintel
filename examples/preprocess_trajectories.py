@@ -22,9 +22,9 @@ spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=
 spts.as_staypoints.plot(out_filename='examples/out/gpsies_trajectory_staypoints.png',
                         radius=meters_to_decimal_degrees(100, 47.5), positionfixes=pfs, plot_osm=True)
 
-plcs = spts.as_staypoints.extract_places(method='dbscan', epsilon=meters_to_decimal_degrees(120, 47.5), 
+plcs = spts.as_staypoints.extract_locations(method='dbscan', epsilon=meters_to_decimal_degrees(120, 47.5), 
                                          num_samples=3)
-plcs.as_places.plot(out_filename='examples/out/gpsies_trajectory_places.png', radius=meters_to_decimal_degrees(120, 47.5), 
+plcs.as_locations.plot(out_filename='examples/out/gpsies_trajectory_locations.png', radius=meters_to_decimal_degrees(120, 47.5), 
                     positionfixes=pfs, staypoints=spts, staypoints_radius=meters_to_decimal_degrees(100, 47.5), 
                     plot_osm=True)
 

@@ -137,7 +137,7 @@ def read_locations_csv(*args, **kwargs):
     GeoDataFrame
         A GeoDataFrame containing the locations.
     """
-    # Todo: How to implement flexible geometry names in places (gdf with potentially 2 geometry columns)
+    # Todo: How to implement flexible geometry names in locations (gdf with potentially 2 geometry columns)
     df = pd.read_csv(*args, **kwargs)
     df['center'] = df['center'].apply(wkt.loads)
     if 'extent' in df.columns:
