@@ -1,9 +1,11 @@
 import os
-import trackintel as ti
-import numpy as np
-from trackintel.geogr.distances import meters_to_decimal_degrees, calculate_distance_matrix
-from sklearn.metrics import pairwise_distances
 from math import radians
+
+import numpy as np
+from sklearn.metrics import pairwise_distances
+
+import trackintel as ti
+from trackintel.geogr.distances import meters_to_decimal_degrees, calculate_distance_matrix
 
 
 class TestCalculate_distance_matrix:
