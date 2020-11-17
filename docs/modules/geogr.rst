@@ -10,13 +10,13 @@ distance functions for points and trajectories
 
 
 Point distances
-==========
+================
 
 .. autofunction:: trackintel.geogr.point_distances.haversine_dist
 
 
 Trajectory distances
-==========
+====================
 
 .. autofunction:: trackintel.geogr.trajectory_distances.dtw
 .. autofunction:: trackintel.geogr.trajectory_distances.frechet_dist
