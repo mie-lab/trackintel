@@ -1,8 +1,8 @@
 from __future__ import division
-from scipy.spatial import distance
-from scipy.spatial import minkowski_distance
 
 import numpy as np
+from scipy.spatial import distance
+from scipy.spatial import minkowski_distance
 
 
 def _c(ca, i, j, P, Q):

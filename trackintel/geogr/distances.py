@@ -10,8 +10,6 @@ from trackintel.geogr.point_distances import haversine_dist
 from trackintel.geogr.trajectory_distances import dtw, frechet_dist
 
 
-# todo: check the sklearn format for distances matrices and try to use it
-# todo: think about possibilities for efficient implementation for sparse point distance matrices using knn (or geopy?)
 def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kwds):
     """
     Calculate a distance matrix based on a specific distance metric.
@@ -63,7 +61,6 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
             # create point pairs for distance calculation
             nx = len(X)
             ny = len(Y)
-
 
             # if y != x they could have different dimensions
             if ny >= nx:

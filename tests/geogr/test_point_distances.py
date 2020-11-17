@@ -1,19 +1,28 @@
+import os
+from math import radians
+
+import numpy as np
+from sklearn.metrics.pairwise import haversine_distances
+
 import trackintel as ti
 from trackintel.geogr.distances import haversine_dist
-import numpy as np
-import os
-from sklearn.metrics.pairwise import haversine_distances
-from math import radians
-import time
+
 
 class TestHaversineDist:
     def test_haversine_dist(self):
-        # input_latlng saves different combinations of haversine-distances in meters and the longitude & latitudes from
-        # two different points in WGS84
+        """
+        input_latlng saves different combinations of haversine-distances in meters and the longitude & latitudes from
+        two different points in WGS84
+
+        References
+        ------
+        https://community.esri.com/groups/coordinate-reference-systems/blog/2017/10/05/haversine-formula
+        """
+
         # {haversine-distance in meters[longitude_P1, latitudes_P1, longitude_P2, latitudes_P2]}
         input_latlng = {18749: [8.5, 47.3, 8.7, 47.2],  # Source: see Information to function
                         5897658.289: [-0.116773, 51.510357, -77.009003, 38.889931],
-                        # Source: https://community.esri.com/groups/coordinate-reference-systems/blog/2017/10/05/haversine-formula
+
                         3780627: [0.0, 4.0, 0.0, 38],
                         # Source for next lines: self-computation with formula from link above
                         2306879.363: [-7.345, -7.345, 7.345, 7.345],
