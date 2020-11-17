@@ -6,10 +6,8 @@
 
 import io
 import os
-import sys
-from shutil import rmtree
 
-from setuptools import find_packages, setup, Command
+from setuptools import find_packages, setup
 
 # Package meta-data.
 NAME = 'trackintel'
@@ -34,8 +32,6 @@ REQUIRED = [
     'osmnx',
     'scikit-learn',
     'simplification',
-    'console_progressbar',
-    'scipy'
 ]
 
 # What packages are optional?
