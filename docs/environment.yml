@@ -8,8 +8,6 @@ dependencies:
 - matplotlib
 - pandas
 - geopandas
-- gdal
-- rtree
 - scikit-learn
 - networkx
 - pint
