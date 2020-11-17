@@ -1,12 +1,26 @@
 Geography Utils
 ***************
 
-To make handling of mobility and geodata easier, *trackintel* features several geographic utilit functions.
+To make handling of mobility and geodata easier, *trackintel* features several geographic utility functions and
+distance functions for points and trajectories
+
+.. autofunction:: trackintel.geogr.distances.calculate_distance_matrix
 
 .. autofunction:: trackintel.geogr.distances.meters_to_decimal_degrees
 
-.. autofunction:: trackintel.geogr.distances.haversine_dist
 
-.. autofunction:: trackintel.geogr.distances.haversine_dist_cdist
+Point distances
+================
 
-.. autofunction:: trackintel.geogr.distances.calculate_distance_matrix
+.. autofunction:: trackintel.geogr.point_distances.haversine_dist
+
+
+Trajectory distances
+====================
+
+.. autofunction:: trackintel.geogr.trajectory_distances.dtw
+.. autofunction:: trackintel.geogr.trajectory_distances.frechet_dist
+
+
+
+

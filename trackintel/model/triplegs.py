@@ -62,3 +62,9 @@ class TriplegsAccessor(object):
         """Stores this collection of triplegs to PostGIS.
         See :func:`trackintel.io.postgis.store_positionfixes_postgis`."""
         ti.io.postgis.write_triplegs_postgis(self._obj, conn_string, table_name)
+
+    def similarity(self, *args, **kwargs):
+        """Calculate pair-wise distance among triplegs (x) or to other triplegs (y)
+        See :func:`trackintel.geogr.distances.calculate_distance_matrix`.
+        """
+        return ti.geogr.distances.calculate_distance_matrix(self._obj, *args, **kwargs)

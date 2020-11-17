@@ -101,3 +101,7 @@ class PositionfixesAccessor(object):
         See :func:`trackintel.io.postgis.write_positionfixes_postgis`."""
         ti.io.postgis.write_positionfixes_postgis(self._obj, conn_string, table_name, 
             schema, sql_chunksize, if_exists)
+        
+    def similarity_matrix(self, method, field='tripleg_id', trsh=None, eps=None, dist=False, **kwargs):
+        """Calculates Similarity (/distance) matrix. See: func: 'trackintel.similarity.detection.similarity_matrix' """
+        return ti.similarity.similarity_matrix(self._obj, method, field, trsh, eps, dist, **kwargs)
