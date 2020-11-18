@@ -26,7 +26,7 @@ Triplegs
 ========
 
 Locations
-======
+=========
 
 .. autofunction:: trackintel.visualization.locations.plot_center_of_locations
 
