@@ -54,7 +54,7 @@ CREATE TABLE staypoints (
 
     -- References to foreign tables.
     trip_id bigint,
-    place_id bigint,
+    location_id bigint,
 
     -- Temporal attributes.
     started_at timestamp without time zone NOT NULL,
@@ -116,7 +116,7 @@ CREATE TABLE triplegs (
     CONSTRAINT triplegs_pkey PRIMARY KEY (id)
 );
 
-CREATE TABLE places (
+CREATE TABLE locations (
     -- Common to all tables.
     id bigint NOT NULL,
     user_id bigint,
@@ -132,7 +132,7 @@ CREATE TABLE places (
     center geometry(Point, 4326),
 
     -- Constraints.
-    CONSTRAINT places_pkey PRIMARY KEY (id)
+    CONSTRAINT locations_pkey PRIMARY KEY (id)
 );
 
 CREATE TABLE trips (
@@ -163,7 +163,7 @@ CREATE TABLE tours (
     user_id integer NOT NULL,
 
     -- References to foreign tables.
-    origin_destination_place_id bigint,
+    origin_destination_location_id bigint,
 
     -- Temporal attributes.
     started_at timestamp without time zone NOT NULL,
