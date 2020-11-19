@@ -54,8 +54,8 @@ autodoc_mock_imports = [
 # -- Project information -----------------------------------------------------
 
 project = 'trackintel'
-copyright = '2019, Dominik Bucher, Henry Martin'
-author = 'Dominik Bucher, Henry Martin'
+copyright = '2019, Dominik Bucher, Henry Martin, Ye Hong'
+author = 'Dominik Bucher, Henry Martin, Ye Hong'
 
 # This always leads to errors. Simply update the version by hand here.
 
@@ -192,7 +192,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'trackintel.tex', 'trackintel Documentation',
-     'Dominik Bucher, Henry Martin', 'manual'),
+     'Dominik Bucher, Henry Martin, Ye Hong', 'manual'),
 ]
 
 

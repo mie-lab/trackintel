@@ -14,7 +14,7 @@ NAME = 'trackintel'
 DESCRIPTION = 'Human mobility and movement analysis framework.'
 URL = 'https://github.com/mie-lab/trackintel'
 EMAIL = 'dobucher@ethz.ch, martinhe@ethz.ch'
-AUTHOR = 'Dominik Bucher, Henry Martin'
+AUTHOR = 'Dominik Bucher, Henry Martin, Ye Hong'
 REQUIRES_PYTHON = '>=3.6.0'
 VERSION = None
 LICENSE = 'MIT'
