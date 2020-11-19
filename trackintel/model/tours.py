@@ -6,7 +6,7 @@ class ToursAccessor(object):
     """A pandas accessor to treat DataFrames as collections of tours. 
 
     Requires at least the following columns: 
-    ``['user_id', 'started_at', 'finished_at', 'origin_destination_place_id', 'journey']``
+    ``['user_id', 'started_at', 'finished_at', 'origin_destination_location_id', 'journey']``
 
     The ``index`` of the GeoDataFrame will be treated as unique identifier of the `trips`
 
@@ -23,7 +23,7 @@ class ToursAccessor(object):
     >>> df.as_tours.plot()
     """
 
-    required_columns = ['user_id', 'started_at', 'finished_at', 'origin_destination_place_id', 'journey']
+    required_columns = ['user_id', 'started_at', 'finished_at', 'origin_destination_location_id', 'journey']
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)

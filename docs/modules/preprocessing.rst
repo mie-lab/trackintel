@@ -21,8 +21,8 @@ In particular, we can extract staypoints and triplegs from positionfixes.
 Staypoints
 ==========
 
-Staypoints are locations where someone stayed for a longer period of time (e.g., during a
-transfer between two transport modes). We can cluster these into places that a user 
+Staypoints are points where someone stayed for a longer period of time (e.g., during a
+transfer between two transport modes). We can cluster these into locations that a user 
 frequently visits.
 
 .. autofunction:: trackintel.preprocessing.staypoints.cluster_staypoints
