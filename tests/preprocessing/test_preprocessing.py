@@ -1,29 +1,32 @@
 import pytest
-import sys
+import sys, os
 
 import geopandas as gpd
 import pandas as pd
+import numpy as np
 from shapely.geometry import Point
+from sklearn.cluster import DBSCAN
+from math import radians
 
 import trackintel as ti
 from trackintel.preprocessing import positionfixes
 from trackintel.preprocessing import staypoints
-
+from trackintel.geogr.distances import calculate_distance_matrix
 
 class TestPreprocessing():
     def test_extract_staypoints_sliding_min(self):
-        pfs = ti.read_positionfixes_csv('tests/data/positionfixes.csv', sep=';')
+        pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         assert len(spts) == len(pfs), "With small thresholds, staypoint extraction should yield each positionfix"
         
     def test_extract_staypoints_sliding_max(self):
-        pfs = ti.read_positionfixes_csv('tests/data/positionfixes.csv', sep=';')
+        pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=sys.maxsize, 
                                                        time_threshold=sys.maxsize)
         assert len(spts) == 0, "With large thresholds, staypoint extraction should not yield positionfixes"
         
     def test_extract_triplegs_staypoint(self):
-        pfs = ti.read_positionfixes_csv('tests/data/positionfixes.csv', sep=';')
+        pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         tpls1 = pfs.as_positionfixes.extract_triplegs()
         tpls2 = pfs.as_positionfixes.extract_triplegs(spts)
@@ -33,19 +36,19 @@ class TestPreprocessing():
             "the same number of triplegs"
 
     def test_cluster_staypoints_dbscan_min(self):
-        pfs = ti.read_positionfixes_csv('tests/data/positionfixes.csv', sep=';')
+        pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         _, clusters = spts.as_staypoints.extract_locations(method='dbscan', epsilon=1e-18, num_samples=0)
         assert len(clusters) == len(spts), "With small hyperparameters, clustering should not reduce the number"
 
     def test_cluster_staypoints_dbscan_max(self):
-        pfs = ti.read_positionfixes_csv('tests/data/positionfixes.csv', sep=';')
+        pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         _, clusters = spts.as_staypoints.extract_locations(method='dbscan', epsilon=1e18, num_samples=1000)
         assert len(clusters) == 0, "With large hyperparameters, everything is an outlier"
         
     def test_cluster_staypoints_dbscan_user_dataset(self):
-        spts = ti.read_staypoints_csv('tests/data/geolife/geolife_staypoints.csv')
+        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'))
         # take the first row and duplicate once
         spts = spts.head(1)
         spts = spts.append(spts, ignore_index=True)
@@ -65,7 +68,7 @@ class TestPreprocessing():
         assert loc_us_num == 2, "Considering user staypoints separately, there should be two locations"
         
     def test_cluster_staypoints_dbscan_loc(self):
-        spts = ti.read_staypoints_csv('tests/data/geolife/geolife_staypoints.csv')
+        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'))
         spts, locs = spts.as_staypoints.extract_locations(method='dbscan', epsilon=10, 
                                                           num_samples=0, distance_matrix_metric='haversine',
                                                           agg_level='dataset')
@@ -91,3 +94,19 @@ class TestPreprocessing():
         assert all(other_locs['center'] == locs['center']), "The location geometry should be the same"
         assert all(other_locs['location_id'] == locs['location_id']), "The location id should be the same" + \
             "and start from one"
+    
+    def test_cluster_staypoints_dbscan_haversine(self):
+        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'))
+        
+        # haversine calculation using sklearn.metrics.pairwise_distances, epsilon converted to radius
+        spts, locs = spts.as_staypoints.extract_locations(method='dbscan', epsilon=10, 
+                                                    num_samples=0, distance_matrix_metric='haversine',
+                                                    agg_level='dataset')
+        
+        # calculate pairwise haversine matrix and fed to dbscan
+        sp_distance_matrix = calculate_distance_matrix(spts, dist_metric="haversine")
+        db = DBSCAN(eps=10, min_samples=0, metric="precomputed")
+        labels = db.fit_predict(sp_distance_matrix)
+        
+        assert len(set(locs['location_id'])) == len(set(labels)) , "The #location should be the same"
+        
