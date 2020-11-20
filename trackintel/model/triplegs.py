@@ -68,3 +68,8 @@ class TriplegsAccessor(object):
         See :func:`trackintel.geogr.distances.calculate_distance_matrix`.
         """
         return ti.geogr.distances.calculate_distance_matrix(self._obj, *args, **kwargs)
+    
+    def spatial_filter(self, *args, **kwargs):
+        """Filter triplegs with a geo extent.
+        See :func:`trackintel.preprocessing.filter.spatial_filter`."""
+        return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
