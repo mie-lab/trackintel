@@ -3,6 +3,7 @@ import trackintel as ti
 
 import trackintel.visualization.staypoints
 import trackintel.visualization.locations
+import trackintel.preprocessing.filter
 
 
 @pd.api.extensions.register_dataframe_accessor("as_locations")

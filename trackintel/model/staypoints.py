@@ -2,6 +2,8 @@ import pandas as pd
 
 import trackintel as ti
 import trackintel.preprocessing.staypoints
+import trackintel.preprocessing.filter
+
 import trackintel.visualization.staypoints
 
 

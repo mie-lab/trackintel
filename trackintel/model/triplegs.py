@@ -2,6 +2,7 @@ import pandas as pd
 
 import trackintel as ti
 import trackintel.visualization.triplegs
+import trackintel.preprocessing.filter
 
 
 @pd.api.extensions.register_dataframe_accessor("as_triplegs")
