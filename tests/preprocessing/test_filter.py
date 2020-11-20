@@ -18,8 +18,10 @@ class TestFilter():
         intersects_spts = spts.as_staypoints.spatial_filter(areas=extent, method="intersects", re_project=True)
         crosses_spts = spts.as_staypoints.spatial_filter(areas=extent, method="crosses", re_project=True)
         
-        gis_filter_num = 13
-        assert len(within_spts) == gis_filter_num, "The spatial filtered sp number should be the same as" + \
+        # the result obtained from ArcGIS
+        gis_within_num = 13
+        
+        assert len(within_spts) == gis_within_num, "The spatial filtered sp number should be the same as" + \
             "the one from the result with ArcGIS"
         assert all(within_spts.geometry == intersects_spts.geometry), "For sp the result of within and" + \
             "intersects should be the same"
@@ -46,3 +48,30 @@ class TestFilter():
             "the same as the one from the result with ArcGIS"
         assert len(crosses_tl) == len(intersects_tl) - len(within_tl), "The crosses tripleg number" + \
             "should equal the number of intersect triplegs minus the number of within triplegs"
+    
+    def test_filter_locations(self):
+        # read staypoints and area file
+        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'))
+        extent = gpd.read_file(os.path.join('tests', 'data', 'area', 'tsinghua.geojson'))
+        
+        # cluster staypoints to locations
+        _, locs = spts.as_staypoints.extract_locations(method='dbscan', epsilon=10, 
+                                                       num_samples=0, distance_matrix_metric='haversine',
+                                                       agg_level='dataset')
+        
+        # the projection needs to be defined: WGS84
+        locs.crs = 'epsg:4326'
+        
+        # filter locations with the area
+        within_loc = locs.as_locations.spatial_filter(areas=extent, method="within", re_project=True)
+        intersects_loc = locs.as_locations.spatial_filter(areas=extent, method="intersects", re_project=True)
+        crosses_loc = locs.as_locations.spatial_filter(areas=extent, method="crosses", re_project=True)
+        
+        # the result obtained from ArcGIS
+        gis_within_num = 12
+        
+        assert len(within_loc) == gis_within_num, "The spatial filtered location number should be the same as" + \
+            "the one from the result with ArcGIS"
+        assert all(within_loc.geometry == intersects_loc.geometry), "For location the result of within and" + \
+            "intersects should be the same"
+        assert len(crosses_loc) == 0, "There will be no point crossing area"
