@@ -64,7 +64,13 @@ class TriplegsAccessor(object):
         ti.io.postgis.write_triplegs_postgis(self._obj, conn_string, table_name)
 
     def similarity(self, *args, **kwargs):
-        """Calculate pair-wise distance among triplegs (x) or to other triplegs (y)
+        """Calculate pair-wise distance among triplegs (x) or to other triplegs (y).
         See :func:`trackintel.geogr.distances.calculate_distance_matrix`.
         """
         return ti.geogr.distances.calculate_distance_matrix(self._obj, *args, **kwargs)
+
+    def predict_transport_mode(self, *args, **kwargs):
+        """Predict/impute the transport mode with which each tripleg was likely covered.
+        See :func:`trackintel.analysis.transport_mode_identification.predict_transport_mode`.
+        """
+        return ti.analysis.transport_mode_identification.predict_transport_mode(self._obj, *args, **kwargs)
