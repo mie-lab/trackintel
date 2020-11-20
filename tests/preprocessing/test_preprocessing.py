@@ -109,4 +109,23 @@ class TestPreprocessing():
         labels = db.fit_predict(sp_distance_matrix)
         
         assert len(set(locs['location_id'])) == len(set(labels)) , "The #location should be the same"
+    
+    def test_cluster_staypoints_dbscan_hav_euc(self):
+        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'))
         
+        # haversine calculation 
+        _, loc_har = spts.as_staypoints.extract_locations(method='dbscan', epsilon=100, 
+                                                          num_samples=0, distance_matrix_metric='haversine',
+                                                          agg_level='dataset')
+        # WGS_1984
+        spts.crs = 'epsg:4326'
+        # WGS_1984_UTM_Zone_49N 
+        spts = spts.to_crs("epsg:32649")
+        
+        # euclidean calculation 
+        _, loc_eu = spts.as_staypoints.extract_locations(method='dbscan', epsilon=100, 
+                                                         num_samples=0, distance_matrix_metric='euclidean',
+                                                         agg_level='dataset')
+        
+        assert len(loc_har) == len(loc_eu) , "The #location should be the same for haversine" + \
+            "and euclidean distances"
