@@ -3,7 +3,6 @@ import copy
 import datetime
 
 import pandas as pd
-import pandas as pd
 from shapely.geometry import LineString
 from simplification.cutil import simplify_coords  # , simplify_coordsvw
 
@@ -131,9 +130,8 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     """ Generate trips based on staypoints and triplegs
 
     `generate_trips` aggregates the staypoints `stps_input` and `tpls_input` into `trips` which are returned
-      in a new DataFrame. The function returns new versions of `stps_input` and `tpls_input` that are identically except
+    in a new DataFrame. The function returns new versions of `stps_input` and `tpls_input` that are identically except
     for additional id's that allow the matching between staypoints, triplegs and trips.
-
 
     Parameters
     ----------
@@ -160,11 +158,13 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     [`trip_id` `prev_trip_id` and `next_trip_id`], triplegs receive the field [`trip_id`].
     The following assumptions are implemented
         - All movement before the first and after the last activity is omitted
-        - If we do not record a person for more than `gap_threshold` minutes, we assume that the person performed an
-            activity in the recording gap and split the trip at the gap.
+        - If we do not record a person for more than `gap_threshold` minutes, we assume that the person performed an activity in the recording gap and split the trip at the gap.
         - Trips that start/end in a recording gap can have an unknown origin/destination
         - There are no trips without a (recored) tripleg
 
+    Examples
+    ---------
+    >>> staypoints, triplegs, trips = generate_trips(staypoints, triplegs)
 
     """
     assert 'activity' in stps_input.columns, "staypoints need the column 'activities' \

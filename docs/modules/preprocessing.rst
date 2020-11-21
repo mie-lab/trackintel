@@ -35,3 +35,10 @@ with a single mode of transport. Depending on the tracking data, they can be rat
 for which reason we often want to smoothen them.
 
 .. autofunction:: trackintel.preprocessing.triplegs.smoothen_triplegs
+.. autofunction:: trackintel.preprocessing.triplegs.generate_trips
+
+The extraction of triplegs in `generate_trips` follows this algorithm:
+
+.. image:: /_static/tripalgorithm.png
+   :scale: 100 %
+   :align: center
