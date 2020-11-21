@@ -3,6 +3,7 @@ import trackintel as ti
 
 import trackintel.visualization.staypoints
 import trackintel.visualization.locations
+import trackintel.preprocessing.filter
 
 
 @pd.api.extensions.register_dataframe_accessor("as_locations")
@@ -56,3 +57,8 @@ class LocationsAccessor(object):
         See :func:`trackintel.io.postgis.write_locations_postgis`."""
         ti.io.postgis.write_locations_postgis(self._obj, conn_string, table_name, 
             schema, sql_chunksize, if_exists)
+        
+    def spatial_filter(self, *args, **kwargs):
+        """Filter locations with a geo extent.
+        See :func:`trackintel.preprocessing.filter.spatial_filter`."""
+        return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)

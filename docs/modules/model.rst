@@ -10,10 +10,10 @@ provides functionality to generate everything starting from the raw GPS position
 * **positionfixes**: Raw GPS data.
 * **staypoints**: Locations where a user spent a minimal time.
 * **triplegs**: Segments covered with one mode of transport.
-* **places**: Clustered staypoints.
+* **locations**: Clustered staypoints.
 * **trips**: Segments between consecutive activities (special staypoints that are not just waiting points).
-* **tours**: Sequences of trips which start and end at the same place (if ``journey`` 
-  is set to ``True``, this place is *home*).
+* **tours**: Sequences of trips which start and end at the same location (if ``journey`` 
+  is set to ``True``, this location is *home*).
 
 A detailed (and SQL-specific) explanation of the different classes can be found under 
 :doc:`/content/data_model_sql`.
@@ -52,7 +52,7 @@ The following accessors are available within *trackintel*.
 
 .. autoclass:: trackintel.model.triplegs.TriplegsAccessor
 
-.. autoclass:: trackintel.model.places.PlacesAccessor
+.. autoclass:: trackintel.model.locations.LocationsAccessor
 
 .. autoclass:: trackintel.model.trips.TripsAccessor
 

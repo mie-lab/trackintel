@@ -2,6 +2,8 @@ import pandas as pd
 
 import trackintel as ti
 import trackintel.preprocessing.staypoints
+import trackintel.preprocessing.filter
+
 import trackintel.visualization.staypoints
 
 
@@ -28,7 +30,7 @@ class StaypointsAccessor(object):
 
     Examples
     --------
-    >>> df.as_staypoints.extract_places()
+    >>> df.as_staypoints.extract_locations()
     """
 
     required_columns = ['user_id', 'started_at', 'finished_at']
@@ -67,7 +69,10 @@ class StaypointsAccessor(object):
         See :func:`trackintel.preprocessing.staypoints.create_activity_flag`."""
         return ti.preprocessing.staypoints.create_activity_flag(self._obj, *args, **kwargs)
 
-
+    def spatial_filter(self, *args, **kwargs):
+        """Filter staypoints with a geo extent.
+        See :func:`trackintel.preprocessing.filter.spatial_filter`."""
+        return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
 
     def plot(self, *args, **kwargs):
         """Plots this collection of staypoints. 

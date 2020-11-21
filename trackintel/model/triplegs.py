@@ -2,6 +2,7 @@ import pandas as pd
 
 import trackintel as ti
 import trackintel.visualization.triplegs
+import trackintel.preprocessing.filter
 
 
 @pd.api.extensions.register_dataframe_accessor("as_triplegs")
@@ -62,3 +63,14 @@ class TriplegsAccessor(object):
         """Stores this collection of triplegs to PostGIS.
         See :func:`trackintel.io.postgis.store_positionfixes_postgis`."""
         ti.io.postgis.write_triplegs_postgis(self._obj, conn_string, table_name)
+
+    def similarity(self, *args, **kwargs):
+        """Calculate pair-wise distance among triplegs (x) or to other triplegs (y)
+        See :func:`trackintel.geogr.distances.calculate_distance_matrix`.
+        """
+        return ti.geogr.distances.calculate_distance_matrix(self._obj, *args, **kwargs)
+    
+    def spatial_filter(self, *args, **kwargs):
+        """Filter triplegs with a geo extent.
+        See :func:`trackintel.preprocessing.filter.spatial_filter`."""
+        return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)

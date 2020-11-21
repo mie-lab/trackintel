@@ -6,10 +6,8 @@
 
 import io
 import os
-import sys
-from shutil import rmtree
 
-from setuptools import find_packages, setup, Command
+from setuptools import find_packages, setup
 
 # Package meta-data.
 NAME = 'trackintel'
@@ -33,7 +31,7 @@ REQUIRED = [
     'geoalchemy2',
     'osmnx',
     'scikit-learn',
-    'simplification'
+    'simplification',
 ]
 
 # What packages are optional?

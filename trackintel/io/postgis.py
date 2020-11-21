@@ -80,7 +80,7 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
 
     # If this GeoDataFrame already has an SRID, we use it, otherwise we default to WGS84.
     if (positionfixes_postgis.crs is not None):
-        srid = int(positionfixes_postgis.crs['init'].split(':')[1])
+        srid = int(positionfixes_postgis.crs.to_epsg())
     else:
         srid = 4326
     positionfixes_postgis['geom'] = \
@@ -167,7 +167,7 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None,
     # make a copy in order to avoid changing the geometry of the original array
     triplegs_postgis = triplegs.copy()
     
-    srid = int(triplegs_postgis.crs['init'].split(':')[1])
+    srid = int(triplegs_postgis.crs.to_epsg())
     triplegs_postgis['geom'] = \
         triplegs_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     if 'id' not in triplegs_postgis.columns:
@@ -257,7 +257,7 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
     # make a copy in order to avoid changing the geometry of the original array
     staypoints_postgis = staypoints.copy()
     
-    srid = int(staypoints_postgis.crs['init'].split(':')[1])
+    srid = int(staypoints_postgis.crs.to_epsg())
     staypoints_postgis['geom'] = \
         staypoints_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     if 'id' not in staypoints_postgis.columns:
@@ -426,7 +426,7 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None,
     # make a copy in order to avoid changing the geometry of the original array
     trips_postgis = trips.copy()
     
-    srid = int(trips_postgis.crs['init'].split(':')[1])
+    srid = int(trips_postgis.crs.to_epsg())
     trips_postgis['center'] = \
         trips_postgis['center'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     trips_postgis['extent'] = \

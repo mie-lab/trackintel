@@ -28,7 +28,7 @@ class TestExtractTriplegs:
             distance = tpls.geom.iloc[i].distance(tpls_test.geom.iloc[i])
             distance_sum = distance_sum + distance
         assert_almost_equal(distance_sum, 0.0)
-
+   
     def test_check_overlap(self):
         """
         Triplegs and staypoints should not overlap when generated using the default extract triplegs method.
@@ -42,13 +42,10 @@ class TestExtractTriplegs:
 
         spts_tpls = spts[['started_at', 'finished_at', 'user_id']].append(
             tpls[['started_at', 'finished_at', 'user_id']])
-
         spts_tpls.sort_values(by=['user_id', 'started_at'], inplace=True)
-
         for user_id_this in spts['user_id'].unique():
             spts_tpls_this = spts_tpls[spts_tpls['user_id'] == user_id_this]
             diff = spts_tpls_this['started_at'] - spts_tpls_this['finished_at'].shift(1)
-
             # transform to numpy array and drop first values (always nan due to shift operation)
             diff = diff.values[1:]
 

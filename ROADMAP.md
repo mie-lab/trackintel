@@ -8,10 +8,10 @@ Steps until we get to version 1.0.0.
 
 ### v0.1.0
 
-* :heavy_check_mark: Read *positionfixes*, *triplegs*, *staypoints*, *places*, *trips* from CSV files.
-* :heavy_check_mark: Read *positionfixes*, *triplegs*, *staypoints*, *places*, *trips* from PostGIS.
-* :heavy_check_mark: Write *positionfixes*, *triplegs*, *staypoints*, *places*, *trips* to CSV files.
-* :heavy_check_mark: Write *positionfixes*, *triplegs*, *staypoints*, *places*, *trips* to PostGIS.
+* :heavy_check_mark: Read *positionfixes*, *triplegs*, *staypoints*, *locations*, *trips* from CSV files.
+* :heavy_check_mark: Read *positionfixes*, *triplegs*, *staypoints*, *locations*, *trips* from PostGIS.
+* :heavy_check_mark: Write *positionfixes*, *triplegs*, *staypoints*, *locations*, *trips* to CSV files.
+* :heavy_check_mark: Write *positionfixes*, *triplegs*, *staypoints*, *locations*, *trips* to PostGIS.
 * :heavy_check_mark: Visualize *positionfixes*, *triplegs*, *staypoints* geographically.
 
 ### v0.2.0
@@ -22,18 +22,18 @@ Steps until we get to version 1.0.0.
 ### v0.3.0
 
 * Extract *trips* from *triplegs* and *staypoints*
-* Extract *places* from *staypoints*.
+* :heavy_check_mark: Extract *locations* from *staypoints*.
 
 ### v0.4.0
 
-* :heavy_check_mark: Create transition graphs from *places*.
+* :heavy_check_mark: Create transition graphs from *locations*.
 * :heavy_check_mark: Provide and visualize a range of (transition) graph measures.
 
 ### v0.5.0
 
 * Simple outlier filtering for *triplegs*
 * Augment model of *triplegs* and *staypoints* in such a way that they can
-  hold references to *trips* and *places*.
+  hold references to *trips* and *locations*.
 
 
 ### v0.6.0
@@ -98,9 +98,9 @@ Analysis
 
 Visualization 
 * Visualize *customermovements*, *tours* geographically.
-* Visualize *trips* and *places* geographically, e.g., by coloring *triplegs*
+* Visualize *trips* and *locations* geographically, e.g., by coloring *triplegs*
   differently or by making a buffer around all *staypoints* that are part of
-  a *place*.
+  a *locations*.
 
 Various
 * Parallelization

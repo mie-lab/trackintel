@@ -25,11 +25,11 @@ Staypoints
 Triplegs
 ========
 
-Places
-======
+Locations
+=========
 
-.. autofunction:: trackintel.visualization.places.plot_center_of_places
+.. autofunction:: trackintel.visualization.locations.plot_center_of_locations
 
-.. image:: /_static/example_places.png
+.. image:: /_static/example_locations.png
    :scale: 50 %
    :align: center
