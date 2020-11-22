@@ -59,6 +59,9 @@ def cluster_staypoints(staypoints,
     if method=='dbscan':
 
         if distance_matrix_metric == 'haversine':
+            # The input and output of sklearn's harvarsine metrix are both in radians,
+            # see https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.haversine_distances.html
+            # here the 'epsilon' is directly applied to the metric's output.
             epsilon = epsilon / 6371000 # convert to radius
         db = DBSCAN(eps=epsilon, min_samples=num_samples, algorithm='ball_tree', metric=distance_matrix_metric)
             
@@ -84,6 +87,7 @@ def cluster_staypoints(staypoints,
                 ret_sp.loc[user_staypoints.index, 'location_id'] = labels
         else:
             if distance_matrix_metric == 'haversine':
+                # the input is converted to list of (lat, lon) tuples in radians unit
                 p = np.array([[radians(g.y), radians(g.x)] for g in ret_sp.geometry])
             else:
                 p = np.array([[g.x, g.y] for g in ret_sp.geometry])
