@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import Point, MultiPoint
 from sklearn.cluster import DBSCAN
+from math import radians
 
 from trackintel.geogr.distances import calculate_distance_matrix, meters_to_decimal_degrees
 
@@ -12,7 +13,7 @@ def cluster_staypoints(staypoints,
                        method='dbscan',
                        epsilon=100, 
                        num_samples=1, 
-                       distance_matrix_metric=None,
+                       distance_matrix_metric='euclidean',
                        agg_level='user'):
     """Clusters staypoints to get locations.
 
@@ -31,12 +32,10 @@ def cluster_staypoints(staypoints,
     num_samples : int, default 1
         The minimal number of samples in a cluster. 
 
-    distance_matrix_metric: str (optional)
-        When given, dbscan will work on a precomputed a distance matrix that is
-        created using the staypoints based on the given metric. Possible metrics
+    distance_matrix_metric: str, default 'euclidean'
+        The distance matrix used by the applied method. Possible metrics
         are: {'haversine', 'euclidean'} or any mentioned in: 
-        https://scikit-learn.org/stable/modules/generated/
-        sklearn.metrics.pairwise_distances.html
+        https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html
         
     agg_level: str, {'user' or 'dataset'}, default 'user'
         The level of aggregation when generating locations:
@@ -59,10 +58,12 @@ def cluster_staypoints(staypoints,
     ret_sp = staypoints.copy()
     if method=='dbscan':
 
-        if distance_matrix_metric is not None:
-            db = DBSCAN(eps=epsilon, min_samples=num_samples, metric='precomputed')
-        else:    
-            db = DBSCAN(eps=epsilon, min_samples=num_samples)
+        if distance_matrix_metric == 'haversine':
+            # The input and output of sklearn's harvarsine metrix are both in radians,
+            # see https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.haversine_distances.html
+            # here the 'epsilon' is directly applied to the metric's output.
+            epsilon = epsilon / 6371000 # convert to radius
+        db = DBSCAN(eps=epsilon, min_samples=num_samples, algorithm='ball_tree', metric=distance_matrix_metric)
             
         if agg_level == 'user':
             location_id_counter = 0
@@ -70,13 +71,12 @@ def cluster_staypoints(staypoints,
                 # Slice staypoints array by user. This is not a copy!
                 user_staypoints = ret_sp[ret_sp["user_id"] == user_id_this]  
                 
-                if distance_matrix_metric is not None:
-                    sp_distance_matrix = calculate_distance_matrix(user_staypoints, 
-                                                                   dist_metric=distance_matrix_metric)
-                    labels = db.fit_predict(sp_distance_matrix)
+                if distance_matrix_metric == 'haversine':
+                    # the input is converted to list of (lat, lon) tuples in radians unit
+                    p = np.array([[radians(g.y), radians(g.x)] for g in user_staypoints.geometry])
                 else:
-                    coordinates = np.array([[g.x, g.y] for g in user_staypoints.geometry])
-                    labels = db.fit_predict(coordinates)
+                    p = np.array([[g.x, g.y] for g in user_staypoints.geometry])
+                labels = db.fit_predict(p)
                     
                 # enforce unique lables across all users without changing noise labels
                 max_label = np.max(labels)
@@ -87,13 +87,12 @@ def cluster_staypoints(staypoints,
                 # add staypoint - location matching to original staypoints
                 ret_sp.loc[user_staypoints.index, 'location_id'] = labels
         else:
-            if distance_matrix_metric is not None:
-                sp_distance_matrix = calculate_distance_matrix(ret_sp, 
-                                                               dist_metric=distance_matrix_metric)
-                labels = db.fit_predict(sp_distance_matrix)
+            if distance_matrix_metric == 'haversine':
+                # the input is converted to list of (lat, lon) tuples in radians unit
+                p = np.array([[radians(g.y), radians(g.x)] for g in ret_sp.geometry])
             else:
-                coordinates = np.array([[g.x, g.y] for g in ret_sp.geometry])
-                labels = db.fit_predict(coordinates)
+                p = np.array([[g.x, g.y] for g in ret_sp.geometry])
+            labels = db.fit_predict(p)
             
             # add 1 to match the 'user' level result
             ret_sp['location_id'] = labels + 1
