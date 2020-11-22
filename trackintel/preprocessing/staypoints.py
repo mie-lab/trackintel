@@ -72,6 +72,7 @@ def cluster_staypoints(staypoints,
                 user_staypoints = ret_sp[ret_sp["user_id"] == user_id_this]  
                 
                 if distance_matrix_metric == 'haversine':
+                    # the input is converted to list of (lat, lon) tuples in radians unit
                     p = np.array([[radians(g.y), radians(g.x)] for g in user_staypoints.geometry])
                 else:
                     p = np.array([[g.x, g.y] for g in user_staypoints.geometry])
