@@ -16,5 +16,3 @@ dependencies:
 - osmnx 
 - psycopg2
 - imageio
-- pip:
-  - simplification

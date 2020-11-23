@@ -1,8 +1,7 @@
-import ast
 import copy
 import datetime
-import pandas as pd
 
+import pandas as pd
 
 
 def smoothen_triplegs(triplegs, method='douglas-peucker', tolerance=1.0):

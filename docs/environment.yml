@@ -18,5 +18,3 @@ dependencies:
 - imageio
 - sphinx
 - sphinx_rtd_theme
-- pip:
-  - simplification
