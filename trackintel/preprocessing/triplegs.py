@@ -1,26 +1,25 @@
-import ast
 import copy
 import datetime
 
 import pandas as pd
-from shapely.geometry import LineString
-from simplification.cutil import simplify_coords  # , simplify_coordsvw
 
 
-def smoothen_triplegs(triplegs, method='douglas-peucker', epsilon = 1.0):
+def smoothen_triplegs(triplegs, method='douglas-peucker', tolerance=1.0):
     """reduces number of points while retaining structure of tripleg
     Parameters
     ----------
     triplegs: shapely file
         triplegs to be reduced
     method: method used to smoothen
-        only one method available so far
-    epsilon: float
-        slack parameter, higher epsilon means removing more points
+        only the douglas-peucker method is available so far
+    tolerance: float
+        a higher tolerance removes more points; the units of tolerance are the same as the projection of the input geometry
     """
     input_copy = copy.deepcopy(triplegs)
-    input_copy.geometry = [LineString(ast.literal_eval(str(simplify_coords(input_copy.geometry[i].coords, epsilon))))
-                           for i in range(len(input_copy.geometry))]
+    origin_geom = input_copy.geom
+    simplified_geom = origin_geom.simplify(tolerance, preserve_topology=False)
+    input_copy.geom = simplified_geom
+
     return input_copy
 
 def _temp_trip_stack_has_tripleg(temp_trip_stack):
