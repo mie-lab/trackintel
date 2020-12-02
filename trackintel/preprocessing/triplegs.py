@@ -168,22 +168,30 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     trips['id'] = trips.index + id_offset
     
     # assign trip_id to tpls
+    ids = tpls.index
     trip2tpl_map = trips[['id', 'tpls']].set_index('id').to_dict()['tpls']
-    
-    tpls['trip_id'] = np.zeros(tpls.shape[0]) - 1
+    ls = []
     for key, values in trip2tpl_map.items():
         for value in values:
-            tpls.loc[tpls.index==value, 'trip_id'] = key
-    tpls['trip_id'].replace(-1, np.NaN, inplace=True)
+            ls.append([value, key])
+    temp = pd.DataFrame(ls, columns=['tplsIndex', 'trip_id'])
+    tpls = tpls.merge(temp, how='left', left_on='id', right_on='tplsIndex')
+    tpls.drop(columns='tplsIndex', inplace=True)
+    tpls['id'] = ids
+    tpls.set_index('id', inplace=True)
     
     # assign trip_id to spts, for non-activity spts
+    ids = spts.index
     trip2spt_map = trips[['id', 'spts']].set_index('id').to_dict()['spts']
-    
-    spts['trip_id'] = np.zeros(spts.shape[0]) - 1
+    ls = []
     for key, values in trip2spt_map.items():
         for value in values:
-            spts.loc[spts.index==value, 'trip_id'] = key
-    spts['trip_id'].replace(-1, np.NaN, inplace=True)
+            ls.append([value, key])
+    temp = pd.DataFrame(ls, columns=['sptsIndex', 'trip_id'])
+    spts = spts.merge(temp, how='left', left_on='id', right_on='sptsIndex')
+    spts.drop(columns='sptsIndex', inplace=True)
+    spts['id'] = ids
+    spts.set_index('id', inplace=True)
     
     # assign prev_trip_id to spts
     ids = spts.index
