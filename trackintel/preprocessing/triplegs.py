@@ -208,7 +208,7 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
         spts_tpls_this = spts_tpls[spts_tpls['user_id'] == user_id_this]
         # assert (spts_tpls_this['started_at'].is_monotonic)  # this is expensive and should be replaced
 
-        origin_activity = None
+        origin_activity = unknown_activity
         temp_trip_stack = []
         before_first_trip = True
         in_trip = False
@@ -220,68 +220,37 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
                         print("trip number: {}".format(trip_id_counter))
                         dont_print_list.append(trip_id_counter)
 
-            # skip all non-activities before the first trip
-            # if before_first_trip:
-            #     if row['activity'] == False:
-            #         continue
-            #     else:
-            #         before_first_trip = False
-
-            # todo: we only skip several activities in a row
-            # todo:
-            # todo: check if cond 4+5 are unnecessary
-
             # check if we can start a new trip
+            # (we make sure that we start the trip with the most recent activity)
             if in_trip is False:
-                # cond 1
                 # If there are several activities in a row, we skip until the last one
                 if row['activity'] and row['activity_next']:
                     continue
 
-                # cond 2
-                # if we did not start a trip yet and the origin is set
-                # encountering another activity means that we have to defer the
-                # start of the trip by 1
-                elif row['activity'] and origin_activity is not None:
-                    origin_activity = row
-                    continue
-
-                # cond 3
-                # If the current row is an activity and `origin_activity` is not set
-                # then we start a new trip. This is for example the case for the first trip
-                elif row['activity'] and origin_activity is None:
+                # if this is the last activity before the trip starts, reset the origin
+                elif row['activity']:
                     origin_activity = row
                     in_trip = True
                     continue
 
-                # cond 4
-                # This is the standard case after finishing a trip.
-                elif not row['activity'] and origin_activity is not None:
-                    in_trip = True
-
-                # cond 5
-                # this is the case for unknown origin activities
-                # note that there is no continue
-                elif not row['activity'] and origin_activity is None:
-                    in_trip = True
-                    origin_activity = unknown_activity
-
+                # if for non-activities we simply start the trip
                 else:
-                    raise ValueError("unknown case")
+                    in_trip = True
 
             if in_trip is True:
                 # during trip generation/recording
 
                 # check if trip ends regularly
                 if row['activity'] is True:
+
                     # if there are no triplegs in the trip, set the current activity as origin and start over
                     if not _temp_trip_stack_has_tripleg(temp_trip_stack):
                         origin_activity = row
                         temp_trip_stack = list()
                         in_trip = True
 
-                    # record trip and reset flags
                     else:
+                        # record trip
                         destination_activity = row
                         trips_of_user_list.append(_create_trip_from_stack(temp_trip_stack, origin_activity,
                                                                           destination_activity, trip_id_counter))
@@ -292,7 +261,7 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
                         # set values for next trip
                         if row['started_at_next'] - row['finished_at'] > datetime.timedelta(minutes=gap_threshold):
                             # if there is a gap after this trip the origin of the next trip is unknown
-                            origin_activity = None
+                            origin_activity = unknown_activity
                             destination_activity = None
                             temp_trip_stack = list()
                             in_trip = False
@@ -307,19 +276,13 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
 
                 # check if gap during the trip
                 elif row['started_at_next'] - row['finished_at'] > datetime.timedelta(minutes=gap_threshold):
-                    # in case of a (temporal) gap we split the trip. This means we save the current trip and start
                     # in case of a gap, the destination of the current trip and the origin of the next trip
-                    # are unknown. For the next trip, we set the `in_trip` flag to true to add everything after
-                    # the gap to the new trip (e.g., we don't skip until the next activity).
+                    # are unknown.
+
+                    # add current item to trip
                     temp_trip_stack.append(row)
 
-                    # # if the trip stack is empty, we do not generate the current trip.
-                    # if len(temp_trip_stack) == 0 and row['type'] == 'staypoint':
-                    #     origin_activity = unknown_activity
-                    #     in_trip = True
-                    #     temp_trip_stack = list()
-
-                    # if the trip has no recored tripleg, we do not generate the current trip.
+                    # if the trip has no recored triplegs, we do not generate the current trip.
                     if not _temp_trip_stack_has_tripleg(temp_trip_stack):
                         origin_activity = unknown_activity
                         in_trip = True

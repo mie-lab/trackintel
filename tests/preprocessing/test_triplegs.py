@@ -60,13 +60,13 @@ class TestGenerate_trips():
         spts = spts.set_index('id')
         tpls = tpls.set_index('id')
 
+        # generate trips and a joint staypoint/triplegs dataframe
         spts, tpls, trips = generate_trips(spts, tpls, gap_threshold=gap_threshold, id_offset=0)
-
-        # test if trips are generated correctly
-        pd.testing.assert_frame_equal(trips_loaded, trips)
-
-        # test if all ids where written back to triplegs/staypoints correctly
         spts_tpls = create_debug_spts_tpls_data(spts, tpls, gap_threshold=gap_threshold)
+
+        # test if generated trips are equal
+        pd.testing.assert_frame_equal(trips_loaded, trips)
+        # test if generated staypoints/triplegs are equal (especially important for trip ids)
         pd.testing.assert_frame_equal(spts_tpls_loaded, spts_tpls, check_dtype=False)
 
     def test_gap_detection(self):
@@ -110,12 +110,15 @@ class TestGenerate_trips():
         spts_tpls_loaded['started_at_next'] = pd.to_datetime(spts_tpls_loaded['started_at_next'])
         spts_tpls_loaded['finished_at'] = pd.to_datetime(spts_tpls_loaded['finished_at'])
 
-        # generate trips
+        # generate trips and a joint staypoint/triplegs dataframe
         spts_proc, tpls_proc, trips = generate_trips(spts_in, tpls_in,
                                                      gap_threshold=15, id_offset=0)
+        spts_tpls = create_debug_spts_tpls_data(spts_proc, tpls_proc, gap_threshold=gap_threshold)
+
+        # test if generated trips are equal
         pd.testing.assert_frame_equal(trips_loaded, trips)
 
-        spts_tpls = create_debug_spts_tpls_data(spts_proc, tpls_proc, gap_threshold=gap_threshold)
+        # test if generated staypoints/triplegs are equal (especially important for trip ids)
         pd.testing.assert_frame_equal(spts_tpls_loaded, spts_tpls, check_dtype=False)
 
 
