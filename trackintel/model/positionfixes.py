@@ -49,7 +49,7 @@ class PositionfixesAccessor(object):
         assert obj.geometry.is_valid.all(), "Not all geometries are valid. Try x[~ x.geometry.is_valid] " \
                                             "where x is you GeoDataFrame"
 
-        if obj.geometry.iloc[0].geom_type is not 'Point':
+        if obj.geometry.iloc[0].geom_type != 'Point':
             raise AttributeError("The geometry must be a Point (only first checked).")
 
     @property

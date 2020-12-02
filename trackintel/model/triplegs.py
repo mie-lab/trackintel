@@ -1,6 +1,7 @@
 import pandas as pd
 
 import trackintel as ti
+import trackintel.preprocessing.filter
 import trackintel.visualization.triplegs
 
 
@@ -45,7 +46,7 @@ class TriplegsAccessor(object):
         # check geometry
         assert obj.geometry.is_valid.all(), "Not all geometries are valid. Try x[~ x.geometry.is_valid] " \
                                             "where x is you GeoDataFrame"
-        if obj.geometry.iloc[0].geom_type is not 'LineString':
+        if obj.geometry.iloc[0].geom_type != 'LineString':
             raise AttributeError("The geometry must be a LineString (only first checked).")
 
     def plot(self, *args, **kwargs):
@@ -74,3 +75,9 @@ class TriplegsAccessor(object):
         See :func:`trackintel.analysis.transport_mode_identification.predict_transport_mode`.
         """
         return ti.analysis.transport_mode_identification.predict_transport_mode(self._obj, *args, **kwargs)
+    
+    def spatial_filter(self, *args, **kwargs):
+        """Filter triplegs with a geo extent.
+        See :func:`trackintel.preprocessing.filter.spatial_filter`."""
+        return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
+

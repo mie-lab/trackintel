@@ -17,11 +17,11 @@ Steps until we get to version 1.0.0.
 ### v0.2.0
 
 * :heavy_check_mark: Extract *triplegs* and *staypoints* from *positionfixes*.
-* Functions for smoothening tripleg data (e.g., Douglas-Peucker).
+* :heavy_check_mark:Functions for smoothening tripleg data (e.g., Douglas-Peucker).
 
 ### v0.3.0
 
-* Extract *trips* from *triplegs* and *staypoints*
+* :heavy_check_mark: Extract *trips* from *triplegs* and *staypoints*
 * :heavy_check_mark: Extract *locations* from *staypoints*.
 
 ### v0.4.0
@@ -32,7 +32,7 @@ Steps until we get to version 1.0.0.
 ### v0.5.0
 
 * Simple outlier filtering for *triplegs*
-* Augment model of *triplegs* and *staypoints* in such a way that they can
+* :heavy_check_mark: Augment model of *triplegs* and *staypoints* in such a way that they can
   hold references to *trips* and *locations*.
 
 

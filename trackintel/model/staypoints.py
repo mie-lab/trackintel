@@ -1,6 +1,7 @@
 import pandas as pd
 
 import trackintel as ti
+import trackintel.preprocessing.filter
 import trackintel.preprocessing.staypoints
 import trackintel.visualization.staypoints
 
@@ -47,7 +48,7 @@ class StaypointsAccessor(object):
         # check geometry
         assert obj.geometry.is_valid.all(), "Not all geometries are valid. Try x[~ x.geometry.is_valid] " \
                                             "where x is you GeoDataFrame"
-        if obj.geometry.iloc[0].geom_type is not 'Point':
+        if obj.geometry.iloc[0].geom_type != 'Point':
             raise AttributeError("The geometry must be a Point (only first checked).")
 
     @property
@@ -67,7 +68,10 @@ class StaypointsAccessor(object):
         See :func:`trackintel.preprocessing.staypoints.create_activity_flag`."""
         return ti.preprocessing.staypoints.create_activity_flag(self._obj, *args, **kwargs)
 
-
+    def spatial_filter(self, *args, **kwargs):
+        """Filter staypoints with a geo extent.
+        See :func:`trackintel.preprocessing.filter.spatial_filter`."""
+        return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
 
     def plot(self, *args, **kwargs):
         """Plots this collection of staypoints. 
