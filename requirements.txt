@@ -10,3 +10,4 @@ osmnx
 psycopg2
 imageio
 simplification
+tqdm

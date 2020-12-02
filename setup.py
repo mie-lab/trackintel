@@ -31,6 +31,7 @@ REQUIRED = [
     'geoalchemy2',
     'osmnx',
     'scikit-learn',
+    'tqdm'
 ]
 
 # What packages are optional?
