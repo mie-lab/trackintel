@@ -201,7 +201,6 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     spts_tpls['started_at_next'] = spts_tpls['started_at'].shift(-1)
     spts_tpls['activity_next'] = spts_tpls['activity'].shift(-1)
 
-    spts_tpls.to_csv(r"C:\Users\henry\polybox\Shared\MOBIS\spts_tpls_demo.csv", index=False)
     for user_id_this in spts_tpls['user_id'].unique():
         unknown_activity = {'user_id': user_id_this, 'activity': True, 'id': np.nan}
 
