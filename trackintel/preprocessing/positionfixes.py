@@ -188,7 +188,7 @@ def extract_staypoints(positionfixes, method='sliding',
     return ret_staypoints
 
 
-def extract_triplegs(positionfixes, staypoints=None, do_propagate_tripleg=False, *args, **kwargs):
+def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
     """Extract triplegs from positionfixes. A tripleg is (for now) defined as anything
     that happens between two consecutive staypoints.
 
@@ -363,5 +363,6 @@ def extract_triplegs(positionfixes, staypoints=None, do_propagate_tripleg=False,
 
     ret_triplegs = gpd.GeoDataFrame(ret_triplegs, geometry='geom', crs=positionfixes.crs)
     ret_triplegs['id'] = ret_triplegs['id'].astype('int')
-
+    # todo: triplegs dataframe has use the index as id
+    # todo: proposed fix: ret_triplegs = ret_triplegs.set_index('id')
     return ret_triplegs
