@@ -1,8 +1,8 @@
 import pandas as pd
 
 import trackintel as ti
-import trackintel.visualization.triplegs
 import trackintel.preprocessing.filter
+import trackintel.visualization.triplegs
 
 
 @pd.api.extensions.register_dataframe_accessor("as_triplegs")
@@ -46,7 +46,7 @@ class TriplegsAccessor(object):
         # check geometry
         assert obj.geometry.is_valid.all(), "Not all geometries are valid. Try x[~ x.geometry.is_valid] " \
                                             "where x is you GeoDataFrame"
-        if obj.geometry.iloc[0].geom_type is not 'LineString':
+        if obj.geometry.iloc[0].geom_type != 'LineString':
             raise AttributeError("The geometry must be a LineString (only first checked).")
 
     def plot(self, *args, **kwargs):
