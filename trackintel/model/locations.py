@@ -1,9 +1,9 @@
 import pandas as pd
-import trackintel as ti
 
-import trackintel.visualization.staypoints
-import trackintel.visualization.locations
+import trackintel as ti
 import trackintel.preprocessing.filter
+import trackintel.visualization.locations
+import trackintel.visualization.staypoints
 
 
 @pd.api.extensions.register_dataframe_accessor("as_locations")
@@ -36,7 +36,7 @@ class LocationsAccessor(object):
                 + "it must have the properties [%s], but it has [%s]." \
                 % (', '.join(LocationsAccessor.required_columns), ', '.join(obj.columns)))
 
-        if not (obj.shape[0] > 0 and obj['center'].iloc[0].geom_type is 'Point'):
+        if not (obj.shape[0] > 0 and obj['center'].iloc[0].geom_type == 'Point'):
             # todo: We could think about allowing both geometry types for locations (point and polygon)
             # One for extend and one for the center
             raise AttributeError("The center geometry must be a Point (only first checked).")

@@ -1,9 +1,8 @@
 import pandas as pd
 
 import trackintel as ti
-import trackintel.preprocessing.staypoints
 import trackintel.preprocessing.filter
-
+import trackintel.preprocessing.staypoints
 import trackintel.visualization.staypoints
 
 
@@ -49,7 +48,7 @@ class StaypointsAccessor(object):
         # check geometry
         assert obj.geometry.is_valid.all(), "Not all geometries are valid. Try x[~ x.geometry.is_valid] " \
                                             "where x is you GeoDataFrame"
-        if obj.geometry.iloc[0].geom_type is not 'Point':
+        if obj.geometry.iloc[0].geom_type != 'Point':
             raise AttributeError("The geometry must be a Point (only first checked).")
 
     @property
