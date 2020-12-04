@@ -224,8 +224,12 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     return spts, tpls, trips
 
 def _generate_trips_user(df, gap_threshold):
+    # function called after groupby: should only contain records of one user
+    user_id = df['user_id'].unique()
+    assert len(user_id) == 1
+    user_id = user_id[0]
 
-    unknown_activity = {'user_id': df['user_id'].unique()[0], 'activity': True, 'id': np.nan}
+    unknown_activity = {'user_id': user_id, 'activity': True, 'id': np.nan}
     origin_activity = unknown_activity
     temp_trip_stack = []
     in_trip = False
