@@ -168,59 +168,41 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     trips['id'] = trips.index + id_offset
     
     # assign trip_id to tpls
-    ids = tpls.index
     trip2tpl_map = trips[['id', 'tpls']].set_index('id').to_dict()['tpls']
     ls = []
     for key, values in trip2tpl_map.items():
         for value in values:
             ls.append([value, key])
-    temp = pd.DataFrame(ls, columns=['tplsIndex', 'trip_id'])
-    tpls = tpls.merge(temp, how='left', left_on='id', right_on='tplsIndex')
-    tpls.drop(columns='tplsIndex', inplace=True)
-    tpls['id'] = ids
-    tpls.set_index('id', inplace=True)
+    temp = pd.DataFrame(ls, columns=[tpls.index.name, 'trip_id']).set_index(tpls.index.name)
+    tpls = tpls.join(temp, how='left')
     
     # assign trip_id to spts, for non-activity spts
-    ids = spts.index
     trip2spt_map = trips[['id', 'spts']].set_index('id').to_dict()['spts']
     ls = []
     for key, values in trip2spt_map.items():
         for value in values:
             ls.append([value, key])
-    temp = pd.DataFrame(ls, columns=['sptsIndex', 'trip_id'])
-    spts = spts.merge(temp, how='left', left_on='id', right_on='sptsIndex')
-    spts.drop(columns='sptsIndex', inplace=True)
-    spts['id'] = ids
-    spts.set_index('id', inplace=True)
+    temp = pd.DataFrame(ls, columns=[spts.index.name, 'trip_id']).set_index(spts.index.name)
+    spts = spts.join(temp, how='left')
     
     # assign prev_trip_id to spts
-    ids = spts.index
-    spts = spts.merge(trips[['id', 'destination_staypoint_id']], 
-                    how ='left', 
-                    left_on ='id', 
-                    right_on='destination_staypoint_id')
-    spts.rename(columns={"id":"prev_trip_id"}, inplace=True)
-    spts.drop(columns={"destination_staypoint_id"}, inplace=True)
+    temp = trips[['id', 'destination_staypoint_id']].copy()
+    temp.rename(columns={"id":"prev_trip_id", "destination_staypoint_id":spts.index.name}, inplace=True)
+    temp.set_index(spts.index.name, inplace=True)
+    spts = spts.join(temp, how ='left')
     
     # assign next_trip_id to spts
-    # restore for merging
-    spts['id'] = ids
-    spts.set_index('id', inplace=True)
-    spts = spts.merge(trips[['id', 'origin_staypoint_id']], 
-                      how ='left', 
-                      left_on ='id', 
-                      right_on='origin_staypoint_id')
-    spts.rename(columns={"id":"next_trip_id"}, inplace=True)
-    spts.drop(columns={"origin_staypoint_id"}, inplace=True)
-    # set back the ids as index
-    spts['id'] = ids
-    spts.set_index('id', inplace=True)
+    temp = trips[['id', 'origin_staypoint_id']].copy()
+    temp.rename(columns={"id":"next_trip_id", "origin_staypoint_id":spts.index.name}, inplace=True)
+    temp.set_index(spts.index.name, inplace=True)
+    spts = spts.join(temp, how ='left')
     
-    tpls.drop(['type'], axis=1, inplace=True)
-    spts.drop(['type'], axis=1, inplace=True)
-    
-    trips.drop(['tpls', 'spts'], axis=1, inplace=True)
+    # final cleaning
+    tpls.drop(columns=['type'], inplace=True)
+    spts.drop(columns=['type'], inplace=True)
+    trips.drop(columns = ['tpls', 'spts'], inplace=True)
     trips.set_index('id', inplace=True)
+    
     return spts, tpls, trips
 
 def _generate_trips_user(df, gap_threshold):
