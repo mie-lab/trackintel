@@ -16,3 +16,4 @@ dependencies:
 - osmnx 
 - psycopg2
 - imageio
+- tqdm
