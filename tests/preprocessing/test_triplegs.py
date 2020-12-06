@@ -44,6 +44,29 @@ class TestGenerate_trips():
         trips_loaded['started_at'] = pd.to_datetime(trips_loaded['started_at'])
         trips_loaded['finished_at'] = pd.to_datetime(trips_loaded['finished_at'])
 
+        # create trips from geolife (based on positionfixes)
+        pfs = read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25,
+                                                       time_threshold=5 * 60)
+        spts = spts.as_staypoints.create_activity_flag()
+        tpls = pfs.as_positionfixes.extract_triplegs(spts)
+
+        # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
+        spts = spts.set_index('id')
+        tpls = tpls.set_index('id')
+
+        # generate trips and a joint staypoint/triplegs dataframe
+        spts, tpls, trips = generate_trips(spts, tpls, gap_threshold=gap_threshold, id_offset=0)
+
+        # test if generated trips are equal
+        pd.testing.assert_frame_equal(trips_loaded, trips)
+
+    def test_trip_generation_id_management(self):
+        """
+        Test if we can generate the example trips based on example data
+        """
+        gap_threshold = 15
+
         spts_tpls_loaded = pd.read_csv(os.path.join('tests', 'data', 'geolife_long', 'tpls_spts.csv'), index_col='id')
         spts_tpls_loaded['started_at'] = pd.to_datetime(spts_tpls_loaded['started_at'])
         spts_tpls_loaded['started_at_next'] = pd.to_datetime(spts_tpls_loaded['started_at_next'])
@@ -64,10 +87,10 @@ class TestGenerate_trips():
         spts, tpls, trips = generate_trips(spts, tpls, gap_threshold=gap_threshold, id_offset=0)
         spts_tpls = create_debug_spts_tpls_data(spts, tpls, gap_threshold=gap_threshold)
 
-        # test if generated trips are equal
-        pd.testing.assert_frame_equal(trips_loaded, trips)
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
         pd.testing.assert_frame_equal(spts_tpls_loaded, spts_tpls, check_dtype=False)
+
+
 
     def test_gap_detection(self):
         """
