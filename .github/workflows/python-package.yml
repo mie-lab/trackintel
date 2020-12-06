@@ -50,7 +50,7 @@ jobs:
         source activate test
         pytest --color=yes --cov=./ 
 
-     - name: Test with PostGIS
+    - name: Test with PostGIS
       shell: bash
       if: contains(matrix.env, '38-latest-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
       env:
