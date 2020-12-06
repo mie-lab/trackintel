@@ -87,7 +87,7 @@ def read_geolife(geolife_path):
                                            'date days', 'date', 'time'])
 
             data_this['tracked_at'] = pd.to_datetime(data_this['date']
-                                                     + ' ' + data_this['time'])
+                                                     + ' ' + data_this['time'], format="%Y-%m-%d %H:%M:%S")
 
             data_this.drop(['zeros', 'date days', 'date', 'time'], axis=1,
                            inplace=True)
