@@ -76,8 +76,8 @@ def read_geolife(geolife_path):
         user_id = int(tail)
         print("start importing geolife user_id: ", user_id)
 
-        input_files = glob.glob(os.path.join(
-            user_folder_this, "Trajectory", "*.plt"))
+        input_files = sorted(glob.glob(os.path.join(
+            user_folder_this, "Trajectory", "*.plt")))
         df_list_days = []
 
         # read every day of every user and concatenate input files
