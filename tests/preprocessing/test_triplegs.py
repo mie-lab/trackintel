@@ -46,6 +46,9 @@ class TestGenerate_trips():
 
         # create trips from geolife (based on positionfixes)
         pfs = read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        print(pfs[0:6])
+        print(pfs[6:])
+
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25,
                                                        time_threshold=5 * 60)
         print(spts)
