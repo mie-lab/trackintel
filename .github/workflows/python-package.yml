@@ -32,10 +32,6 @@ jobs:
             os: windows-latest
             postgis: false
             dev: false
-          - env: ci/envs/38-latest-conda-forge.yaml
-            os: ubuntu-latest
-            postgis: false
-            dev: false
       
     steps:
     - uses: actions/checkout@v2
@@ -47,8 +43,14 @@ jobs:
     - name: Install Env
       shell: bash
       run: conda env create -f ${{ matrix.env }}
+        
+    - name: Test with pytest
+      shell: bash
+      run: |
+        source activate test
+        pytest --color=yes --cov=./ 
 
-    - name: Test with PostGIS
+     - name: Test with PostGIS
       shell: bash
       if: contains(matrix.env, '38-latest-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
       env:
@@ -59,10 +61,4 @@ jobs:
         source activate test
         conda install postgis -c conda-forge
         source ci/envs/setup_postgres.sh
-        pytest --cov=./ | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
-        
-    - name: Test with pytest
-      shell: bash
-      run: |
-        source activate test
-        pytest --cov=./
+         pytest -v -r s --color=yes --cov=./ | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
