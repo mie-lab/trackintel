@@ -65,7 +65,7 @@ def connection_postgis():
     port = os.environ.get("PGPORT")
     try:
         con = psycopg2.connect(
-            dbname="test_geopandas2", user=user, password=password, host=host, port=port
+            dbname=dbname, user=user, password="", host=host, port=port
         )
     except OperationalError:
         pytest.skip("Cannot connect with postgresql database")
