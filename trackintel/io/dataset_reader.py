@@ -58,7 +58,7 @@ def read_geolife(geolife_path):
 
 
     geolife_path = os.path.join(geolife_path, '*')
-    user_folder = glob.glob(geolife_path)
+    user_folder = sorted(glob.glob(geolife_path))
 
     df_list_users = []
 
