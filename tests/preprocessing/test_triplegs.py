@@ -48,6 +48,7 @@ class TestGenerate_trips():
         pfs = read_geolife(os.path.join('tests', 'data', 'geolife_long'))
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25,
                                                        time_threshold=5 * 60)
+        print(spts)
         spts = spts.as_staypoints.create_activity_flag()
         tpls = pfs.as_positionfixes.extract_triplegs(spts)
 
@@ -57,7 +58,7 @@ class TestGenerate_trips():
 
         # generate trips and a joint staypoint/triplegs dataframe
         spts, tpls, trips = generate_trips(spts, tpls, gap_threshold=gap_threshold, id_offset=0)
-
+        print(spts)
         # test if generated trips are equal
         pd.testing.assert_frame_equal(trips_loaded, trips)
 
