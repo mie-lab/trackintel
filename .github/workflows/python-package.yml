@@ -59,5 +59,5 @@ jobs:
       run: |
         source activate test
         conda install postgis -c conda-forge
-#        source ci/envs/setup_postgres.sh
+        source ci/envs/setup_postgres.sh
         pytest -v -r s --color=yes --cov=./ | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
