@@ -48,8 +48,6 @@ class TestGenerate_trips():
         pfs = read_geolife(os.path.join('tests', 'data', 'geolife_long'))
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25,
                                                        time_threshold=5 * 60)
-        print(pfs.iloc[:, 0:5])
-        print(pfs.iloc[:, 5:])
         spts = spts.as_staypoints.create_activity_flag()
         tpls = pfs.as_positionfixes.extract_triplegs(spts)
 
