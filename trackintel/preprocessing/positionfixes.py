@@ -62,6 +62,8 @@ def extract_staypoints(positionfixes, method='sliding',
     """
     if 'id' not in positionfixes.columns:
         positionfixes['id'] = positionfixes.index
+    
+    elevation_flag = 'elevation' in positionfixes.columns # if there is elevation data
 
     name_geocol = positionfixes.geometry.name
     ret_staypoints = pd.DataFrame(columns=['started_at', 'finished_at', 'geom', 'id'])
@@ -102,7 +104,8 @@ def extract_staypoints(positionfixes, method='sliding',
                             staypoint['user_id'] = pfs[i]['user_id']
                             staypoint[name_geocol] = Point(np.mean([pfs[k][name_geocol].x for k in range(i, j)]),
                                                            np.mean([pfs[k][name_geocol].y for k in range(i, j)]))
-                            staypoint['elevation'] = np.mean([pfs[k]['elevation'] for k in range(i, j)])
+                            if elevation_flag:
+                                staypoint['elevation'] = np.mean([pfs[k]['elevation'] for k in range(i, j)])
                             staypoint['started_at'] = pfs[i]['tracked_at']
                             staypoint['finished_at'] = pfs[j - 1][
                                 'tracked_at']  # TODO: should this not be j-1? because j is not part of the staypoint. DB: Changed.
@@ -121,7 +124,8 @@ def extract_staypoints(positionfixes, method='sliding',
                                 staypoint = {}
                                 staypoint['user_id'] = pfs[j]['user_id']
                                 staypoint[name_geocol] = Point(pfs[j][name_geocol].x, pfs[j][name_geocol].y)
-                                staypoint['elevation'] = pfs[j]['elevation']
+                                if elevation_flag:
+                                    staypoint['elevation'] = pfs[j]['elevation']
                                 staypoint['started_at'] = pfs[j]['tracked_at']
                                 staypoint['finished_at'] = pfs[j]['tracked_at']
                                 staypoint['id'] = staypoint_id_counter
