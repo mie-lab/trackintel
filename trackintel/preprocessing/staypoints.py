@@ -27,7 +27,8 @@ def cluster_staypoints(staypoints,
         'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
 
     epsilon : float, default 100
-        The epsilon for the 'dbscan' method.
+        The epsilon for the 'dbscan' method. if 'distance_matrix_metric' is 'haversine' 
+        or 'euclidean', the unit is meters.
 
     num_samples : int, default 1
         The minimal number of samples in a cluster. 
@@ -62,8 +63,10 @@ def cluster_staypoints(staypoints,
             # The input and output of sklearn's harvarsine metrix are both in radians,
             # see https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.haversine_distances.html
             # here the 'epsilon' is directly applied to the metric's output.
-            epsilon = epsilon / 6371000 # convert to radius
-        db = DBSCAN(eps=epsilon, min_samples=num_samples, algorithm='ball_tree', metric=distance_matrix_metric)
+            # convert to radius
+            db = DBSCAN(eps=epsilon / 6371000 , min_samples=num_samples, algorithm='ball_tree', metric=distance_matrix_metric)
+        else:
+            db = DBSCAN(eps=epsilon, min_samples=num_samples, algorithm='ball_tree', metric=distance_matrix_metric)
             
         if agg_level == 'user':
             location_id_counter = 0
@@ -99,9 +102,20 @@ def cluster_staypoints(staypoints,
             
         # create locations as grouped staypoints
         temp_sp = ret_sp[['user_id', 'location_id', ret_sp.geometry.name]]
-        ret_loc = temp_sp.dissolve(by=['user_id', 'location_id'],as_index=False)
+        if agg_level == 'user':
+            # directly dissolve by 'user_id' and 'location_id'
+            ret_loc = temp_sp.dissolve(by=['user_id', 'location_id'],as_index=False)
+        else:
+            ## generate user-location pairs with same geometries across users
+            # get user-location pairs
+            ret_loc = temp_sp.dissolve(by=['user_id', 'location_id'], as_index=False).drop(columns={'geom'})
+            # get location geometries
+            geom_df = temp_sp.dissolve(by=['location_id'], as_index=False).drop(columns={'user_id'})
+            # merge pairs with location geometries
+            ret_loc = ret_loc.merge(geom_df, on='location_id', how='left')
+            
         # filter outlier
-        ret_loc = ret_loc.loc[ret_loc['location_id'] != -1]
+        ret_loc = ret_loc.loc[ret_loc['location_id'] != 0]
         
         # locations with only one staypoints is of type "Point"
         point_idx = ret_loc.geom_type == 'Point'
