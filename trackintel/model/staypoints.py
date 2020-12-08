@@ -64,7 +64,7 @@ class StaypointsAccessor(object):
         return ti.preprocessing.staypoints.cluster_staypoints(self._obj, *args, **kwargs)
     
     def cluster_staypoints(self, *args, **kwargs):
-        """Extracts locations from this collection of staypoints.
+        """Function alias for extract_locations to ensure consistency for function naming.
         See :func:`trackintel.preprocessing.staypoints.cluster_staypoints`."""
         return self.extract_locations(*args, **kwargs)
 
