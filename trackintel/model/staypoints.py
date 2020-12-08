@@ -62,6 +62,11 @@ class StaypointsAccessor(object):
         """Extracts locations from this collection of staypoints.
         See :func:`trackintel.preprocessing.staypoints.cluster_staypoints`."""
         return ti.preprocessing.staypoints.cluster_staypoints(self._obj, *args, **kwargs)
+    
+    def cluster_staypoints(self, *args, **kwargs):
+        """Extracts locations from this collection of staypoints.
+        See :func:`trackintel.preprocessing.staypoints.cluster_staypoints`."""
+        return self.extract_locations(*args, **kwargs)
 
     def create_activity_flag(self, *args, **kwargs):
         """Sets a flag if a staypoint is also an activity.
