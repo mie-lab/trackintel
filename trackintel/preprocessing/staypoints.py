@@ -97,8 +97,7 @@ def cluster_staypoints(staypoints,
                 p = np.array([[g.x, g.y] for g in ret_sp.geometry])
             labels = db.fit_predict(p)
             
-            # add 1 to match the 'user' level result
-            ret_sp['location_id'] = labels + 1
+            ret_sp['location_id'] = labels
             
         # create locations as grouped staypoints
         temp_sp = ret_sp[['user_id', 'location_id', ret_sp.geometry.name]]
@@ -115,7 +114,7 @@ def cluster_staypoints(staypoints,
             ret_loc = ret_loc.merge(geom_df, on='location_id', how='left')
             
         # filter outlier
-        ret_loc = ret_loc.loc[ret_loc['location_id'] != 0]
+        ret_loc = ret_loc.loc[ret_loc['location_id'] != -1]
         
         # locations with only one staypoints is of type "Point"
         point_idx = ret_loc.geom_type == 'Point'
