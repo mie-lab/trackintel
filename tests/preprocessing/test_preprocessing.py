@@ -38,14 +38,23 @@ class TestPreprocessing():
     def test_cluster_staypoints_dbscan_min(self):
         pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
-        _, clusters = spts.as_staypoints.extract_locations(method='dbscan', epsilon=1e-18, num_samples=0)
-        assert len(clusters) == len(spts), "With small hyperparameters, clustering should not reduce the number"
+        _, locs_user = spts.as_staypoints.extract_locations(method='dbscan', epsilon=1e-18, 
+                                                            num_samples=0, agg_level='user')
+        _, locs_data = spts.as_staypoints.extract_locations(method='dbscan', epsilon=1e-18, 
+                                                            num_samples=0, agg_level='dataset')
+        assert len(locs_user) == len(spts), "With small hyperparameters, clustering should not reduce the number"
+        assert len(locs_data) == len(spts), "With small hyperparameters, clustering should not reduce the number"
 
     def test_cluster_staypoints_dbscan_max(self):
         pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
         spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
-        _, clusters = spts.as_staypoints.extract_locations(method='dbscan', epsilon=1e18, num_samples=1000)
-        assert len(clusters) == 0, "With large hyperparameters, everything is an outlier"
+        _, locs_user = spts.as_staypoints.extract_locations(method='dbscan', epsilon=1e18, 
+                                                            num_samples=1000, agg_level='user')
+        _, locs_data = spts.as_staypoints.extract_locations(method='dbscan', epsilon=1e18, 
+                                                            num_samples=1000, agg_level='dataset')
+        assert len(locs_user) == 0, "With large hyperparameters, every user location is an outlier"
+        assert len(locs_data) == 0, "With large hyperparameters, every dataset location is an outlier"
+        
         
     def test_cluster_staypoints_dbscan_user_dataset(self):
         spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'))
@@ -92,8 +101,19 @@ class TestPreprocessing():
         other_locs = gpd.GeoDataFrame(other_locs, geometry='center', crs=spts.crs)
         
         assert all(other_locs['center'] == locs['center']), "The location geometry should be the same"
-        assert all(other_locs['location_id'] == locs['location_id']), "The location id should be the same" + \
-            "and start from one"
+        assert all(other_locs['location_id'] == locs['location_id']), "The location id should be the same"
+        
+    def test_cluster_staypoints_functions(self):
+        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'))
+        _, locs_1 = spts.as_staypoints.extract_locations(method='dbscan', epsilon=10, 
+                                                          num_samples=0, distance_matrix_metric='haversine',
+                                                          agg_level='dataset')
+        _, locs_2 = spts.as_staypoints.cluster_staypoints(method='dbscan', epsilon=10, 
+                                                          num_samples=0, distance_matrix_metric='haversine',
+                                                          agg_level='dataset')
+        
+        assert all(locs_1['center'] == locs_2['center']), "The location geometry should be the same"
+        assert all(locs_1['location_id'] == locs_2['location_id']), "The location id should be the same"
     
     def test_cluster_staypoints_dbscan_haversine(self):
         spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'))
@@ -129,3 +149,5 @@ class TestPreprocessing():
         
         assert len(loc_har) == len(loc_eu) , "The #location should be the same for haversine" + \
             "and euclidean distances"
+            
+    
