@@ -38,13 +38,13 @@ Steps until we get to version 1.0.0.
 
 ### v0.6.0
 * Support flexible geometry columns [Issue15](https://github.com/mie-lab/trackintel/issues/15)
-* Filter data by geographic location (e.g., all data within Switzerland)
+* :heavy_check_mark: Filter data by geographic location (e.g., all data within Switzerland)
 * Enhance tripleg extraction to be _gap aware_ [issue27](https://github.com/mie-lab/trackintel/issues/27)
 
 ### v0.7.0
 
-* Simple transport mode prediction. This functionality is based on properties of the movement data only. 
-* Simple activity inference. This functionality is based on properties of the movement data only and should include {Home, Work, Other}.
+* Simple transport mode prediction. This functionality is based on properties of the movement data only. [PR65][https://github.com/mie-lab/trackintel/pull/65]
+* :heavy_check_mark: Simple activity inference. This functionality is based on properties of the movement data only and should include {Home, Work, Other}.
 
 ### v0.8.0
 
