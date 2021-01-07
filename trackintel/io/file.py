@@ -1,11 +1,8 @@
 import dateutil.parser
-
-import pandas as pd
 import geopandas as gpd
-import shapely
-
-from shapely.geometry import Point
+import pandas as pd
 from shapely import wkt
+from shapely.geometry import Point
 
 
 def read_positionfixes_csv(*args, **kwargs):
@@ -50,10 +47,10 @@ def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
         The file to write to.
     """
     gdf = positionfixes.copy()
-    gdf['longitude'] = positionfixes['geom'].apply(lambda p: p.coords[0][0])
-    gdf['latitude'] = positionfixes['geom'].apply(lambda p: p.coords[0][1])
-    gdf = gdf.drop('geom', axis=1)
-    gdf.to_csv(filename, index=False, *args, **kwargs)
+    gdf['longitude'] = positionfixes.geometry.apply(lambda p: p.coords[0][0])
+    gdf['latitude'] = positionfixes.geometry.apply(lambda p: p.coords[0][1])
+    gdf = gdf.drop(gdf.geometry.name, axis=1)
+    gdf.to_csv(filename, index=True, *args, **kwargs)
 
 
 def read_triplegs_csv(*args, **kwargs):
@@ -88,8 +85,8 @@ def write_triplegs_csv(triplegs, filename, *args, **kwargs):
         The file to write to.
     """
     gdf = triplegs.copy()
-    gdf['geom'] = triplegs['geom'].apply(wkt.dumps)
-    gdf.to_csv(filename, index=False, *args, **kwargs)
+    gdf[gdf.geometry.name] = triplegs.geometry.apply(wkt.dumps)
+    gdf.to_csv(filename, index=True, *args, **kwargs)
 
 
 def read_staypoints_csv(*args, **kwargs):
@@ -125,47 +122,48 @@ def write_staypoints_csv(staypoints, filename, *args, **kwargs):
         The file to write to.
     """
     gdf = staypoints.copy()
-    gdf['geom'] = staypoints['geom'].apply(wkt.dumps)
-    gdf.to_csv(filename, index=False, *args, **kwargs)
+    gdf[gdf.geometry.name] = gdf.geometry.apply(wkt.dumps)
+    gdf.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_places_csv(*args, **kwargs):
-    """Wraps the pandas read_csv function, extracts a WKT for the place 
+def read_locations_csv(*args, **kwargs):
+    """Wraps the pandas read_csv function, extracts a WKT for the location 
     center (and extent) and builds a geopandas GeoDataFrame. This also 
     validates that the ingested data conforms to the trackintel understanding 
-    of places (see :doc:`/modules/model`).
+    of locations (see :doc:`/modules/model`).
 
     Returns
     -------
     GeoDataFrame
-        A GeoDataFrame containing the places.
+        A GeoDataFrame containing the locations.
     """
+    # Todo: How to implement flexible geometry names in locations (gdf with potentially 2 geometry columns)
     df = pd.read_csv(*args, **kwargs)
     df['center'] = df['center'].apply(wkt.loads)
     if 'extent' in df.columns:
         df['extent'] = df['extent'].apply(wkt.loads)
     gdf = gpd.GeoDataFrame(df, geometry='center')
-    assert gdf.as_places
+    assert gdf.as_locations
     return gdf
 
 
-def write_places_csv(places, filename, *args, **kwargs):
+def write_locations_csv(locations, filename, *args, **kwargs):
     """Wraps the pandas to_csv function, but transforms the center (and 
     extent) into WKT before writing.
 
     Parameters
     ----------
-    places : GeoDataFrame
-        The places to store to the CSV file.
+    locations : GeoDataFrame
+        The locations to store to the CSV file.
     
     filename : str
         The file to write to.
     """
-    gdf = places.copy()
-    gdf['center'] = places['center'].apply(wkt.dumps)
+    gdf = locations.copy()
+    gdf['center'] = locations['center'].apply(wkt.dumps)
     if 'extent' in gdf.columns:
-        gdf['extent'] = places['extent'].apply(wkt.dumps)
-    gdf.to_csv(filename, index=False, *args, **kwargs)
+        gdf['extent'] = locations['extent'].apply(wkt.dumps)
+    gdf.to_csv(filename, index=True, *args, **kwargs)
 
 
 def read_trips_csv(*args, **kwargs):
@@ -197,4 +195,4 @@ def write_trips_csv(trips, filename, *args, **kwargs):
         The file to write to.
     """
     df = trips.copy()
-    df.to_csv(filename, index=False, *args, **kwargs)
+    df.to_csv(filename, index=True, *args, **kwargs)

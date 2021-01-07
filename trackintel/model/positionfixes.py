@@ -1,10 +1,8 @@
 import pandas as pd
-import trackintel as ti
 
+import trackintel as ti
 import trackintel.preprocessing.positionfixes
 import trackintel.visualization.positionfixes
-import trackintel.io.postgis
-import trackintel.io.file
 
 
 @pd.api.extensions.register_dataframe_accessor("as_positionfixes")
@@ -14,17 +12,25 @@ class PositionfixesAccessor(object):
     adheres to some requirements.
 
     Requires at least the following columns: 
-    ``['user_id', 'tracked_at', 'geom']``
+    ``['user_id', 'tracked_at']``
+
+    Requires valid ``point geometries``; the ``index`` of the GeoDataFrame will be treated as unique identifier
+    of the `Positionfixes`
 
     For several usecases, the following additional columns are required:
     ``['elevation', 'accuracy', 'tracking_tech', 'context']``
+
+    Notes
+    -------
+    In GPS based movement data analysis `Positionfixes` are the smallest unit of tracking and
+    represent timestamped locations.
 
     Examples
     --------
     >>> df.as_positionfixes.extract_staypoints()
     """
 
-    required_columns = ['user_id', 'tracked_at', 'geom']
+    required_columns = ['user_id', 'tracked_at']
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -32,11 +38,18 @@ class PositionfixesAccessor(object):
 
     @staticmethod
     def _validate(obj):
+        assert obj.shape[0] > 0, "Geodataframe is empty with shape: {}".format(obj.shape)
+        # check columns
         if any([c not in obj.columns for c in PositionfixesAccessor.required_columns]):
             raise AttributeError("To process a DataFrame as a collection of positionfixes, " \
-                + "it must have the properties [%s], but it has [%s]." \
-                % (', '.join(PositionfixesAccessor.required_columns), ', '.join(obj.columns)))
-        if obj.shape[0] > 0 and obj.geometry.iloc[0].geom_type is not 'Point':
+                                 + "it must have the properties [%s], but it has [%s]." \
+                                 % (', '.join(PositionfixesAccessor.required_columns), ', '.join(obj.columns)))
+
+        # check geometry
+        assert obj.geometry.is_valid.all(), "Not all geometries are valid. Try x[~ x.geometry.is_valid] " \
+                                            "where x is you GeoDataFrame"
+
+        if obj.geometry.iloc[0].geom_type != 'Point':
             raise AttributeError("The geometry must be a Point (only first checked).")
 
     @property
@@ -88,3 +101,7 @@ class PositionfixesAccessor(object):
         See :func:`trackintel.io.postgis.write_positionfixes_postgis`."""
         ti.io.postgis.write_positionfixes_postgis(self._obj, conn_string, table_name, 
             schema, sql_chunksize, if_exists)
+        
+    def similarity_matrix(self, method, field='tripleg_id', trsh=None, eps=None, dist=False, **kwargs):
+        """Calculates Similarity (/distance) matrix. See: func: 'trackintel.similarity.detection.similarity_matrix' """
+        return ti.similarity.similarity_matrix(self._obj, method, field, trsh, eps, dist, **kwargs)

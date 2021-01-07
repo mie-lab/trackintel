@@ -10,14 +10,14 @@ from scipy.spatial.qhull import QhullError
 
 def weights_transition_count(staypoints, adjacency_dict=None):
     """
-    Calculate the number of transition between places as graph weights.
+    Calculate the number of transition between locations as graph weights.
 
-    Graphs based on the activity places (trackintel places) can have several
+    Graphs based on the activity locations (trackintel locations) can have several
     types of weighted edges. This function calculates the edge weight based
-    on the number of transitions of an individual user between places.
+    on the number of transitions of an individual user between locations.
 
     The function requires the staypoints to have a cluster id field (e.g.
-    staypoints.as_staypoints.extract_places() was already used.
+    staypoints.as_staypoints.extract_locations() was already used.
 
     Parameters
     ----------
@@ -38,25 +38,21 @@ def weights_transition_count(staypoints, adjacency_dict=None):
     # transitions between two clusters e.g., 1 -> -1 -> 2 as direct transitions
     # between two clusters!
     # E.g., 1 -> 2
-    staypoints_a = staypoints_a.loc[staypoints_a['place_id'] != -1]
+    staypoints_a = staypoints_a.loc[staypoints_a['location_id'] != -1]
 
     # count transitions between cluster
-    staypoints_a["place_id_end"] = staypoints_a.groupby("user_id"
-                                                          )[
-                                                    "place_id"].shift(-1)
+    staypoints_a["location_id_end"] = staypoints_a.groupby("user_id")["location_id"].shift(-1)
     try:
         
-        counts = staypoints_a.groupby(by=['user_id', 'place_id',
-                                          'place_id_end']
-                                      ).size().reset_index(name='counts')
+        counts = staypoints_a.groupby(by=['user_id', 
+                                          'location_id',
+                                          'location_id_end']).size().reset_index(name='counts')
     except ValueError:
         # If there are only rows with nans, groupby throws an error but should
         # return an empty dataframe
-        counts = pd.DataFrame(columns=['user_id', 'place_id', 'place_id_end',
-                                       'counts'])
+        counts = pd.DataFrame(columns=['user_id', 'location_id', 'location_id_end', 'counts'])
     # create Adjacency matrix
-    adjacency_dict = create_adjacency_matrix_from_counts(counts, all_users,
-                                                         adjacency_dict)
+    adjacency_dict = create_adjacency_matrix_from_counts(counts, all_users, adjacency_dict)
     
     
 
@@ -67,7 +63,7 @@ def create_adjacency_matrix_from_counts(counts, user_list, adjacency_dict):
     """
     Transform transition counts into a adjacency matrix per user.
 
-    The input provides transition counts between places of a user. These
+    The input provides transition counts between locations of a user. These
     counts are transformed into a weighted adjacency matrix.
 
     Parameters
@@ -75,7 +71,7 @@ def create_adjacency_matrix_from_counts(counts, user_list, adjacency_dict):
     counts : DataFrame
         pandas DataFrame that has at least the columns ['user_id',
         'cluster_id', 'cluster_id_end', 'counts']. Counts represents the
-        number of transitions between two places.
+        number of transitions between two locations.
     user_list : iterable
         A list of the relevant user_ids, must be a subset of the user_id column
         in counts
@@ -91,13 +87,13 @@ def create_adjacency_matrix_from_counts(counts, user_list, adjacency_dict):
     for user_id_this in user_list:
         counts_user = counts.loc[counts['user_id'] == user_id_this]
         
-        row_ix = counts_user['place_id'].values.astype('int')
-        col_ix = counts_user['place_id_end'].values.astype('int')
+        row_ix = counts_user['location_id'].values.astype('int')
+        col_ix = counts_user['location_id_end'].values.astype('int')
         values = counts_user['counts'].values
              
         if len(values) == 0:
             A =  coo_matrix((0, 0))
-            place_id_order = np.asarray([])
+            location_id_order = np.asarray([])
 
         else:
 
@@ -117,34 +113,34 @@ def create_adjacency_matrix_from_counts(counts, user_list, adjacency_dict):
             shape = (max_ix, max_ix)
             
             A = coo_matrix((values,(row_ix, col_ix)),shape=shape)
-            place_id_order = org_ix
+            location_id_order = org_ix
             
         
         if user_id_this not in adjacency_dict:
             adjacency_dict[user_id_this] = {'A': [A],
-                                            'place_id_order': [place_id_order],
+                                            'location_id_order': [location_id_order],
                                             'edge_name': ['transition_counts']}
         else:
             adjacency_dict[user_id_this]['A'].append(A)
-            adjacency_dict[user_id_this]['place_id_order'].append(place_id_order)
+            adjacency_dict[user_id_this]['location_id_order'].append(location_id_order)
             adjacency_dict[user_id_this]['edge_name'].append('transition_counts')
 
     return adjacency_dict
 
-def weights_n_neighbors(places, n=None, distance_matrix_metric='haversine',adjacency_dict=None):
+def weights_n_neighbors(locations, n=None, distance_matrix_metric='haversine',adjacency_dict=None):
     """
-    Calculate the distance of the n nearest places as graph weights.
+    Calculate the distance of the n nearest locations as graph weights.
 
-    Graphs based on the activity places (trackintel places) can have several
+    Graphs based on the activity locations (trackintel locations) can have several
     types of weighted edges. This function calculates the edge weight based
-    on the distance to the n closest neighbors (places) of the same user.
+    on the distance to the n closest neighbors (locations) of the same user.
 
     Parameters
     ----------
-    places: GeoDataFrame
+    locations: GeoDataFrame
     
     n: int
-    number of nearst places to take into account
+    number of nearst locations to take into account
     
     distance_matrix_metric: String
     can be 
@@ -152,7 +148,7 @@ def weights_n_neighbors(places, n=None, distance_matrix_metric='haversine',adjac
     Returns
     -------
     distance_matrix_metric: string
-        The distance metric used to calculate the distance between places.
+        The distance metric used to calculate the distance between locations.
         Uses the Trackintel.geogr.distances.calculate_distance_matrix()
         function. Possible metrics are: {'haversine', 'euclidean'} or any 
         mentioned in: 
@@ -163,42 +159,39 @@ def weights_n_neighbors(places, n=None, distance_matrix_metric='haversine',adjac
     # todo: check if adjacency matrix is symmetric?
     # todo: What if n is too large?
     
-    all_users = places["user_id"].unique()
+    all_users = locations["user_id"].unique()
     if adjacency_dict is None:
         adjacency_dict = {}
     
-    sorted_places = places.set_index('user_id', drop=False)
-    sorted_places.index.name = 'user_id_ix'
-    sorted_places.sort_index(inplace=True)
+    sorted_locs = locations.set_index('user_id', drop=False)
+    sorted_locs.index.name = 'user_id_ix'
+    sorted_locs.sort_index(inplace=True)
     
     for user_id_this in all_users:
         row_ixs = []
         col_ixs = []
         values = []
         
-        user_places = sorted_places[sorted_places.index == user_id_this]
+        user_locs = sorted_locs[sorted_locs.index == user_id_this]
         
-        places_distance_matrix = calculate_distance_matrix(
-                user_places,
-                dist_metric=distance_matrix_metric)
+        locs_distance_matrix = calculate_distance_matrix(user_locs, dist_metric=distance_matrix_metric)
         # invert such that close nodes have a high weight
-        places_distance_matrix = np.reciprocal(places_distance_matrix, 
-                                               where=places_distance_matrix != 0)
-        org_ixs = user_places['place_id'].values
+        locs_distance_matrix = np.reciprocal(locs_distance_matrix, where=locs_distance_matrix != 0)
+        org_ixs = user_locs['location_id'].values
         
-        shape = places_distance_matrix.shape
-        place_id_order = org_ixs
+        shape = locs_distance_matrix.shape
+        loc_id_order = org_ixs
         
         
         if n is None or n == 'fconn':
-            A = coo_matrix(places_distance_matrix)
+            A = coo_matrix(locs_distance_matrix)
             edge_name = 'fconn_distant'
             
         else:
         
             # for every row, keep only the n largest elements
             for row_ix_this in range(shape[0]):
-                row_this = places_distance_matrix[row_ix_this,:]
+                row_this = locs_distance_matrix[row_ix_this,:]
                 
                 max_ixs = np.argsort(row_this)[::-1][0:n+1] 
                 
@@ -219,28 +212,28 @@ def weights_n_neighbors(places, n=None, distance_matrix_metric='haversine',adjac
         
         if user_id_this not in adjacency_dict:
             adjacency_dict[user_id_this] = {'A': [A],
-                                            'place_id_order': [place_id_order],
+                                            'loc_id_order': [loc_id_order],
                                             'edge_name': [edge_name]}
         else:
             adjacency_dict[user_id_this]['A'].append(A)
-            adjacency_dict[user_id_this]['place_id_order'].append(place_id_order)
+            adjacency_dict[user_id_this]['loc_id_order'].append(loc_id_order)
             adjacency_dict[user_id_this]['edge_name'].append(edge_name)
         
         
     return adjacency_dict
 
 
-def generate_activity_graphs(places, adjacency_dict, node_feature_names=[]):
+def generate_activity_graphs(locations, adjacency_dict, node_feature_names=[]):
     """
-    Generate user specific graphs based on activity locations (places).
+    Generate user specific graphs based on activity locations (trackintel locations).
 
-    This function creates a networkx graph per user based on the places of
+    This function creates a networkx graph per user based on the locations of
     the user as nodes and a set of (weighted) edges defined in adjacency dict.
 
     Parameters
     ----------
-    places : GeoDataFrame
-        Trackintel dataframe of type places
+    locations : GeoDataFrame
+        Trackintel dataframe of type locations
     adjacency_dict : dictionary or list of dictionaries
          A dictionary with adjacendy matrices of type: {user_id:
          scipy.sparse.coo_matrix}.
@@ -255,35 +248,34 @@ def generate_activity_graphs(places, adjacency_dict, node_feature_names=[]):
     """
     # Todo: Enable multigraph input. E.g. adjacency_dict[user_id] = [edges1,
     #  edges2]
-    # Todo: Should we do a check if places is really a dataframe of trackintel
+    # Todo: Should we do a check if locations is really a dataframe of trackintel
     #  type?
 
     G_dict = {}
     
-    sorted_places = places.set_index('user_id', drop=False)
-    sorted_places.index.name = 'user_id_ix'
-    sorted_places.sort_index(inplace=True)
+    sorted_locations = locations.set_index('user_id', drop=False)
+    sorted_locations.index.name = 'user_id_ix'
+    sorted_locations.sort_index(inplace=True)
     
-    for user_id_this in places['user_id'].unique():
+    for user_id_this in locations['user_id'].unique():
         if user_id_this not in adjacency_dict:
             continue
         
-        places_user_view = sorted_places.loc[sorted_places.index == user_id_this]
+        locs_user_view = sorted_locations.loc[sorted_locations.index == user_id_this]
         
-        G = initialize_multigraph(user_id_this, places_user_view,
-                                  node_feature_names)
+        G = initialize_multigraph(user_id_this, locs_user_view, node_feature_names)
         G.graph['edge_keys'] = []
         
         A_list = adjacency_dict[user_id_this]['A']
-        place_id_order_list = adjacency_dict[user_id_this]['place_id_order']
+        location_id_order_list = adjacency_dict[user_id_this]['location_id_order']
         edge_name_list = adjacency_dict[user_id_this]['edge_name']
         
         for ix in range(len(A_list)):
             A = A_list[ix]
             a = A.todense()
-            place_id_order = place_id_order_list[ix]
+            location_id_order = location_id_order_list[ix]
             edge_name = edge_name_list[ix]
-            # todo: assert place_id_order
+            # todo: assert location_id_order
         
             G_temp = nx.from_scipy_sparse_matrix(A)
             edge_list = nx.to_edgelist(G_temp)      
@@ -303,34 +295,34 @@ def generate_activity_graphs(places, adjacency_dict, node_feature_names=[]):
 
     return G_dict
 
-def weights_delaunay(places, to_crs=None, distance_matrix_metric='haversine',
+def weights_delaunay(locations, to_crs=None, distance_matrix_metric='haversine',
                         adjacency_dict=None):
 
 
-    all_users = places["user_id"].unique()
+    all_users = locations["user_id"].unique()
     if adjacency_dict is None:
         adjacency_dict = {}
         
-    sorted_places = places.set_index('user_id', drop=False)
-    sorted_places.index.name = 'user_id_ix'
-    sorted_places.sort_index(inplace=True)
+    sorted_locs = locations.set_index('user_id', drop=False)
+    sorted_locs.index.name = 'user_id_ix'
+    sorted_locs.sort_index(inplace=True)
     
     for user_id_this in all_users:
     
-        user_places = sorted_places[sorted_places.index == user_id_this]
-        org_ixs = user_places['place_id'].values
-        place_id_order = org_ixs
+        user_locs = sorted_locs[sorted_locs.index == user_id_this]
+        org_ixs = user_locs['location_id'].values
+        loc_id_order = org_ixs
         edge_name = 'delaunay'
     
         if to_crs is not None:
-            geometry = user_places['center'].to_crs(to_crs)
+            geometry = user_locs['center'].to_crs(to_crs)
             points = list(zip(geometry.x,geometry.y))
         else:
             try:
-                points = list(zip(places['long'],places['lat']))
+                points = list(zip(locations['long'],locations['lat']))
             
             except KeyError:
-                geometry = user_places['center']
+                geometry = user_locs['center']
                 points = list(zip(geometry.x,geometry.y))
             
         # import point data as xy coordinates 
@@ -359,16 +351,16 @@ def weights_delaunay(places, to_crs=None, distance_matrix_metric='haversine',
                 edges.add((edge[0], edge[1])) 
         
             # add distances to edges
-            places_distance_matrix = calculate_distance_matrix(
-                        user_places,
+            locs_distance_matrix = calculate_distance_matrix(
+                        user_locs,
                         dist_metric=distance_matrix_metric)
             
             # invert distance matrix, so that close places have a high weight
-            places_distance_matrix = np.reciprocal(places_distance_matrix, 
-                                               where=places_distance_matrix != 0)
+            locs_distance_matrix = np.reciprocal(locs_distance_matrix, 
+                                               where=locs_distance_matrix != 0)
             
             
-            edges = [(u, v, places_distance_matrix[u,v]) for u,v in edges]
+            edges = [(u, v, locs_distance_matrix[u,v]) for u,v in edges]
             row_ixs, col_ixs, values = map(list, zip(*edges))
             
             # enforce symmetry: 
@@ -378,37 +370,35 @@ def weights_delaunay(places, to_crs=None, distance_matrix_metric='haversine',
             values = values + values
             
             # create adjacency matrix
-            shape = places_distance_matrix.shape
+            shape = locs_distance_matrix.shape
             A = coo_matrix((values,(row_ixs, col_ixs)),shape=shape)
         
         except QhullError:    
             A =  coo_matrix((0, 0))
-            place_id_order = np.asarray([])
+            loc_id_order = np.asarray([])
         
         
         if user_id_this not in adjacency_dict:
             adjacency_dict[user_id_this] = {'A': [A],
-                                            'place_id_order': [place_id_order],
+                                            'loc_id_order': [loc_id_order],
                                             'edge_name': [edge_name]}
         else:
             adjacency_dict[user_id_this]['A'].append(A)
-            adjacency_dict[user_id_this]['place_id_order'].append(place_id_order)
+            adjacency_dict[user_id_this]['loc_id_order'].append(loc_id_order)
             adjacency_dict[user_id_this]['edge_name'].append(edge_name)
 
     return adjacency_dict
 
 
-def initialize_multigraph(user_id_this, places_user_view, node_feature_names):
+def initialize_multigraph(user_id_this, locs_user_view, node_feature_names):
     
     # create graph
     G = nx.MultiGraph()
     G.graph["user_id"] = user_id_this
     
     # add node information
-    node_ids = np.arange(len(places_user_view))
-    node_features = places_user_view.loc[:,
-            ['place_id','extent', 'center'] + node_feature_names
-            ].to_dict('records')
+    node_ids = np.arange(len(locs_user_view))
+    node_features = locs_user_view.loc[:,['location_id','extent', 'center'] + node_feature_names].to_dict('records')
 
     node_tuple = tuple(zip(node_ids, node_features))
     G.add_nodes_from(node_tuple)
@@ -422,7 +412,7 @@ def nx_coordinate_layout(G):
     Parameters
     ----------
     G : networkx graph
-        A networkx graph that was generated based on trackintel places.
+        A networkx graph that was generated based on trackintel locations.
         Nodes require the `center` attribute that holds a shapely point
         geometry
 
@@ -439,9 +429,9 @@ def nx_coordinate_layout(G):
     return pos
 
 
-def count_places_by_user(staypoints):
+def count_locations_by_user(staypoints):
     """
-    Count how many places per user exist
+    Count how many locations per user exist
 
     Parameters
     ----------
@@ -449,22 +439,22 @@ def count_places_by_user(staypoints):
 
     Returns
     -------
-    places_by_user_count : dictionary
-        Dictionary of type: {user_id: place_count}. It has the number of
-        places per user.
+    locations_by_user_count : dictionary
+        Dictionary of type: {user_id: location_count}. It has the number of
+        locations per user.
 
     """
     all_users = staypoints["user_id"].unique()
 
-    # delete invalid places if exist
+    # delete invalid locations if exist
     staypoints_a = staypoints.loc[staypoints['cluster_id'] != -1]
 
-    # count places by user
-    places_by_user_count = {}
+    # count locations by user
+    locations_by_user_count = {}
     for user_id in all_users:
-        unique_places = staypoints_a.loc[
+        unique_locations = staypoints_a.loc[
             staypoints_a["user_id"] == user_id, 'cluster_id'].unique()
 
-        places_by_user_count[user_id] = len(unique_places)
+        locations_by_user_count[user_id] = len(unique_locations)
 
-    return places_by_user_count
+    return locations_by_user_count

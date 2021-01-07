@@ -6,6 +6,8 @@ Henry Martin: [@henrymartin1 (Github)](https://github.com/henrymartin1).
 
 René Buffat: [@rbuffat (Github)](https://github.com/rbuffat).
 
+Ye Hong: [@hong2223 (Github)](https://github.com/hong2223).
+
 # Previous Authors, Advisors, Visionaries
 
 David Jonietz: [@DavidJonietz (Github)](https://github.com/DavidJonietz).

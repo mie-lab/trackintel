@@ -6,17 +6,15 @@
 
 import io
 import os
-import sys
-from shutil import rmtree
 
-from setuptools import find_packages, setup, Command
+from setuptools import find_packages, setup
 
 # Package meta-data.
 NAME = 'trackintel'
 DESCRIPTION = 'Human mobility and movement analysis framework.'
 URL = 'https://github.com/mie-lab/trackintel'
 EMAIL = 'dobucher@ethz.ch, martinhe@ethz.ch'
-AUTHOR = 'Dominik Bucher, Henry Martin'
+AUTHOR = 'Dominik Bucher, Henry Martin, Ye Hong'
 REQUIRES_PYTHON = '>=3.6.0'
 VERSION = None
 LICENSE = 'MIT'
@@ -32,7 +30,8 @@ REQUIRED = [
     'networkx',
     'geoalchemy2',
     'osmnx',
-    'scikit-learn'
+    'scikit-learn',
+    'tqdm'
 ]
 
 # What packages are optional?

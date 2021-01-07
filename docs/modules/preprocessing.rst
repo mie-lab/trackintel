@@ -21,8 +21,8 @@ In particular, we can extract staypoints and triplegs from positionfixes.
 Staypoints
 ==========
 
-Staypoints are locations where someone stayed for a longer period of time (e.g., during a
-transfer between two transport modes). We can cluster these into places that a user 
+Staypoints are points where someone stayed for a longer period of time (e.g., during a
+transfer between two transport modes). We can cluster these into locations that a user 
 frequently visits.
 
 .. autofunction:: trackintel.preprocessing.staypoints.cluster_staypoints
@@ -35,3 +35,10 @@ with a single mode of transport. Depending on the tracking data, they can be rat
 for which reason we often want to smoothen them.
 
 .. autofunction:: trackintel.preprocessing.triplegs.smoothen_triplegs
+.. autofunction:: trackintel.preprocessing.triplegs.generate_trips
+
+The extraction of triplegs in `generate_trips` follows this algorithm:
+
+.. image:: /_static/tripalgorithm.png
+   :scale: 100 %
+   :align: center

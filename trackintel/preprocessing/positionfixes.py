@@ -1,8 +1,7 @@
+import geopandas as gpd
 import numpy as np
 import pandas as pd
-import geopandas as gpd
 from shapely.geometry import LineString
-
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
 
@@ -63,7 +62,10 @@ def extract_staypoints(positionfixes, method='sliding',
     """
     if 'id' not in positionfixes.columns:
         positionfixes['id'] = positionfixes.index
+    
+    elevation_flag = 'elevation' in positionfixes.columns # if there is elevation data
 
+    name_geocol = positionfixes.geometry.name
     ret_staypoints = pd.DataFrame(columns=['started_at', 'finished_at', 'geom', 'id'])
 
     if method == 'sliding':
@@ -92,17 +94,18 @@ def extract_staypoints(positionfixes, method='sliding',
                     j = i + 1
                 while j < num_pfs:
                     # TODO: Can we make distance function independent of projection?
-                    dist = dist_func(pfs[i]['geom'].x, pfs[i]['geom'].y,
-                                     pfs[j]['geom'].x, pfs[j]['geom'].y)
+                    dist = dist_func(pfs[i][name_geocol].x, pfs[i][name_geocol].y,
+                                     pfs[j][name_geocol].x, pfs[j][name_geocol].y)
 
                     if dist > dist_threshold:
                         delta_t = pfs[j]['tracked_at'] - pfs[i]['tracked_at']
                         if delta_t.total_seconds() > time_threshold:
                             staypoint = {}
                             staypoint['user_id'] = pfs[i]['user_id']
-                            staypoint['geom'] = Point(np.mean([pfs[k]['geom'].x for k in range(i, j)]),
-                                                      np.mean([pfs[k]['geom'].y for k in range(i, j)]))
-                            staypoint['elevation'] = np.mean([pfs[k]['elevation'] for k in range(i, j)])
+                            staypoint[name_geocol] = Point(np.mean([pfs[k][name_geocol].x for k in range(i, j)]),
+                                                           np.mean([pfs[k][name_geocol].y for k in range(i, j)]))
+                            if elevation_flag:
+                                staypoint['elevation'] = np.mean([pfs[k]['elevation'] for k in range(i, j)])
                             staypoint['started_at'] = pfs[i]['tracked_at']
                             staypoint['finished_at'] = pfs[j - 1][
                                 'tracked_at']  # TODO: should this not be j-1? because j is not part of the staypoint. DB: Changed.
@@ -120,15 +123,16 @@ def extract_staypoints(positionfixes, method='sliding',
                             if j == num_pfs - 1:
                                 staypoint = {}
                                 staypoint['user_id'] = pfs[j]['user_id']
-                                staypoint['geom'] = Point(pfs[j]['geom'].x, pfs[j]['geom'].y)
-                                staypoint['elevation'] = pfs[j]['elevation']
+                                staypoint[name_geocol] = Point(pfs[j][name_geocol].x, pfs[j][name_geocol].y)
+                                if elevation_flag:
+                                    staypoint['elevation'] = pfs[j]['elevation']
                                 staypoint['started_at'] = pfs[j]['tracked_at']
                                 staypoint['finished_at'] = pfs[j]['tracked_at']
                                 staypoint['id'] = staypoint_id_counter
 
                                 # store matching
                                 posfix_staypoint_matching[staypoint_id_counter] = [
-                                    j]  # rather [k for k in range(i, j)]?
+                                    pfs[j]['id']]  # rather [k for k in range(i, j)]?
                                 staypoint_id_counter += 1
                                 ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
                         i = j
@@ -176,8 +180,8 @@ def extract_staypoints(positionfixes, method='sliding',
                 staypoint['id'] = staypoint_id
 
                 # point geometry of staypoint
-                staypoint['geom'] = Point(group.geometry.x.mean(),
-                                          group.geometry.y.mean())
+                staypoint.geometry = Point(group[name_geocol].x.mean(),
+                                           group[name_geocol].y.mean())
 
                 ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
 
@@ -216,6 +220,7 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
     --------
     >>> psfs.as_positionfixes.extract_triplegs(staypoints)
     """
+    name_geocol = positionfixes.geometry.name
     # Check that data adheres to contract.
     if staypoints is None and len(positionfixes['staypoint_id'].unique()) < 2:
         raise ValueError("If staypoints is not defined, positionfixes must have more than 1 staypoint_id.")
@@ -244,6 +249,7 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                 # get the last posfix of the first staypoint
                 index_first_posfix_tl = pfs[pfs.staypoint_id == stp1['id']].index[-1]
                 position_first_posfix_tl = pfs.index.get_loc(index_first_posfix_tl)
+
                 # get first posfix of the second staypoint
                 index_last_posfix_tl = pfs[pfs.staypoint_id == stp2['id']].index[0]
                 position_last_posfix_tl = pfs.index.get_loc(index_last_posfix_tl)
@@ -253,14 +259,10 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                 # include every positionfix that brings you closer to the center 
                 # of the staypoint
 
-                posfix_before, started_at = propagate_tripleg(pfs, stp1, position_first_posfix_tl, direction=-1)
-                posfix_before = posfix_before[::-1]
-                # add geometry of staypoint and correct the direction
+                started_at = pfs_tripleg['tracked_at'].iloc[0]
+                finished_at = pfs_tripleg['tracked_at'].iloc[-1]
 
-                posfix_after, finished_at = propagate_tripleg(pfs, stp2, position_last_posfix_tl, direction=1)
-
-                coords = list(pfs_tripleg['geom'].apply(lambda r: (r.x, r.y)))
-                coords = posfix_before + coords + posfix_after
+                coords = list(pfs_tripleg.geometry.apply(lambda r: (r.x, r.y)))
 
                 if len(coords) > 1:
                     generated_triplegs.append({
@@ -282,14 +284,14 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                 pfs_tripleg = pfs[(stp1['finished_at'] <= pfs['tracked_at']) & \
                                   (pfs['tracked_at'] <= stp2['started_at'])].sort_values('tracked_at')
 
-                coords = list(pfs_tripleg['geom'].apply(lambda r: (r.x, r.y)))
+                coords = list(pfs_tripleg.geometry.apply(lambda r: (r.x, r.y)))
                 if len(coords) > 1:
                     generated_triplegs.append({
                         'id': curr_tripleg_id,
                         'user_id': user_id_this,
                         'started_at': pfs_tripleg['tracked_at'].iloc[0],
                         'finished_at': pfs_tripleg['tracked_at'].iloc[-1],
-                        'geom': LineString(list(pfs_tripleg['geom'].apply(lambda r: (r.x, r.y))))
+                        'geom': LineString(list(pfs_tripleg.geometry.apply(lambda r: (r.x, r.y))))
                     })
                     curr_tripleg_id += 1
 
@@ -308,12 +310,12 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                     # This tripleg ends. 
                     pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
                     curr_tripleg['finished_at'] = pf['tracked_at']
-                    curr_tripleg['coords'].append((pf['geom'].x, pf['geom'].y))
+                    curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
 
                 elif (prev_pf is not None and prev_pf['staypoint_id'] != -1 and pf['staypoint_id'] == -1):
                     # A new tripleg starts (due to a staypoint_id switch from -1 to x).
                     if len(curr_tripleg['coords']) > 1:
-                        curr_tripleg['geom'] = LineString(curr_tripleg['coords'])
+                        curr_tripleg[name_geocol] = LineString(curr_tripleg['coords'])
                         del curr_tripleg['coords']
                         generated_triplegs.append(curr_tripleg)
                         curr_tripleg_id += 1
@@ -323,17 +325,17 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                     prev_pf['tripleg_id'] = curr_tripleg_id
                     pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
                     curr_tripleg['started_at'] = pf['tracked_at']
-                    curr_tripleg['coords'].append((pf['geom'].x, pf['geom'].y))
+                    curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
 
                 elif prev_pf is not None and prev_pf['staypoint_id'] != -1 and \
                         pf['staypoint_id'] != -1 and prev_pf['staypoint_id'] != pf['staypoint_id']:
                     # A new tripleg starts (due to a staypoint_id switch from x to y).
                     pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
                     curr_tripleg['finished_at'] = pf['tracked_at']
-                    curr_tripleg['coords'].append((pf['geom'].x, pf['geom'].y))
+                    curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
 
                     if len(curr_tripleg['coords']) > 1:
-                        curr_tripleg['geom'] = LineString(curr_tripleg['coords'])
+                        curr_tripleg[name_geocol] = LineString(curr_tripleg['coords'])
                         del curr_tripleg['coords']
                         generated_triplegs.append(curr_tripleg)
                         curr_tripleg_id += 1
@@ -348,7 +350,7 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
                     prev_pf['tripleg_id'] = curr_tripleg_id
                     pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
                     curr_tripleg['started_at'] = pf['tracked_at']
-                    curr_tripleg['coords'].append((pf['geom'].x, pf['geom'].y))
+                    curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
 
                 elif prev_pf is not None and prev_pf['staypoint_id'] != -1 and \
                         prev_pf['staypoint_id'] == pf['staypoint_id']:
@@ -357,58 +359,14 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
 
                 else:
                     pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
-                    curr_tripleg['coords'].append((pf['geom'].x, pf['geom'].y))
+                    curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
 
                 prev_pf = pf
-        ret_triplegs = ret_triplegs.append(generated_triplegs)
+        if len(generated_triplegs) > 0:
+            ret_triplegs = ret_triplegs.append(generated_triplegs)
 
     ret_triplegs = gpd.GeoDataFrame(ret_triplegs, geometry='geom', crs=positionfixes.crs)
     ret_triplegs['id'] = ret_triplegs['id'].astype('int')
-
+    # todo: triplegs dataframe has use the index as id
+    # todo: proposed fix: ret_triplegs = ret_triplegs.set_index('id')
     return ret_triplegs
-
-
-def propagate_tripleg(pfs, stp, position_edge_posfix_tl, direction=1):
-    # propagate backwards at start
-    posfix_to_add = []
-    i = direction
-
-    if (position_edge_posfix_tl + i) >= len(pfs) or (position_edge_posfix_tl + i)  < 0:
-        return posfix_to_add, pfs.iloc[position_edge_posfix_tl].tracked_at
-
-    geom_stp = stp['geom']
-
-    geom_edge_posfix_tl = pfs.iloc[position_edge_posfix_tl].geom
-    geom_candidate_posfix = pfs.iloc[position_edge_posfix_tl + i].geom
-
-    dist_edge_psf_stp = geom_stp.distance(geom_edge_posfix_tl)
-
-    # new posfix must be closer to the center of the staypoint then the current one
-    cond1 = (geom_stp.distance(geom_candidate_posfix) < dist_edge_psf_stp)
-
-    # new posfix must be closer then the center of the staypoint to qualify
-    cond2 = (geom_edge_posfix_tl.distance(geom_candidate_posfix) < dist_edge_psf_stp)
-
-    closer = cond1 and cond2
-
-    while (closer):
-        if (position_edge_posfix_tl + i + direction) > len(pfs) or (position_edge_posfix_tl + i + direction)  < 0:
-            break
-
-        # insert new posfix
-        posfix_to_add.append((geom_candidate_posfix.x, geom_candidate_posfix.y))
-
-        # update variables
-        geom_edge_posfix_tl = pfs.iloc[position_edge_posfix_tl + i,:].geom
-        i = i + direction
-        geom_candidate_posfix = pfs.iloc[position_edge_posfix_tl + i,:].geom
-
-        # update closer
-        dist_edge_psf_stp = geom_stp.distance(geom_edge_posfix_tl)
-        cond1 = (geom_stp.distance(geom_candidate_posfix) < dist_edge_psf_stp)
-        cond2 = (geom_edge_posfix_tl.distance(geom_candidate_posfix) < dist_edge_psf_stp)
-        closer = cond1 and cond2
-
-    tracked_at = pfs.iloc[position_edge_posfix_tl + i].tracked_at
-    # posfix_to_add.append((geom_stp.x, geom_stp.y))
-    return posfix_to_add, tracked_at

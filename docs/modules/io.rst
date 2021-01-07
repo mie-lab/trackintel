@@ -25,7 +25,7 @@ CSV File Import
 
 .. autofunction:: trackintel.io.file.read_staypoints_csv
 
-.. autofunction:: trackintel.io.file.read_places_csv
+.. autofunction:: trackintel.io.file.read_locations_csv
 
 .. autofunction:: trackintel.io.file.read_trips_csv
 
@@ -38,7 +38,7 @@ PostGIS Import
 
 .. autofunction:: trackintel.io.postgis.read_staypoints_postgis
 
-.. autofunction:: trackintel.io.postgis.read_places_postgis
+.. autofunction:: trackintel.io.postgis.read_locations_postgis
 
 .. autofunction:: trackintel.io.postgis.read_trips_postgis
 
@@ -51,7 +51,7 @@ CSV File Export
 
 .. autofunction:: trackintel.io.file.write_staypoints_csv
 
-.. autofunction:: trackintel.io.file.write_places_csv
+.. autofunction:: trackintel.io.file.write_locations_csv
 
 .. autofunction:: trackintel.io.file.write_trips_csv
 
@@ -64,6 +64,6 @@ PostGIS Export
 
 .. autofunction:: trackintel.io.postgis.write_staypoints_postgis
 
-.. autofunction:: trackintel.io.postgis.write_places_postgis
+.. autofunction:: trackintel.io.postgis.write_locations_postgis
 
 .. autofunction:: trackintel.io.postgis.write_trips_postgis

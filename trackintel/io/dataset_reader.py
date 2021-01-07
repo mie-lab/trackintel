@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import os
-import ntpath
 import glob
-import pandas as pd
+import ntpath
+import os
+
 import geopandas as gpd
+import numpy as np
+import pandas as pd
 from shapely.geometry import Point
 
 FEET2METER = 0.3048
@@ -60,7 +62,15 @@ def read_geolife(geolife_path):
 
     df_list_users = []
 
+    if len(user_folder) == 0:
+        raise NameError('No folders found with working directory {} and path {}'.format(os.getcwd(), geolife_path))
+
     for user_folder_this in user_folder:
+
+        # skip files
+        if not os.path.isdir(user_folder_this):
+            continue
+
         # extract user id from path
         _, tail = ntpath.split(user_folder_this)
         user_id = int(tail)
@@ -96,8 +106,9 @@ def read_geolife(geolife_path):
         df_list_users.append(df_user_this)
 
     df = pd.concat(df_list_users, axis=0, ignore_index=True)
-    df["accuracy"] = None
     gdf = gpd.GeoDataFrame(df, geometry="geom", crs=CRS_WGS84)
-    gdf["accuracy"] = None
+    gdf["accuracy"] = np.nan
+
+    gdf.index.name = 'id'
 
     return gdf

@@ -80,7 +80,7 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
 
     # If this GeoDataFrame already has an SRID, we use it, otherwise we default to WGS84.
     if (positionfixes_postgis.crs is not None):
-        srid = int(positionfixes_postgis.crs['init'].split(':')[1])
+        srid = int(positionfixes_postgis.crs.to_epsg())
     else:
         srid = 4326
     positionfixes_postgis['geom'] = \
@@ -167,7 +167,7 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None,
     # make a copy in order to avoid changing the geometry of the original array
     triplegs_postgis = triplegs.copy()
     
-    srid = int(triplegs_postgis.crs['init'].split(':')[1])
+    srid = int(triplegs_postgis.crs.to_epsg())
     triplegs_postgis['geom'] = \
         triplegs_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     if 'id' not in triplegs_postgis.columns:
@@ -257,7 +257,7 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
     # make a copy in order to avoid changing the geometry of the original array
     staypoints_postgis = staypoints.copy()
     
-    srid = int(staypoints_postgis.crs['init'].split(':')[1])
+    srid = int(staypoints_postgis.crs.to_epsg())
     staypoints_postgis['geom'] = \
         staypoints_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     if 'id' not in staypoints_postgis.columns:
@@ -274,8 +274,8 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
         conn.close()
         
         
-def read_places_postgis(conn_string, table_name, geom_col='geom', *args, **kwargs):
-    """Reads places from a PostGIS database.
+def read_locations_postgis(conn_string, table_name, geom_col='geom', *args, **kwargs):
+    """Reads locations from a PostGIS database.
 
     Parameters
     ----------
@@ -284,7 +284,7 @@ def read_places_postgis(conn_string, table_name, geom_col='geom', *args, **kwarg
         ``postgresql://username:password@host:socket/database``.
     
     table_name : str
-        The table to read the places from.
+        The table to read the locations from.
 
     geom_col : str, default 'geom'
         The geometry column of the table. 
@@ -292,31 +292,31 @@ def read_places_postgis(conn_string, table_name, geom_col='geom', *args, **kwarg
     Returns
     -------
     GeoDataFrame
-        A GeoDataFrame containing the places.
+        A GeoDataFrame containing the locations.
     """
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        plcs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, 
+        locs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, 
                                             geom_col=geom_col, index_col='id',
                                             *args, **kwargs)
     finally:
         conn.close()
-    assert plcs.as_places
-    return plcs
+    assert locs.as_locations
+    return locs
 
 
-def write_places_postgis(places, conn_string, table_name, schema=None,
+def write_locations_postgis(locations, conn_string, table_name, schema=None,
                          sql_chunksize=None, if_exists='replace'):
-    """Stores places to PostGIS. Usually, this is directly called on a places 
+    """Stores locations to PostGIS. Usually, this is directly called on a locations 
     GeoDataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
 
     Parameters
     ----------
-    places : GeoDataFrame
-        The places to store to the database.
+    locations : GeoDataFrame
+        The locations to store to the database.
 
     conn_string : str
         A connection string to connect to a database, e.g., 
@@ -336,24 +336,24 @@ def write_places_postgis(places, conn_string, table_name, schema=None,
 
     Examples
     --------
-    >>> df.as_places.to_postgis(conn_string, table_name)
+    >>> df.as_locations.to_postgis(conn_string, table_name)
     """
     
     # make a copy in order to avoid changing the geometry of the original array
-    places_postgis = places.copy()
+    locations_postgis = locations.copy()
     
-    srid = int(places_postgis.crs['init'].split(':')[1])
-    places_postgis['center'] = \
-        places_postgis['center'].apply(lambda x: WKTElement(x.wkt, srid=srid))
-    places_postgis['extent'] = \
-        places_postgis['extent'].apply(lambda x: WKTElement(x.wkt, srid=srid))
-    if 'id' not in places_postgis.columns:
-        places_postgis['id'] = places_postgis.index
+    srid = int(locations_postgis.crs['init'].split(':')[1])
+    locations_postgis['center'] = \
+        locations_postgis['center'].apply(lambda x: WKTElement(x.wkt, srid=srid))
+    locations_postgis['extent'] = \
+        locations_postgis['extent'].apply(lambda x: WKTElement(x.wkt, srid=srid))
+    if 'id' not in locations_postgis.columns:
+        locations_postgis['id'] = locations_postgis.index
 
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        places_postgis.to_sql(table_name, engine, schema=schema,
+        locations_postgis.to_sql(table_name, engine, schema=schema,
                               if_exists=if_exists, index=False, 
                               dtype={'center': Geometry('POINT', srid=srid),
                                      'extent': Geometry('GEOMETRY', srid=srid)},
@@ -426,7 +426,7 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None,
     # make a copy in order to avoid changing the geometry of the original array
     trips_postgis = trips.copy()
     
-    srid = int(trips_postgis.crs['init'].split(':')[1])
+    srid = int(trips_postgis.crs.to_epsg())
     trips_postgis['center'] = \
         trips_postgis['center'].apply(lambda x: WKTElement(x.wkt, srid=srid))
     trips_postgis['extent'] = \

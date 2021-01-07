@@ -1,0 +1,19 @@
+name: trackintel
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+- numpy
+- matplotlib
+- pandas
+- geopandas
+- scikit-learn
+- networkx 
+- pint
+- pip 
+- geoalchemy2 
+- osmnx 
+- psycopg2
+- imageio
+- tqdm

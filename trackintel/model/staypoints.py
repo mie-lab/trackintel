@@ -1,10 +1,9 @@
 import pandas as pd
-import trackintel as ti
 
-import trackintel.visualization.staypoints
+import trackintel as ti
+import trackintel.preprocessing.filter
 import trackintel.preprocessing.staypoints
-import trackintel.io.postgis
-import trackintel.io.file
+import trackintel.visualization.staypoints
 
 
 @pd.api.extensions.register_dataframe_accessor("as_staypoints")
@@ -14,18 +13,26 @@ class StaypointsAccessor(object):
     adheres to some requirements.
 
     Requires at least the following columns: 
-    ``['user_id', 'started_at', 'finished_at', 'geom']``
+    ``['user_id', 'started_at', 'finished_at']``
+
+    Requires valid ``point geometries``; the ``index`` of the GeoDataFrame will be treated as unique identifier
+    of the `Staypoints`
 
     For several usecases, the following additional columns are required:
-    ``['elevation', 'radius', 'context', 'purpose_detected', 'purpose_validated',``
-    ``'validated', 'validated_at', 'activity']``
+    ``['elevation', 'radius', 'context', 'purpose', 'activity', 'next_trip_id', 'prev_trip_id', 'trip_id']``
+
+    Notes
+    -------
+    Staypoints are defined as location were a person did not move for a while. Under consideration of location
+     uncertainty this means that a person stays within a certain radius for a certain amount of time.
+     The exact definition is use-case dependent.
 
     Examples
     --------
-    >>> df.as_staypoints.extract_places()
+    >>> df.as_staypoints.extract_locations()
     """
 
-    required_columns = ['user_id', 'started_at', 'finished_at', 'geom']
+    required_columns = ['user_id', 'started_at', 'finished_at']
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -33,11 +40,15 @@ class StaypointsAccessor(object):
 
     @staticmethod
     def _validate(obj):
+        # check columns
         if any([c not in obj.columns for c in StaypointsAccessor.required_columns]):
             raise AttributeError("To process a DataFrame as a collection of staypoints, " \
-                + "it must have the properties [%s], but it has [%s]." \
-                % (', '.join(StaypointsAccessor.required_columns), ', '.join(obj.columns)))
-        if not (obj.shape[0] > 0 and obj.geometry.iat[0].geom_type is 'Point'):
+                                 + "it must have the properties [%s], but it has [%s]." \
+                                 % (', '.join(StaypointsAccessor.required_columns), ', '.join(obj.columns)))
+        # check geometry
+        assert obj.geometry.is_valid.all(), "Not all geometries are valid. Try x[~ x.geometry.is_valid] " \
+                                            "where x is you GeoDataFrame"
+        if obj.geometry.iloc[0].geom_type != 'Point':
             raise AttributeError("The geometry must be a Point (only first checked).")
 
     @property
@@ -47,10 +58,25 @@ class StaypointsAccessor(object):
         lon = self._obj.geometry.x
         return (float(lon.mean()), float(lat.mean()))
 
-    def extract_places(self, *args, **kwargs):
-        """Extracts places from this collection of staypoints.
+    def extract_locations(self, *args, **kwargs):
+        """Extracts locations from this collection of staypoints.
         See :func:`trackintel.preprocessing.staypoints.cluster_staypoints`."""
         return ti.preprocessing.staypoints.cluster_staypoints(self._obj, *args, **kwargs)
+    
+    def cluster_staypoints(self, *args, **kwargs):
+        """Function alias for extract_locations to ensure consistency for function naming.
+        See :func:`trackintel.preprocessing.staypoints.cluster_staypoints`."""
+        return self.extract_locations(*args, **kwargs)
+
+    def create_activity_flag(self, *args, **kwargs):
+        """Sets a flag if a staypoint is also an activity.
+        See :func:`trackintel.preprocessing.staypoints.create_activity_flag`."""
+        return ti.preprocessing.staypoints.create_activity_flag(self._obj, *args, **kwargs)
+
+    def spatial_filter(self, *args, **kwargs):
+        """Filter staypoints with a geo extent.
+        See :func:`trackintel.preprocessing.filter.spatial_filter`."""
+        return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
 
     def plot(self, *args, **kwargs):
         """Plots this collection of staypoints. 

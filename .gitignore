@@ -111,3 +111,6 @@ venv.bak/
 # Each developer can have its own Packages
 Pipfile.lock
 /docs.gen
+.diff
+/docs_local
+*.orig

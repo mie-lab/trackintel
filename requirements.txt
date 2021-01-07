@@ -9,3 +9,4 @@ geoalchemy2
 osmnx 
 psycopg2
 imageio
+tqdm

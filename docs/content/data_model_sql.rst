@@ -61,9 +61,9 @@ a user, but also (potentially, if this link has already been made) to a trip leg
         CONSTRAINT positionfixes_pkey PRIMARY KEY (id)
     );
 
-The **staypoints** table contains all stay points, i.e., places where a user stayed
+The **staypoints** table contains all stay points, i.e., points where a user stayed
 for a certain amount of time. They are linked to a user, as well as (potentially) to a trip
-and place. Depending on the purpose and time spent, a staypoint can be an *activity*,
+and location. Depending on the purpose and time spent, a staypoint can be an *activity*,
 i.e., a meaningful destination of movement::
 
     CREATE TABLE staypoints (
@@ -73,7 +73,7 @@ i.e., a meaningful destination of movement::
 
         -- References to foreign tables.
         trip_id bigint,
-        place_id bigint,
+        location_id bigint,
 
         -- Temporal attributes.
         started_at timestamp without time zone NOT NULL,
@@ -139,10 +139,10 @@ and if applicable, a public transport case::
         CONSTRAINT triplegs_pkey PRIMARY KEY (id)
     );
 
-The **places** table contains all places, i.e., somehow created (e.g., from clustering
+The **locations** table contains all locations, i.e., somehow created (e.g., from clustering
 staypoints) meaningful locations::
 
-    CREATE TABLE places (
+    CREATE TABLE locations (
         -- Common to all tables.
         id bigint NOT NULL,
         user_id bigint,
@@ -158,7 +158,7 @@ staypoints) meaningful locations::
         center geometry(Point, 4326),
 
         -- Constraints.
-        CONSTRAINT places_pkey PRIMARY KEY (id)
+        CONSTRAINT locations_pkey PRIMARY KEY (id)
     );
 
 The **trips** table contains all trips, i.e., collection of trip legs going from one 
@@ -187,7 +187,7 @@ activity (staypoint with ``activity==True``) to another. They are simply linked 
     );
 
 The **tours** table contains all tours, i.e., sequence of trips which start and end 
-at the same place (in case of ``journey==True`` this place is *home*). 
+at the same location (in case of ``journey==True`` this location is *home*). 
 They are linked to a user::
 
     CREATE TABLE tours (
@@ -196,7 +196,7 @@ They are linked to a user::
         user_id integer NOT NULL,
 
         -- References to foreign tables.
-        origin_destination_place_id bigint,
+        origin_destination_location_id bigint,
 
         -- Temporal attributes.
         started_at timestamp without time zone NOT NULL,
