@@ -22,7 +22,7 @@ jobs:
         build
         --sdist
         --wheel
-        --outdir trackintel/
+        --outdir dist/
     - name: Publish distr to Test pypi
       uses: pypa/gh-action-pypi-publish@v1.4.1
       with: 
