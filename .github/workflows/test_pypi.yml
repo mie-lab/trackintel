@@ -27,4 +27,4 @@ jobs:
       uses: pypa/gh-action-pypi-publish@v1.4.1
       with: 
         password: ${{secrets.TEST_PIPY_API_TOKEN}}
-        repository_url: https://test.pypi.org/legacy/
+        repository_url: https://test.pypi.org/project/trackintel/0.2.0/
