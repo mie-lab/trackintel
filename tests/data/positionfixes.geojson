@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "Unnamed: 0": 0, "User": 1, "tracked_at": "2015-11-27T08:00:00Z", "elevation": 456, "accuracy": 1 }, "geometry": { "type": "Point", "coordinates": [ 8.548779488, 47.37651505 ] } },
+{ "type": "Feature", "properties": { "Unnamed: 0": 1, "User": 1, "tracked_at": "2015-11-27T08:20:22Z", "elevation": 524, "accuracy": 1 }, "geometry": { "type": "Point", "coordinates": [ 8.5277, 47.39935 ] } },
+{ "type": "Feature", "properties": { "Unnamed: 0": 2, "User": 1, "tracked_at": "2015-11-27T12:39:28Z", "elevation": 537, "accuracy": 1 }, "geometry": { "type": "Point", "coordinates": [ 8.51169, 47.40854 ] } },
+{ "type": "Feature", "properties": { "Unnamed: 0": 3, "User": 1, "tracked_at": "2015-11-27T13:57:20Z", "elevation": 447, "accuracy": 1 }, "geometry": { "type": "Point", "coordinates": [ 8.54472, 47.41144 ] } },
+{ "type": "Feature", "properties": { "Unnamed: 0": 4, "User": 1, "tracked_at": "2015-11-28T12:39:28Z", "elevation": 537, "accuracy": 1 }, "geometry": { "type": "Point", "coordinates": [ 8.51169, 43.40854 ] } },
+{ "type": "Feature", "properties": { "Unnamed: 0": 5, "User": 1, "tracked_at": "2015-11-28T13:57:20Z", "elevation": 447, "accuracy": 1 }, "geometry": { "type": "Point", "coordinates": [ 8.54472, 43.41144 ] } }
+]
+}

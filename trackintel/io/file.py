@@ -24,7 +24,9 @@ def read_positionfixes_csv(*args, **kwargs):
     --------
     >>> trackintel.read_positionfixes_csv('data.csv')
     """
+    columns=kwargs.pop('columns',{})
     df = pd.read_csv(*args, **kwargs)
+    df = df.rename(columns=columns)
     df['geom'] = list(zip(df.longitude, df.latitude))
     df['geom'] = df['geom'].apply(Point)
     df['tracked_at'] = df['tracked_at'].apply(dateutil.parser.parse)
@@ -63,7 +65,9 @@ def read_triplegs_csv(*args, **kwargs):
     GeoDataFrame
         A GeoDataFrame containing the triplegs.
     """
+    columns=kwargs.pop('columns',{})
     df = pd.read_csv(*args, **kwargs)
+    df = df.rename(columns=columns)
     df['geom'] = df['geom'].apply(wkt.loads)
     df['started_at'] = df['started_at'].apply(dateutil.parser.parse)
     df['finished_at'] = df['finished_at'].apply(dateutil.parser.parse)
@@ -100,7 +104,9 @@ def read_staypoints_csv(*args, **kwargs):
     GeoDataFrame
         A GeoDataFrame containing the staypoints.
     """
+    columns=kwargs.pop('columns',{})
     df = pd.read_csv(*args, **kwargs)
+    df = df.rename(columns=columns)
     df['geom'] = df['geom'].apply(wkt.loads)
     df['started_at'] = df['started_at'].apply(dateutil.parser.parse)
     df['finished_at'] = df['finished_at'].apply(dateutil.parser.parse)
@@ -137,8 +143,9 @@ def read_locations_csv(*args, **kwargs):
     GeoDataFrame
         A GeoDataFrame containing the locations.
     """
-    # Todo: How to implement flexible geometry names in locations (gdf with potentially 2 geometry columns)
+    columns=kwargs.pop('columns',{})
     df = pd.read_csv(*args, **kwargs)
+    df = df.rename(columns=columns)
     df['center'] = df['center'].apply(wkt.loads)
     if 'extent' in df.columns:
         df['extent'] = df['extent'].apply(wkt.loads)
@@ -176,7 +183,9 @@ def read_trips_csv(*args, **kwargs):
     DataFrame
         A DataFrame containing the trips.
     """
+    columns=kwargs.pop('columns',{})
     df = pd.read_csv(*args, **kwargs)
+    df = df.rename(columns=columns)
     df['started_at'] = df['started_at'].apply(dateutil.parser.parse)
     df['finished_at'] = df['finished_at'].apply(dateutil.parser.parse)
     assert df.as_trips
