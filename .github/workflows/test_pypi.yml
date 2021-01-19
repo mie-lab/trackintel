@@ -1,0 +1,30 @@
+name: pypi-publish
+on: push
+jobs:
+  build-n-publish:
+    name: Build and publish Python distr to TestPyPI
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@master
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+    - name: Install pypa/build
+      run: >-
+        python -m
+        pip install
+        build
+        --user
+    - name: Build a binary wheel and a source tarball
+      run: >-
+        python -m
+        build
+        --sdist
+        --wheel
+        --outdir dist/
+    - name: Publish distr to Test pypi
+      uses: pypa/gh-action-pypi-publish@v1.4.1
+      with: 
+        password: ${{secrets.TEST_PIPY_API_TOKEN}}
+        repository_url: https://test.pypi.org/project/trackintel/0.2.0/
