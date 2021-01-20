@@ -10,6 +10,9 @@ def read_positionfixes_csv(*args, **kwargs):
     builds a geopandas GeoDataFrame. This also validates that the ingested data
     conforms to the trackintel understanding of positionfixes (see 
     :doc:`/modules/model`). 
+    
+    In addition to the pandas read_csv keyword arguments, this function provides to rename columns directly while importing
+    by specifying the columnnames in a dictionary, see second example.
 
     Note that this function is primarily useful if data is available in a 
     longitude/latitude format. If your data already contains a WKT column, it
@@ -23,6 +26,7 @@ def read_positionfixes_csv(*args, **kwargs):
     Examples
     --------
     >>> trackintel.read_positionfixes_csv('data.csv')
+    >>> trackintel.read_positionfixes_csv('data.csv', columns={'time':'tracked_at', 'User':'user_id'})
     """
     columns=kwargs.pop('columns',{})
     df = pd.read_csv(*args, **kwargs)
@@ -60,10 +64,18 @@ def read_triplegs_csv(*args, **kwargs):
     builds a geopandas GeoDataFrame. This also validates that the ingested data
     conforms to the trackintel understanding of triplegs (see :doc:`/modules/model`).
 
+
+    In addition to the pandas read_csv keyword arguments, this function provides to rename columns directly while importing
+    by specifying the columnnames in a dictionary, see second example.
+    
     Returns
     -------
     GeoDataFrame
         A GeoDataFrame containing the triplegs.
+        
+    Examples
+    --------
+    >>>> trackintel.read_triplegs_csv('data.csv', columns={'start_time':'started_at'})
     """
     columns=kwargs.pop('columns',{})
     df = pd.read_csv(*args, **kwargs)
@@ -98,6 +110,9 @@ def read_staypoints_csv(*args, **kwargs):
     geometry and builds a geopandas GeoDataFrame. This also validates that 
     the ingested data conforms to the trackintel understanding of staypoints 
     (see :doc:`/modules/model`).
+    
+    In addition to the pandas read_csv keyword arguments, this function provides to rename columns directly while importing
+    by specifying the columnnames in a dictionary, see examples in read_triplegs_csv or read_positionfixes_csv.
 
     Returns
     -------
@@ -138,6 +153,9 @@ def read_locations_csv(*args, **kwargs):
     validates that the ingested data conforms to the trackintel understanding 
     of locations (see :doc:`/modules/model`).
 
+    In addition to the pandas read_csv keyword arguments, this function provides to rename columns directly while importing
+    by specifying the columnnames in a dictionary, see examples in read_triplegs_csv or read_positionfixes_csv.
+
     Returns
     -------
     GeoDataFrame
@@ -177,6 +195,9 @@ def read_trips_csv(*args, **kwargs):
     """Wraps the pandas read_csv function and extraces proper datetimes. This also 
     validates that the ingested data conforms to the trackintel understanding 
     of trips (see :doc:`/modules/model`).
+    
+    In addition to the pandas read_csv keyword arguments, this function provides to rename columns directly while importing
+    by specifying the columnnames in a dictionary, see examples in read_triplegs_csv or read_positionfixes_csv.
 
     Returns
     -------
