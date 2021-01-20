@@ -58,7 +58,7 @@ def read_geolife(geolife_path):
 
 
     geolife_path = os.path.join(geolife_path, '*')
-    user_folder = glob.glob(geolife_path)
+    user_folder = sorted(glob.glob(geolife_path))
 
     df_list_users = []
 
@@ -76,8 +76,8 @@ def read_geolife(geolife_path):
         user_id = int(tail)
         print("start importing geolife user_id: ", user_id)
 
-        input_files = glob.glob(os.path.join(
-            user_folder_this, "Trajectory", "*.plt"))
+        input_files = sorted(glob.glob(os.path.join(
+            user_folder_this, "Trajectory", "*.plt")))
         df_list_days = []
 
         # read every day of every user and concatenate input files
@@ -87,7 +87,7 @@ def read_geolife(geolife_path):
                                            'date days', 'date', 'time'])
 
             data_this['tracked_at'] = pd.to_datetime(data_this['date']
-                                                     + ' ' + data_this['time'])
+                                                     + ' ' + data_this['time'], format="%Y-%m-%d %H:%M:%S")
 
             data_this.drop(['zeros', 'date days', 'date', 'time'], axis=1,
                            inplace=True)

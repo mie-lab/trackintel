@@ -1,11 +1,11 @@
-name: trackintel
+name: test
 channels:
   - conda-forge
   - defaults
 dependencies:
-- python=3.8
-- numpy
+- python=3.9
 - matplotlib
+- numpy
 - pandas
 - geopandas
 - scikit-learn
@@ -16,4 +16,7 @@ dependencies:
 - osmnx 
 - psycopg2
 - imageio
+- pytest
+- pytest-cov
+- pytest-xdist
 - tqdm

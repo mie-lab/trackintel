@@ -1,0 +1,63 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Tests
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *" # repeat every day
+
+jobs:
+  Test:
+    name: ${{ matrix.os }}, ${{ matrix.env }}
+    runs-on: ${{ matrix.os }}   
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        postgis: [false]
+        dev: [false]
+        env:
+          - ci/envs/37-latest-conda-forge.yaml
+          - ci/envs/38-latest-conda-forge.yaml
+          - ci/envs/39-latest-conda-forge.yaml
+        include:
+          - env: ci/envs/38-latest-conda-forge.yaml
+            os: macos-latest
+            postgis: false
+            dev: false
+          - env: ci/envs/38-latest-conda-forge.yaml
+            os: windows-latest
+            postgis: false
+            dev: false
+      
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Conda
+      uses: s-weigand/setup-conda@v1
+      with:
+        activate-conda: false
+        
+    - name: Install Env
+      shell: bash
+      run: conda env create -f ${{ matrix.env }}
+        
+    - name: Test with pytest
+      shell: bash
+      run: |
+        source activate test
+        pytest --color=yes --cov=./ 
+
+    - name: Test with PostGIS
+      shell: bash
+      if: contains(matrix.env, '38-latest-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
+      env:
+        PGUSER: postgres
+        PGPASSWORD: postgres
+        PGHOST: "127.0.0.1"
+      run: |
+        source activate test
+        conda install postgis -c conda-forge
+        source ci/envs/setup_postgres.sh
+        pytest -v -r s --color=yes --cov=./ | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi

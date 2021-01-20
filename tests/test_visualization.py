@@ -2,6 +2,8 @@ import pytest
 import sys
 import os
 import filecmp
+import matplotlib as mpl
+mpl.use('Agg')
 
 import trackintel as ti
 from trackintel.preprocessing import positionfixes
