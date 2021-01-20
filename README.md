@@ -1,6 +1,6 @@
 # The trackintel Framework
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/henrymartin1/trackintel/master?filepath=examples%2Fexample_geolife%2FTrackintel_introduction.ipynb)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/mie-lab/trackintel/master?filepath=%2Fexamples%2Fexample_geolife%2FTrackintel_introduction.ipynb)
 ![Version](https://img.shields.io/badge/version-v0.2.0-red.svg)
 [![Build Status](https://travis-ci.org/mie-lab/trackintel.svg?branch=master)](https://travis-ci.org/mie-lab/trackintel)
 [![codecov.io](https://codecov.io/gh/mie-lab/trackintel/coverage.svg?branch=master)](https://codecov.io/gh/mie-lab/trackintel)
