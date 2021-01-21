@@ -25,7 +25,7 @@ class PositionfixesAccessor(object):
 
     Examples
     --------
-    >>> df.as_positionfixes.extract_staypoints()
+    >>> df.as_positionfixes.generate_staypoints()
     """
 
     required_columns = ['user_id', 'tracked_at']

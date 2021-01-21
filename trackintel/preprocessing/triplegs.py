@@ -5,23 +5,29 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-def smoothen_triplegs(triplegs, method='douglas-peucker', tolerance=1.0):
-    """reduces number of points while retaining structure of tripleg
+def smoothen_triplegs(triplegs, tolerance=1.0):
+    """Reduces number of points while retaining structure of tripleg
+    
     Parameters
     ----------
-    triplegs: shapely file
-        triplegs to be reduced
-    method: method used to smoothen
-        only the douglas-peucker method is available so far
+    triplegs: GeoDataFrame
+        triplegs to be simplified
+        
     tolerance: float
         a higher tolerance removes more points; the units of tolerance are the same as the projection of the input geometry
+    
+    Returns
+    ----------
+    GeoDataFrame
+        The simplified triplegs GeoDataFrame
+    
     """
-    input_copy = copy.deepcopy(triplegs)
-    origin_geom = input_copy.geom
-    simplified_geom = origin_geom.simplify(tolerance, preserve_topology=False)
-    input_copy.geom = simplified_geom
+    ret_triplegs = triplegs.copy()
+    origin_geom = ret_triplegs.geom
+    simplified_geom = origin_geom.simplify(tolerance, preserve_topology=True)
+    ret_triplegs.geom = simplified_geom
 
-    return input_copy
+    return ret_triplegs
 
 
 def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_progress=False):
@@ -46,7 +52,7 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     Returns
     -------
     (GeoDataFrame, GeoDataFrame, GeoDataFrame)
-        the tuple contains (staypoints, triplegs, trips)
+        Tuple containing (staypoints, triplegs, trips)
 
     Notes
     -----
@@ -56,8 +62,8 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     [`trip_id` `prev_trip_id` and `next_trip_id`], triplegs receive the field [`trip_id`].
     The following assumptions are implemented
         - All movement before the first and after the last activity is omitted
-        - If we do not record a person for more than `gap_threshold` minutes, we assume that the person performed
-         an activity in the recording gap and split the trip at the gap.
+        - If we do not record a person for more than `gap_threshold` minutes, \
+            we assume that the person performed an activity in the recording gap and split the trip at the gap.
         - Trips that start/end in a recording gap can have an unknown origin/destination
         - There are no trips without a (recored) tripleg
 

@@ -14,16 +14,14 @@ def spatial_filter(source, areas, method="within", re_project=False):
         The areas used to perform the spatial filtering. Note, you can have multiple Polygons 
         and it will return all the features intersect with ANY of those geometries.
 
-    method : str, one of {'within', 'intersects', 'crosses'}, default 'within'
-        'within'    : return instances in 'source' where no points of these instances lies in the 
-            exterior of the 'areas' and at least one point of the interior of these instances lies 
+    method : str, {'within', 'intersects', 'crosses'}, default 'within'
+        - 'within'    : return instances in 'source' where no points of these instances lies in the \
+            exterior of the 'areas' and at least one point of the interior of these instances lies \
             in the interior of 'areas'.
-            
-        'intersects': return instances in 'source' where the boundary or interior of these instances 
+        - 'intersects': return instances in 'source' where the boundary or interior of these instances \
             intersect in any way with those of the 'areas'
-            
-        'crosses'   : return instances in 'source' where the interior of these instances intersects 
-            the interior of the 'areas' but does not contain it, and the dimension of the intersection 
+        - 'crosses'   : return instances in 'source' where the interior of these instances intersects \
+            the interior of the 'areas' but does not contain it, and the dimension of the intersection \
             is less than the dimension of the one of the 'areas'.
             
     re_project : bool, default False

@@ -9,23 +9,21 @@ from trackintel.geogr.distances import haversine_dist
 
 def generate_staypoints(positionfixes, method='sliding',
                         dist_threshold=50, time_threshold=5 * 60, epsilon=100,
-                        dist_func=haversine_dist, eps=None, num_samples=None):
+                        dist_func=haversine_dist, num_samples=None):
     """Generates staypoints from positionfixes.
 
     This function modifies the positionfixes and adds staypoint_ids.
 
     Parameters
     ----------
-    num_samples
-    eps
+    
+    
     positionfixes : GeoDataFrame
         The positionfixes have to follow the standard definition for positionfixes DataFrames.
 
-    method : {'sliding' or 'dbscan'}
-        The following methods are available to extract staypoints from positionfixes:
-
-        'sliding' : Applies a sliding window over the data.
-        'dbscan' : Uses the DBSCAN algorithm to find clusters of staypoints.
+    method : str, {'sliding' or 'dbscan'}, default 'sliding'
+        - 'sliding' : Applies a sliding window over the data.
+        - 'dbscan' : Uses the DBSCAN algorithm to find clusters of staypoints.
 
     dist_threshold : float
         The distance threshold for the 'sliding' method, i.e., how far someone has to travel to
@@ -40,7 +38,9 @@ def generate_staypoints(positionfixes, method='sliding',
 
     dist_func : function
         A function that expects (lon_1, lat_1, lon_2, lat_2) and computes a distance in meters.
-
+        
+    num_samples :
+    
     Returns
     -------
     GeoDataFrame

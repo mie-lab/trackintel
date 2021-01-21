@@ -4,6 +4,10 @@ Preprocessing
 The preprocessing module contains a variety of functions to transform mobility and tracking 
 data into richer data sources.
 
+Filtering
+=============
+.. autofunction:: trackintel.preprocessing.filter.spatial_filter
+
 
 Positionfixes
 =============
@@ -14,9 +18,9 @@ turn it into a higher-level *trackintel* data structure).
 
 In particular, we can extract staypoints and triplegs from positionfixes.
 
-.. autofunction:: trackintel.preprocessing.positionfixes.extract_staypoints
+.. autofunction:: trackintel.preprocessing.positionfixes.generate_staypoints
 
-.. autofunction:: trackintel.preprocessing.positionfixes.extract_triplegs
+.. autofunction:: trackintel.preprocessing.positionfixes.generate_triplegs
 
 Staypoints
 ==========
@@ -25,7 +29,7 @@ Staypoints are points where someone stayed for a longer period of time (e.g., du
 transfer between two transport modes). We can cluster these into locations that a user 
 frequently visits.
 
-.. autofunction:: trackintel.preprocessing.staypoints.cluster_staypoints
+.. autofunction:: trackintel.preprocessing.staypoints.generate_locations
 
 Triplegs
 ========

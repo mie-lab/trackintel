@@ -26,7 +26,7 @@ class StaypointsAccessor(object):
 
     Examples
     --------
-    >>> df.as_staypoints.extract_locations()
+    >>> df.as_staypoints.generate_locations()
     """
 
     required_columns = ['user_id', 'started_at', 'finished_at']

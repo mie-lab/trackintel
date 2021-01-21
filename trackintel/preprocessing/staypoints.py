@@ -22,8 +22,7 @@ def generate_locations(staypoints,
         The staypoints have to follow the standard definition for staypoints DataFrames.
 
     method : str, {'dbscan'}, default 'dbscan'
-        The following methods are available to cluster staypoints into locations:
-        'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
+        - 'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
 
     epsilon : float, default 100
         The epsilon for the 'dbscan' method. if 'distance_matrix_metric' is 'haversine' 
@@ -37,10 +36,10 @@ def generate_locations(staypoints,
         are: {'haversine', 'euclidean'} or any mentioned in: 
         https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html
         
-    agg_level: str, {'user' or 'dataset'}, default 'user'
+    agg_level: str, {'user','dataset'}, default 'user'
         The level of aggregation when generating locations:
-        'user'      : locations are generated independently per-user.
-        'dataset'   : shared locations are generated for all users.
+        - 'user'      : locations are generated independently per-user.
+        - 'dataset'   : shared locations are generated for all users.
     
     Returns
     -------
