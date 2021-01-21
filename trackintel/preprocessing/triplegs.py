@@ -23,72 +23,6 @@ def smoothen_triplegs(triplegs, method='douglas-peucker', tolerance=1.0):
 
     return input_copy
 
-def _temp_trip_stack_has_tripleg(temp_trip_stack):
-    """
-    Check if a trip has at least 1 tripleg
-    Parameters
-    ----------
-        temp_trip_stack : list
-                    list of dictionary like elements (either pandas series or
-                    python dictionary). Contains all elements
-                    that will be aggregated into a trip
-
-    Returns
-    -------
-    Bool
-    """
-
-    has_tripleg = False
-    for row in temp_trip_stack:
-        if row['type'] == 'tripleg':
-            has_tripleg = True
-            break
-
-    return has_tripleg
-
-
-def _create_trip_from_stack(temp_trip_stack, origin_activity, destination_activity):
-    """
-    Aggregate information of trip elements in a structured dictionary
-
-    Parameters
-    ----------
-    temp_trip_stack : list
-                    list of dictionary like elements (either pandas series or python dictionary). Contains all elements
-                    that will be aggregated into a trip
-    origin_activity : dictionary like
-                    Either dictionary or pandas series
-    destination_activity : dictionary like
-                    Either dictionary or pandas series
-
-    Returns
-    -------
-    dictionary
-
-    """
-
-    # this function return and empty dict if no tripleg is in the stack
-    first_trip_element = temp_trip_stack[0]
-    last_trip_element = temp_trip_stack[-1]
-
-    # all data has to be from the same user
-    assert origin_activity['user_id'] == last_trip_element['user_id']
-
-    # double check if trip requirements are fulfilled
-    assert origin_activity['activity'] == True
-    assert destination_activity['activity'] == True
-    assert first_trip_element['activity'] == False
-
-    trip_dict_entry = {'user_id': origin_activity['user_id'],
-                       'started_at': first_trip_element['started_at'],
-                       'finished_at': last_trip_element['finished_at'],
-                       'origin_staypoint_id': origin_activity['id'],
-                       'destination_staypoint_id': destination_activity['id'],
-                       'tpls': [tripleg['id'] for tripleg in temp_trip_stack if tripleg['type'] == 'tripleg'],
-                       'spts': [tripleg['id'] for tripleg in temp_trip_stack if tripleg['type'] == 'staypoint']}
-    
-    return trip_dict_entry
-
 
 def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_progress=False):
     """ Generate trips based on staypoints and triplegs
@@ -205,6 +139,7 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     
     return spts, tpls, trips
 
+
 def _generate_trips_user(df, gap_threshold):
     # function called after groupby: should only contain records of one user
     user_id = df['user_id'].unique()
@@ -244,7 +179,7 @@ def _generate_trips_user(df, gap_threshold):
             if row['activity'] is True:
 
                 # if there are no triplegs in the trip, set the current activity as origin and start over
-                if not _temp_trip_stack_has_tripleg(temp_trip_stack):
+                if not _check_trip_stack_has_tripleg(temp_trip_stack):
                     origin_activity = row
                     temp_trip_stack = list()
                     in_trip = True
@@ -279,7 +214,7 @@ def _generate_trips_user(df, gap_threshold):
                 temp_trip_stack.append(row)
 
                 # if the trip has no recored triplegs, we do not generate the current trip.
-                if not _temp_trip_stack_has_tripleg(temp_trip_stack):
+                if not _check_trip_stack_has_tripleg(temp_trip_stack):
                     origin_activity = unknown_activity
                     in_trip = True
                     temp_trip_stack = list()
@@ -298,10 +233,77 @@ def _generate_trips_user(df, gap_threshold):
                 temp_trip_stack.append(row)
     
     # if user ends generate last trip with unknown destination
-    if (len(temp_trip_stack) > 0) and (_temp_trip_stack_has_tripleg(temp_trip_stack)):
+    if (len(temp_trip_stack) > 0) and (_check_trip_stack_has_tripleg(temp_trip_stack)):
         destination_activity = unknown_activity
         trip_ls.append(_create_trip_from_stack(temp_trip_stack, origin_activity,destination_activity,))
     
     # print(trip_ls)
     trips = pd.DataFrame(trip_ls)
     return trips
+
+
+def _check_trip_stack_has_tripleg(temp_trip_stack):
+    """
+    Check if a trip has at least 1 tripleg
+    Parameters
+    ----------
+        temp_trip_stack : list
+                    list of dictionary like elements (either pandas series or
+                    python dictionary). Contains all elements
+                    that will be aggregated into a trip
+
+    Returns
+    -------
+    Bool
+    """
+
+    has_tripleg = False
+    for row in temp_trip_stack:
+        if row['type'] == 'tripleg':
+            has_tripleg = True
+            break
+
+    return has_tripleg
+
+
+def _create_trip_from_stack(temp_trip_stack, origin_activity, destination_activity):
+    """
+    Aggregate information of trip elements in a structured dictionary
+
+    Parameters
+    ----------
+    temp_trip_stack : list
+                    list of dictionary like elements (either pandas series or python dictionary). Contains all elements
+                    that will be aggregated into a trip
+    origin_activity : dictionary like
+                    Either dictionary or pandas series
+    destination_activity : dictionary like
+                    Either dictionary or pandas series
+
+    Returns
+    -------
+    dictionary
+
+    """
+
+    # this function return and empty dict if no tripleg is in the stack
+    first_trip_element = temp_trip_stack[0]
+    last_trip_element = temp_trip_stack[-1]
+
+    # all data has to be from the same user
+    assert origin_activity['user_id'] == last_trip_element['user_id']
+
+    # double check if trip requirements are fulfilled
+    assert origin_activity['activity'] == True
+    assert destination_activity['activity'] == True
+    assert first_trip_element['activity'] == False
+
+    trip_dict_entry = {'user_id': origin_activity['user_id'],
+                       'started_at': first_trip_element['started_at'],
+                       'finished_at': last_trip_element['finished_at'],
+                       'origin_staypoint_id': origin_activity['id'],
+                       'destination_staypoint_id': destination_activity['id'],
+                       'tpls': [tripleg['id'] for tripleg in temp_trip_stack if tripleg['type'] == 'tripleg'],
+                       'spts': [tripleg['id'] for tripleg in temp_trip_stack if tripleg['type'] == 'staypoint']}
+    
+    return trip_dict_entry

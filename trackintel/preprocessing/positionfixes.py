@@ -1,17 +1,16 @@
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString
-from shapely.geometry import Point
+from shapely.geometry import LineString, Point
 from sklearn.cluster import DBSCAN
 
 from trackintel.geogr.distances import haversine_dist
 
 
-def extract_staypoints(positionfixes, method='sliding',
-                       dist_threshold=50, time_threshold=5 * 60, epsilon=100,
-                       dist_func=haversine_dist, eps=None, num_samples=None):
-    """Extract staypoints from positionfixes.
+def generate_staypoints(positionfixes, method='sliding',
+                        dist_threshold=50, time_threshold=5 * 60, epsilon=100,
+                        dist_func=haversine_dist, eps=None, num_samples=None):
+    """Generates staypoints from positionfixes.
 
     This function modifies the positionfixes and adds staypoint_ids.
 
@@ -49,7 +48,7 @@ def extract_staypoints(positionfixes, method='sliding',
 
     Examples
     --------
-    >>> psfs.as_positionfixes.extract_staypoints('sliding', dist_threshold=100)
+    >>> psfs.as_positionfixes.generate_staypoints('sliding', dist_threshold=100)
 
     References
     ----------
@@ -192,8 +191,8 @@ def extract_staypoints(positionfixes, method='sliding',
     return ret_staypoints
 
 
-def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
-    """Extract triplegs from positionfixes. A tripleg is (for now) defined as anything
+def generate_triplegs(positionfixes, staypoints=None, *args, **kwargs):
+    """Generates triplegs from positionfixes. A tripleg is (for now) defined as anything
     that happens between two consecutive staypoints.
 
     **Attention**: This function requires either a column ``staypoint_id`` on the 
@@ -218,7 +217,7 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
 
     Examples
     --------
-    >>> psfs.as_positionfixes.extract_triplegs(staypoints)
+    >>> psfs.as_positionfixes.generate_triplegs(staypoints)
     """
     name_geocol = positionfixes.geometry.name
     # Check that data adheres to contract.
