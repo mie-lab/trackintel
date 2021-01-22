@@ -85,3 +85,6 @@ class TestIO:
         # no crs defined on the created geodatabase, and none specified
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
+
+    def test_postgis_test_that_fails():
+        pytest.skip("This skip should cause a fail for the postgis test run")
