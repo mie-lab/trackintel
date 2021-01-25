@@ -31,11 +31,11 @@ def read_positionfixes_csv(*args, **kwargs):
     columns=kwargs.pop('columns',{})
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
-    df['geometry'] = list(zip(df.longitude, df.latitude))
-    df['geometry'] = df['geom'].apply(Point)
+    df['geom'] = list(zip(df.longitude, df.latitude))
+    df['geom'] = df['geom'].apply(Point)
     df['tracked_at'] = df['tracked_at'].apply(dateutil.parser.parse)
     df = df.drop(['longitude', 'latitude'], axis=1)
-    gdf = gpd.GeoDataFrame(df, geometry='geometry')
+    gdf = gpd.GeoDataFrame(df, geometry='geom')
     assert gdf.as_positionfixes
     return gdf
 

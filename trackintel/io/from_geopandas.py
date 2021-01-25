@@ -1,7 +1,7 @@
 import geopandas as gpd
 import pandas as pd
 
-def read_positionfixes_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom='geometry', mapper={}):
+def read_positionfixes_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom='geom', mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -22,17 +22,18 @@ def read_positionfixes_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom
     
     columns = {tracked_at:'tracked_at', 
                user_id:'user_id',
-               geom:'geometry'}
+               geom:'geom'}
     columns.update(mapper)
     
     pfs = gdf.rename(columns=columns)
+    pfs = pfs.set_geometry('geom')
     
     assert pfs.as_positionfixes
     
 
     return pfs
 
-def read_staypoints_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', geom='geometry', mapper={}):
+def read_staypoints_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', geom='geom', mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -52,13 +53,14 @@ def read_staypoints_gpd(gdf, started_at='started_at', finished_at='finished_at',
     """
   
     
-    columns = {started_at:'tracked_at',
+    columns = {started_at:'started_at',
                finished_at:'finished_at',
                user_id:'user_id',
-               geom:'geometry'}
+               geom:'geom'}
     columns.update(mapper)
     
     stp = gdf.rename(columns=columns)
+    stp = stp.set_geometry('geom')
     
     assert stp.as_staypoints
     
@@ -85,13 +87,14 @@ def read_triplegs_gpd(gdf, started_at='started_at', finished_at='finished_at', u
     """
   
     
-    columns = {started_at:'tracked_at',
+    columns = {started_at:'started_at',
                finished_at:'finished_at',
                user_id:'user_id',
-               geom:'geometry'}
+               geom:'geom'}
     columns.update(mapper)
     
     tpl = gdf.rename(columns=columns)
+    tpl = tpl.set_geometry('geom')
     
     assert tpl.as_triplegs
     
@@ -123,10 +126,11 @@ def read_trips_gpd(gdf, started_at='started_at', finished_at='finished_at', user
     columns = {started_at:'tracked_at',
                finished_at:'finished_at',
                user_id:'user_id',
-               geom:'geometry'}
+               geom:'geom'}
     columns.update(mapper)
     
     tps = gdf.rename(columns=columns)
+    tps = tps.set_geometry('geom')
     
     assert tps.as_trips
     
@@ -156,6 +160,7 @@ def read_locations_gpd(gdf, user_id='user_id', center='center', mapper={}):
     columns.update(mapper)
     
     lcs = gdf.rename(columns=columns)
+    lcs = lcs.set_geometry('center')
     
     assert lcs.as_locations
     
