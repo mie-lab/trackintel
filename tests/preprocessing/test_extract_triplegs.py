@@ -12,7 +12,7 @@ class TestExtractTriplegs:
     def test_extract_triplegs_global(self):
         # generate triplegs from raw-data
         pfs = read_geolife(os.path.join('tests', 'data', 'geolife'))
-        spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
+        _, spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
         tpls = pfs.as_positionfixes.extract_triplegs(spts)
 
         # load pregenerated test-triplegs
@@ -37,7 +37,7 @@ class TestExtractTriplegs:
         the next one started.
         """
         pfs = read_geolife(os.path.join('tests', 'data', 'geolife_long'))
-        spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
+        _, spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
         tpls = pfs.as_positionfixes.extract_triplegs(spts)
 
         spts_tpls = spts[['started_at', 'finished_at', 'user_id']].append(

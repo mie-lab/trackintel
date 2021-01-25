@@ -16,18 +16,18 @@ from trackintel.geogr.distances import calculate_distance_matrix
 class TestPreprocessing():
     def test_extract_staypoints_sliding_min(self):
         pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
-        spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
+        _, spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         assert len(spts) == len(pfs), "With small thresholds, staypoint extraction should yield each positionfix"
         
     def test_extract_staypoints_sliding_max(self):
         pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
-        spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=sys.maxsize, 
+        _, spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=sys.maxsize, 
                                                        time_threshold=sys.maxsize)
         assert len(spts) == 0, "With large thresholds, staypoint extraction should not yield positionfixes"
         
     def test_extract_triplegs_staypoint(self):
         pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
-        spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
+        pfs, spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         tpls1 = pfs.as_positionfixes.extract_triplegs()
         tpls2 = pfs.as_positionfixes.extract_triplegs(spts)
         assert len(tpls1) > 0, "There should be more than zero triplegs"
@@ -37,7 +37,7 @@ class TestPreprocessing():
 
     def test_cluster_staypoints_dbscan_min(self):
         pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
-        spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
+        _, spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         _, locs_user = spts.as_staypoints.extract_locations(method='dbscan', epsilon=1e-18, 
                                                             num_samples=0, agg_level='user')
         _, locs_data = spts.as_staypoints.extract_locations(method='dbscan', epsilon=1e-18, 
@@ -47,7 +47,7 @@ class TestPreprocessing():
 
     def test_cluster_staypoints_dbscan_max(self):
         pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
-        spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
+        _, spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         _, locs_user = spts.as_staypoints.extract_locations(method='dbscan', epsilon=1e18, 
                                                             num_samples=1000, agg_level='user')
         _, locs_data = spts.as_staypoints.extract_locations(method='dbscan', epsilon=1e18, 

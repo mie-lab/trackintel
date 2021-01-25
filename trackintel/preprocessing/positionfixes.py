@@ -13,8 +13,6 @@ def extract_staypoints(positionfixes, method='sliding',
                        dist_func=haversine_dist, eps=None, num_samples=None):
     """Extract staypoints from positionfixes.
 
-    This function modifies the positionfixes and adds staypoint_ids.
-
     Parameters
     ----------
     num_samples
@@ -44,8 +42,10 @@ def extract_staypoints(positionfixes, method='sliding',
 
     Returns
     -------
-    GeoDataFrame
-        A new GeoDataFrame containing points where a person spent some time.
+    (GeoDataFrame, GeoDataFrame)
+        The tuple contains (positionfixes, staypoints). Positionfixes contains a new column 
+        'staypoint_ids', and staypoints is the generated staypoints where a person spent some 
+        time.
 
     Examples
     --------
@@ -60,23 +60,26 @@ def extract_staypoints(positionfixes, method='sliding',
     similarity based on location history. In Proceedings of the 16th ACM SIGSPATIAL international 
     conference on Advances in geographic information systems (p. 34). ACM.
     """
-    if 'id' not in positionfixes.columns:
-        positionfixes['id'] = positionfixes.index
+    # copy the original pfs df for modification
+    ret_pfs = positionfixes.copy()
     
-    elevation_flag = 'elevation' in positionfixes.columns # if there is elevation data
+    if 'id' not in ret_pfs.columns:
+        ret_pfs['id'] = ret_pfs.index
+    
+    elevation_flag = 'elevation' in ret_pfs.columns # if there is elevation data
 
-    name_geocol = positionfixes.geometry.name
-    ret_staypoints = pd.DataFrame(columns=['started_at', 'finished_at', 'geom', 'id'])
+    name_geocol = ret_pfs.geometry.name
+    ret_stps = pd.DataFrame(columns=['started_at', 'finished_at', 'geom', 'id'])
 
     if method == 'sliding':
         # Algorithm from Li et al. (2008). For details, please refer to the paper.
         staypoint_id_counter = 0
-        positionfixes['staypoint_id'] = -1  # this marks all that are not part of a SP
+        ret_pfs['staypoint_id'] = -1  # this marks all that are not part of a SP
+        
+        # TODO: use groupby()
+        for user_id_this in ret_pfs['user_id'].unique():
 
-        for user_id_this in positionfixes['user_id'].unique():
-
-            positionfixes_user_this = positionfixes.loc[
-                positionfixes['user_id'] == user_id_this]  # this is no copy
+            positionfixes_user_this = ret_pfs.loc[ret_pfs['user_id'] == user_id_this]  # this is no copy
 
             pfs = positionfixes_user_this.sort_values('tracked_at').to_dict('records')
             num_pfs = len(pfs)
@@ -116,7 +119,7 @@ def extract_staypoints(positionfixes, method='sliding',
                             staypoint_id_counter += 1
 
                             # add staypoint
-                            ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
+                            ret_stps = ret_stps.append(staypoint, ignore_index=True)
 
                             # TODO Discussion: Is this last point really a staypoint? As we don't know if the
                             #      person "moves on" afterwards...
@@ -134,7 +137,7 @@ def extract_staypoints(positionfixes, method='sliding',
                                 posfix_staypoint_matching[staypoint_id_counter] = [
                                     pfs[j]['id']]  # rather [k for k in range(i, j)]?
                                 staypoint_id_counter += 1
-                                ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
+                                ret_stps = ret_stps.append(staypoint, ignore_index=True)
                         i = j
                         break
                     j = j + 1
@@ -143,8 +146,8 @@ def extract_staypoints(positionfixes, method='sliding',
 
             for staypoints_id, posfix_idlist in posfix_staypoint_matching.items():
                 # note that we use .loc because above we have saved the id 
-                # of the positionfixes not thier absolut position
-                positionfixes.loc[posfix_idlist, 'staypoint_id'] = staypoints_id
+                # of the positionfixes not their absolut position
+                ret_pfs.loc[posfix_idlist, 'staypoint_id'] = staypoints_id
 
 
     elif method == 'dbscan':
@@ -153,9 +156,11 @@ def extract_staypoints(positionfixes, method='sliding',
         # adjust the distance metric e.g. chebychev
 
         db = DBSCAN(eps=epsilon, min_samples=num_samples)
-        for user_id_this in positionfixes['user_id'].unique():
+        
+        # TODO: use groupby()
+        for user_id_this in ret_pfs['user_id'].unique():
 
-            user_positionfixes = positionfixes[positionfixes['user_id'] == user_id_this]  # this is not a copy!
+            user_positionfixes = ret_pfs[ret_pfs['user_id'] == user_id_this]  # this is not a copy!
 
             # TODO: enable transformations to temporary (metric) system
             transform_crs = None
@@ -167,10 +172,10 @@ def extract_staypoints(positionfixes, method='sliding',
             labels = db.fit_predict(coordinates)
 
             # add positionfixes - staypoint matching to original positionfixes
-            positionfixes.loc[user_positionfixes.index, 'staypoint_id'] = labels
+            ret_pfs.loc[user_positionfixes.index, 'staypoint_id'] = labels
 
         # create staypoints as the center of the grouped positionfixes
-        grouped_df = positionfixes.groupby(['user_id', 'staypoint_id'])
+        grouped_df = ret_pfs.groupby(['user_id', 'staypoint_id'])
         for combined_id, group in grouped_df:
             user_id, staypoint_id = combined_id
 
@@ -183,13 +188,12 @@ def extract_staypoints(positionfixes, method='sliding',
                 staypoint.geometry = Point(group[name_geocol].x.mean(),
                                            group[name_geocol].y.mean())
 
-                ret_staypoints = ret_staypoints.append(staypoint, ignore_index=True)
+                ret_stps = ret_stps.append(staypoint, ignore_index=True)
 
-    ret_staypoints = gpd.GeoDataFrame(ret_staypoints, geometry='geom',
-                                      crs=positionfixes.crs)
-    ret_staypoints['id'] = ret_staypoints['id'].astype('int')
+    ret_stps = gpd.GeoDataFrame(ret_stps, geometry='geom', crs=ret_pfs.crs)
+    ret_stps['id'] = ret_stps['id'].astype('int')
 
-    return ret_staypoints
+    return ret_pfs, ret_stps
 
 
 def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
