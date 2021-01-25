@@ -12,8 +12,8 @@ class TestExtractTriplegs:
     def test_extract_triplegs_global(self):
         # generate triplegs from raw-data
         pfs = read_geolife(os.path.join('tests', 'data', 'geolife'))
-        _, spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
-        tpls = pfs.as_positionfixes.extract_triplegs(spts)
+        pfs, spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
+        pfs, tpls = pfs.as_positionfixes.extract_triplegs(spts)
 
         # load pregenerated test-triplegs
         tpls_test = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs_short.csv'))
@@ -37,8 +37,8 @@ class TestExtractTriplegs:
         the next one started.
         """
         pfs = read_geolife(os.path.join('tests', 'data', 'geolife_long'))
-        _, spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
-        tpls = pfs.as_positionfixes.extract_triplegs(spts)
+        pfs, spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
+        pfs, tpls = pfs.as_positionfixes.extract_triplegs(spts)
 
         spts_tpls = spts[['started_at', 'finished_at', 'user_id']].append(
             tpls[['started_at', 'finished_at', 'user_id']])

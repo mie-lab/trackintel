@@ -224,22 +224,24 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
     --------
     >>> psfs.as_positionfixes.extract_triplegs(staypoints)
     """
-    name_geocol = positionfixes.geometry.name
+    # copy the original pfs df for modification
+    ret_pfs = positionfixes.copy()
+    
+    name_geocol = ret_pfs.geometry.name
     # Check that data adheres to contract.
-    if staypoints is None and len(positionfixes['staypoint_id'].unique()) < 2:
+    if staypoints is None and len(ret_pfs['staypoint_id'].unique()) < 2:
         raise ValueError("If staypoints is not defined, positionfixes must have more than 1 staypoint_id.")
 
     # if staypoints is not None:
     #     raise NotImplementedError("Splitting up positionfixes by timestamp is not available yet. " + \
     #         "Use extract_staypoints and the thus generated staypoint_ids.")
 
-    ret_triplegs = pd.DataFrame(columns=['id', 'user_id', 'started_at', 'finished_at', 'geom'])
+    ret_tpls = pd.DataFrame(columns=['id', 'user_id', 'started_at', 'finished_at', 'geom'])
     curr_tripleg_id = 0
     # Do this for each user.
-    for user_id_this in positionfixes['user_id'].unique():
+    for user_id_this in ret_pfs['user_id'].unique():
 
-        positionfixes_user_this = positionfixes.loc[
-            positionfixes['user_id'] == user_id_this]  # this is no copy
+        positionfixes_user_this = ret_pfs.loc[ret_pfs['user_id'] == user_id_this]  # this is no copy
         pfs = positionfixes_user_this.sort_values('tracked_at')
         generated_triplegs = []
 
@@ -367,10 +369,10 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
 
                 prev_pf = pf
         if len(generated_triplegs) > 0:
-            ret_triplegs = ret_triplegs.append(generated_triplegs)
+            ret_tpls = ret_tpls.append(generated_triplegs)
 
-    ret_triplegs = gpd.GeoDataFrame(ret_triplegs, geometry='geom', crs=positionfixes.crs)
-    ret_triplegs['id'] = ret_triplegs['id'].astype('int')
+    ret_tpls = gpd.GeoDataFrame(ret_tpls, geometry='geom', crs=ret_pfs.crs)
+    ret_tpls['id'] = ret_tpls['id'].astype('int')
     # todo: triplegs dataframe has use the index as id
     # todo: proposed fix: ret_triplegs = ret_triplegs.set_index('id')
-    return ret_triplegs
+    return ret_pfs, ret_tpls

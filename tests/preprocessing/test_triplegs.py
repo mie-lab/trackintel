@@ -49,7 +49,7 @@ class TestGenerate_trips():
         pfs, spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25,
                                                        time_threshold=5 * 60)
         spts = spts.as_staypoints.create_activity_flag()
-        tpls = pfs.as_positionfixes.extract_triplegs(spts)
+        pfs, tpls = pfs.as_positionfixes.extract_triplegs(spts)
 
         # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
         spts = spts.set_index('id')
@@ -77,7 +77,7 @@ class TestGenerate_trips():
                                                             dist_threshold=25,
                                                             time_threshold=5 * 60)
         spts = spts.as_staypoints.create_activity_flag()
-        tpls = pfs.as_positionfixes.extract_triplegs(spts)
+        pfs, tpls = pfs.as_positionfixes.extract_triplegs(spts)
 
         # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
         spts = spts.set_index('id')
