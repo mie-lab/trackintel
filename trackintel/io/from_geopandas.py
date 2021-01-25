@@ -1,7 +1,7 @@
 import geopandas as gpd
 import pandas as pd
 
-def read_positionfixes_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom='geom', mapper={}):
+def read_positionfixes_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom='geometry', mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -22,7 +22,7 @@ def read_positionfixes_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom
     
     columns = {tracked_at:'tracked_at', 
                user_id:'user_id',
-               geom:'geom'}
+               geom:'geometry'}
     columns.update(mapper)
     
     pfs = gdf.rename(columns=columns)
@@ -32,7 +32,7 @@ def read_positionfixes_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom
 
     return pfs
 
-def read_staypoints_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', geom='geom', mapper={}):
+def read_staypoints_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', geom='geometry', mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -55,7 +55,7 @@ def read_staypoints_gpd(gdf, started_at='started_at', finished_at='finished_at',
     columns = {started_at:'tracked_at',
                finished_at:'finished_at',
                user_id:'user_id',
-               geom:'geom'}
+               geom:'geometry'}
     columns.update(mapper)
     
     stp = gdf.rename(columns=columns)
@@ -65,7 +65,7 @@ def read_staypoints_gpd(gdf, started_at='started_at', finished_at='finished_at',
 
     return stp
 
-def read_triplegs_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', geom='geom', mapper={}):
+def read_triplegs_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', geom='geometry', mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -88,7 +88,7 @@ def read_triplegs_gpd(gdf, started_at='started_at', finished_at='finished_at', u
     columns = {started_at:'tracked_at',
                finished_at:'finished_at',
                user_id:'user_id',
-               geom:'geom'}
+               geom:'geometry'}
     columns.update(mapper)
     
     tpl = gdf.rename(columns=columns)
@@ -123,7 +123,7 @@ def read_trips_gpd(gdf, started_at='started_at', finished_at='finished_at', user
     columns = {started_at:'tracked_at',
                finished_at:'finished_at',
                user_id:'user_id',
-               geom:'geom'}
+               geom:'geometry'}
     columns.update(mapper)
     
     tps = gdf.rename(columns=columns)

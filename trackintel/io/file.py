@@ -31,11 +31,11 @@ def read_positionfixes_csv(*args, **kwargs):
     columns=kwargs.pop('columns',{})
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
-    df['geom'] = list(zip(df.longitude, df.latitude))
-    df['geom'] = df['geom'].apply(Point)
+    df['geometry'] = list(zip(df.longitude, df.latitude))
+    df['geometry'] = df['geom'].apply(Point)
     df['tracked_at'] = df['tracked_at'].apply(dateutil.parser.parse)
     df = df.drop(['longitude', 'latitude'], axis=1)
-    gdf = gpd.GeoDataFrame(df, geometry='geom')
+    gdf = gpd.GeoDataFrame(df, geometry='geometry')
     assert gdf.as_positionfixes
     return gdf
 
@@ -66,7 +66,7 @@ def read_triplegs_csv(*args, **kwargs):
 
 
     In addition to the pandas read_csv keyword arguments, this function provides to rename columns directly while importing
-    by specifying the columnnames in a dictionary, see second example.
+    by specifying the columnnames in a dictionary, see example.
     
     Returns
     -------
@@ -75,7 +75,7 @@ def read_triplegs_csv(*args, **kwargs):
         
     Examples
     --------
-    >>>> trackintel.read_triplegs_csv('data.csv', columns={'start_time':'started_at'})
+    >>> trackintel.read_triplegs_csv('data.csv', columns={'start_time':'started_at'})
     """
     columns=kwargs.pop('columns',{})
     df = pd.read_csv(*args, **kwargs)

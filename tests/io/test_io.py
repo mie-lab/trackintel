@@ -24,11 +24,12 @@ class TestIO:
 
     
     def test_positionfixes_from_gpd(self):
+        
         file = os.path.join('tests','data','positionfixes.geojson')
         csv_file = os.path.join('tests', 'data', 'positionfixes.csv')
         gdf = gpd.read_file(file)
-        pfs = ti.io.geopandas.read_positionfixes_gpd(gdf, user_id='User',geom='geometry')
-        pfs_csv = ti.read_positionfixes_csv(csv_file, sep=';')
+        pfs = ti.io.from_geopandas.read_positionfixes_gpd(gdf, user_id='User',geom='geometry')
+        pfs_csv = ti.read_positionfixes_csv(csv_file, sep=';',columns={'geom':'geometry'})
         pfs_csv['tracked_at'] = pfs_csv['tracked_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
         assert pfs.equals(pfs_csv)
         
@@ -56,7 +57,7 @@ class TestIO:
         file=os.path.join('tests','data','triplegs.geojson')
         csv_file = os.path.join('tests','data','triplegs.csv')
         gdf = gpd.read_file(file)
-        tpls = ti.io.geopandas.read_triplegs_gpd(gdf,user_id='User')
+        tpls = ti.io.from_geopandas.read_triplegs_gpd(gdf,user_id='User')
         tpls_csv = ti.read_triplegs_csv(csv_file,sep=';')
         tpls_csv['started_at'] = tpls_csv['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
         tpls_csv['finished_at'] = tpls_csv['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
@@ -86,7 +87,7 @@ class TestIO:
         file=os.path.join('tests','data','staypoints.geojson')
         csv_file = os.path.join('tests','data','staypoints.csv')
         gdf = gpd.read_file(file)
-        stps = ti.io.geopandas.read_triplegs_gpd(gdf,'start_time','end_time')
+        stps = ti.io.from_geopandas.read_triplegs_gpd(gdf,'start_time','end_time')
         stps_csv = ti.read_triplegs_csv(csv_file,sep=';')
         stps_csv['started_at'] = stps_csv['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
         stps_csv['finished_at'] = stps_csv['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
@@ -114,7 +115,7 @@ class TestIO:
         file=os.path.join('tests','data','locations.geojson')
         csv_file = os.path.join('tests','data','locations.csv')
         gdf = gpd.read_file(file)
-        plcs = ti.io.geopandas.read_locations_gpd(gdf,user_id='User')
+        plcs = ti.io.from_geopandas.read_locations_gpd(gdf,user_id='User')
         plcs_csv = ti.read_locations_csv(csv_file,sep=';')
         plcs_csv['started_at'] = plcs_csv['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
         plcs_csv['finished_at'] = plcs_csv['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
@@ -145,7 +146,7 @@ class TestIO:
         file=os.path.join('tests','data','trips.geojson')
         csv_file = os.path.join('tests','data','trips.csv')
         gdf = gpd.read_file(file)
-        trps = ti.io.geopandas.read_trips_gpd(gdf,user_id='User')
+        trps = ti.io.from_geopandas.read_trips_gpd(gdf,user_id='User')
         trps_csv = ti.read_triplegs_csv(csv_file,sep=';')
         trps_csv['started_at'] = trps_csv['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
         trps_csv['finished_at'] = trps_csv['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
