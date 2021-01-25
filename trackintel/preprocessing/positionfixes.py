@@ -43,8 +43,8 @@ def extract_staypoints(positionfixes, method='sliding',
     Returns
     -------
     (GeoDataFrame, GeoDataFrame)
-        The tuple contains (positionfixes, staypoints). Positionfixes contains a new column 
-        'staypoint_ids', and staypoints is the generated staypoints where a person spent some 
+        The tuple contains (positionfixes, staypoints). 'Positionfixes' contains a new column 
+        'staypoint_ids', and 'staypoints' is the generated staypoints where a person spent some 
         time.
 
     Examples
@@ -204,8 +204,6 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
     positionfixes or passing some staypoints that correspond to the positionfixes! 
     This means you usually should call ``extract_staypoints()`` first.
 
-    This function modifies the positionfixes and adds a ``tripleg_id``.
-
     Parameters
     ----------
     positionfixes : GeoDataFrame
@@ -217,8 +215,9 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
 
     Returns
     -------
-    GeoDataFrame
-        A new GeoDataFrame containing triplegs.
+    (GeoDataFrame, GeoDataFrame)
+        The tuple contains (positionfixes, triplegs). 'Positionfixes' contains a new column 
+        'tripleg_id', and 'triplegs' is the generated triplegs.
 
     Examples
     --------
