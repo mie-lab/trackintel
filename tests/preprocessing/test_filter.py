@@ -5,7 +5,7 @@ import geopandas as gpd
 import trackintel as ti
 
 
-class TestFilter():
+class TestSpatial_filter():
     
     def test_filter_staypoints(self):
         # read staypoints and area file

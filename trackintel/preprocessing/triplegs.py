@@ -5,16 +5,22 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-def smoothen_triplegs(triplegs, tolerance=1.0):
-    """Reduces number of points while retaining structure of tripleg
+def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
+    """Reduces number of points while retaining structure of tripleg. 
+    A wrapper function using shapely.simplify():
+    https://shapely.readthedocs.io/en/stable/manual.html#object.simplify
     
     Parameters
     ----------
     triplegs: GeoDataFrame
         triplegs to be simplified
         
-    tolerance: float
-        a higher tolerance removes more points; the units of tolerance are the same as the projection of the input geometry
+    tolerance: float, default 1.0
+        a higher tolerance removes more points; the units of tolerance are the same as the 
+        projection of the input geometry
+    
+    preserve_topology: bool, default True
+        whether to preserve topology. If set to False the Douglas-Peucker algorithm is used.
     
     Returns
     ----------
@@ -22,12 +28,12 @@ def smoothen_triplegs(triplegs, tolerance=1.0):
         The simplified triplegs GeoDataFrame
     
     """
-    ret_triplegs = triplegs.copy()
-    origin_geom = ret_triplegs.geom
-    simplified_geom = origin_geom.simplify(tolerance, preserve_topology=True)
-    ret_triplegs.geom = simplified_geom
+    ret_tpls = triplegs.copy()
+    origin_geom = ret_tpls.geom
+    simplified_geom = origin_geom.simplify(tolerance, preserve_topology=preserve_topology)
+    ret_tpls.geom = simplified_geom
 
-    return ret_triplegs
+    return ret_tpls
 
 
 def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_progress=False):
