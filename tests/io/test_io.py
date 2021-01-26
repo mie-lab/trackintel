@@ -2,6 +2,7 @@ import filecmp
 import os
 import trackintel as ti
 import geopandas as gpd
+import pandas as pd
 
 
 class TestIO:
@@ -117,9 +118,7 @@ class TestIO:
         gdf = gpd.read_file(file)
         plcs = ti.io.from_geopandas.read_locations_gpd(gdf,user_id='User',center='geometry')
         plcs_csv = ti.read_locations_csv(csv_file,sep=';')
-        plcs_csv['started_at'] = plcs_csv['started_at'].apply(lambda d: d.isoformat().replace(' ', 'T'))
-        plcs_csv['finished_at'] = plcs_csv['finished_at'].apply(lambda d: d.isoformat().replace(' ', 'T'))
-        
+        plcs_csv = plcs_csv.drop(columns='extent') #drop the second geometry column manually because not storable in GeoJSON
         assert plcs.equals(plcs_csv)
 
     def test_trips_from_to_csv(self):
@@ -142,13 +141,14 @@ class TestIO:
         pass
 
 
-    def test_trips_from_gpd(self): #TODO: empty geometry in trips.csv
-        file=os.path.join('tests','data','trips.geojson')
+    def test_trips_from_gpd(self): 
         csv_file = os.path.join('tests','data','trips.csv')
-        gdf = gpd.read_file(file)
-        trps = ti.io.from_geopandas.read_trips_gpd(gdf,user_id='User')
-        trps_csv = ti.read_triplegs_csv(csv_file,sep=';')
+        df = pd.read_csv(csv_file, sep=';')
+        trps = ti.io.from_geopandas.read_trips_gpd(df)
+        trps_csv = ti.read_trips_csv(csv_file,sep=';')
         trps_csv['started_at'] = trps_csv['started_at'].apply(lambda d: d.isoformat().replace(' ', 'T'))
         trps_csv['finished_at'] = trps_csv['finished_at'].apply(lambda d: d.isoformat().replace(' ', 'T'))
+        trps_csv['started_at'] = trps_csv['started_at'].apply(lambda d: d.replace('+00:00', 'Z'))
+        trps_csv['finished_at'] = trps_csv['finished_at'].apply(lambda d: d.replace('+00:00', 'Z'))
         
-        # assert trps.equals(trps_csv)
+        assert trps.equals(trps_csv)

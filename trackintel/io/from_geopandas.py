@@ -101,7 +101,7 @@ def read_triplegs_gpd(gdf, started_at='started_at', finished_at='finished_at', u
 
     return tpl
 
-def read_trips_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', origin_staypoint_id='origin_staypoint_id', destination_staypoint_id='destination_staypoint_id', geom='geom', mapper={}):
+def read_trips_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', origin_staypoint_id='origin_staypoint_id', destination_staypoint_id='destination_staypoint_id', mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -113,7 +113,6 @@ def read_trips_gpd(gdf, started_at='started_at', finished_at='finished_at', user
     user_id : str, name of the column storing the user_id. The default is 'user_id'.
     origin_staypoint_id : str, name of the column storing the staypoint_id of the start of the tripleg
     destination_staypoint_id : str, name of the column storing the staypoint_id of the end of the tripleg
-    geom : str, name of the column storing the geometry. The default is 'geom'.
     mapper : dict, further columns that should be renamed. 
 
     Returns
@@ -123,14 +122,15 @@ def read_trips_gpd(gdf, started_at='started_at', finished_at='finished_at', user
     """
   
     
-    columns = {started_at:'tracked_at',
+    columns = {started_at:'started_at',
                finished_at:'finished_at',
                user_id:'user_id',
-               geom:'geom'}
+               origin_staypoint_id:'origin_staypoint_id',
+               destination_staypoint_id:'destination_staypoint_id'
+               }
     columns.update(mapper)
     
     tps = gdf.rename(columns=columns)
-    tps = tps.set_geometry('geom')
     
     assert tps.as_trips
     
