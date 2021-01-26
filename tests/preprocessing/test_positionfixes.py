@@ -18,6 +18,14 @@ class TestGenerate_staypoints():
                                                        time_threshold=sys.maxsize)
         assert len(spts) == 0, "With large thresholds, staypoint extraction should not yield positionfixes"
         
+    def test_generate_staypoints_dtype_consistent(self):
+        pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
+        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', 
+                                                             dist_threshold=25, 
+                                                             time_threshold=5 * 60)
+        assert pfs['user_id'].dtype == spts['user_id'].dtype
+        assert pfs['staypoint_id'].dtype == spts['id'].dtype
+        
             
 
 

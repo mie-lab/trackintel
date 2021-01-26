@@ -31,6 +31,7 @@ class TestGenerate_trips():
         trips_loaded = pd.read_csv(os.path.join('tests', 'data', 'geolife_long', 'trips.csv'), index_col='id')
         trips_loaded['started_at'] = pd.to_datetime(trips_loaded['started_at'])
         trips_loaded['finished_at'] = pd.to_datetime(trips_loaded['finished_at'])
+        trips_loaded['user_id'] = trips_loaded['user_id'].astype("int64")
 
         # create trips from geolife (based on positionfixes)
         pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
