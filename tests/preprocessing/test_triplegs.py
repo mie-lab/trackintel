@@ -46,6 +46,7 @@ class TestGenerate_trips():
 
         # generate trips and a joint staypoint/triplegs dataframe
         spts, tpls, trips = ti.preprocessing.triplegs.generate_trips(spts, tpls, gap_threshold=gap_threshold, id_offset=0)
+        trips.set_index('id', inplace=True)
         # test if generated trips are equal
         pd.testing.assert_frame_equal(trips_loaded, trips)
         
@@ -117,7 +118,8 @@ class TestGenerate_trips():
                                                                                gap_threshold=15, 
                                                                                id_offset=0)
         spts_tpls = _create_debug_spts_tpls_data(spts_proc, tpls_proc, gap_threshold=gap_threshold)
-
+        
+        trips.set_index('id', inplace=True)
         # test if generated trips are equal
         pd.testing.assert_frame_equal(trips_loaded, trips)
 
