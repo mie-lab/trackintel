@@ -41,7 +41,7 @@ class TestGenerate_locations():
         db = DBSCAN(eps=10, min_samples=0, metric="precomputed")
         labels = db.fit_predict(sp_distance_matrix)
         
-        assert len(set(locs['location_id'])) == len(set(labels)) , "The #location should be the same"
+        assert len(set(locs['id'])) == len(set(labels)) , "The #location should be the same"
     
     def test_generate_locations_dbscan_loc(self):
         spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'))
@@ -50,7 +50,7 @@ class TestGenerate_locations():
                                                           agg_level='dataset')
 
         # create locations as grouped staypoints, another way to create locations
-        other_locs = pd.DataFrame(columns=['user_id', 'location_id','center'])
+        other_locs = pd.DataFrame(columns=['user_id', 'id','center'])
         grouped_df = spts.groupby(['user_id', 'location_id'])
         for combined_id, group in grouped_df:
             user_id, location_id = combined_id
@@ -59,7 +59,7 @@ class TestGenerate_locations():
             if int(location_id) != -1:
                 temp_loc = {}
                 temp_loc['user_id'] = user_id
-                temp_loc['location_id'] = location_id
+                temp_loc['id'] = location_id
                 
                 # point geometry of place
                 temp_loc['center'] = Point(group.geometry.x.mean(), group.geometry.y.mean())
@@ -68,7 +68,7 @@ class TestGenerate_locations():
         other_locs = gpd.GeoDataFrame(other_locs, geometry='center', crs=spts.crs)
         
         assert all(other_locs['center'] == locs['center']), "The location geometry should be the same"
-        assert all(other_locs['location_id'] == locs['location_id']), "The location id should be the same"
+        assert all(other_locs['id'] == locs['id']), "The location id should be the same"
     
     def test_generate_locations_dbscan_user_dataset(self):
         spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'))
@@ -85,8 +85,8 @@ class TestGenerate_locations():
         _, locs_us = spts.as_staypoints.generate_locations(method='dbscan', epsilon=10, 
                                                           num_samples=0, distance_matrix_metric='haversine',
                                                           agg_level='user')
-        loc_ds_num = locs_ds['location_id'].unique().shape[0]
-        loc_us_num = locs_us['location_id'].unique().shape[0]
+        loc_ds_num = locs_ds['id'].unique().shape[0]
+        loc_us_num = locs_us['id'].unique().shape[0]
         assert loc_ds_num == 1, "Considering all staypoints at once, there should be only one location"
         assert loc_us_num == 2, "Considering user staypoints separately, there should be two locations"
     
@@ -109,6 +109,27 @@ class TestGenerate_locations():
                                                             num_samples=1000, agg_level='dataset')
         assert len(locs_user) == 0, "With large hyperparameters, every user location is an outlier"
         assert len(locs_data) == 0, "With large hyperparameters, every dataset location is an outlier"
+    
+    def test_generate_locations_dtype_consistent(self):
+        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'))
+        # 
+        spts, locs = spts.as_staypoints.generate_locations(method='dbscan', 
+                                                           epsilon=10, 
+                                                           num_samples=0, 
+                                                           distance_matrix_metric='haversine',
+                                                           agg_level='dataset')
+        assert spts['user_id'].dtype == locs['user_id'].dtype
+        assert spts['location_id'].dtype == locs['id'].dtype
+        # change the user_id to string
+        spts['user_id'] = spts['user_id'].apply(lambda x: str(x))
+        spts, locs = spts.as_staypoints.generate_locations(method='dbscan', 
+                                                           epsilon=10, 
+                                                           num_samples=0, 
+                                                           distance_matrix_metric='haversine',
+                                                           agg_level='dataset')
+        assert spts['user_id'].dtype == locs['user_id'].dtype
+        assert spts['location_id'].dtype == locs['id'].dtype
+        
         
 class TestCreate_activity_flag():
     pass

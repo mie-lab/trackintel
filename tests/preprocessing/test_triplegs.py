@@ -48,7 +48,29 @@ class TestGenerate_trips():
         spts, tpls, trips = ti.preprocessing.triplegs.generate_trips(spts, tpls, gap_threshold=gap_threshold, id_offset=0)
         # test if generated trips are equal
         pd.testing.assert_frame_equal(trips_loaded, trips)
-    
+        
+    def test_generate_trips_dtype_consistent(self):
+        # create trips from geolife (based on positionfixes)
+        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', 
+                                                             dist_threshold=25,
+                                                             time_threshold=5 * 60)
+        spts = spts.as_staypoints.create_activity_flag()
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts)
+
+        # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
+        spts = spts.set_index('id')
+        tpls = tpls.set_index('id')
+
+        # generate trips and a joint staypoint/triplegs dataframe
+        spts, tpls, trips = ti.preprocessing.triplegs.generate_trips(spts, 
+                                                                     tpls, 
+                                                                     gap_threshold=15, 
+                                                                     id_offset=0)
+        
+        assert spts['user_id'].dtype == trips['user_id'].dtype
+        assert trips['id'].dtype == "int64"
+        
     def test_generate_trips_gap_detection(self):
         """
         Test different gap cases:
