@@ -5,7 +5,7 @@ import geopandas as gpd
 import trackintel as ti
 
 
-class TestFilter():
+class TestSpatial_filter():
     
     def test_filter_staypoints(self):
         # read staypoints and area file
@@ -55,7 +55,7 @@ class TestFilter():
         extent = gpd.read_file(os.path.join('tests', 'data', 'area', 'tsinghua.geojson'))
         
         # cluster staypoints to locations
-        _, locs = spts.as_staypoints.extract_locations(method='dbscan', epsilon=10, 
+        _, locs = spts.as_staypoints.generate_locations(method='dbscan', epsilon=10, 
                                                        num_samples=0, distance_matrix_metric='haversine',
                                                        agg_level='dataset')
         

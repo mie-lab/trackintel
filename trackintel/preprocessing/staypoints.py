@@ -1,21 +1,20 @@
 import datetime
 
-import geopandas as gpd
 import numpy as np
-import pandas as pd
-from shapely.geometry import Point, MultiPoint
+import geopandas as gpd
+from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
 from math import radians
 
-from trackintel.geogr.distances import calculate_distance_matrix, meters_to_decimal_degrees
+from trackintel.geogr.distances import meters_to_decimal_degrees
 
-def cluster_staypoints(staypoints, 
+def generate_locations(staypoints, 
                        method='dbscan',
                        epsilon=100, 
                        num_samples=1, 
                        distance_matrix_metric='euclidean',
                        agg_level='user'):
-    """Clusters staypoints to get locations.
+    """generate locations from the staypoints.
 
     Parameters
     ----------
@@ -23,12 +22,11 @@ def cluster_staypoints(staypoints,
         The staypoints have to follow the standard definition for staypoints DataFrames.
 
     method : str, {'dbscan'}, default 'dbscan'
-        The following methods are available to cluster staypoints into locations:
-        'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
+        - 'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
 
     epsilon : float, default 100
         The epsilon for the 'dbscan' method. if 'distance_matrix_metric' is 'haversine' 
-        or 'euclidean', the unit is meters.
+        or 'euclidean', the unit is in meters.
 
     num_samples : int, default 1
         The minimal number of samples in a cluster. 
@@ -38,25 +36,30 @@ def cluster_staypoints(staypoints,
         are: {'haversine', 'euclidean'} or any mentioned in: 
         https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html
         
-    agg_level: str, {'user' or 'dataset'}, default 'user'
+    agg_level: str, {'user','dataset'}, default 'user'
         The level of aggregation when generating locations:
-        'user'      : locations are generated independently per-user.
-        'dataset'   : shared locations are generated for all users.
+        - 'user'      : locations are generated independently per-user.
+        - 'dataset'   : shared locations are generated for all users.
     
     Returns
     -------
-    GeoDataFrame
+    ret_sp: GeoDataFrame
+        Original 'staypoints' containing one additional column 'location_id' linking to the 'ret_loc'
+    ret_loc: GeoDataFrame
         A new GeoDataFrame containing locations that a person visited multiple times.
         
     Examples
     --------
-    >>> spts.as_staypoints.cluster_staypoints(method='dbscan', epsilon=100, num_samples=1)
+    >>> spts.as_staypoints.generate_locations(method='dbscan', epsilon=100, num_samples=1)
     """
     
     if agg_level not in ['user', 'dataset']:
         raise AttributeError("The parameter agg_level must be one of ['user', 'dataset'].")
     
+    # initialize the return GeoDataFrames
     ret_sp = staypoints.copy()
+    ret_loc = gpd.GeoDataFrame([], columns=['user_id', 'location_id', 'center', 'extent'])
+    
     if method=='dbscan':
 
         if distance_matrix_metric == 'haversine':

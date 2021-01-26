@@ -1,40 +1,28 @@
 import os
-
-import geopandas as gpd
 import pandas as pd
+import geopandas as gpd
 from shapely.geometry import Point, LineString
 
 import trackintel as ti
-from trackintel.io.dataset_reader import read_geolife
-from trackintel.preprocessing.triplegs import generate_trips
-from trackintel.preprocessing.triplegs import smoothen_triplegs
 
+class TestSmoothen_triplegs():
+    def test_smoothen_triplegs(self):
+        tpls = ti.read_triplegs_csv(os.path.join('tests','data','triplegs_with_too_many_points_test.csv'), sep=';')
+        tpls_smoothed = ti.preprocessing.triplegs.smoothen_triplegs(tpls, tolerance=0.0001)
+        line1 = tpls.iloc[0].geom
+        line1_smoothed = tpls_smoothed.iloc[0].geom
+        line2 = tpls.iloc[1].geom
+        line2_smoothed = tpls_smoothed.iloc[1].geom
 
-def create_debug_spts_tpls_data(spts, tpls, gap_threshold):
-    spts = spts.copy()
-    tpls = tpls.copy()
-
-    # create table with relevant information from triplegs and staypoints.
-    tpls['type'] = 'tripleg'
-    spts['type'] = 'staypoint'
-    spts_tpls = spts[['started_at', 'finished_at', 'user_id', 'type', 'activity', 'trip_id',
-                      'prev_trip_id', 'next_trip_id']].append(
-        tpls[['started_at', 'finished_at', 'user_id', 'type', 'trip_id']])
-
-    # transform nan to bool
-    spts_tpls['activity'] = spts_tpls['activity'] == True
-    spts_tpls.sort_values(by=['user_id', 'started_at'], inplace=True)
-    spts_tpls['started_at_next'] = spts_tpls['started_at'].shift(-1)
-    spts_tpls['activity_next'] = spts_tpls['activity'].shift(-1)
-
-    spts_tpls['gap'] = (spts_tpls['started_at_next'] - spts_tpls['finished_at']).dt.seconds / 60 > gap_threshold
-
-    return spts_tpls
-
+        assert line1.length == line1_smoothed.length
+        assert line2.length == line2_smoothed.length
+        assert len(line1.coords) == 10
+        assert len(line2.coords) == 7
+        assert len(line1_smoothed.coords) == 4
+        assert len(line2_smoothed.coords) == 3
 
 class TestGenerate_trips():
-
-    def test_general_trip_generation(self):
+    def test_generate_trips(self):
         """
         Test if we can generate the example trips based on example data
         """
@@ -45,53 +33,22 @@ class TestGenerate_trips():
         trips_loaded['finished_at'] = pd.to_datetime(trips_loaded['finished_at'])
 
         # create trips from geolife (based on positionfixes)
-        pfs = read_geolife(os.path.join('tests', 'data', 'geolife_long'))
-        spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25,
-                                                       time_threshold=5 * 60)
+        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25,
+                                                        time_threshold=5 * 60)
         spts = spts.as_staypoints.create_activity_flag()
-        tpls = pfs.as_positionfixes.extract_triplegs(spts)
+        tpls = pfs.as_positionfixes.generate_triplegs(spts)
 
         # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
         spts = spts.set_index('id')
         tpls = tpls.set_index('id')
 
         # generate trips and a joint staypoint/triplegs dataframe
-        spts, tpls, trips = generate_trips(spts, tpls, gap_threshold=gap_threshold, id_offset=0)
+        spts, tpls, trips = ti.preprocessing.triplegs.generate_trips(spts, tpls, gap_threshold=gap_threshold, id_offset=0)
         # test if generated trips are equal
         pd.testing.assert_frame_equal(trips_loaded, trips)
-
-    def test_trip_generation_id_management(self):
-        """
-        Test if we can generate the example trips based on example data
-        """
-        gap_threshold = 15
-
-        spts_tpls_loaded = pd.read_csv(os.path.join('tests', 'data', 'geolife_long', 'tpls_spts.csv'), index_col='id')
-        spts_tpls_loaded['started_at'] = pd.to_datetime(spts_tpls_loaded['started_at'])
-        spts_tpls_loaded['started_at_next'] = pd.to_datetime(spts_tpls_loaded['started_at_next'])
-        spts_tpls_loaded['finished_at'] = pd.to_datetime(spts_tpls_loaded['finished_at'])
-
-        # create trips from geolife (based on positionfixes)
-        pfs = read_geolife(os.path.join('tests', 'data', 'geolife_long'))
-        spts = pfs.as_positionfixes.extract_staypoints(method='sliding', dist_threshold=25,
-                                                       time_threshold=5 * 60)
-        spts = spts.as_staypoints.create_activity_flag()
-        tpls = pfs.as_positionfixes.extract_triplegs(spts)
-
-        # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
-        spts = spts.set_index('id')
-        tpls = tpls.set_index('id')
-
-        # generate trips and a joint staypoint/triplegs dataframe
-        spts, tpls, trips = generate_trips(spts, tpls, gap_threshold=gap_threshold, id_offset=0)
-        spts_tpls = create_debug_spts_tpls_data(spts, tpls, gap_threshold=gap_threshold)
-
-        # test if generated staypoints/triplegs are equal (especially important for trip ids)
-        pd.testing.assert_frame_equal(spts_tpls_loaded, spts_tpls, check_dtype=False)
-
-
-
-    def test_gap_detection(self):
+    
+    def test_generate_trips_gap_detection(self):
         """
         Test different gap cases:
         - activity - tripleg - activity [gap] activity - tripleg - activity
@@ -133,35 +90,65 @@ class TestGenerate_trips():
         spts_tpls_loaded['finished_at'] = pd.to_datetime(spts_tpls_loaded['finished_at'])
 
         # generate trips and a joint staypoint/triplegs dataframe
-        spts_proc, tpls_proc, trips = generate_trips(spts_in, tpls_in,
-                                                     gap_threshold=15, id_offset=0)
-        spts_tpls = create_debug_spts_tpls_data(spts_proc, tpls_proc, gap_threshold=gap_threshold)
+        spts_proc, tpls_proc, trips = ti.preprocessing.triplegs.generate_trips(spts_in, tpls_in,
+                                                                               gap_threshold=15, 
+                                                                               id_offset=0)
+        spts_tpls = _create_debug_spts_tpls_data(spts_proc, tpls_proc, gap_threshold=gap_threshold)
 
         # test if generated trips are equal
         pd.testing.assert_frame_equal(trips_loaded, trips)
 
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
         pd.testing.assert_frame_equal(spts_tpls_loaded, spts_tpls, check_dtype=False)
-
-
-class TestSmoothen_triplegs():
-    def test_douglas_peucker_algorithm_reduce_tripleg_length(self):
+        
+    def test_generate_trips_id_management(self):
         """
-        test the douglas peucker algorithm in simplifying triplegs
+        Test if we can generate the example trips based on example data
         """
-        orig_file = 'tests/data/triplegs_with_too_many_points_test.csv'
-        tpls = ti.read_triplegs_csv(orig_file, sep=';')
-        tpls_smoothed = smoothen_triplegs(tpls, tolerance=0.0001)
-        line1 = tpls.iloc[0].geom
-        line1_smoothed = tpls_smoothed.iloc[0].geom
-        line2 = tpls.iloc[1].geom
-        line2_smoothed = tpls_smoothed.iloc[1].geom
+        gap_threshold = 15
 
-        print(line1)
-        print(line1_smoothed)
-        assert line1.length == line1_smoothed.length
-        assert line2.length == line2_smoothed.length
-        assert len(line1.coords) == 10
-        assert len(line2.coords) == 7
-        assert len(line1_smoothed.coords) == 4
-        assert len(line2_smoothed.coords) == 3
+        spts_tpls_loaded = pd.read_csv(os.path.join('tests', 'data', 'geolife_long', 'tpls_spts.csv'), index_col='id')
+        spts_tpls_loaded['started_at'] = pd.to_datetime(spts_tpls_loaded['started_at'])
+        spts_tpls_loaded['started_at_next'] = pd.to_datetime(spts_tpls_loaded['started_at_next'])
+        spts_tpls_loaded['finished_at'] = pd.to_datetime(spts_tpls_loaded['finished_at'])
+
+        # create trips from geolife (based on positionfixes)
+        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
+        spts = spts.as_staypoints.create_activity_flag()
+        tpls = pfs.as_positionfixes.generate_triplegs(spts)
+
+        # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
+        spts = spts.set_index('id')
+        tpls = tpls.set_index('id')
+
+        # generate trips and a joint staypoint/triplegs dataframe
+        spts, tpls, _ = ti.preprocessing.triplegs.generate_trips(spts, tpls, gap_threshold=gap_threshold, id_offset=0)
+        spts_tpls = _create_debug_spts_tpls_data(spts, tpls, gap_threshold=gap_threshold)
+
+        # test if generated staypoints/triplegs are equal (especially important for trip ids)
+        pd.testing.assert_frame_equal(spts_tpls_loaded, spts_tpls, check_dtype=False)
+        
+    
+
+# helper function for "test_generate_trips_*"
+def _create_debug_spts_tpls_data(spts, tpls, gap_threshold):
+    spts = spts.copy()
+    tpls = tpls.copy()
+
+    # create table with relevant information from triplegs and staypoints.
+    tpls['type'] = 'tripleg'
+    spts['type'] = 'staypoint'
+    spts_tpls = spts[['started_at', 'finished_at', 'user_id', 'type', 'activity', 'trip_id',
+                      'prev_trip_id', 'next_trip_id']].append(
+        tpls[['started_at', 'finished_at', 'user_id', 'type', 'trip_id']])
+
+    # transform nan to bool
+    spts_tpls['activity'] = spts_tpls['activity'] == True
+    spts_tpls.sort_values(by=['user_id', 'started_at'], inplace=True)
+    spts_tpls['started_at_next'] = spts_tpls['started_at'].shift(-1)
+    spts_tpls['activity_next'] = spts_tpls['activity'].shift(-1)
+
+    spts_tpls['gap'] = (spts_tpls['started_at_next'] - spts_tpls['finished_at']).dt.seconds / 60 > gap_threshold
+
+    return spts_tpls

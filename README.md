@@ -21,13 +21,13 @@ You can find the documentation on the [trackintel documentation page](https://tr
 These assumptions concern your data:
 
 * Movement data exists in csv, (geo)json, gpx or PostGIS format
-* Movement data consists of points with x,y-coordinates, a time stamp, an optional accuracy and a user ID
+* Movement data consists of points with x,y-coordinates, a time stamp, a user ID, and an optional accuracy
+* One of the following transportation modes was used at any time: car, walking, bike, bus, tram, train, plane, ship, e-car, e-bike
 * The tracking data can be reasonably segmented into 
   * positionfixes (raw tracking points)
-  * triplegs (aggregated tracking points based on the transport mode)
+  * triplegs (or stages) (aggregated tracking points based on the transport mode)
   * trips (aggregated activities based on the visited destination / staypoint)
   * tours (aggregated trips starting / ending at the same location / staypoint)
-* One of the following transportation modes was used at any time: car, walking, bike, bus, tram, train, plane, ship, e-car, e-bike
 
 ## Installation and Usage
 
