@@ -92,7 +92,7 @@ class TestGenerate_locations():
     
     def test_generate_locations_dbscan_min(self):
         pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
-        spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
+        _, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         _, locs_user = spts.as_staypoints.generate_locations(method='dbscan', epsilon=1e-18, 
                                                             num_samples=0, agg_level='user')
         _, locs_data = spts.as_staypoints.generate_locations(method='dbscan', epsilon=1e-18, 
@@ -102,7 +102,7 @@ class TestGenerate_locations():
 
     def test_generate_locations_dbscan_max(self):
         pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
-        spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
+        _, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         _, locs_user = spts.as_staypoints.generate_locations(method='dbscan', epsilon=1e18, 
                                                             num_samples=1000, agg_level='user')
         _, locs_data = spts.as_staypoints.generate_locations(method='dbscan', epsilon=1e18, 
