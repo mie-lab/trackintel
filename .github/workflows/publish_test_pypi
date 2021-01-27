@@ -26,5 +26,5 @@ jobs:
     - name: Publish distr to Test pypi
       uses: pypa/gh-action-pypi-publish@v1.4.1
       with: 
-        password: ${{secrets.TEST_PIPY_API_TOKEN}}
+        password: ${{secrets.pypikey}}
         repository_url: https://test.pypi.org/legacy/
