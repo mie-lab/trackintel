@@ -1,9 +1,6 @@
 import pandas as pd
 
 import trackintel as ti
-import trackintel.preprocessing.filter
-import trackintel.preprocessing.staypoints
-import trackintel.visualization.staypoints
 
 
 @pd.api.extensions.register_dataframe_accessor("as_staypoints")
@@ -29,7 +26,7 @@ class StaypointsAccessor(object):
 
     Examples
     --------
-    >>> df.as_staypoints.extract_locations()
+    >>> df.as_staypoints.generate_locations()
     """
 
     required_columns = ['user_id', 'started_at', 'finished_at']
@@ -58,15 +55,10 @@ class StaypointsAccessor(object):
         lon = self._obj.geometry.x
         return (float(lon.mean()), float(lat.mean()))
 
-    def extract_locations(self, *args, **kwargs):
-        """Extracts locations from this collection of staypoints.
-        See :func:`trackintel.preprocessing.staypoints.cluster_staypoints`."""
-        return ti.preprocessing.staypoints.cluster_staypoints(self._obj, *args, **kwargs)
-    
-    def cluster_staypoints(self, *args, **kwargs):
-        """Function alias for extract_locations to ensure consistency for function naming.
-        See :func:`trackintel.preprocessing.staypoints.cluster_staypoints`."""
-        return self.extract_locations(*args, **kwargs)
+    def generate_locations(self, *args, **kwargs):
+        """Generate locations from this collection of staypoints.
+        See :func:`trackintel.preprocessing.staypoints.generate_locations`."""
+        return ti.preprocessing.staypoints.generate_locations(self._obj, *args, **kwargs)
 
     def create_activity_flag(self, *args, **kwargs):
         """Sets a flag if a staypoint is also an activity.

@@ -5,89 +5,35 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-def smoothen_triplegs(triplegs, method='douglas-peucker', tolerance=1.0):
-    """reduces number of points while retaining structure of tripleg
-    Parameters
-    ----------
-    triplegs: shapely file
-        triplegs to be reduced
-    method: method used to smoothen
-        only the douglas-peucker method is available so far
-    tolerance: float
-        a higher tolerance removes more points; the units of tolerance are the same as the projection of the input geometry
-    """
-    input_copy = copy.deepcopy(triplegs)
-    origin_geom = input_copy.geom
-    simplified_geom = origin_geom.simplify(tolerance, preserve_topology=False)
-    input_copy.geom = simplified_geom
-
-    return input_copy
-
-def _temp_trip_stack_has_tripleg(temp_trip_stack):
-    """
-    Check if a trip has at least 1 tripleg
-    Parameters
-    ----------
-        temp_trip_stack : list
-                    list of dictionary like elements (either pandas series or
-                    python dictionary). Contains all elements
-                    that will be aggregated into a trip
-
-    Returns
-    -------
-    Bool
-    """
-
-    has_tripleg = False
-    for row in temp_trip_stack:
-        if row['type'] == 'tripleg':
-            has_tripleg = True
-            break
-
-    return has_tripleg
-
-
-def _create_trip_from_stack(temp_trip_stack, origin_activity, destination_activity):
-    """
-    Aggregate information of trip elements in a structured dictionary
-
-    Parameters
-    ----------
-    temp_trip_stack : list
-                    list of dictionary like elements (either pandas series or python dictionary). Contains all elements
-                    that will be aggregated into a trip
-    origin_activity : dictionary like
-                    Either dictionary or pandas series
-    destination_activity : dictionary like
-                    Either dictionary or pandas series
-
-    Returns
-    -------
-    dictionary
-
-    """
-
-    # this function return and empty dict if no tripleg is in the stack
-    first_trip_element = temp_trip_stack[0]
-    last_trip_element = temp_trip_stack[-1]
-
-    # all data has to be from the same user
-    assert origin_activity['user_id'] == last_trip_element['user_id']
-
-    # double check if trip requirements are fulfilled
-    assert origin_activity['activity'] == True
-    assert destination_activity['activity'] == True
-    assert first_trip_element['activity'] == False
-
-    trip_dict_entry = {'user_id': origin_activity['user_id'],
-                       'started_at': first_trip_element['started_at'],
-                       'finished_at': last_trip_element['finished_at'],
-                       'origin_staypoint_id': origin_activity['id'],
-                       'destination_staypoint_id': destination_activity['id'],
-                       'tpls': [tripleg['id'] for tripleg in temp_trip_stack if tripleg['type'] == 'tripleg'],
-                       'spts': [tripleg['id'] for tripleg in temp_trip_stack if tripleg['type'] == 'staypoint']}
+def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
+    """Reduces number of points while retaining structure of tripleg. 
+    A wrapper function using shapely.simplify():
+    https://shapely.readthedocs.io/en/stable/manual.html#object.simplify
     
-    return trip_dict_entry
+    Parameters
+    ----------
+    triplegs: GeoDataFrame
+        triplegs to be simplified
+        
+    tolerance: float, default 1.0
+        a higher tolerance removes more points; the units of tolerance are the same as the 
+        projection of the input geometry
+    
+    preserve_topology: bool, default True
+        whether to preserve topology. If set to False the Douglas-Peucker algorithm is used.
+    
+    Returns
+    ----------
+    GeoDataFrame
+        The simplified triplegs GeoDataFrame
+    
+    """
+    ret_tpls = triplegs.copy()
+    origin_geom = ret_tpls.geom
+    simplified_geom = origin_geom.simplify(tolerance, preserve_topology=preserve_topology)
+    ret_tpls.geom = simplified_geom
+
+    return ret_tpls
 
 
 def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_progress=False):
@@ -112,7 +58,7 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     Returns
     -------
     (GeoDataFrame, GeoDataFrame, GeoDataFrame)
-        the tuple contains (staypoints, triplegs, trips)
+        Tuple containing (staypoints, triplegs, trips)
 
     Notes
     -----
@@ -122,8 +68,8 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     [`trip_id` `prev_trip_id` and `next_trip_id`], triplegs receive the field [`trip_id`].
     The following assumptions are implemented
         - All movement before the first and after the last activity is omitted
-        - If we do not record a person for more than `gap_threshold` minutes, we assume that the person performed
-         an activity in the recording gap and split the trip at the gap.
+        - If we do not record a person for more than `gap_threshold` minutes, \
+            we assume that the person performed an activity in the recording gap and split the trip at the gap.
         - Trips that start/end in a recording gap can have an unknown origin/destination
         - There are no trips without a (recored) tripleg
 
@@ -205,6 +151,7 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     
     return spts, tpls, trips
 
+
 def _generate_trips_user(df, gap_threshold):
     # function called after groupby: should only contain records of one user
     user_id = df['user_id'].unique()
@@ -244,7 +191,7 @@ def _generate_trips_user(df, gap_threshold):
             if row['activity'] is True:
 
                 # if there are no triplegs in the trip, set the current activity as origin and start over
-                if not _temp_trip_stack_has_tripleg(temp_trip_stack):
+                if not _check_trip_stack_has_tripleg(temp_trip_stack):
                     origin_activity = row
                     temp_trip_stack = list()
                     in_trip = True
@@ -279,7 +226,7 @@ def _generate_trips_user(df, gap_threshold):
                 temp_trip_stack.append(row)
 
                 # if the trip has no recored triplegs, we do not generate the current trip.
-                if not _temp_trip_stack_has_tripleg(temp_trip_stack):
+                if not _check_trip_stack_has_tripleg(temp_trip_stack):
                     origin_activity = unknown_activity
                     in_trip = True
                     temp_trip_stack = list()
@@ -298,10 +245,77 @@ def _generate_trips_user(df, gap_threshold):
                 temp_trip_stack.append(row)
     
     # if user ends generate last trip with unknown destination
-    if (len(temp_trip_stack) > 0) and (_temp_trip_stack_has_tripleg(temp_trip_stack)):
+    if (len(temp_trip_stack) > 0) and (_check_trip_stack_has_tripleg(temp_trip_stack)):
         destination_activity = unknown_activity
         trip_ls.append(_create_trip_from_stack(temp_trip_stack, origin_activity,destination_activity,))
     
     # print(trip_ls)
     trips = pd.DataFrame(trip_ls)
     return trips
+
+
+def _check_trip_stack_has_tripleg(temp_trip_stack):
+    """
+    Check if a trip has at least 1 tripleg
+    Parameters
+    ----------
+        temp_trip_stack : list
+                    list of dictionary like elements (either pandas series or
+                    python dictionary). Contains all elements
+                    that will be aggregated into a trip
+
+    Returns
+    -------
+    Bool
+    """
+
+    has_tripleg = False
+    for row in temp_trip_stack:
+        if row['type'] == 'tripleg':
+            has_tripleg = True
+            break
+
+    return has_tripleg
+
+
+def _create_trip_from_stack(temp_trip_stack, origin_activity, destination_activity):
+    """
+    Aggregate information of trip elements in a structured dictionary
+
+    Parameters
+    ----------
+    temp_trip_stack : list
+                    list of dictionary like elements (either pandas series or python dictionary). Contains all elements
+                    that will be aggregated into a trip
+    origin_activity : dictionary like
+                    Either dictionary or pandas series
+    destination_activity : dictionary like
+                    Either dictionary or pandas series
+
+    Returns
+    -------
+    dictionary
+
+    """
+
+    # this function return and empty dict if no tripleg is in the stack
+    first_trip_element = temp_trip_stack[0]
+    last_trip_element = temp_trip_stack[-1]
+
+    # all data has to be from the same user
+    assert origin_activity['user_id'] == last_trip_element['user_id']
+
+    # double check if trip requirements are fulfilled
+    assert origin_activity['activity'] == True
+    assert destination_activity['activity'] == True
+    assert first_trip_element['activity'] == False
+
+    trip_dict_entry = {'user_id': origin_activity['user_id'],
+                       'started_at': first_trip_element['started_at'],
+                       'finished_at': last_trip_element['finished_at'],
+                       'origin_staypoint_id': origin_activity['id'],
+                       'destination_staypoint_id': destination_activity['id'],
+                       'tpls': [tripleg['id'] for tripleg in temp_trip_stack if tripleg['type'] == 'tripleg'],
+                       'spts': [tripleg['id'] for tripleg in temp_trip_stack if tripleg['type'] == 'staypoint']}
+    
+    return trip_dict_entry

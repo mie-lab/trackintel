@@ -11,7 +11,7 @@ provides functionality to generate everything starting from the raw GPS position
 * **staypoints**: Locations where a user spent a minimal time.
 * **triplegs**: Segments covered with one mode of transport.
 * **locations**: Clustered staypoints.
-* **trips**: Segments between consecutive activities (special staypoints that are not just waiting points).
+* **trips**: Segments between consecutive activity staypoints (special staypoints that are not just waiting points).
 * **tours**: Sequences of trips which start and end at the same location (if ``journey`` 
   is set to ``True``, this location is *home*).
 

@@ -1,32 +1,29 @@
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString
-from shapely.geometry import Point
+from shapely.geometry import LineString, Point
 from sklearn.cluster import DBSCAN
 
 from trackintel.geogr.distances import haversine_dist
 
 
-def extract_staypoints(positionfixes, method='sliding',
-                       dist_threshold=50, time_threshold=5 * 60, epsilon=100,
-                       dist_func=haversine_dist, eps=None, num_samples=None):
-    """Extract staypoints from positionfixes.
+def generate_staypoints(positionfixes, method='sliding',
+                        dist_threshold=50, time_threshold=5 * 60, epsilon=100,
+                        dist_func=haversine_dist, num_samples=None):
+    """Generates staypoints from positionfixes.
 
     This function modifies the positionfixes and adds staypoint_ids.
 
     Parameters
     ----------
-    num_samples
-    eps
+    
+    
     positionfixes : GeoDataFrame
         The positionfixes have to follow the standard definition for positionfixes DataFrames.
 
-    method : {'sliding' or 'dbscan'}
-        The following methods are available to extract staypoints from positionfixes:
-
-        'sliding' : Applies a sliding window over the data.
-        'dbscan' : Uses the DBSCAN algorithm to find clusters of staypoints.
+    method : str, {'sliding' or 'dbscan'}, default 'sliding'
+        - 'sliding' : Applies a sliding window over the data.
+        - 'dbscan' : Uses the DBSCAN algorithm to find clusters of staypoints.
 
     dist_threshold : float
         The distance threshold for the 'sliding' method, i.e., how far someone has to travel to
@@ -41,7 +38,9 @@ def extract_staypoints(positionfixes, method='sliding',
 
     dist_func : function
         A function that expects (lon_1, lat_1, lon_2, lat_2) and computes a distance in meters.
-
+        
+    num_samples :
+    
     Returns
     -------
     GeoDataFrame
@@ -49,7 +48,7 @@ def extract_staypoints(positionfixes, method='sliding',
 
     Examples
     --------
-    >>> psfs.as_positionfixes.extract_staypoints('sliding', dist_threshold=100)
+    >>> psfs.as_positionfixes.generate_staypoints('sliding', dist_threshold=100)
 
     References
     ----------
@@ -192,8 +191,8 @@ def extract_staypoints(positionfixes, method='sliding',
     return ret_staypoints
 
 
-def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
-    """Extract triplegs from positionfixes. A tripleg is (for now) defined as anything
+def generate_triplegs(positionfixes, staypoints=None, *args, **kwargs):
+    """Generates triplegs from positionfixes. A tripleg is (for now) defined as anything
     that happens between two consecutive staypoints.
 
     **Attention**: This function requires either a column ``staypoint_id`` on the 
@@ -218,7 +217,7 @@ def extract_triplegs(positionfixes, staypoints=None, *args, **kwargs):
 
     Examples
     --------
-    >>> psfs.as_positionfixes.extract_triplegs(staypoints)
+    >>> psfs.as_positionfixes.generate_triplegs(staypoints)
     """
     name_geocol = positionfixes.geometry.name
     # Check that data adheres to contract.

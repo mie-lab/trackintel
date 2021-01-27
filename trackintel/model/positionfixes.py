@@ -1,8 +1,6 @@
 import pandas as pd
 
 import trackintel as ti
-import trackintel.preprocessing.positionfixes
-import trackintel.visualization.positionfixes
 
 
 @pd.api.extensions.register_dataframe_accessor("as_positionfixes")
@@ -27,7 +25,7 @@ class PositionfixesAccessor(object):
 
     Examples
     --------
-    >>> df.as_positionfixes.extract_staypoints()
+    >>> df.as_positionfixes.generate_staypoints()
     """
 
     required_columns = ['user_id', 'tracked_at']
@@ -59,19 +57,19 @@ class PositionfixesAccessor(object):
         lon = self._obj.geometry.x
         return (float(lon.mean()), float(lat.mean()))
 
-    def extract_staypoints(self, *args, **kwargs):
-        """Extracts staypoints from this collection of positionfixes. 
-        See :func:`trackintel.preprocessing.positionfixes.extract_staypoints`."""
-        return ti.preprocessing.positionfixes.extract_staypoints(self._obj, *args, **kwargs)
+    def generate_staypoints(self, *args, **kwargs):
+        """Generates staypoints from this collection of positionfixes. 
+        See :func:`trackintel.preprocessing.positionfixes.generate_staypoints`."""
+        return ti.preprocessing.positionfixes.generate_staypoints(self._obj, *args, **kwargs)
 
-    def extract_triplegs(self, staypoints=None, *args, **kwargs):
-        """Extracts triplegs from this collection of positionfixes.
-        See :func:`trackintel.preprocessing.positionfixes.extract_triplegs`.
+    def generate_triplegs(self, staypoints=None, *args, **kwargs):
+        """Generates triplegs from this collection of positionfixes.
+        See :func:`trackintel.preprocessing.positionfixes.generate_triplegs`.
         """
-        return ti.preprocessing.positionfixes.extract_triplegs(self._obj, staypoints, *args, **kwargs)
+        return ti.preprocessing.positionfixes.generate_triplegs(self._obj, staypoints, *args, **kwargs)
 
-    def extract_staypoints_and_triplegs(self, *args, **kwargs):
-        """Extracts staypoints, uses them to build triplegs, and builds all associations 
+    def generate_staypoints_and_triplegs(self, *args, **kwargs):
+        """Generates staypoints, uses them to build triplegs, and builds all associations 
         with the original positionfixes (i.e., returning everything in accordance with the trackintel
         :doc:`/content/data_model_sql`).
         
