@@ -1,0 +1,7 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "Unnamed: 0": 0, "user_id": 1, "elevation": 5 }, "geometry": { "type": "Point", "coordinates": [ 8.548779488, 47.37651505 ] } },
+{ "type": "Feature", "properties": { "Unnamed: 0": 1, "user_id": 1, "elevation": 5 }, "geometry": { "type": "Point", "coordinates": [ 8.5634, 47.956 ] } }
+]
+}
