@@ -1,7 +1,7 @@
 import geopandas as gpd
 import pandas as pd
 
-def read_positionfixes_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom='geom', mapper={}):
+def positionfixes_from_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom='geom', mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -33,7 +33,7 @@ def read_positionfixes_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom
 
     return pfs
 
-def read_staypoints_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', geom='geom', mapper={}):
+def staypoints_from_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', geom='geom', mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -67,7 +67,7 @@ def read_staypoints_gpd(gdf, started_at='started_at', finished_at='finished_at',
 
     return stp
 
-def read_triplegs_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', geom='geometry', mapper={}):
+def triplegs_from_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', geom='geometry', mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -101,7 +101,7 @@ def read_triplegs_gpd(gdf, started_at='started_at', finished_at='finished_at', u
 
     return tpl
 
-def read_trips_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', origin_staypoint_id='origin_staypoint_id', destination_staypoint_id='destination_staypoint_id', mapper={}):
+def trips_from_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', origin_staypoint_id='origin_staypoint_id', destination_staypoint_id='destination_staypoint_id', mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -137,7 +137,7 @@ def read_trips_gpd(gdf, started_at='started_at', finished_at='finished_at', user
 
     return tps
 
-def read_locations_gpd(gdf, user_id='user_id', center='center', mapper={}):
+def locations_from_gpd(gdf, user_id='user_id', center='center', mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -167,7 +167,7 @@ def read_locations_gpd(gdf, user_id='user_id', center='center', mapper={}):
 
     return lcs
 
-def read_tours_gpd(gdf, user_id='user_id',started_at='started_at', finished_at='finished_at', origin_destination_location_id='origin_destination_location_id', journey='journey', mapper={}):
+def tours_from_gpd(gdf, user_id='user_id',started_at='started_at', finished_at='finished_at', origin_destination_location_id='origin_destination_location_id', journey='journey', mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 

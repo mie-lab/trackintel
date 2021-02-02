@@ -21,10 +21,8 @@ from .postgis import write_locations_postgis
 from .file import read_trips_csv
 from .file import write_trips_csv
 from .postgis import read_trips_postgis
-<<<<<<< HEAD
-from .postgis import write_trips_postgis
 
-from .from_geopandas import *
-=======
 from .postgis import write_trips_postgis
->>>>>>> master
+from .from_geopandas import *
+
+
