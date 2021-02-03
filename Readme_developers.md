@@ -8,7 +8,6 @@ Before you release a new version you should check/modify the following files:
 
 - docs/index.rst -> update the version number
 
-- readme.md -> update the version number badge (automatic update is planned)
 - check setup.py if new dependencies need greater python version
 
 After the release is tagged, __no new release with the same version number__ can be published on pypi!
