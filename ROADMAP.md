@@ -37,7 +37,7 @@ Steps until we get to version 1.0.0.
 
 
 ### v0.6.0
-* Support flexible geometry columns [Issue15](https://github.com/mie-lab/trackintel/issues/15)
+* :heavy_check_mark: Support flexible geometry columns [Issue15](https://github.com/mie-lab/trackintel/issues/15)
 * :heavy_check_mark: Filter data by geographic location (e.g., all data within Switzerland)
 * Enhance tripleg extraction to be _gap aware_ [issue27](https://github.com/mie-lab/trackintel/issues/27)
 
