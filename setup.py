@@ -36,7 +36,6 @@ REQUIRED = [
 
 install_requires = [
     'pandas',
-    'geopandas',
     'matplotlib',
     'numpy',
     'pint',
@@ -45,7 +44,8 @@ install_requires = [
     'geoalchemy2',
     'osmnx',
     'scikit-learn',
-    'tqdm'
+    'tqdm',
+    'geopandas'
 ]
 
 # What packages are optional?
