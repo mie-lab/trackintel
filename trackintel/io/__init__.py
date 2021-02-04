@@ -27,5 +27,6 @@ from .file import write_trips_csv
 from .postgis import read_trips_postgis
 from .postgis import write_trips_postgis
 
-
 from .from_geopandas import trips_from_gpd
+from .dataset_reader import read_geolife
+

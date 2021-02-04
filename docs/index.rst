@@ -4,7 +4,8 @@ The *trackintel* Documentation
 
 .. image:: https://mybinder.org/badge_logo.svg
  :target: https://mybinder.org/v2/gh/mie-lab/trackintel/master?filepath=%2Fexamples%2Fexample_geolife%2FTrackintel_introduction.ipynb
-.. image:: https://img.shields.io/badge/version-v0.2.0-red.svg
+.. image:: https://badge.fury.io/py/trackintel.svg
+    :target: https://badge.fury.io/py/trackintel
 
 Focusing on human mobility data, *trackintel* provides functionalities for data quality 
 enhancement, integrating data from various sources, performing quantitative analysis and 
