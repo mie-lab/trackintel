@@ -34,6 +34,20 @@ REQUIRED = [
     'tqdm'
 ]
 
+install_requires = [
+    'pandas',
+    'matplotlib',
+    'numpy',
+    'pint',
+    'shapely',
+    'networkx',
+    'geoalchemy2',
+    'osmnx',
+    'scikit-learn',
+    'tqdm',
+    'geopandas'
+]
+
 # What packages are optional?
 EXTRAS = {
     # 'fancy feature': ['django'],
