@@ -2,9 +2,12 @@ import filecmp
 import os
 
 import trackintel as ti
+import geopandas as gpd
+import pandas as pd
 
 
-class TestIO:
+
+class TestFile:
     def test_positionfixes_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'positionfixes.csv')
         tmp_file = os.path.join('tests', 'data', 'positionfixes_test.csv')
@@ -18,6 +21,8 @@ class TestIO:
     def test_positionfixes_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
+    
+
 
     def test_triplegs_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'triplegs.csv')
@@ -34,6 +39,8 @@ class TestIO:
     def test_triplegs_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
+    
+    
 
     def test_staypoints_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'staypoints.csv')
@@ -49,6 +56,8 @@ class TestIO:
     def test_staypoints_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
+    
+    
 
     def test_locations_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'locations.csv')
@@ -62,6 +71,8 @@ class TestIO:
     def test_locations_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
+
+    
 
     def test_trips_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'trips.csv')
@@ -79,3 +90,4 @@ class TestIO:
         # TODO Implement some tests for PostGIS.
         pass
 
+    
