@@ -13,7 +13,7 @@ class TestFromGeopandas:
             
             # TODO: datetime format not yet implemented and checked in model
             pfs_from_csv['tracked_at'] = pfs_from_csv['tracked_at'].apply(lambda d: d.isoformat().replace(' ', 'T'))
-            pfs_from_csv['tracked_at'] = pfs_from_csv['tracked_at'].apply(lambda d: d.replace('+00:00', ''))
+            # pfs_from_csv['tracked_at'] = pfs_from_csv['tracked_at'].apply(lambda d: d.replace('+00:00', ''))
             
             assert pfs_from_gpd.equals(pfs_from_csv)
             
@@ -25,8 +25,8 @@ class TestFromGeopandas:
             # TODO: datetime format not yet implemented and checked in model
             tpls_from_csv['started_at'] = tpls_from_csv['started_at'].apply(lambda d: d.isoformat().replace(' ', 'T')) 
             tpls_from_csv['finished_at'] = tpls_from_csv['finished_at'].apply(lambda d: d.isoformat().replace(' ', 'T'))
-            tpls_from_csv['started_at'] = tpls_from_csv['started_at'].apply(lambda d: d.replace('+00:00', ''))
-            tpls_from_csv['finished_at'] = tpls_from_csv['finished_at'].apply(lambda d: d.replace('+00:00', ''))
+            # tpls_from_csv['started_at'] = tpls_from_csv['started_at'].apply(lambda d: d.replace('+00:00', ''))
+            # tpls_from_csv['finished_at'] = tpls_from_csv['finished_at'].apply(lambda d: d.replace('+00:00', ''))
             
             assert tpls_from_gpd.equals(tpls_from_csv)
             
@@ -38,8 +38,8 @@ class TestFromGeopandas:
             # TODO: datetime format not yet implemented and checked in model
             stps_from_csv['started_at'] = stps_from_csv['started_at'].apply(lambda d: d.isoformat().replace(' ', 'T'))  
             stps_from_csv['finished_at'] = stps_from_csv['finished_at'].apply(lambda d: d.isoformat().replace(' ', 'T'))
-            stps_from_csv['started_at'] = stps_from_csv['started_at'].apply(lambda d: d.replace('+00:00', ''))
-            stps_from_csv['finished_at'] = stps_from_csv['finished_at'].apply(lambda d: d.replace('+00:00', ''))
+            # stps_from_csv['started_at'] = stps_from_csv['started_at'].apply(lambda d: d.replace('+00:00', ''))
+            # stps_from_csv['finished_at'] = stps_from_csv['finished_at'].apply(lambda d: d.replace('+00:00', ''))
             
             assert stps_from_gpd.equals(stps_from_csv)
             
