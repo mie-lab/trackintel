@@ -196,3 +196,32 @@ def write_trips_csv(trips, filename, *args, **kwargs):
     """
     df = trips.copy()
     df.to_csv(filename, index=True, *args, **kwargs)
+
+
+def read_tours_csv(*args, **kwargs):
+    """Wraps the pandas read_csv function and extraces proper datetimes. This also 
+    validates that the ingested data conforms to the trackintel understanding 
+    of tours (see :doc:`/modules/model`).
+
+    Returns
+    -------
+    DataFrame
+        A DataFrame containing the tours.
+    """
+    # TODO: implement the reading function for tours
+    pass
+
+
+def write_tours_csv(tours, filename, *args, **kwargs):
+    """Wraps the pandas to_csv function.
+
+    Parameters
+    ----------
+    tours : DataFrame
+        The tours to store to the CSV file.
+    
+    filename : str
+        The file to write to.
+    """
+    # TODO: implement the writing function for tours
+    pass

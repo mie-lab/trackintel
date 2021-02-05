@@ -62,9 +62,9 @@ class TestFile:
     def test_locations_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'locations.csv')
         tmp_file = os.path.join('tests', 'data', 'locations_test.csv')
-        plcs = ti.read_locations_csv(orig_file, sep=';')
-        plcs.as_locations.to_csv(tmp_file, sep=';',
-                              columns=['user_id', 'elevation', 'center', 'extent'])
+        locs = ti.read_locations_csv(orig_file, sep=';')
+        locs.as_locations.to_csv(tmp_file, sep=';',
+                                 columns=['user_id', 'elevation', 'center', 'extent'])
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
         
@@ -89,5 +89,9 @@ class TestFile:
     def test_trips_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
-
+    
+    
+    def test_tours_from_to_csv(self):
+        # TODO Implement some tests for reading and writing tours.
+        pass
     

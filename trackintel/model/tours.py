@@ -35,7 +35,12 @@ class ToursAccessor(object):
             raise AttributeError("To process a DataFrame as a collection of staypoints, " \
                 + "it must have the properties [%s], but it has [%s]." \
                 % (', '.join(ToursAccessor.required_columns), ', '.join(obj.columns)))
-
+            
+    def to_csv(self, filename, *args, **kwargs):
+        """Stores this collection of tours as a CSV file.
+        See :func:`trackintel.io.file.write_tours_csv`."""
+        raise NotImplementedError
+        
     def plot(self, *args, **kwargs):
         """Plots this collection of tours. 
         See :func:`trackintel.visualization.tours.plot_tours`."""
