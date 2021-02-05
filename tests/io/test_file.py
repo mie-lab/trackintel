@@ -89,5 +89,9 @@ class TestFile:
     def test_trips_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
-
+    
+    
+    def test_tours_from_to_csv(self):
+        # TODO Implement some tests for reading and writing tours.
+        pass
     
