@@ -1,0 +1,7 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "Unnamed: 0": 0, "User": 1, "started_at": "2015-11-27T08:00:00Z", "finished_at": "2015-11-27T10:00:00Z" }, "geometry": { "type": "LineString", "coordinates": [ [ 8.548779488, 47.37651505 ], [ 8.5277, 47.39935 ], [ 8.51169, 47.40854 ] ] } },
+{ "type": "Feature", "properties": { "Unnamed: 0": 1, "User": 1, "started_at": "2015-11-27T12:00:00Z", "finished_at": "2015-11-27T14:00:00Z" }, "geometry": { "type": "LineString", "coordinates": [ [ 8.5634, 47.956 ], [ 8.6456, 47.23345 ], [ 8.4534, 47.2634 ] ] } }
+]
+}

@@ -1,0 +1,7 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "Unnamed: 0": 0, "user_id": 1, "start_time": "2015-11-27T08:00:00Z", "end_time": "2015-11-27T10:00:00Z", "elevation": 350 }, "geometry": { "type": "Point", "coordinates": [ 8.528223, 47.395186 ] } },
+{ "type": "Feature", "properties": { "Unnamed: 0": 1, "user_id": 1, "start_time": "2015-11-27T12:00:00Z", "end_time": "2015-11-27T14:00:00Z", "elevation": 370 }, "geometry": { "type": "Point", "coordinates": [ 8.5434, 47.956 ] } }
+]
+}

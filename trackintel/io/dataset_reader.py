@@ -11,7 +11,7 @@ from shapely.geometry import Point
 
 FEET2METER = 0.3048
 
-CRS_WGS84 = {'init': 'epsg:4326'}
+CRS_WGS84 = 'epsg:4326'
 
 
 def read_geolife(geolife_path):
