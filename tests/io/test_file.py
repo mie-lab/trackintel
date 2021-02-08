@@ -73,9 +73,9 @@ class TestFile:
         mod_file = os.path.join('tests','data','locations_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'locations_test.csv')
         mod_plcs = ti.read_locations_csv(mod_file, columns={'geom':'center'},sep=';')
-        plcs = ti.read_locations_csv(orig_file, sep=';')
-        assert mod_plcs.equals(plcs)
-        plcs.as_locations.to_csv(tmp_file, sep=';',
+        locs = ti.read_locations_csv(orig_file, sep=';')
+        assert mod_plcs.equals(locs)
+        locs.as_locations.to_csv(tmp_file, sep=';',
                               columns=['user_id', 'elevation', 'center', 'extent'])
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)

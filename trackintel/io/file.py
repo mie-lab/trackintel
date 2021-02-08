@@ -11,8 +11,10 @@ def read_positionfixes_csv(*args, **kwargs):
     conforms to the trackintel understanding of positionfixes (see 
     :doc:`/modules/model`). 
     
-    In addition to the pandas read_csv keyword arguments, this function provides to rename columns directly while importing
-    by specifying the columnnames in a dictionary, see second example.
+    Parameters
+    ----------
+    columns : dict
+        The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
 
     Note that this function is primarily useful if data is available in a 
     longitude/latitude format. If your data already contains a WKT column, it
@@ -65,8 +67,10 @@ def read_triplegs_csv(*args, **kwargs):
     conforms to the trackintel understanding of triplegs (see :doc:`/modules/model`).
 
 
-    In addition to the pandas read_csv keyword arguments, this function provides to rename columns directly while importing
-    by specifying the columnnames in a dictionary, see example.
+   Parameters
+    ----------
+    columns : dict
+        The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
     
     Returns
     -------
@@ -75,7 +79,8 @@ def read_triplegs_csv(*args, **kwargs):
         
     Examples
     --------
-    >>> trackintel.read_triplegs_csv('data.csv', columns={'start_time':'started_at'})
+    >>> trackintel.read_triplegs_csv('data.csv')
+    >>> trackintel.read_triplegs_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
     columns=kwargs.pop('columns',{})
     df = pd.read_csv(*args, **kwargs)
@@ -112,13 +117,20 @@ def read_staypoints_csv(*args, **kwargs):
     the ingested data conforms to the trackintel understanding of staypoints 
     (see :doc:`/modules/model`).
     
-    In addition to the pandas read_csv keyword arguments, this function provides to rename columns directly while importing
-    by specifying the columnnames in a dictionary, see examples in read_triplegs_csv or read_positionfixes_csv.
+    Parameters
+    ----------
+    columns : dict
+        The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
 
     Returns
     -------
     GeoDataFrame
         A GeoDataFrame containing the staypoints.
+            
+    Examples
+    --------
+    >>> trackintel.read_staypoints_csv('data.csv')
+    >>> trackintel.read_staypoints_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
     columns=kwargs.pop('columns',{})
     df = pd.read_csv(*args, **kwargs)
@@ -154,13 +166,21 @@ def read_locations_csv(*args, **kwargs):
     validates that the ingested data conforms to the trackintel understanding 
     of locations (see :doc:`/modules/model`).
 
-    In addition to the pandas read_csv keyword arguments, this function provides to rename columns directly while importing
-    by specifying the columnnames in a dictionary, see examples in read_triplegs_csv or read_positionfixes_csv.
+    Parameters
+    ----------
+    columns : dict
+        The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
 
     Returns
     -------
     GeoDataFrame
         A GeoDataFrame containing the locations.
+        
+            
+    Examples
+    --------
+    >>> trackintel.read_locations_csv('data.csv')
+    >>> trackintel.read_locations_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
     columns=kwargs.pop('columns',{})
     df = pd.read_csv(*args, **kwargs)
@@ -197,13 +217,21 @@ def read_trips_csv(*args, **kwargs):
     validates that the ingested data conforms to the trackintel understanding 
     of trips (see :doc:`/modules/model`).
     
-    In addition to the pandas read_csv keyword arguments, this function provides to rename columns directly while importing
-    by specifying the columnnames in a dictionary, see examples in read_triplegs_csv or read_positionfixes_csv.
+    Parameters
+    ----------
+    columns : dict
+        The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
 
     Returns
     -------
     DataFrame
         A DataFrame containing the trips.
+        
+            
+    Examples
+    --------
+    >>> trackintel.read_trips_csv('data.csv')
+    >>> trackintel.read_trips_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
     columns=kwargs.pop('columns',{})
     df = pd.read_csv(*args, **kwargs)
