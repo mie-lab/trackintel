@@ -1,17 +1,18 @@
 import datetime
+from math import radians
 
-import numpy as np
 import geopandas as gpd
+import numpy as np
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
-from math import radians
 
 from trackintel.geogr.distances import meters_to_decimal_degrees
 
-def generate_locations(staypoints, 
+
+def generate_locations(staypoints,
                        method='dbscan',
-                       epsilon=100, 
-                       num_samples=1, 
+                       epsilon=100,
+                       num_samples=1,
                        distance_matrix_metric='euclidean',
                        agg_level='user'):
     """generate locations from the staypoints.
@@ -58,7 +59,7 @@ def generate_locations(staypoints,
     
     # initialize the return GeoDataFrames
     ret_stps = staypoints.copy()
-    ret_loc = gpd.GeoDataFrame([], columns=['user_id', 'id', 'center', 'extent'])
+    ret_loc = gpd.GeoDataFrame([], columns=['user_id', 'id', 'center', 'extent'])  # todo: define default dtypes
     
     if method=='dbscan':
 
