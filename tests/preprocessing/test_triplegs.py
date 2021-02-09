@@ -1,9 +1,11 @@
 import os
-import pandas as pd
+
 import geopandas as gpd
+import pandas as pd
 from shapely.geometry import Point, LineString
 
 import trackintel as ti
+
 
 class TestSmoothen_triplegs():
     def test_smoothen_triplegs(self):
@@ -29,14 +31,14 @@ class TestGenerate_trips():
         gap_threshold = 15
         # load pregenerated trips
         trips_loaded = pd.read_csv(os.path.join('tests', 'data', 'geolife_long', 'trips.csv'), index_col='id')
-        trips_loaded['started_at'] = pd.to_datetime(trips_loaded['started_at'])
-        trips_loaded['finished_at'] = pd.to_datetime(trips_loaded['finished_at'])
+        trips_loaded['started_at'] = pd.to_datetime(trips_loaded['started_at'], utc=True)
+        trips_loaded['finished_at'] = pd.to_datetime(trips_loaded['finished_at'], utc=True)
         trips_loaded['user_id'] = trips_loaded['user_id'].astype("int64")
 
         # create trips from geolife (based on positionfixes)
         pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25,
-                                                        time_threshold=5 * 60)
+                                                             time_threshold=5 * 60)
         stps = stps.as_staypoints.create_activity_flag()
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 
@@ -93,6 +95,8 @@ class TestGenerate_trips():
                               infer_datetime_format=True, dayfirst=True)
         stps_in['geom'] = Point(1, 1)
         stps_in = gpd.GeoDataFrame(stps_in, geometry='geom')
+        stps_in = ti.io.staypoints_from_gpd(stps_in, tz='utc')
+
         assert stps_in.as_staypoints
 
         tpls_in = pd.read_csv(os.path.join('.', 'tests', 'data', 'trips', 'triplegs_gaps.csv'),
@@ -100,25 +104,27 @@ class TestGenerate_trips():
                               infer_datetime_format=True, dayfirst=True)
         tpls_in['geom'] = LineString([[1, 1], [2, 2]])
         tpls_in = gpd.GeoDataFrame(tpls_in, geometry='geom')
+        tpls_in = ti.io.triplegs_from_gpd(tpls_in, tz='utc')
+
         assert tpls_in.as_triplegs
 
         # load ground truth data
         trips_loaded = pd.read_csv(os.path.join('.', 'tests', 'data', 'trips', 'trips_gaps.csv'), index_col='id')
-        trips_loaded['started_at'] = pd.to_datetime(trips_loaded['started_at'])
-        trips_loaded['finished_at'] = pd.to_datetime(trips_loaded['finished_at'])
+        trips_loaded['started_at'] = pd.to_datetime(trips_loaded['started_at'], utc=True)
+        trips_loaded['finished_at'] = pd.to_datetime(trips_loaded['finished_at'], utc=True)
 
         stps_tpls_loaded = pd.read_csv(os.path.join('.', 'tests', 'data', 'trips', 'stps_tpls_gaps.csv')
                                        , index_col='id')
-        stps_tpls_loaded['started_at'] = pd.to_datetime(stps_tpls_loaded['started_at'])
-        stps_tpls_loaded['started_at_next'] = pd.to_datetime(stps_tpls_loaded['started_at_next'])
-        stps_tpls_loaded['finished_at'] = pd.to_datetime(stps_tpls_loaded['finished_at'])
+        stps_tpls_loaded['started_at'] = pd.to_datetime(stps_tpls_loaded['started_at'], utc=True)
+        stps_tpls_loaded['started_at_next'] = pd.to_datetime(stps_tpls_loaded['started_at_next'], utc=True)
+        stps_tpls_loaded['finished_at'] = pd.to_datetime(stps_tpls_loaded['finished_at'], utc=True)
 
         # generate trips and a joint staypoint/triplegs dataframe
         stps_proc, tpls_proc, trips = ti.preprocessing.triplegs.generate_trips(stps_in, tpls_in,
-                                                                               gap_threshold=15, 
+                                                                               gap_threshold=15,
                                                                                id_offset=0)
         spts_tpls = _create_debug_spts_tpls_data(stps_proc, tpls_proc, gap_threshold=gap_threshold)
-        
+
         trips.set_index('id', inplace=True)
         # test if generated trips are equal
         pd.testing.assert_frame_equal(trips_loaded, trips)

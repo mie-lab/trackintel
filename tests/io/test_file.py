@@ -2,9 +2,6 @@ import filecmp
 import os
 
 import trackintel as ti
-import geopandas as gpd
-import pandas as pd
-
 
 
 class TestFile:
@@ -31,8 +28,9 @@ class TestFile:
         orig_file = os.path.join('tests', 'data', 'triplegs.csv')
         mod_file = os.path.join('tests','data','triplegs_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'triplegs_test.csv')
-        tpls = ti.read_triplegs_csv(orig_file, sep=';')
-        mod_tpls = ti.read_triplegs_csv(mod_file, columns={'start_time':'started_at','end_time':'finished_at', 'tripleg':'geom'},sep=';')
+        tpls = ti.read_triplegs_csv(orig_file, sep=';', tz='utc')
+        mod_tpls = ti.read_triplegs_csv(mod_file, columns={'start_time': 'started_at', 'end_time': 'finished_at',
+                                                           'tripleg': 'geom'}, sep=';')
         assert mod_tpls.equals(tpls)
         tpls['started_at'] = tpls['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
         tpls['finished_at'] = tpls['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
@@ -52,8 +50,8 @@ class TestFile:
         orig_file = os.path.join('tests', 'data', 'staypoints.csv')
         mod_file = os.path.join('tests', 'data', 'staypoints_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'staypoints_test.csv')
-        stps = ti.read_staypoints_csv(orig_file, sep=';')
-        mod_stps = ti.read_staypoints_csv(mod_file, columns={'User':'user_id'},sep=';')
+        stps = ti.read_staypoints_csv(orig_file, sep=';', tz='utc')
+        mod_stps = ti.read_staypoints_csv(mod_file, columns={'User': 'user_id'}, sep=';')
         assert mod_stps.equals(stps)
         stps['started_at'] = stps['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
         stps['finished_at'] = stps['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
@@ -65,7 +63,6 @@ class TestFile:
     def test_staypoints_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
-    
     
 
     def test_locations_from_to_csv(self):
