@@ -21,8 +21,10 @@ class StaypointsAccessor(object):
     Notes
     -------
     Staypoints are defined as location were a person did not move for a while. Under consideration of location
-     uncertainty this means that a person stays within a certain radius for a certain amount of time.
-     The exact definition is use-case dependent.
+    uncertainty this means that a person stays within a certain radius for a certain amount of time.
+    The exact definition is use-case dependent.
+
+    ``started_at`` and ``finished_at`` are timezone aware pandas datetime objects.
 
     Examples
     --------
@@ -47,6 +49,14 @@ class StaypointsAccessor(object):
                                             "where x is you GeoDataFrame"
         if obj.geometry.iloc[0].geom_type != 'Point':
             raise AttributeError("The geometry must be a Point (only first checked).")
+
+        # check timestamp dtypes
+        assert pd.api.types.is_datetime64tz_dtype(obj['started_at']), "dtype of started_at is {} but has to be " \
+                                                                      "tz aware datetime64".format(
+            obj['started_at'].dtype)
+        assert pd.api.types.is_datetime64tz_dtype(obj['finished_at']), "dtype of finished_at is {} but has to " \
+                                                                       "be tz aware datetime64".format(
+            obj['finished_at'].dtype)
 
     @property
     def center(self):

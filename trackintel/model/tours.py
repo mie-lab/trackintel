@@ -18,6 +18,8 @@ class ToursAccessor(object):
     Tours are an aggregation level in transport planning that summarize all trips until a person returns to the
     same location. Tours starting and ending at home (=journey) are especially important.
 
+    ``started_at`` and ``finished_at`` are timezone aware pandas datetime objects.
+
     Examples
     --------
     >>> df.as_tours.plot()
@@ -33,14 +35,22 @@ class ToursAccessor(object):
     def _validate(obj):
         if any([c not in obj.columns for c in ToursAccessor.required_columns]):
             raise AttributeError("To process a DataFrame as a collection of staypoints, " \
-                + "it must have the properties [%s], but it has [%s]." \
-                % (', '.join(ToursAccessor.required_columns), ', '.join(obj.columns)))
-            
+                                 + "it must have the properties [%s], but it has [%s]." \
+                                 % (', '.join(ToursAccessor.required_columns), ', '.join(obj.columns)))
+
+        # check timestamp dtypes
+        assert pd.api.types.is_datetime64tz_dtype(obj['started_at']), "dtype of started_at is {} but has to be " \
+                                                                      "datetime64 and timezone aware".format(
+            obj['started_at'].dtype)
+        assert pd.api.types.is_datetime64tz_dtype(obj['finished_at']), "dtype of finished_at is {} but has to " \
+                                                                       "be datetime64 and timezone aware".format(
+            obj['started_at'].dtype)
+
     def to_csv(self, filename, *args, **kwargs):
         """Stores this collection of tours as a CSV file.
         See :func:`trackintel.io.file.write_tours_csv`."""
         raise NotImplementedError
-        
+
     def plot(self, *args, **kwargs):
         """Plots this collection of tours. 
         See :func:`trackintel.visualization.tours.plot_tours`."""
