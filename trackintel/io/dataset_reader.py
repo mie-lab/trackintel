@@ -56,7 +56,6 @@ def read_geolife(geolife_path):
     'tracked_at': datetime64[ns]; 'user_id': int64; 'geom': geopandas/shapely geometry; 'accuracy': None
     """
 
-
     geolife_path = os.path.join(geolife_path, '*')
     user_folder = sorted(glob.glob(geolife_path))
 
@@ -87,7 +86,7 @@ def read_geolife(geolife_path):
                                            'date days', 'date', 'time'])
 
             data_this['tracked_at'] = pd.to_datetime(data_this['date']
-                                                     + ' ' + data_this['time'], format="%Y-%m-%d %H:%M:%S")
+                                                     + ' ' + data_this['time'], format="%Y-%m-%d %H:%M:%S", utc=True)
 
             data_this.drop(['zeros', 'date days', 'date', 'time'], axis=1,
                            inplace=True)
