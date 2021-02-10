@@ -45,7 +45,7 @@ def predict_transport_mode_simple_coarse(triplegs):
         wgs=True
         warnings.warn('Your data is not projected. WGS84 is assumed and for length calculation the haversine distance is used')
     elif triplegs.crs.is_geographic:
-        warnings.warn('Your data is not in a projected coordinate system, length calculation will fail')
+        raise UserWarning('Your data is in a geographic coordinate system, length calculation fails')
 
         
 
