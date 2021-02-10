@@ -1,6 +1,7 @@
-# Readme
+# How to contribute
 This is a place to collect conventions we agreed upon until we find the right place in the doc for them
 
+## Coding conventions
 ### Time stamps
 All timestamps are timezone aware pandas `datetime64[ns, UTC]` objects. The default timezone should be `UTC` but the user should be free to use a different one if he wants. See [Issue 101](https://github.com/mie-lab/trackintel/issues/18). 
 
@@ -26,7 +27,10 @@ The main function should be on the top of the file, the internal/secondary funct
 ### ID management
 All trackintel objects have an ID that is the index of the dataframe [Issue 97](https://github.com/mie-lab/trackintel/issues/97)
 
-### trackintel: version release checklist
+### Others
+- We limit all lines to a maximum of 120 characters.
+
+## Version release checklist
 Before you release a new version you should check/modify the following files:
 
 - trackintel/__ version__.py -> update the version number
