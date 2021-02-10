@@ -59,7 +59,7 @@ def generate_locations(staypoints,
     
     # initialize the return GeoDataFrames
     ret_stps = staypoints.copy()
-    ret_loc = gpd.GeoDataFrame([], columns=['user_id', 'id', 'center', 'extent'])  # todo: define default dtypes
+    ret_loc = gpd.GeoDataFrame(columns=['user_id', 'id', 'center', 'extent'])
     
     if method=='dbscan':
 
@@ -74,6 +74,7 @@ def generate_locations(staypoints,
             
         if agg_level == 'user':
             location_id_counter = 0
+            # TODO: change into groupby
             for user_id_this in ret_stps["user_id"].unique():
                 # Slice staypoints array by user. This is not a copy!
                 user_staypoints = ret_stps[ret_stps["user_id"] == user_id_this]  
@@ -120,27 +121,32 @@ def generate_locations(staypoints,
         # filter outlier
         ret_loc = ret_loc.loc[ret_loc['location_id'] != -1]
         
+        ret_loc['center'] = 0 # initialize
         # locations with only one staypoints is of type "Point"
         point_idx = ret_loc.geom_type == 'Point'
-        ret_loc['center'] = 0 # initialize
-        ret_loc.loc[point_idx, 'center'] = ret_loc.loc[point_idx, 'geom']
+        if not ret_loc.loc[point_idx].empty:
+            ret_loc.loc[point_idx, 'center'] = ret_loc.loc[point_idx, 'geom']
         # locations with multiple staypoints is of type "MultiPoint"
-        ret_loc.loc[~point_idx, 'center'] = ret_loc.loc[~point_idx, 'geom'].apply(
-            lambda p: Point(np.array(p)[:,0].mean(), np.array(p)[:,1].mean()))
+        if not ret_loc.loc[~point_idx].empty:
+            ret_loc.loc[~point_idx, 'center'] = ret_loc.loc[~point_idx, 'geom'].apply(
+                lambda p: Point(np.array(p)[:,0].mean(), np.array(p)[:,1].mean()))
         
         # extent is the convex hull of the geometry
-        ret_loc['extent'] = ret_loc['geom'].apply(lambda p: p.convex_hull)                                                                                        
-        # convex_hull of one point would be a Point and two points a Linestring, 
-        # we change them into Polygon by creating a buffer of epsilon around them.
-        pointLine_idx = (ret_loc['extent'].geom_type == 'LineString') | (ret_loc['extent'].geom_type == 'Point')
+        ret_loc['extent'] = 0 # initialize
+        if not ret_loc.empty:
+            ret_loc['extent'] = ret_loc['geom'].apply(lambda p: p.convex_hull)                                                                                        
+            # convex_hull of one point would be a Point and two points a Linestring, 
+            # we change them into Polygon by creating a buffer of epsilon around them.
+            pointLine_idx = (ret_loc['extent'].geom_type == 'LineString') | (ret_loc['extent'].geom_type == 'Point')
         
-        # Perform meter to decimal conversion if the distance metric is haversine
-        if distance_matrix_metric == 'haversine':
-            ret_loc.loc[pointLine_idx, 'extent'] = ret_loc.loc[pointLine_idx].apply(
-                lambda p: p['extent'].buffer(meters_to_decimal_degrees(epsilon, p['center'].y)), axis=1)
-        else:
-            ret_loc.loc[pointLine_idx, 'extent'] = ret_loc.loc[pointLine_idx].apply(
-                lambda p: p['extent'].buffer(epsilon), axis=1)
+            if not ret_loc.loc[pointLine_idx].empty:
+                # Perform meter to decimal conversion if the distance metric is haversine
+                if distance_matrix_metric == 'haversine':
+                    ret_loc.loc[pointLine_idx, 'extent'] = ret_loc.loc[pointLine_idx].apply(
+                        lambda p: p['extent'].buffer(meters_to_decimal_degrees(epsilon, p['center'].y)), axis=1)
+                else:
+                    ret_loc.loc[pointLine_idx, 'extent'] = ret_loc.loc[pointLine_idx].apply(
+                        lambda p: p['extent'].buffer(epsilon), axis=1)
         
         ret_loc = ret_loc.set_geometry('center')
         ret_loc = ret_loc[['user_id', 'location_id', 'center', 'extent']]
