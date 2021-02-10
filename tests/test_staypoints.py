@@ -1,11 +1,16 @@
-import pytest
 import trackintel as ti
 import os
 import pandas as pd
+import os
+
+import pandas as pd
+
+import trackintel as ti
+
 
 class TestCreate_activity_flag():
     def test_create_activity_flag(self):
-        spts_test = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'))
+        spts_test = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'), tz='utc')
 
         activity_true = spts_test['activity'].copy()
         spts_test['activity'] = False

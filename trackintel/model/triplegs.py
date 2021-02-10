@@ -24,6 +24,8 @@ class TriplegsAccessor(object):
     -------
     A `tripleg` (also called `stage`) is defined as continuous movement without changing the mode of transport.
 
+    ``started_at`` and ``finished_at`` are timezone aware pandas datetime objects.
+
     Examples
     --------
     >>> df.as_triplegs.plot()
@@ -49,6 +51,12 @@ class TriplegsAccessor(object):
         if obj.geometry.iloc[0].geom_type != 'LineString':
             raise AttributeError("The geometry must be a LineString (only first checked).")
 
+        # check timestamp dtypes
+        assert pd.api.types.is_datetime64tz_dtype(obj['started_at']), \
+            "dtype of started_at is {} but has to be datetime64 and timezone aware".format(obj['started_at'].dtype)
+        assert pd.api.types.is_datetime64tz_dtype(obj['finished_at']), \
+            "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj['finished_at'].dtype)
+
     def plot(self, *args, **kwargs):
         """Plots this collection of triplegs. 
         See :func:`trackintel.visualization.triplegs.plot_triplegs`."""
@@ -65,19 +73,12 @@ class TriplegsAccessor(object):
         ti.io.postgis.write_triplegs_postgis(self._obj, conn_string, table_name)
 
     def similarity(self, *args, **kwargs):
-        """Calculate pair-wise distance among triplegs (x) or to other triplegs (y).
+        """Calculate pair-wise distance among triplegs (x) or to other triplegs (y)
         See :func:`trackintel.geogr.distances.calculate_distance_matrix`.
         """
         return ti.geogr.distances.calculate_distance_matrix(self._obj, *args, **kwargs)
 
-    def predict_transport_mode(self, *args, **kwargs):
-        """Predict/impute the transport mode with which each tripleg was likely covered.
-        See :func:`trackintel.analysis.transport_mode_identification.predict_transport_mode`.
-        """
-        return ti.analysis.transport_mode_identification.predict_transport_mode(self._obj, *args, **kwargs)
-    
     def spatial_filter(self, *args, **kwargs):
         """Filter triplegs with a geo extent.
         See :func:`trackintel.preprocessing.filter.spatial_filter`."""
         return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
-

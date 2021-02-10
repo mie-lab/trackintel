@@ -1,14 +1,15 @@
-import sys
-import os
 import datetime
+import os
+import sys
 
 import numpy as np
 
 import trackintel as ti
 
+
 class TestGenerate_staypoints():
     def test_generate_staypoints_sliding_min(self):
-        pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
+        pfs = ti.read_positionfixes_csv(os.path.join('tests', 'data', 'positionfixes.csv'), sep=';')
         pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         assert len(spts) == len(pfs), "With small thresholds, staypoint extraction should yield each positionfix"
         
@@ -35,7 +36,8 @@ class TestGenerate_triplegs():
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts)
 
         # load pregenerated test-triplegs
-        tpls_test = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs_short.csv'))
+        tpls_test = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs_short.csv'),
+                                         tz='utc')
 
         assert len(tpls) > 0
         assert len(tpls) == len(tpls)

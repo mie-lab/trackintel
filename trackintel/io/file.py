@@ -1,8 +1,39 @@
+import warnings
+
+import dateutil
 import dateutil.parser
 import geopandas as gpd
 import pandas as pd
+import pytz
 from shapely import wkt
 from shapely.geometry import Point
+
+
+def localize_timestamp(dt_series, pytz_tzinfo, col_name):
+    """
+    Helper function that adds timezone info to timestamp
+
+    Parameters
+    ----------
+    dt_series: pandas.Series
+        a pandas datetime series
+    pytz_tzinfo: str
+        pytz compatible timezone string. If none UTC will be assumed
+    col_name: str
+        Column name for informative warning message
+
+    Returns
+    -------
+    pd.Series
+        a timezone aware pandas datetime series
+
+    """
+    if pytz_tzinfo is None:
+        warnings.warn("Assuming UTC timezone for column {}".format(col_name))
+        pytz_tzinfo = 'utc'
+
+    timezone = pytz.timezone(pytz_tzinfo)
+    return dt_series.apply(pd.Timestamp, tz=timezone)
 
 
 def read_positionfixes_csv(*args, **kwargs):
@@ -15,6 +46,8 @@ def read_positionfixes_csv(*args, **kwargs):
     ----------
     columns : dict
         The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
+    tz : str
+        pytz compatible timezone string. If None UTC is assumed.
 
     Note that this function is primarily useful if data is available in a 
     longitude/latitude format. If your data already contains a WKT column, it
@@ -30,12 +63,25 @@ def read_positionfixes_csv(*args, **kwargs):
     >>> trackintel.read_positionfixes_csv('data.csv')
     >>> trackintel.read_positionfixes_csv('data.csv', columns={'time':'tracked_at', 'User':'user_id'})
     """
-    columns=kwargs.pop('columns',{})
+
+    columns = kwargs.pop('columns', {})
+    tz = kwargs.pop('tz', None)
+
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
     df['geom'] = list(zip(df.longitude, df.latitude))
     df['geom'] = df['geom'].apply(Point)
     df['tracked_at'] = df['tracked_at'].apply(dateutil.parser.parse)
+
+    # check and/or set timezone
+    for col in ['tracked_at']:
+        if not pd.api.types.is_datetime64tz_dtype(df[col]):
+            df[col] = localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
+        else:
+            # dateutil parser timezones are sometimes not compatible with pandas (e.g., in asserts)
+            tz = df[col].iloc[0].tzinfo.tzname(df[col].iloc[0])
+            df[col] = df[col].dt.tz_convert(tz)
+
     df = df.drop(['longitude', 'latitude'], axis=1)
     gdf = gpd.GeoDataFrame(df, geometry='geom')
     assert gdf.as_positionfixes
@@ -71,7 +117,9 @@ def read_triplegs_csv(*args, **kwargs):
     ----------
     columns : dict
         The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
-    
+    tz : str
+        pytz compatible timezone string. If None UTC is assumed.
+
     Returns
     -------
     GeoDataFrame
@@ -82,16 +130,28 @@ def read_triplegs_csv(*args, **kwargs):
     >>> trackintel.read_triplegs_csv('data.csv')
     >>> trackintel.read_triplegs_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
-    columns=kwargs.pop('columns',{})
+
+    columns = kwargs.pop('columns', {})
+    tz = kwargs.pop('tz', None)
+
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
     df['geom'] = df['geom'].apply(wkt.loads)
     df['started_at'] = df['started_at'].apply(dateutil.parser.parse)
     df['finished_at'] = df['finished_at'].apply(dateutil.parser.parse)
+
+    # check and/or set timezone
+    for col in ['started_at', 'finished_at']:
+        if not pd.api.types.is_datetime64tz_dtype(df[col]):
+            df[col] = localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
+        else:
+            # dateutil parser timezones are sometimes not compatible with pandas (e.g., in asserts)
+            tz = df[col].iloc[0].tzinfo.tzname(df[col].iloc[0])
+            df[col] = df[col].dt.tz_convert(tz)
+
     gdf = gpd.GeoDataFrame(df, geometry='geom')
     assert gdf.as_triplegs
     return gdf
-
 
 
 def write_triplegs_csv(triplegs, filename, *args, **kwargs):
@@ -106,6 +166,7 @@ def write_triplegs_csv(triplegs, filename, *args, **kwargs):
     filename : str
         The file to write to.
     """
+
     gdf = triplegs.copy()
     gdf[gdf.geometry.name] = triplegs.geometry.apply(wkt.dumps)
     gdf.to_csv(filename, index=True, *args, **kwargs)
@@ -121,6 +182,8 @@ def read_staypoints_csv(*args, **kwargs):
     ----------
     columns : dict
         The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
+    tz : str
+        pytz compatible timezone string. If None UTC is assumed.
 
     Returns
     -------
@@ -132,12 +195,25 @@ def read_staypoints_csv(*args, **kwargs):
     >>> trackintel.read_staypoints_csv('data.csv')
     >>> trackintel.read_staypoints_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
-    columns=kwargs.pop('columns',{})
+
+    columns = kwargs.pop('columns', {})
+    tz = kwargs.pop('tz', None)
+
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
     df['geom'] = df['geom'].apply(wkt.loads)
     df['started_at'] = df['started_at'].apply(dateutil.parser.parse)
     df['finished_at'] = df['finished_at'].apply(dateutil.parser.parse)
+
+    # check and/or set timezone
+    for col in ['started_at', 'finished_at']:
+        if not pd.api.types.is_datetime64tz_dtype(df[col]):
+            df[col] = localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
+        else:
+            # dateutil parser timezones are sometimes not compatible with pandas (e.g., in asserts)
+            tz = df[col].iloc[0].tzinfo.tzname(df[col].iloc[0])
+            df[col] = df[col].dt.tz_convert(tz)
+
     gdf = gpd.GeoDataFrame(df, geometry='geom')
     assert gdf.as_staypoints
     return gdf
@@ -182,7 +258,7 @@ def read_locations_csv(*args, **kwargs):
     >>> trackintel.read_locations_csv('data.csv')
     >>> trackintel.read_locations_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
-    columns=kwargs.pop('columns',{})
+    columns = kwargs.pop('columns', {})
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
     df['center'] = df['center'].apply(wkt.loads)
@@ -221,6 +297,8 @@ def read_trips_csv(*args, **kwargs):
     ----------
     columns : dict
         The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
+    tz : str
+        pytz compatible timezone string. If None UTC is assumed.
 
     Returns
     -------
@@ -233,14 +311,25 @@ def read_trips_csv(*args, **kwargs):
     >>> trackintel.read_trips_csv('data.csv')
     >>> trackintel.read_trips_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
-    columns=kwargs.pop('columns',{})
+
+    columns = kwargs.pop('columns', {})
+    tz = kwargs.pop('tz', None)
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
     df['started_at'] = df['started_at'].apply(dateutil.parser.parse)
     df['finished_at'] = df['finished_at'].apply(dateutil.parser.parse)
+
+    # check and/or set timezone
+    for col in ['started_at', 'finished_at']:
+        if not pd.api.types.is_datetime64tz_dtype(df[col]):
+            df[col] = localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
+        else:
+            # dateutil parser timezones are sometimes not compatible with pandas (e.g., in asserts)
+            tz = df[col].iloc[0].tzinfo.tzname(df[col].iloc[0])
+            df[col] = df[col].dt.tz_convert(tz)
+
     assert df.as_trips
     return df
-
 
 
 def write_trips_csv(trips, filename, *args, **kwargs):
@@ -263,12 +352,26 @@ def read_tours_csv(*args, **kwargs):
     validates that the ingested data conforms to the trackintel understanding 
     of tours (see :doc:`/modules/model`).
 
+    columns : dict
+        The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
+    tz : str
+        pytz compatible timezone string. If None UTC is assumed.
+
     Returns
     -------
     DataFrame
         A DataFrame containing the tours.
     """
     # TODO: implement the reading function for tours
+
+    # # check and/or set timezone
+    # for col in ['started_at', 'finished_at']:
+    #     if not pd.api.types.is_datetime64tz_dtype(df[col]):
+    #         df[col] = localize_timestamp(dt_series=df[col], pytz_tzinfo=kwargs.pop('tz', None), col_name=col)
+    #         else:
+    #             # dateutil parser timezones are sometimes not compatible with pandas (e.g., in asserts)
+    #             tz = df[col].iloc[0].tzinfo.tzname(df[col].iloc[0])
+    #             df[col] = df[col].dt.tz_convert(tz)
     pass
 
 
