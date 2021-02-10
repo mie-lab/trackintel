@@ -53,12 +53,10 @@ class TripsAccessor(object):
                                  % (', '.join(TripsAccessor.required_columns), ', '.join(obj.columns)))
 
         # check timestamp dtypes
-        assert pd.api.types.is_datetime64tz_dtype(obj['started_at']), "dtype of started_at is {} but has to be " \
-                                                                      "datetime64 and timezone aware".format(
-            obj['started_at'].dtype)
-        assert pd.api.types.is_datetime64tz_dtype(obj['finished_at']), "dtype of finished_at is {} but has to " \
-                                                                       "be datetime64 and timezone aware".format(
-            obj['started_at'].dtype)
+        assert pd.api.types.is_datetime64tz_dtype(obj['started_at']), \
+            "dtype of started_at is {} but has to be datetime64 and timezone aware".format(obj['started_at'].dtype)
+        assert pd.api.types.is_datetime64tz_dtype(obj['finished_at']), \
+            "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj['finished_at'].dtype)
 
     def plot(self, *args, **kwargs):
         """Plots this collection of trips. 

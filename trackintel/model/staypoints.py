@@ -51,12 +51,10 @@ class StaypointsAccessor(object):
             raise AttributeError("The geometry must be a Point (only first checked).")
 
         # check timestamp dtypes
-        assert pd.api.types.is_datetime64tz_dtype(obj['started_at']), "dtype of started_at is {} but has to be " \
-                                                                      "tz aware datetime64".format(
-            obj['started_at'].dtype)
-        assert pd.api.types.is_datetime64tz_dtype(obj['finished_at']), "dtype of finished_at is {} but has to " \
-                                                                       "be tz aware datetime64".format(
-            obj['finished_at'].dtype)
+        assert pd.api.types.is_datetime64tz_dtype(obj['started_at']), \
+            "dtype of started_at is {} but has to be tz aware datetime64".format(obj['started_at'].dtype)
+        assert pd.api.types.is_datetime64tz_dtype(obj['finished_at']), \
+            "dtype of finished_at is {} but has to be tz aware datetime64".format(obj['finished_at'].dtype)
 
     @property
     def center(self):

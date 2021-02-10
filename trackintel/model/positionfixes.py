@@ -53,9 +53,8 @@ class PositionfixesAccessor(object):
             raise AttributeError("The geometry must be a Point (only first checked).")
 
         # check timestamp dtypes
-        assert pd.api.types.is_datetime64tz_dtype(obj['tracked_at']), "dtype of tracked_at is {} but has to be " \
-                                                                      "datetime64 and timezone aware".format(
-            obj['tracked_at'].dtype)
+        assert pd.api.types.is_datetime64tz_dtype(obj['tracked_at']), \
+            "dtype of tracked_at is {} but has to be datetime64 and timezone aware".format(obj['tracked_at'].dtype)
 
     @property
     def center(self):
