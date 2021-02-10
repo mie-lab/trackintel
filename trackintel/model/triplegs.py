@@ -82,3 +82,9 @@ class TriplegsAccessor(object):
         """Filter triplegs with a geo extent.
         See :func:`trackintel.preprocessing.filter.spatial_filter`."""
         return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
+
+    def predict_transport_mode(self, *args, **kwargs):
+        """Predict/impute the transport mode with which each tripleg was likely covered.
+        See :func:`trackintel.analysis.transport_mode_identification.predict_transport_mode`.
+        """
+        return ti.analysis.transport_mode_identification.predict_transport_mode(self._obj, *args, **kwargs)
