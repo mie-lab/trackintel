@@ -166,9 +166,9 @@ def write_triplegs_csv(triplegs, filename, *args, **kwargs):
     filename : str
         The file to write to.
     """
-
-    gdf = triplegs.copy()
-    gdf[gdf.geometry.name] = triplegs.geometry.apply(wkt.dumps)
+    geo_col_name = triplegs.geometry.name
+    gdf = pd.DataFrame(triplegs, copy=True)
+    gdf[geo_col_name] = triplegs.geometry.apply(wkt.dumps)
     gdf.to_csv(filename, index=True, *args, **kwargs)
 
 
@@ -231,8 +231,9 @@ def write_staypoints_csv(staypoints, filename, *args, **kwargs):
     filename : str
         The file to write to.
     """
-    gdf = staypoints.copy()
-    gdf[gdf.geometry.name] = gdf.geometry.apply(wkt.dumps)
+    geo_col_name = staypoints.geometry.name
+    gdf = pd.DataFrame(staypoints, copy=True)
+    gdf[geo_col_name] = staypoints.geometry.apply(wkt.dumps)
     gdf.to_csv(filename, index=True, *args, **kwargs)
 
 
@@ -281,7 +282,7 @@ def write_locations_csv(locations, filename, *args, **kwargs):
     filename : str
         The file to write to.
     """
-    gdf = locations.copy()
+    gdf = pd.DataFrame(locations, copy=True)
     gdf['center'] = locations['center'].apply(wkt.dumps)
     if 'extent' in gdf.columns:
         gdf['extent'] = locations['extent'].apply(wkt.dumps)
