@@ -37,7 +37,7 @@ def predict_transport_mode_simple_coarse(triplegs):
     """
     triplegs = triplegs.copy()
     
-    wgs = ti.geogr.check_crs(triplegs)
+    wgs = ti.geogr.distances.check_crs(triplegs)
 
 
     def identify_mode(tripleg,wgs):
