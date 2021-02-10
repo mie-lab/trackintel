@@ -6,35 +6,29 @@
 [![Documentation Status](https://readthedocs.org/projects/trackintel/badge/?version=latest)](https://trackintel.readthedocs.io/en/latest/?badge=latest)
 [![codecov.io](https://codecov.io/gh/mie-lab/trackintel/coverage.svg?branch=master)](https://codecov.io/gh/mie-lab/trackintel)
           
-Focusing on human mobility data, *trackintel* provides functionalities for data quality enhancement, integrating data from various sources, performing quantitative analysis and mining tasks, and visualizing the data and/or analysis results.
-In addition to these core functionalities, packages are provided for user mobility profiling and trajectory-based learning analytics.
+*trackintel* is a library for the analysis of spatio-temporal tracking data with a focus on human mobility. The core of *trackintel* is the hierachical data model for movement data that is used in transport planning [[1]](#1). We provide functionalities for the full life-cycle of human mobility data analysis: import and export of tracking data of different types (e.g, trackpoints, check-ins, trajectories, etc.), preprocessing, data quality assessment, semantic enrichment, quantitative analysis and mining tasks, and visualization of data and results.
+Trackintel is based on [Pandas](https://pandas.pydata.org/) and [GeoPandas](https://geopandas.org/#)
 
 You can find the documentation on the [trackintel documentation page](https://trackintel.readthedocs.io/en/latest).
 
-## Target Users and Assumptions
+## Data model
 
-*trackintel* is intended for use mainly by researchers with:
+An overview of the data model of *trackintel*:
+* **positionfixes** (raw tracking points, e.g., GPS)
+* **staypoints** (locations where a user spent time without moving, e.g., aggregations of positionfixes or check-ins)
+* **activities** (staypoints with a purpose and a semantic label, e.g., meeting to drink a coffee as opposed to waiting for the bus)
+* **locations** (important places that are visited more than once)
+* **triplegs** (or stages) (continuous movement without changing mode, vehicle or stopping for too long, e.g., a taxi trip between pick-up and drop-off)
+* **trips** (The sequence of all triplegs between two consecutive activities)
+* **tours** (A collection of sequential trips that return to the same location)
 
-* Programming experience in Python
-* Proficiency in movement data mining and analysis
-
-These assumptions concern your data:
-
-* Movement data exists in csv, (geo)json, gpx or PostGIS format
-* Movement data consists of points with x,y-coordinates, a time stamp, a user ID, and an optional accuracy
-* One of the following transportation modes was used at any time: car, walking, bike, bus, tram, train, plane, ship, e-car, e-bike
-* The tracking data can be reasonably segmented into 
-  * positionfixes (raw tracking points)
-  * triplegs (or stages) (aggregated tracking points based on the transport mode)
-  * trips (aggregated activities based on the visited destination / staypoint)
-  * tours (aggregated trips starting / ending at the same location / staypoint)
+You can enter the trackintel framework if your data corresponds to any of the above mentioned movement data representation. Here are some of the functionalities that we provide: 
+* **Import**: Import from the follwoing data formats is supported `geopandas dataframes` (recommended), `csv files` in a specified format, `postGIS` databases, and we have specific dataset readers for popular public datasets (e.g, geolife).
+* **Aggregation**: We provide functionalities to aggregate into the next level of our data model. E.g., positionfixes->staypoints; positionfixes->triplegs; staypoints; staypoints->locations; staypoints+triplegs->trips; trips->tours
+* **Enrichment**: Activity semantics for staypoints; Mode of transport semantics for triplegs; High level semantics for locations
 
 ## Installation and Usage
-
-This is not on [pypi.org](https://pypi.org/) yet, so to install you have to `git clone` the repository and install it with `pip install .` or `pipenv install -e .`.
-If you choose the second approach and you are on Windows, you might have to install individual wheels (e.g., from https://www.lfd.uci.edu/~gohlke/pythonlibs).
-For this, activate the environment using `pipenv shell` and install everything using `pip install ...` (in particular: `GDAL`, `numpy`, `sklean`, `Rtree`, `fiona` and `osmnx`).
-You can quit this shell at any time using `exit`.
+*trackintel* is on [pypi.org](https://pypi.org/project/trackintel/), you can install it with `pip install trackintel` as long as `GeoPandas` is already installed. 
 
 You should then be able to run the examples in the `examples` folder or import trackintel using:
 ```{python}
@@ -42,7 +36,6 @@ import trackintel
 ```
 
 ## Development
-
 You can install *trackintel* locally using `pip install .`.
 For quick testing, use `trackintel.print_version()`.
 
@@ -79,3 +72,8 @@ Adding [Coveralls](https://coveralls.io) is an open todo.
 
 trackintel is primarily maintained by the Mobility Information Engineering Lab at ETH Zurich ([mie-lab.ethz.ch](http://mie-lab.ethz.ch)).
 If you want to contribute, send a pull request and put yourself in the `AUTHORS.md` file.
+
+## References
+<a id="1">[1]</a>
+[Axhausen, K. W. (2007). Definition Of Movement and Activity For Transport Modelling. In Handbook of Transport Modelling. Emerald Group Publishing Limited.](
+https://www.researchgate.net/publication/251791517_Definition_of_movement_and_activity_for_transport_modelling)
