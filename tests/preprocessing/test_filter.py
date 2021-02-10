@@ -1,5 +1,5 @@
-import pytest
 import os
+
 import geopandas as gpd
 
 import trackintel as ti
@@ -9,7 +9,7 @@ class TestSpatial_filter():
     
     def test_filter_staypoints(self):
         # read staypoints and area file
-        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'))
+        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'), tz='utc')
         extent = gpd.read_file(os.path.join('tests', 'data', 'area', 'tsinghua.geojson'))
         
         # the projection needs to be defined: WGS84
@@ -29,7 +29,7 @@ class TestSpatial_filter():
         
     def test_filter_triplegs(self):
         # read triplegs and area file
-        tl = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv'))
+        tl = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv'), tz='utc')
         extent = gpd.read_file(os.path.join('tests', 'data', 'area', 'tsinghua.geojson'))
         
         # the projection needs to be defined: WGS84
@@ -51,7 +51,7 @@ class TestSpatial_filter():
     
     def test_filter_locations(self):
         # read staypoints and area file
-        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'))
+        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'), tz='utc')
         extent = gpd.read_file(os.path.join('tests', 'data', 'area', 'tsinghua.geojson'))
         
         # cluster staypoints to locations

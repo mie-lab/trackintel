@@ -23,6 +23,8 @@ class PositionfixesAccessor(object):
     In GPS based movement data analysis `Positionfixes` are the smallest unit of tracking and
     represent timestamped locations.
 
+    ``tracked_at`` is a timezone aware pandas datetime object.
+
     Examples
     --------
     >>> df.as_positionfixes.generate_staypoints()
@@ -49,6 +51,10 @@ class PositionfixesAccessor(object):
 
         if obj.geometry.iloc[0].geom_type != 'Point':
             raise AttributeError("The geometry must be a Point (only first checked).")
+
+        # check timestamp dtypes
+        assert pd.api.types.is_datetime64tz_dtype(obj['tracked_at']), \
+            "dtype of tracked_at is {} but has to be datetime64 and timezone aware".format(obj['tracked_at'].dtype)
 
     @property
     def center(self):
@@ -94,12 +100,12 @@ class PositionfixesAccessor(object):
         ti.io.file.write_positionfixes_csv(self._obj, filename, *args, **kwargs)
 
     def to_postgis(self, conn_string, table_name, schema=None,
-            sql_chunksize=None, if_exists='replace'):
+                   sql_chunksize=None, if_exists='replace'):
         """Stores this collection of positionfixes to PostGIS.
         See :func:`trackintel.io.postgis.write_positionfixes_postgis`."""
-        ti.io.postgis.write_positionfixes_postgis(self._obj, conn_string, table_name, 
-            schema, sql_chunksize, if_exists)
-        
+        ti.io.postgis.write_positionfixes_postgis(self._obj, conn_string, table_name,
+                                                  schema, sql_chunksize, if_exists)
+
     def similarity_matrix(self, method, field='tripleg_id', trsh=None, eps=None, dist=False, **kwargs):
         """Calculates Similarity (/distance) matrix. See: func: 'trackintel.similarity.detection.similarity_matrix' """
         return ti.similarity.similarity_matrix(self._obj, method, field, trsh, eps, dist, **kwargs)

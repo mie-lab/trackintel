@@ -24,6 +24,8 @@ class TriplegsAccessor(object):
     -------
     A `tripleg` (also called `stage`) is defined as continuous movement without changing the mode of transport.
 
+    ``started_at`` and ``finished_at`` are timezone aware pandas datetime objects.
+
     Examples
     --------
     >>> df.as_triplegs.plot()
@@ -49,6 +51,12 @@ class TriplegsAccessor(object):
         if obj.geometry.iloc[0].geom_type != 'LineString':
             raise AttributeError("The geometry must be a LineString (only first checked).")
 
+        # check timestamp dtypes
+        assert pd.api.types.is_datetime64tz_dtype(obj['started_at']), \
+            "dtype of started_at is {} but has to be datetime64 and timezone aware".format(obj['started_at'].dtype)
+        assert pd.api.types.is_datetime64tz_dtype(obj['finished_at']), \
+            "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj['finished_at'].dtype)
+
     def plot(self, *args, **kwargs):
         """Plots this collection of triplegs. 
         See :func:`trackintel.visualization.triplegs.plot_triplegs`."""
@@ -69,7 +77,7 @@ class TriplegsAccessor(object):
         See :func:`trackintel.geogr.distances.calculate_distance_matrix`.
         """
         return ti.geogr.distances.calculate_distance_matrix(self._obj, *args, **kwargs)
-    
+
     def spatial_filter(self, *args, **kwargs):
         """Filter triplegs with a geo extent.
         See :func:`trackintel.preprocessing.filter.spatial_filter`."""
