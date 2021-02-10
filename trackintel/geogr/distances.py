@@ -8,6 +8,7 @@ from sklearn.metrics import pairwise_distances
 
 from trackintel.geogr.point_distances import haversine_dist
 from trackintel.geogr.trajectory_distances import dtw, frechet_dist
+import warnings
 
 
 def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kwds):
@@ -162,3 +163,16 @@ def meters_to_decimal_degrees(meters, latitude):
         An approximation of a distance (given in meters) in degrees.
     """
     return meters / (111.32 * 1000.0 * cos(latitude * (pi / 180.0)))
+
+
+def check_crs(data):
+    wgs = False
+    if data.crs == 4326:
+        wgs=True
+        warnings.warn('Your data is in WGS84, for length calculation the haversine distance is used')
+    elif data.crs == None:
+        wgs=True
+        warnings.warn('Your data is not projected. WGS84 is assumed and for length calculation the haversine distance is used')
+    elif data.crs.is_geographic:
+        raise UserWarning('Your data is in a geographic coordinate system, length calculation fails')
+    return wgs

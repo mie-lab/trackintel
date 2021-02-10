@@ -37,17 +37,8 @@ def predict_transport_mode_simple_coarse(triplegs):
     """
     triplegs = triplegs.copy()
     
-    wgs = False
-    if triplegs.crs == 4326:
-        wgs=True
-        warnings.warn('Your data is in WGS84, for length calculation the haversine distance is used')
-    elif triplegs.crs == None:
-        wgs=True
-        warnings.warn('Your data is not projected. WGS84 is assumed and for length calculation the haversine distance is used')
-    elif triplegs.crs.is_geographic:
-        raise UserWarning('Your data is in a geographic coordinate system, length calculation fails')
+    wgs = ti.geogr.check_crs(triplegs)
 
-        
 
     def identify_mode(tripleg,wgs):
         """Identifies the mode based on the (overall) tripleg speed."""
