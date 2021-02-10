@@ -1,30 +1,33 @@
 # The trackintel Framework
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/mie-lab/trackintel/master?filepath=%2Fexamples%2Fexample_geolife%2FTrackintel_introduction.ipynb)
+
 [![PyPI version](https://badge.fury.io/py/trackintel.svg)](https://badge.fury.io/py/trackintel)
 [![Build Status](https://travis-ci.org/mie-lab/trackintel.svg?branch=master)](https://travis-ci.org/mie-lab/trackintel)
 [![Documentation Status](https://readthedocs.org/projects/trackintel/badge/?version=latest)](https://trackintel.readthedocs.io/en/latest/?badge=latest)
 [![codecov.io](https://codecov.io/gh/mie-lab/trackintel/coverage.svg?branch=master)](https://codecov.io/gh/mie-lab/trackintel)
           
-*trackintel* is a library for the analysis of spatio-temporal tracking data with a focus on human mobility. The core of *trackintel* is the hierachical data model for movement data that is used in transport planning [[1]](#1). We provide functionalities for the full life-cycle of human mobility data analysis: import and export of tracking data of different types (e.g, trackpoints, check-ins, trajectories, etc.), preprocessing, data quality assessment, semantic enrichment, quantitative analysis and mining tasks, and visualization of data and results.
+*trackintel* is a library for the analysis of spatio-temporal tracking data with a focus on human mobility. The core of *trackintel* is the hierachical data model for movement data that is used in transport planning [[1]](#1). We provide functionalities for the full life-cycle of human mobility data analysis: import and export of tracking data of different types (e.g, trackpoints, check-ins, trajectories), preprocessing, data quality assessment, semantic enrichment, quantitative analysis and mining tasks, and visualization of data and results.
 Trackintel is based on [Pandas](https://pandas.pydata.org/) and [GeoPandas](https://geopandas.org/#)
 
 You can find the documentation on the [trackintel documentation page](https://trackintel.readthedocs.io/en/latest).
 
+Try *trackintel* online in a MyBinder notebook: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/mie-lab/trackintel/master?filepath=%2Fexamples%2Fexample_geolife%2FTrackintel_introduction.ipynb)
+
 ## Data model
 
 An overview of the data model of *trackintel*:
-* **positionfixes** (raw tracking points, e.g., GPS)
+* **positionfixes** (raw tracking points, e.g., GPS recordings or check-ins)
 * **staypoints** (locations where a user spent time without moving, e.g., aggregations of positionfixes or check-ins)
 * **activities** (staypoints with a purpose and a semantic label, e.g., meeting to drink a coffee as opposed to waiting for the bus)
-* **locations** (important places that are visited more than once)
+* **locations** (important places that are visited more than once, e.g., home or work location)
 * **triplegs** (or stages) (continuous movement without changing mode, vehicle or stopping for too long, e.g., a taxi trip between pick-up and drop-off)
 * **trips** (The sequence of all triplegs between two consecutive activities)
 * **tours** (A collection of sequential trips that return to the same location)
 
 You can enter the trackintel framework if your data corresponds to any of the above mentioned movement data representation. Here are some of the functionalities that we provide: 
-* **Import**: Import from the follwoing data formats is supported `geopandas dataframes` (recommended), `csv files` in a specified format, `postGIS` databases, and we have specific dataset readers for popular public datasets (e.g, geolife).
-* **Aggregation**: We provide functionalities to aggregate into the next level of our data model. E.g., positionfixes->staypoints; positionfixes->triplegs; staypoints; staypoints->locations; staypoints+triplegs->trips; trips->tours
+
+* **Import**: Import from the follwoing data formats is supported: `geopandas dataframes` (recommended), `csv files` in a specified format, `postGIS` databases. We also provide specific dataset readers for popular public datasets (e.g, geolife).
+* **Aggregation**: We provide functionalities to aggregate into the next level of our data model. E.g., positionfixes->staypoints; positionfixes->triplegs; staypoints->locations; staypoints+triplegs->trips; trips->tours
 * **Enrichment**: Activity semantics for staypoints; Mode of transport semantics for triplegs; High level semantics for locations
 
 ## Installation and Usage
@@ -42,14 +45,14 @@ For quick testing, use `trackintel.print_version()`.
 Testing is done using [pytest](https://docs.pytest.org/en/latest).
 Simply run the tests using `pytest` in the top-level trackintel folder.
 In case you use `pipenv`, install *pytest* first (`pip install pytest`), then run *pytest* using this version: `python -m pytest`.
-The use of [fixtures](https://pypi.org/project/fixtures/) for data generation (e.g., trips and trackpoints) is still an open todo.
+The use of [fixtures](https://pypi.org/project/fixtures/) for data generation (e.g., trips and trackpoints) is stil an open todo.
 As for now, there are some smaller datasets in the `tests` folder.
 
 Versions use [semantic numbering](https://semver.org/).
 Commits follow the standard of [Conventional Commits](https://www.conventionalcommits.org).
 You can generate them easily using [Commitizen](https://github.com/commitizen/cz-cli).
 
-You can find the development roadmap under `ROADMAP.md`.
+You can find the development roadmap under `ROADMAP.md` and coding conventions under `Contributing.md`.
 
 ### Documentation
 
