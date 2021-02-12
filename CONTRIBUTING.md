@@ -35,7 +35,7 @@ Before you release a new version you should check/modify the following files:
 
 - trackintel/__ version__.py -> update the version number
 
-- conf.py -> update the version number
+- docs/conf.py -> update the version number
 
 - check setup.py if new dependencies need greater python version
 

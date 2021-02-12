@@ -47,7 +47,6 @@ autodoc_mock_imports = [
   'sklearn',
   'sqlalchemy',
   'geoalchemy2',
-  'simplification',
 ]
 
 
@@ -67,7 +66,7 @@ author = 'Dominik Bucher, Henry Martin, Ye Hong'
 # The full version, including alpha/beta/rc tags
 #release = version
 
-version = '0.2.0'
+version = '0.5.0'
 release = version
 
 
