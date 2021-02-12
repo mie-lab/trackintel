@@ -34,17 +34,17 @@ def predict_transport_mode(triplegs, method='simple-coarse', **kwargs):
 
 def predict_transport_mode_simple_coarse(triplegs, categories):
     """
-    Predicts a transport mode out of three coarse classes. Implements a simple speed- \
-    based heuristic (over the whole tripleg)\
-    As such, it is very fast, but also very simple and coarse.
+    Predicts a transport mode out of three coarse classes. Implements a simple speed based heuristic
+     (over the whole tripleg). As such, it is very fast, but also very simple and coarse.
 
     Parameters
     ----------
     triplegs : trackintel triplegs GeoDataFrame
         The triplegs for the transport mode prediction.
     categories : dict, optional
-        The categories for the speed classification {upper_boundary:'category_name'}.\
-            The default is {15/3.6: 'slow_mobility', 100/3.6: 'motorized_mobility', np.inf: 'fast_mobility'}.
+        The categories for the speed classification {upper_boundary:'category_name'}. The unit for the upper boundary
+        is m/s.
+        The default is {15/3.6: 'slow_mobility', 100/3.6: 'motorized_mobility', np.inf: 'fast_mobility'}.
 
     Raises
     ------
@@ -71,8 +71,8 @@ def predict_transport_mode_simple_coarse(triplegs, categories):
 
     elif triplegs.crs is None:
         wgs = True
-        warnings.warn('Your data is not projected. WGS84 is assumed and for length \
-calculation the haversine distance is used')
+        warnings.warn('Your data is not projected. WGS84 is assumed and for length calculation the haversine '
+                      'distance is used')
 
     elif triplegs.crs.is_geographic:
         raise UserWarning('Your data is in a geographic coordinate system, length calculation fails')
