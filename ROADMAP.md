@@ -31,10 +31,8 @@ Steps until we get to version 1.0.0.
 
 ### v0.5.0
 
-* Simple outlier filtering for *triplegs*
 * :heavy_check_mark: Augment model of *triplegs* and *staypoints* in such a way that they can
   hold references to *trips* and *locations*.
-
 
 ### v0.6.0
 * :heavy_check_mark: Support flexible geometry columns [Issue15](https://github.com/mie-lab/trackintel/issues/15)
@@ -79,6 +77,7 @@ Preprocessing
 * Short walks to/from cars/buses/etc.: These are often not recognized by the tracking applications.
 * Map match *triplegs* (based on transport mode identification). 
 * Imputation of trivial gaps in tracking data (*triplegs* and *staypoints*).
+* Simple outlier filtering for *triplegs*
 
 Augment tracking data:
 * Better transport mode prediction based on movement data (speed, associated features from accelerometer data, etc.) as well as by aligning them with context data such as from OpenStreetMap or GTFS departure schedules. 
