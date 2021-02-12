@@ -43,12 +43,12 @@ Steps until we get to version 1.0.0.
 
 ### v0.7.0
 
-* Simple transport mode prediction. This functionality is based on properties of the movement data only. [PR65][https://github.com/mie-lab/trackintel/pull/65]
+* :heavy_check_mark: Simple transport mode prediction. This functionality is based on properties of the movement data only.
 * :heavy_check_mark: Simple activity inference. This functionality is based on properties of the movement data only and should include {Home, Work, Other}.
 
 ### v0.8.0
 
-* Data quality assessments: statistical measures and visualization (e.g., of tracking frequency, both spatial and temporal).
+* Data quality assessments: statistical measures of temporal tracking frequency.
 
 ### v0.9.0
 
