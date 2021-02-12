@@ -8,6 +8,7 @@ from sklearn.metrics import pairwise_distances
 
 from trackintel.geogr.point_distances import haversine_dist
 from trackintel.geogr.trajectory_distances import dtw, frechet_dist
+import warnings
 
 
 def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kwds):
