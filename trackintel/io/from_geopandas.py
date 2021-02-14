@@ -40,9 +40,15 @@ def positionfixes_from_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom
     for col in ['tracked_at']:
         if not pd.api.types.is_datetime64tz_dtype(pfs[col]):
             pfs[col] = localize_timestamp(dt_series=pfs[col], pytz_tzinfo=tz, col_name=col)
-
+            
+    # set id as index
+    if "id" in pfs.columns:
+        pfs.set_index("id", inplace=True)
+    else:
+        pfs.index = list(pfs.index)
+        pfs.index.name = "id"
+        
     assert pfs.as_positionfixes
-
     return pfs
 
 

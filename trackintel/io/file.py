@@ -1,5 +1,6 @@
 import warnings
 
+import numpy as np
 import dateutil
 import dateutil.parser
 import geopandas as gpd
@@ -81,6 +82,12 @@ def read_positionfixes_csv(*args, **kwargs):
             # dateutil parser timezones are sometimes not compatible with pandas (e.g., in asserts)
             tz = df[col].iloc[0].tzinfo.tzname(df[col].iloc[0])
             df[col] = df[col].dt.tz_convert(tz)
+    # set id as index
+    if "id" in df.columns:
+        df.set_index("id", inplace=True)
+    else:
+        df.index = list(df.index)
+        df.index.name = "id"
 
     df = df.drop(['longitude', 'latitude'], axis=1)
     gdf = gpd.GeoDataFrame(df, geometry='geom')
