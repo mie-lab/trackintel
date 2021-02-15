@@ -78,7 +78,8 @@ class TestGenerate_locations():
         stps = stps.head(1)
         stps = stps.append(stps, ignore_index=True)
         # assign a different user_id to the second row
-        stps.iloc[1, 5] = 1
+        stps.iloc[1, 4] = 1
+        
         # duplicate for a certain number 
         stps = stps.append([stps]*5,ignore_index=True)
         _, locs_ds = stps.as_staypoints.generate_locations(method='dbscan', epsilon=10, 
@@ -87,8 +88,8 @@ class TestGenerate_locations():
         _, locs_us = stps.as_staypoints.generate_locations(method='dbscan', epsilon=10, 
                                                           num_samples=0, distance_matrix_metric='haversine',
                                                           agg_level='user')
-        loc_ds_num = locs_ds['id'].unique().shape[0]
-        loc_us_num = locs_us['id'].unique().shape[0]
+        loc_ds_num = len(locs_ds['id'].unique())
+        loc_us_num = len(locs_us['id'].unique())
         assert loc_ds_num == 1, "Considering all staypoints at once, there should be only one location"
         assert loc_us_num == 2, "Considering user staypoints separately, there should be two locations"
     

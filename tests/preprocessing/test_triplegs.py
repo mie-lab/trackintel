@@ -43,7 +43,7 @@ class TestGenerate_trips():
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 
         # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
-        stps = stps.set_index('id')
+        # stps = stps.set_index('id')
         tpls = tpls.set_index('id')
 
         # generate trips and a joint staypoint/triplegs dataframe
@@ -150,7 +150,7 @@ class TestGenerate_trips():
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 
         # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
-        stps = stps.set_index('id')
+        # stps = stps.set_index('id')
         tpls = tpls.set_index('id')
 
         # generate trips and a joint staypoint/triplegs dataframe

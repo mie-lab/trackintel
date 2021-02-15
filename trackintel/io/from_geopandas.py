@@ -94,9 +94,15 @@ def staypoints_from_gpd(gdf, started_at='started_at', finished_at='finished_at',
     for col in ['started_at', 'finished_at']:
         if not pd.api.types.is_datetime64tz_dtype(stp[col]):
             stp[col] = localize_timestamp(dt_series=stp[col], pytz_tzinfo=tz, col_name=col)
-
+            
+    # set id as index
+    if "id" in stp.columns:
+        stp.set_index("id", inplace=True)
+    else:
+        stp.index = list(stp.index)
+        stp.index.name = "id"
+        
     assert stp.as_staypoints
-
     return stp
 
 
