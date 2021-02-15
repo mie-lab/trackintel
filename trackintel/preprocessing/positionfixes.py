@@ -36,7 +36,7 @@ def generate_staypoints(positionfixes,
         stay within an area to consider it as a staypoint.
 
     dist_func : function, defaut haversine_dist
-        A function that expects (lon_1, lat_1, lon_2, lat_2) and computes a distance in meters.
+        The distance matrix used by the applied method. Possible metrics are: {'haversine_dist'}
         
     epsilon : float, default 100
         The epsilon for the 'dbscan' method. Units depend on the dist_func parameter.
