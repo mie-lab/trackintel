@@ -15,11 +15,11 @@ def generate_staypoints(positionfixes,
                         dist_func=haversine_dist, 
                         epsilon=100,
                         num_samples=1):
-    """Generates staypoints from positionfixes.
-
+    """
+    Generate staypoints from positionfixes.
+    
     Parameters
     ----------
-    
     positionfixes : GeoDataFrame
         The positionfixes have to follow the standard definition for positionfixes DataFrames.
 
@@ -147,9 +147,11 @@ def generate_staypoints(positionfixes,
 
 
 def generate_triplegs(positionfixes, staypoints=None, *args, **kwargs):
-    """Generates triplegs from positionfixes. A tripleg is (for now) defined as anything
-    that happens between two consecutive staypoints.
-
+    """
+    Generate triplegs from positionfixes.
+    
+    A tripleg is (for now) defined as anything that happens between two consecutive staypoints.
+    
     **Attention**: This function requires either a column ``staypoint_id`` on the 
     positionfixes or passing some staypoints that correspond to the positionfixes! 
     This means you usually should call ``extract_staypoints()`` first.

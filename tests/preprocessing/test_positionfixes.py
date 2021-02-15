@@ -32,10 +32,10 @@ class TestGenerate_staypoints():
         assert pfs['user_id'].dtype == spts['user_id'].dtype
         # assert pfs['staypoint_id'].dtype == spts['id'].dtype
         
-    def test_generate_staypoints_groupby(self):
+    def test_generate_staypoints_groupby_sliding(self):
+        """Test the 'sliding' result obtained using user_id for loop (previous) with groupby.apply (current)."""
         pfs_ori = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';',  tz='utc')
         
-        ### sliding method
         # stps detection using groupby
         pfs_groupby, spts_groupby = pfs_ori.as_positionfixes.generate_staypoints(method='sliding', 
                                                                                  dist_threshold=25, 
@@ -49,11 +49,15 @@ class TestGenerate_staypoints():
         pd.testing.assert_frame_equal(spts_groupby, spts_for, check_dtype=False)
         pd.testing.assert_frame_equal(pfs_groupby, pfs_for, check_dtype=False)
         
-        ### dbscan method
+    def test_generate_staypoints_groupby_dbscan(self):
+        """Test the 'dbscan' result obtained using user_id for loop (previous) with groupby.apply (current)."""
+        pfs_ori = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';',  tz='utc')
+        
         # stps detection using groupby
         pfs_groupby, spts_groupby = pfs_ori.as_positionfixes.generate_staypoints(method='dbscan')
         # stps detection using for loop
         pfs_for, spts_for = _generate_staypoints_original(pfs_ori, method='dbscan')
+        
         pd.testing.assert_frame_equal(spts_groupby, spts_for, check_dtype=False)
         pd.testing.assert_frame_equal(pfs_groupby, pfs_for, check_dtype=False)
         
@@ -129,7 +133,11 @@ class TestGenerate_triplegs():
 def _generate_staypoints_original(positionfixes, method='sliding',
                                   dist_threshold=50, time_threshold= 300, epsilon=100,
                                   dist_func=haversine_dist, num_samples=1):
+    """
+    Original function using 'user_id' for-loop to generate staypoints based on pfs.
     
+    Used for comparing with the current groupby.apply() method.
+    """
     # copy the original pfs for adding 'staypoint_id' column
     ret_pfs = positionfixes.copy()
     ret_pfs.sort_values(by='user_id', inplace=True)
