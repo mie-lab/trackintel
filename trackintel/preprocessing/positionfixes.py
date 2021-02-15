@@ -8,9 +8,13 @@ from math import radians
 from trackintel.geogr.distances import haversine_dist
 
 
-def generate_staypoints(positionfixes, method='sliding',
-                        dist_threshold=50, time_threshold= 300, epsilon=100,
-                        dist_func=haversine_dist, num_samples=1):
+def generate_staypoints(positionfixes, 
+                        method='sliding',
+                        dist_threshold=50, 
+                        time_threshold= 300, 
+                        dist_func=haversine_dist, 
+                        epsilon=100,
+                        num_samples=1):
     """Generates staypoints from positionfixes.
 
     Parameters
@@ -25,19 +29,20 @@ def generate_staypoints(positionfixes, method='sliding',
 
     dist_threshold : float, default 50
         The distance threshold for the 'sliding' method, i.e., how far someone has to travel to
-        generate a new staypoint.
+        generate a new staypoint. Units depend on the dist_func parameter.
 
     time_threshold : float, default 300 (seconds)
         The time threshold for the 'sliding' method in seconds, i.e., how long someone has to 
         stay within an area to consider it as a staypoint.
 
-    epsilon : float, default 100
-        The epsilon for the 'dbscan' method.
-
     dist_func : function, defaut haversine_dist
         A function that expects (lon_1, lat_1, lon_2, lat_2) and computes a distance in meters.
         
-    num_samples :
+    epsilon : float, default 100
+        The epsilon for the 'dbscan' method. Units depend on the dist_func parameter.
+        
+    num_samples : int, default 1
+        The num_samples for the 'dbscan' method. The minimal number of samples in a cluster. 
     
     Returns
     -------
@@ -65,7 +70,8 @@ def generate_staypoints(positionfixes, method='sliding',
 
     name_geocol = ret_pfs.geometry.name
     ret_spts = pd.DataFrame(columns=['id', 'user_id', 'started_at', 'finished_at', 'geom'])
-
+    
+    # TODO: tests using a different distance function, e.g., L2 distance
     if method == 'sliding':
         # Algorithm from Li et al. (2008). For details, please refer to the paper.
         ret_spts = ret_pfs.groupby('user_id', as_index=False).apply(_generate_staypoints_sliding_user, 
@@ -73,7 +79,7 @@ def generate_staypoints(positionfixes, method='sliding',
                                                                     elevation_flag,
                                                                     dist_threshold, 
                                                                     time_threshold, 
-                                                                    dist_func=haversine_dist).reset_index(drop=True)
+                                                                    dist_func).reset_index(drop=True)
         # spts id management
         ret_spts['id'] = np.arange(len(ret_spts))
         ret_spts.set_index('id', inplace=True)
@@ -398,7 +404,10 @@ def _generate_staypoints_sliding_user(df,
     
     return ret_spts
 
-def _generate_staypoints_dbscan_user(df, name_geocol, epsilon, num_samples):
+def _generate_staypoints_dbscan_user(df, 
+                                     name_geocol, 
+                                     epsilon = 100, 
+                                     num_samples = 1):
     db = DBSCAN(eps=epsilon / 6371000, min_samples=num_samples, algorithm='ball_tree', metric='haversine')
 
 

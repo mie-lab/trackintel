@@ -127,8 +127,8 @@ class TestGenerate_triplegs():
 
 
 def _generate_staypoints_original(positionfixes, method='sliding',
-                        dist_threshold=50, time_threshold= 300, epsilon=100,
-                        dist_func=haversine_dist, num_samples=1):
+                                  dist_threshold=50, time_threshold= 300, epsilon=100,
+                                  dist_func=haversine_dist, num_samples=1):
     
     # copy the original pfs for adding 'staypoint_id' column
     ret_pfs = positionfixes.copy()
