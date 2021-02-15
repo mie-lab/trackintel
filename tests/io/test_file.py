@@ -13,7 +13,8 @@ class TestFile:
         mod_pfs = ti.read_positionfixes_csv(mod_file, columns={'lat':'latitude', 'lon':'longitude', 'time':'tracked_at'},sep=';')
         assert mod_pfs.equals(pfs)
         pfs['tracked_at'] = pfs['tracked_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
-        pfs.as_positionfixes.to_csv(tmp_file, sep=';',
+        pfs.as_positionfixes.to_csv(tmp_file, 
+                                    sep=';',
                                     columns=['user_id', 'tracked_at', 'latitude', 'longitude', 'elevation', 'accuracy'])
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)

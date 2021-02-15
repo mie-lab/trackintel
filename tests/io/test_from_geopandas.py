@@ -25,7 +25,9 @@ class TestFromGeopandas:
         gdf = gpd.read_file(os.path.join('tests', 'data', 'staypoints.geojson'))
         stps_from_gpd = ti.io.from_geopandas.staypoints_from_gpd(gdf, 'start_time', 'end_time', geom='geometry',
                                                                  tz='utc')
+        print(stps_from_gpd)
         stps_from_csv = ti.read_staypoints_csv(os.path.join('tests', 'data', 'staypoints.csv'), sep=';', tz='utc')
+        print(stps_from_csv)
 
         pd.testing.assert_frame_equal(stps_from_gpd, stps_from_csv, check_exact=False)
 

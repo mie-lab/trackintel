@@ -78,7 +78,7 @@ class TestGenerate_locations():
         stps = stps.head(1)
         stps = stps.append(stps, ignore_index=True)
         # assign a different user_id to the second row
-        stps.iloc[1, 4] = 1
+        stps.iloc[1, 5] = 1
         
         # duplicate for a certain number 
         stps = stps.append([stps]*5,ignore_index=True)

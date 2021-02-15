@@ -1,4 +1,4 @@
-id;user_id;time;lat;lon;elevation;accuracy
+;user_id;time;lat;lon;elevation;accuracy
 0;1;2015-11-27T08:00:00Z;47.37651505;8.548779488;456;1
 1;1;2015-11-27T08:20:22Z;47.39935;8.5277;524;1
 2;1;2015-11-27T12:39:28Z;47.40854;8.51169;537;1

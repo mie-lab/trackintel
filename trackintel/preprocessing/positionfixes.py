@@ -349,7 +349,9 @@ def _generate_staypoints_sliding_user(df,
     ret_spts = pd.DataFrame(columns=['user_id', 'started_at', 'finished_at', 'geom'])
     
     # pfs id should be in index
-    pfs = df.sort_values('tracked_at').reset_index().to_dict('records')
+    df = df.sort_values('tracked_at')
+    pfs = df.to_dict('records')
+    idx = df.index.to_list()
     num_pfs = len(pfs)
 
 
@@ -365,7 +367,7 @@ def _generate_staypoints_sliding_user(df,
         while j < num_pfs:
             # TODO: Can we make distance function independent of projection?
             dist = dist_func(pfs[i][name_geocol].x, pfs[i][name_geocol].y,
-                                pfs[j][name_geocol].x, pfs[j][name_geocol].y)
+                             pfs[j][name_geocol].x, pfs[j][name_geocol].y)
 
             if dist > dist_threshold:
                 delta_t = pfs[j]['tracked_at'] - pfs[i]['tracked_at']
@@ -377,11 +379,10 @@ def _generate_staypoints_sliding_user(df,
                     if elevation_flag:
                         staypoint['elevation'] = np.mean([pfs[k]['elevation'] for k in range(i, j)])
                     staypoint['started_at'] = pfs[i]['tracked_at']
-                    staypoint['finished_at'] = pfs[j - 1][
-                        'tracked_at']  # TODO: should this not be j-1? because j is not part of the staypoint. DB: Changed.
+                    staypoint['finished_at'] = pfs[j - 1]['tracked_at']
 
                     # store matching, index should be the id of pfs
-                    staypoint['pfs_id'] = [pfs[k]['id'] for k in range(i, j)]
+                    staypoint['pfs_id'] = [idx[k] for k in range(i, j)]
 
                     # add staypoint
                     ret_spts = ret_spts.append(staypoint, ignore_index=True)
@@ -397,7 +398,7 @@ def _generate_staypoints_sliding_user(df,
                         staypoint['started_at'] = pfs[j]['tracked_at']
                         staypoint['finished_at'] = pfs[j]['tracked_at']
                         # store matching, index should be the id of pfs
-                        staypoint['pfs_id'] = [pfs[j]['id']]
+                        staypoint['pfs_id'] = [idx[j]]
 
                         ret_spts = ret_spts.append(staypoint, ignore_index=True)
                 i = j
@@ -406,7 +407,7 @@ def _generate_staypoints_sliding_user(df,
     
     return ret_spts
 
-def _generate_staypoints_dbscan_user(df, 
+def _generate_staypoints_dbscan_user(pfs, 
                                      name_geocol, 
                                      epsilon = 100, 
                                      num_samples = 1):
@@ -419,10 +420,10 @@ def _generate_staypoints_dbscan_user(df,
         pass
 
     # get staypoint matching
-    p = np.array([[radians(g.y), radians(g.x)] for g in df[name_geocol]])
+    p = np.array([[radians(g.y), radians(g.x)] for g in pfs[name_geocol]])
     labels = db.fit_predict(p)
 
     # add positionfixes - staypoint matching to original positionfixes
-    df['staypoint_id'] = labels
+    pfs['staypoint_id'] = labels
     
-    return df
+    return pfs

@@ -20,8 +20,9 @@ class TestGenerate_staypoints():
         
     def test_generate_staypoints_sliding_max(self):
         pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';',  tz='utc')
-        _, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=sys.maxsize, 
-                                                       time_threshold=sys.maxsize)
+        _, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', 
+                                                           dist_threshold=sys.maxsize, 
+                                                           time_threshold=sys.maxsize)
         assert len(spts) == 0, "With large thresholds, staypoint extraction should not yield positionfixes"
         
     def test_generate_staypoints_dtype_consistent(self):
@@ -126,10 +127,6 @@ class TestGenerate_triplegs():
 
             
 
-        
-    
-
-
 def _generate_staypoints_original(positionfixes, method='sliding',
                                   dist_threshold=50, time_threshold= 300, epsilon=100,
                                   dist_func=haversine_dist, num_samples=1):
@@ -156,7 +153,9 @@ def _generate_staypoints_original(positionfixes, method='sliding',
 
             positionfixes_user_this = ret_pfs.loc[ret_pfs['user_id'] == user_id_this]  # this is no copy
 
-            pfs = positionfixes_user_this.sort_values('tracked_at').reset_index().to_dict('records')
+            positionfixes_user_this = positionfixes_user_this.sort_values('tracked_at')
+            pfs = positionfixes_user_this.to_dict('records')
+            idx = positionfixes_user_this.index.to_list()
             num_pfs = len(pfs)
 
             posfix_staypoint_matching = {}
@@ -185,12 +184,11 @@ def _generate_staypoints_original(positionfixes, method='sliding',
                             if elevation_flag:
                                 staypoint['elevation'] = np.mean([pfs[k]['elevation'] for k in range(i, j)])
                             staypoint['started_at'] = pfs[i]['tracked_at']
-                            staypoint['finished_at'] = pfs[j - 1][
-                                'tracked_at']  # TODO: should this not be j-1? because j is not part of the staypoint. DB: Changed.
+                            staypoint['finished_at'] = pfs[j - 1]['tracked_at']
                             staypoint['id'] = staypoint_id_counter
 
                             # store matching 
-                            posfix_staypoint_matching[staypoint_id_counter] = [pfs[k]['id'] for k in range(i, j)]
+                            posfix_staypoint_matching[staypoint_id_counter] = [idx[k] for k in range(i, j)]
                             staypoint_id_counter += 1
 
                             # add staypoint
@@ -209,8 +207,7 @@ def _generate_staypoints_original(positionfixes, method='sliding',
                                 staypoint['id'] = staypoint_id_counter
 
                                 # store matching
-                                posfix_staypoint_matching[staypoint_id_counter] = [
-                                    pfs[j]['id']]  # rather [k for k in range(i, j)]?
+                                posfix_staypoint_matching[staypoint_id_counter] = [idx[j]] 
                                 staypoint_id_counter += 1
                                 ret_spts = ret_spts.append(staypoint, ignore_index=True)
                         i = j
