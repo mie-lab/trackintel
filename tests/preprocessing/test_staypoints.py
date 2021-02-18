@@ -11,7 +11,8 @@ from trackintel.geogr.distances import calculate_distance_matrix
 
 class TestGenerate_locations():
     def test_generate_locations_dbscan_hav_euc(self):
-        stps = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'), tz='utc')
+        stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+        stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
         
         # haversine calculation 
         _, loc_har = stps.as_staypoints.generate_locations(method='dbscan', epsilon=100, 
@@ -31,7 +32,8 @@ class TestGenerate_locations():
             "and euclidean distances"
             
     def test_generate_locations_dbscan_haversine(self):
-        stps = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'), tz='utc')
+        stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+        stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
         
         # haversine calculation using sklearn.metrics.pairwise_distances, epsilon converted to radius
         stps, locs = stps.as_staypoints.generate_locations(method='dbscan', epsilon=10, 
@@ -46,7 +48,8 @@ class TestGenerate_locations():
         assert len(set(locs['id'])) == len(set(labels)) , "The #location should be the same"
     
     def test_generate_locations_dbscan_loc(self):
-        stps = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'), tz='utc')
+        stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+        stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
         stps, locs = stps.as_staypoints.generate_locations(method='dbscan', epsilon=10,
                                                            num_samples=0, distance_matrix_metric='haversine',
                                                            agg_level='dataset')
@@ -73,12 +76,13 @@ class TestGenerate_locations():
         assert all(other_locs['id'] == locs['id']), "The location id should be the same"
     
     def test_generate_locations_dbscan_user_dataset(self):
-        stps = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'), tz='utc')
+        stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+        stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
         # take the first row and duplicate once
         stps = stps.head(1)
         stps = stps.append(stps, ignore_index=True)
         # assign a different user_id to the second row
-        stps.iloc[1, 5] = 1
+        stps.iloc[1, 4] = 1
         
         # duplicate for a certain number 
         stps = stps.append([stps]*5,ignore_index=True)
@@ -94,7 +98,8 @@ class TestGenerate_locations():
         assert loc_us_num == 2, "Considering user staypoints separately, there should be two locations"
     
     def test_generate_locations_dbscan_min(self):
-        pfs = ti.read_positionfixes_csv(os.path.join('tests', 'data', 'positionfixes.csv'), sep=';', tz='utc')
+        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
         _, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         _, locs_user = stps.as_staypoints.generate_locations(method='dbscan', epsilon=1e-18, 
                                                             num_samples=0, agg_level='user')
@@ -104,7 +109,8 @@ class TestGenerate_locations():
         assert len(locs_data) == len(stps), "With small hyperparameters, clustering should not reduce the number"
 
     def test_generate_locations_dbscan_max(self):
-        pfs = ti.read_positionfixes_csv(os.path.join('tests', 'data', 'positionfixes.csv'), sep=';', tz='utc')
+        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
         _, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         _, locs_user = stps.as_staypoints.generate_locations(method='dbscan', epsilon=1e18, 
                                                             num_samples=1000, agg_level='user')
@@ -114,7 +120,8 @@ class TestGenerate_locations():
         assert len(locs_data) == 0, "With large hyperparameters, every dataset location is an outlier"
     
     def test_generate_locations_dtype_consistent(self):
-        stps = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'), tz='utc')
+        stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+        stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
         # 
         stps, locs = stps.as_staypoints.generate_locations(method='dbscan', 
                                                            epsilon=10, 

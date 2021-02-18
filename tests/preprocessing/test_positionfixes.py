@@ -14,19 +14,22 @@ from trackintel.geogr.distances import haversine_dist
 
 class TestGenerate_staypoints():
     def test_generate_staypoints_sliding_min(self):
-        pfs = ti.read_positionfixes_csv(os.path.join('tests', 'data', 'positionfixes.csv'), sep=';', tz='utc')
+        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
         pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         assert len(spts) == len(pfs), "With small thresholds, staypoint extraction should yield each positionfix"
         
     def test_generate_staypoints_sliding_max(self):
-        pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';',  tz='utc')
+        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
         _, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', 
                                                            dist_threshold=sys.maxsize, 
                                                            time_threshold=sys.maxsize)
         assert len(spts) == 0, "With large thresholds, staypoint extraction should not yield positionfixes"
         
     def test_generate_staypoints_dtype_consistent(self):
-        pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';',  tz='utc')
+        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
         pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', 
                                                              dist_threshold=25, 
                                                              time_threshold=5 * 60)
@@ -35,7 +38,8 @@ class TestGenerate_staypoints():
         
     def test_generate_staypoints_groupby_sliding(self):
         """Test the 'sliding' result obtained using user_id for loop (previous) with groupby.apply (current)."""
-        pfs_ori = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';',  tz='utc')
+        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
+        pfs_ori = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
         
         # stps detection using groupby
         pfs_groupby, spts_groupby = pfs_ori.as_positionfixes.generate_staypoints(method='sliding', 
@@ -52,7 +56,8 @@ class TestGenerate_staypoints():
         
     def test_generate_staypoints_groupby_dbscan(self):
         """Test the 'dbscan' result obtained using user_id for loop (previous) with groupby.apply (current)."""
-        pfs_ori = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';',  tz='utc')
+        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
+        pfs_ori = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
         
         # stps detection using groupby
         pfs_groupby, spts_groupby = pfs_ori.as_positionfixes.generate_staypoints(method='dbscan')
@@ -67,12 +72,14 @@ class TestGenerate_triplegs():
     def test_generate_triplegs_global(self):
         # generate triplegs from raw-data
         pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
-        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
+        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', 
+                                                             dist_threshold=25, 
+                                                             time_threshold=5 * 60)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts)
 
         # load pregenerated test-triplegs
-        tpls_test = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs_short.csv'),
-                                         tz='utc')
+        tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs_short.csv')
+        tpls_test = ti.read_triplegs_csv(tpls_file, tz='utc')
 
         assert len(tpls) > 0
         assert len(tpls) == len(tpls)
@@ -84,7 +91,8 @@ class TestGenerate_triplegs():
         np.testing.assert_almost_equal(distance_sum, 0.0)
     
     def test_generate_triplegs_dtype_consistent(self):
-        pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
+        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
         pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', 
                                                              dist_threshold=25, 
                                                              time_threshold=5 * 60)
@@ -93,7 +101,8 @@ class TestGenerate_triplegs():
         # assert pfs['tripleg_id'].dtype == tpls['id'].dtype
         
     def test_generate_staypoint_triplegs(self):
-        pfs = ti.read_positionfixes_csv(os.path.join('tests','data','positionfixes.csv'), sep=';')
+        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
         pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         _, tpls1 = pfs.as_positionfixes.generate_triplegs()
         _, tpls2 = pfs.as_positionfixes.generate_triplegs(spts)
@@ -109,8 +118,11 @@ class TestGenerate_triplegs():
         The dataframe is sorted by date, then we check if the staypoint/tripleg from the row before was finished when
         the next one started.
         """
-        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
-        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
+        pfs_file = os.path.join('tests', 'data', 'geolife_long')
+        pfs = ti.io.dataset_reader.read_geolife(pfs_file)
+        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', 
+                                                             dist_threshold=25, 
+                                                             time_threshold=5 * 60)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts)
 
         spts_tpls = spts[['started_at', 'finished_at', 'user_id']].append(
