@@ -93,6 +93,7 @@ def generate_staypoints(positionfixes,
                 for value in values:
                     ls.append([value, key])
             temp = pd.DataFrame(ls, columns=['id', 'staypoint_id']).set_index('id')
+            # pfs with no stps receives nan in 'staypoint_id'
             ret_pfs = ret_pfs.join(temp, how='left')
             ret_spts.drop(columns={'pfs_id'}, inplace=True)
         # if no staypoint is identified
@@ -125,8 +126,8 @@ def generate_staypoints(positionfixes,
                 staypoint['id'] = staypoint_id
 
                 # point geometry of staypoint
-                staypoint[name_geocol] = Point(group[name_geocol].x.mean(),
-                                           group[name_geocol].y.mean())
+                staypoint[name_geocol] = Point(group[name_geocol].x.mean(), 
+                                               group[name_geocol].y.mean())
 
                 ret_spts = ret_spts.append(staypoint, ignore_index=True)
         ret_spts.set_index('id', inplace=True)
@@ -346,13 +347,13 @@ def _generate_staypoints_sliding_user(df,
                                       time_threshold= 300, 
                                       dist_func=haversine_dist):
     ret_spts = pd.DataFrame(columns=['user_id', 'started_at', 'finished_at', 'geom'])
+    df.sort_values('tracked_at', inplace=True)
     
-    # pfs id should be in index
-    df = df.sort_values('tracked_at')
+    # pfs id should be in index, create separate idx for storing the matching
     pfs = df.to_dict('records')
     idx = df.index.to_list()
+    
     num_pfs = len(pfs)
-
 
     i = 0
     j = 0  # is zero because it gets incremented in the beginning
@@ -363,6 +364,7 @@ def _generate_staypoints_sliding_user(df,
             break
         else:
             j = i + 1
+            
         while j < num_pfs:
             # TODO: Can we make distance function independent of projection?
             dist = dist_func(pfs[i][name_geocol].x, pfs[i][name_geocol].y,
