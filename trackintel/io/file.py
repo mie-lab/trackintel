@@ -6,6 +6,7 @@ import dateutil.parser
 import geopandas as gpd
 import pandas as pd
 import pytz
+import warnings
 from shapely import wkt
 from shapely.geometry import Point
 
@@ -49,6 +50,9 @@ def read_positionfixes_csv(*args, **kwargs):
         The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
     tz : str
         pytz compatible timezone string. If None UTC is assumed.
+    index_col : str
+        column name to be used as index. If None the default index is assumed 
+        as unique identifier.
 
     Note that this function is primarily useful if data is available in a 
     longitude/latitude format. If your data already contains a WKT column, it
@@ -67,6 +71,10 @@ def read_positionfixes_csv(*args, **kwargs):
 
     columns = kwargs.pop('columns', {})
     tz = kwargs.pop('tz', None)
+    
+    # Warning if no 'index_col' parameter is provided
+    if not 'index_col' in kwargs:
+        warnings.warn("Assuming default index as unique identifier")
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
@@ -120,6 +128,9 @@ def read_triplegs_csv(*args, **kwargs):
         The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
     tz : str
         pytz compatible timezone string. If None UTC is assumed.
+    index_col : str
+        column name to be used as index. If None the default index is assumed 
+        as unique identifier.
 
     Returns
     -------
@@ -134,6 +145,10 @@ def read_triplegs_csv(*args, **kwargs):
 
     columns = kwargs.pop('columns', {})
     tz = kwargs.pop('tz', None)
+    
+    # Warning if no 'index_col' parameter is provided
+    if not 'index_col' in kwargs:
+        warnings.warn("Assuming default index as unique identifier")
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
@@ -185,6 +200,9 @@ def read_staypoints_csv(*args, **kwargs):
         The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
     tz : str
         pytz compatible timezone string. If None UTC is assumed.
+    index_col : str
+        column name to be used as index. If None the default index is assumed 
+        as unique identifier.
 
     Returns
     -------
@@ -199,6 +217,10 @@ def read_staypoints_csv(*args, **kwargs):
 
     columns = kwargs.pop('columns', {})
     tz = kwargs.pop('tz', None)
+    
+    # Warning if no 'index_col' parameter is provided
+    if not 'index_col' in kwargs:
+        warnings.warn("Assuming default index as unique identifier")
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
@@ -253,6 +275,9 @@ def read_locations_csv(*args, **kwargs):
     -------
     GeoDataFrame
         A GeoDataFrame containing the locations.
+    index_col : str
+        column name to be used as index. If None the default index is assumed 
+        as unique identifier.
         
             
     Examples
@@ -261,6 +286,11 @@ def read_locations_csv(*args, **kwargs):
     >>> trackintel.read_locations_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
     columns = kwargs.pop('columns', {})
+    
+    # Warning if no 'index_col' parameter is provided
+    if not 'index_col' in kwargs:
+        warnings.warn("Assuming default index as unique identifier")
+    
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
     df['center'] = df['center'].apply(wkt.loads)
@@ -301,6 +331,9 @@ def read_trips_csv(*args, **kwargs):
         The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
     tz : str
         pytz compatible timezone string. If None UTC is assumed.
+    index_col : str
+        column name to be used as index. If None the default index is assumed 
+        as unique identifier.
 
     Returns
     -------
@@ -316,6 +349,11 @@ def read_trips_csv(*args, **kwargs):
 
     columns = kwargs.pop('columns', {})
     tz = kwargs.pop('tz', None)
+    
+    # Warning if no 'index_col' parameter is provided
+    if not 'index_col' in kwargs:
+        warnings.warn("Assuming default index as unique identifier")
+    
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
     df['started_at'] = df['started_at'].apply(dateutil.parser.parse)

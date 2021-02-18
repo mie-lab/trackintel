@@ -23,7 +23,7 @@ def generate_staypoints(positionfixes,
     positionfixes : GeoDataFrame
         The positionfixes have to follow the standard definition for positionfixes DataFrames.
 
-    method : str, {'sliding' or 'dbscan'}, default 'sliding'
+    method : str, {'sliding' or '   '}, default 'sliding'
         - 'sliding' : Applies a sliding window over the data.
         - 'dbscan' : Uses the DBSCAN algorithm to find clusters of staypoints.
 
@@ -199,7 +199,6 @@ def generate_triplegs(positionfixes, staypoints=None, *args, **kwargs):
         # Case 1: Staypoints exist and are connected to positionfixes by user id
         if staypoints is not None and "staypoint_id" in pfs:
             stps = staypoints.loc[staypoints['user_id'] == user_id_this].sort_values('started_at')
-            # id of stps should be in index
             stps = stps.reset_index().to_dict('records')
             for stp1, stp2 in zip(list(stps), list(stps)[1:]):
                 # Get all positionfixes that lie between these two staypoints.

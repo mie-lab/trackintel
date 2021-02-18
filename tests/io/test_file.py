@@ -9,8 +9,11 @@ class TestFile:
         orig_file = os.path.join('tests', 'data', 'positionfixes.csv')
         mod_file = os.path.join('tests','data', 'positionfixes_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'positionfixes_test.csv')
-        pfs = ti.read_positionfixes_csv(orig_file, sep=';')
-        mod_pfs = ti.read_positionfixes_csv(mod_file, columns={'lat':'latitude', 'lon':'longitude', 'time':'tracked_at'},sep=';')
+        pfs = ti.read_positionfixes_csv(orig_file, sep=';', index_col="id")
+        mod_pfs = ti.read_positionfixes_csv(mod_file, 
+                                            sep=';', 
+                                            index_col="id",
+                                            columns={'lat':'latitude', 'lon':'longitude', 'time':'tracked_at'})
         assert mod_pfs.equals(pfs)
         pfs['tracked_at'] = pfs['tracked_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
         pfs.as_positionfixes.to_csv(tmp_file, 
