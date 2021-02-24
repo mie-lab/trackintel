@@ -107,7 +107,8 @@ def generate_staypoints(positionfixes,
         # TODO: Make sure time information is included in the clustering!
         # time information is in the column 'started at', however the user should be able to
         # adjust the distance metric e.g. chebychev
-
+        
+        # TODO: fix bug: generated staypoints has id starting from 0 for each user
         ret_pfs = ret_pfs.groupby("user_id").apply(_generate_staypoints_dbscan_user, 
                                                    name_geocol,
                                                    epsilon, 
