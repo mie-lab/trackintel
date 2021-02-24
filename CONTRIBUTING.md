@@ -27,6 +27,9 @@ The main function should be on the top of the file, the internal/secondary funct
 ### ID management
 All trackintel objects have an ID that is the index of the dataframe [Issue 97](https://github.com/mie-lab/trackintel/issues/97)
 
+### Commit message conventions
+We use the geopandas [commit message convenctions](https://geopandas.readthedocs.io/en/latest/community/contributing.html#commit-message-conventions)
+
 ### Others
 - We limit all lines to a maximum of 120 characters.
 
