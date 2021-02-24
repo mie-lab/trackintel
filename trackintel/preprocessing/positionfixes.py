@@ -3,40 +3,46 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import LineString, Point
 from sklearn.cluster import DBSCAN
+from math import radians
 
 from trackintel.geogr.distances import haversine_dist
 
 
-def generate_staypoints(positionfixes, method='sliding',
-                        dist_threshold=50, time_threshold= 300, epsilon=100,
-                        dist_func=haversine_dist, num_samples=None):
-    """Generates staypoints from positionfixes.
-
+def generate_staypoints(positionfixes, 
+                        method='sliding',
+                        dist_threshold=50, 
+                        time_threshold= 300, 
+                        dist_func=haversine_dist, 
+                        epsilon=100,
+                        num_samples=1):
+    """
+    Generate staypoints from positionfixes.
+    
     Parameters
     ----------
-    
     positionfixes : GeoDataFrame
         The positionfixes have to follow the standard definition for positionfixes DataFrames.
 
-    method : str, {'sliding' or 'dbscan'}, default 'sliding'
+    method : str, {'sliding' or '   '}, default 'sliding'
         - 'sliding' : Applies a sliding window over the data.
         - 'dbscan' : Uses the DBSCAN algorithm to find clusters of staypoints.
 
     dist_threshold : float, default 50
         The distance threshold for the 'sliding' method, i.e., how far someone has to travel to
-        generate a new staypoint.
+        generate a new staypoint. Units depend on the dist_func parameter.
 
     time_threshold : float, default 300 (seconds)
         The time threshold for the 'sliding' method in seconds, i.e., how long someone has to 
         stay within an area to consider it as a staypoint.
 
-    epsilon : float, default 100
-        The epsilon for the 'dbscan' method.
-
     dist_func : function, defaut haversine_dist
-        A function that expects (lon_1, lat_1, lon_2, lat_2) and computes a distance in meters.
+        The distance matrix used by the applied method. Possible metrics are: {'haversine_dist'}
         
-    num_samples :
+    epsilon : float, default 100
+        The epsilon for the 'dbscan' method. Units depend on the dist_func parameter.
+        
+    num_samples : int, default 1
+        The num_samples for the 'dbscan' method. The minimal number of samples in a cluster. 
     
     Returns
     -------
@@ -60,114 +66,56 @@ def generate_staypoints(positionfixes, method='sliding',
     # copy the original pfs for adding 'staypoint_id' column
     ret_pfs = positionfixes.copy()
     
-    if 'id' not in ret_pfs.columns:
-        ret_pfs['id'] = ret_pfs.index
-    
     elevation_flag = 'elevation' in ret_pfs.columns # if there is elevation data
 
     name_geocol = ret_pfs.geometry.name
     ret_spts = pd.DataFrame(columns=['id', 'user_id', 'started_at', 'finished_at', 'geom'])
-
+    
+    # TODO: tests using a different distance function, e.g., L2 distance
     if method == 'sliding':
         # Algorithm from Li et al. (2008). For details, please refer to the paper.
-        staypoint_id_counter = 0
-        ret_pfs['staypoint_id'] = -1  # this marks all that are not part of a SP
-
-        for user_id_this in ret_pfs['user_id'].unique():
-
-            positionfixes_user_this = ret_pfs.loc[ret_pfs['user_id'] == user_id_this]  # this is no copy
-
-            pfs = positionfixes_user_this.sort_values('tracked_at').to_dict('records')
-            num_pfs = len(pfs)
-
-            posfix_staypoint_matching = {}
-
-            i = 0
-            j = 0  # is zero because it gets incremented in the beginning
-            while i < num_pfs:
-                if j == num_pfs:
-                    # We're at the end, this can happen if in the last "bin", 
-                    # the dist_threshold is never crossed anymore.
-                    break
-                else:
-                    j = i + 1
-                while j < num_pfs:
-                    # TODO: Can we make distance function independent of projection?
-                    dist = dist_func(pfs[i][name_geocol].x, pfs[i][name_geocol].y,
-                                     pfs[j][name_geocol].x, pfs[j][name_geocol].y)
-
-                    if dist > dist_threshold:
-                        delta_t = pfs[j]['tracked_at'] - pfs[i]['tracked_at']
-                        if delta_t.total_seconds() > time_threshold:
-                            staypoint = {}
-                            staypoint['user_id'] = pfs[i]['user_id']
-                            staypoint[name_geocol] = Point(np.mean([pfs[k][name_geocol].x for k in range(i, j)]),
-                                                           np.mean([pfs[k][name_geocol].y for k in range(i, j)]))
-                            if elevation_flag:
-                                staypoint['elevation'] = np.mean([pfs[k]['elevation'] for k in range(i, j)])
-                            staypoint['started_at'] = pfs[i]['tracked_at']
-                            staypoint['finished_at'] = pfs[j - 1][
-                                'tracked_at']  # TODO: should this not be j-1? because j is not part of the staypoint. DB: Changed.
-                            staypoint['id'] = staypoint_id_counter
-
-                            # store matching 
-                            posfix_staypoint_matching[staypoint_id_counter] = [pfs[k]['id'] for k in range(i, j)]
-                            staypoint_id_counter += 1
-
-                            # add staypoint
-                            ret_spts = ret_spts.append(staypoint, ignore_index=True)
-
-                            # TODO Discussion: Is this last point really a staypoint? As we don't know if the
-                            #      person "moves on" afterwards...
-                            if j == num_pfs - 1:
-                                staypoint = {}
-                                staypoint['user_id'] = pfs[j]['user_id']
-                                staypoint[name_geocol] = Point(pfs[j][name_geocol].x, pfs[j][name_geocol].y)
-                                if elevation_flag:
-                                    staypoint['elevation'] = pfs[j]['elevation']
-                                staypoint['started_at'] = pfs[j]['tracked_at']
-                                staypoint['finished_at'] = pfs[j]['tracked_at']
-                                staypoint['id'] = staypoint_id_counter
-
-                                # store matching
-                                posfix_staypoint_matching[staypoint_id_counter] = [
-                                    pfs[j]['id']]  # rather [k for k in range(i, j)]?
-                                staypoint_id_counter += 1
-                                ret_spts = ret_spts.append(staypoint, ignore_index=True)
-                        i = j
-                        break
-                    j = j + 1
-
-            # add matching to original positionfixes (for every user)
-
-            for staypoints_id, posfix_idlist in posfix_staypoint_matching.items():
-                # note that we use .loc because above we have saved the id 
-                # of the positionfixes not thier absolut position
-                ret_pfs.loc[posfix_idlist, 'staypoint_id'] = staypoints_id
-
-
+        ret_spts = ret_pfs.groupby('user_id', as_index=False).apply(_generate_staypoints_sliding_user, 
+                                                                    name_geocol, 
+                                                                    elevation_flag,
+                                                                    dist_threshold, 
+                                                                    time_threshold, 
+                                                                    dist_func).reset_index(drop=True)
+        # spts id management
+        ret_spts['id'] = np.arange(len(ret_spts))
+        ret_spts.set_index('id', inplace=True)
+        
+        # Assign staypoint_id to ret_pfs if spts is detected 
+        if not ret_spts.empty:
+            stps2pfs_map = ret_spts[['pfs_id']].to_dict()['pfs_id']
+            
+            ls = []
+            for key, values in stps2pfs_map.items():
+                for value in values:
+                    ls.append([value, key])
+            temp = pd.DataFrame(ls, columns=['id', 'staypoint_id']).set_index('id')
+            # pfs with no stps receives nan in 'staypoint_id'
+            ret_pfs = ret_pfs.join(temp, how='left')
+            ret_spts.drop(columns={'pfs_id'}, inplace=True)
+        # if no staypoint is identified
+        else: 
+            ret_pfs['staypoint_id'] = np.NaN
+    
+    # TODO: create tests for dbscan method
+    # TODO: currently only support haversine distance, provode support for other distances, 
+    # we could use the same structure as generate_location function
     elif method == 'dbscan':
         # TODO: Make sure time information is included in the clustering!
         # time information is in the column 'started at', however the user should be able to
         # adjust the distance metric e.g. chebychev
-
-        db = DBSCAN(eps=epsilon, min_samples=num_samples)
-        for user_id_this in ret_pfs['user_id'].unique():
-
-            user_positionfixes = ret_pfs[ret_pfs['user_id'] == user_id_this]  # this is not a copy!
-
-            # TODO: enable transformations to temporary (metric) system
-            transform_crs = None
-            if transform_crs is not None:
-                pass
-
-            # get staypoint matching
-            coordinates = np.array([[g.x, g.y] for g in user_positionfixes['geom']])
-            labels = db.fit_predict(coordinates)
-
-            # add positionfixes - staypoint matching to original positionfixes
-            ret_pfs.loc[user_positionfixes.index, 'staypoint_id'] = labels
-
+        
+        # TODO: fix bug: generated staypoints has id starting from 0 for each user
+        ret_pfs = ret_pfs.groupby("user_id").apply(_generate_staypoints_dbscan_user, 
+                                                   name_geocol,
+                                                   epsilon, 
+                                                   num_samples)
+        
+        # TODO: staypoint 'elevation' field
+        # TODO: using dissolve for staypoint generation
         # create staypoints as the center of the grouped positionfixes
         grouped_df = ret_pfs.groupby(['user_id', 'staypoint_id'])
         for combined_id, group in grouped_df:
@@ -179,17 +127,20 @@ def generate_staypoints(positionfixes, method='sliding',
                 staypoint['id'] = staypoint_id
 
                 # point geometry of staypoint
-                staypoint.geometry = Point(group[name_geocol].x.mean(),
-                                           group[name_geocol].y.mean())
+                staypoint[name_geocol] = Point(group[name_geocol].x.mean(), 
+                                               group[name_geocol].y.mean())
 
                 ret_spts = ret_spts.append(staypoint, ignore_index=True)
-
-    ret_spts = gpd.GeoDataFrame(ret_spts, geometry='geom',crs=ret_pfs.crs)
+        ret_spts.set_index('id', inplace=True)
+        
+    ret_pfs = gpd.GeoDataFrame(ret_pfs, geometry=name_geocol,crs=ret_pfs.crs)
+    ret_spts = gpd.GeoDataFrame(ret_spts, geometry=name_geocol,crs=ret_pfs.crs)
     
     ## ensure dtype consistency 
     # stps id (generated by this function) should be int64
-    ret_spts['id'] = ret_spts['id'].astype('int64')
-    ret_pfs['staypoint_id'] = ret_pfs['staypoint_id'].astype('int64')
+    ret_spts.index = ret_spts.index.astype('int64')
+    # ret_pfs['staypoint_id'] should be float, as it could contain missing values
+    ret_pfs['staypoint_id'] = ret_pfs['staypoint_id'].astype('float')
     
     # user_id of spts should be the same as ret_pfs
     ret_spts['user_id'] = ret_spts['user_id'].astype(ret_pfs['user_id'].dtype)
@@ -198,9 +149,11 @@ def generate_staypoints(positionfixes, method='sliding',
 
 
 def generate_triplegs(positionfixes, staypoints=None, *args, **kwargs):
-    """Generates triplegs from positionfixes. A tripleg is (for now) defined as anything
-    that happens between two consecutive staypoints.
-
+    """
+    Generate triplegs from positionfixes.
+    
+    A tripleg is (for now) defined as anything that happens between two consecutive staypoints.
+    
     **Attention**: This function requires either a column ``staypoint_id`` on the 
     positionfixes or passing some staypoints that correspond to the positionfixes! 
     This means you usually should call ``extract_staypoints()`` first.
@@ -248,7 +201,7 @@ def generate_triplegs(positionfixes, staypoints=None, *args, **kwargs):
         # Case 1: Staypoints exist and are connected to positionfixes by user id
         if staypoints is not None and "staypoint_id" in pfs:
             stps = staypoints.loc[staypoints['user_id'] == user_id_this].sort_values('started_at')
-            stps = stps.to_dict('records')
+            stps = stps.reset_index().to_dict('records')
             for stp1, stp2 in zip(list(stps), list(stps)[1:]):
                 # Get all positionfixes that lie between these two staypoints.
 
@@ -386,3 +339,93 @@ def generate_triplegs(positionfixes, staypoints=None, *args, **kwargs):
     # todo: triplegs dataframe has use the index as id
     # todo: proposed fix: ret_triplegs = ret_triplegs.set_index('id')
     return ret_pfs, ret_tpls
+
+
+def _generate_staypoints_sliding_user(df, 
+                                      name_geocol, 
+                                      elevation_flag,
+                                      dist_threshold=50, 
+                                      time_threshold= 300, 
+                                      dist_func=haversine_dist):
+    ret_spts = pd.DataFrame(columns=['user_id', 'started_at', 'finished_at', 'geom'])
+    df.sort_values('tracked_at', inplace=True)
+    
+    # pfs id should be in index, create separate idx for storing the matching
+    pfs = df.to_dict('records')
+    idx = df.index.to_list()
+    
+    num_pfs = len(pfs)
+
+    i = 0
+    j = 0  # is zero because it gets incremented in the beginning
+    while i < num_pfs:
+        if j == num_pfs:
+            # We're at the end, this can happen if in the last "bin", 
+            # the dist_threshold is never crossed anymore.
+            break
+        else:
+            j = i + 1
+            
+        while j < num_pfs:
+            # TODO: Can we make distance function independent of projection?
+            dist = dist_func(pfs[i][name_geocol].x, pfs[i][name_geocol].y,
+                             pfs[j][name_geocol].x, pfs[j][name_geocol].y)
+
+            if dist > dist_threshold:
+                delta_t = pfs[j]['tracked_at'] - pfs[i]['tracked_at']
+                if delta_t.total_seconds() > time_threshold:
+                    staypoint = {}
+                    staypoint['user_id'] = pfs[i]['user_id']
+                    staypoint[name_geocol] = Point(np.mean([pfs[k][name_geocol].x for k in range(i, j)]),
+                                                    np.mean([pfs[k][name_geocol].y for k in range(i, j)]))
+                    if elevation_flag:
+                        staypoint['elevation'] = np.mean([pfs[k]['elevation'] for k in range(i, j)])
+                    staypoint['started_at'] = pfs[i]['tracked_at']
+                    staypoint['finished_at'] = pfs[j - 1]['tracked_at']
+
+                    # store matching, index should be the id of pfs
+                    staypoint['pfs_id'] = [idx[k] for k in range(i, j)]
+
+                    # add staypoint
+                    ret_spts = ret_spts.append(staypoint, ignore_index=True)
+
+                    # TODO Discussion: Is this last point really a staypoint? As we don't know if the
+                    #      person "moves on" afterwards...
+                    if j == num_pfs - 1:
+                        staypoint = {}
+                        staypoint['user_id'] = pfs[j]['user_id']
+                        staypoint[name_geocol] = Point(pfs[j][name_geocol].x, pfs[j][name_geocol].y)
+                        if elevation_flag:
+                            staypoint['elevation'] = pfs[j]['elevation']
+                        staypoint['started_at'] = pfs[j]['tracked_at']
+                        staypoint['finished_at'] = pfs[j]['tracked_at']
+                        # store matching, index should be the id of pfs
+                        staypoint['pfs_id'] = [idx[j]]
+
+                        ret_spts = ret_spts.append(staypoint, ignore_index=True)
+                i = j
+                break
+            j = j + 1
+    
+    return ret_spts
+
+def _generate_staypoints_dbscan_user(pfs, 
+                                     name_geocol, 
+                                     epsilon = 100, 
+                                     num_samples = 1):
+    db = DBSCAN(eps=epsilon / 6371000, min_samples=num_samples, algorithm='ball_tree', metric='haversine')
+
+
+    # TODO: enable transformations to temporary (metric) system
+    transform_crs = None
+    if transform_crs is not None:
+        pass
+
+    # get staypoint matching
+    p = np.array([[radians(g.y), radians(g.x)] for g in pfs[name_geocol]])
+    labels = db.fit_predict(p)
+
+    # add positionfixes - staypoint matching to original positionfixes
+    pfs['staypoint_id'] = labels
+    
+    return pfs

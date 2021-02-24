@@ -40,9 +40,8 @@ def positionfixes_from_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom
     for col in ['tracked_at']:
         if not pd.api.types.is_datetime64tz_dtype(pfs[col]):
             pfs[col] = localize_timestamp(dt_series=pfs[col], pytz_tzinfo=tz, col_name=col)
-
+        
     assert pfs.as_positionfixes
-
     return pfs
 
 
@@ -88,9 +87,8 @@ def staypoints_from_gpd(gdf, started_at='started_at', finished_at='finished_at',
     for col in ['started_at', 'finished_at']:
         if not pd.api.types.is_datetime64tz_dtype(stp[col]):
             stp[col] = localize_timestamp(dt_series=stp[col], pytz_tzinfo=tz, col_name=col)
-
+        
     assert stp.as_staypoints
-
     return stp
 
 
