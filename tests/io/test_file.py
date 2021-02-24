@@ -1,5 +1,6 @@
 import filecmp
 import os
+import pytest
 
 import trackintel as ti
 
@@ -9,6 +10,7 @@ class TestFile:
         orig_file = os.path.join('tests', 'data', 'positionfixes.csv')
         mod_file = os.path.join('tests','data', 'positionfixes_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'positionfixes_test.csv')
+
         pfs = ti.read_positionfixes_csv(orig_file, sep=';', index_col="id")
         
         column_mapping = {'lat':'latitude', 'lon':'longitude', 'time':'tracked_at'}
@@ -20,6 +22,12 @@ class TestFile:
         pfs.as_positionfixes.to_csv(tmp_file, sep=';', columns=columns)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
+        
+    def test_positionfixes_csv_index_warning(self):
+        """Test if a warning is raised when not parsing the index_col arguement."""
+        file = os.path.join('tests', 'data', 'positionfixes.csv')
+        with pytest.warns(UserWarning):
+            ti.read_positionfixes_csv(file, sep=';')
         
     def test_positionfixes_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
@@ -66,7 +74,13 @@ class TestFile:
         stps.as_staypoints.to_csv(tmp_file, sep=';', columns=columns)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
-        
+    
+    def test_staypoints_csv_index_warning(self):
+        """Test if a warning is raised when not parsing the index_col arguement."""
+        file = os.path.join('tests', 'data', 'staypoints.csv')
+        with pytest.warns(UserWarning):
+            ti.read_staypoints_csv(file, sep=';')
+            
     def test_staypoints_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass

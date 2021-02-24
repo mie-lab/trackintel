@@ -74,7 +74,8 @@ def read_positionfixes_csv(*args, **kwargs):
     
     # Warning if no 'index_col' parameter is provided
     if not 'index_col' in kwargs:
-        warnings.warn("Assuming default index as unique identifier")
+        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" + 
+            "argument to avoid a warning when reading csv files.")
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
@@ -213,7 +214,8 @@ def read_staypoints_csv(*args, **kwargs):
     
     # Warning if no 'index_col' parameter is provided
     if not 'index_col' in kwargs:
-        warnings.warn("Assuming default index as unique identifier")
+        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" + 
+            "argument to avoid a warning when reading csv files.")
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
