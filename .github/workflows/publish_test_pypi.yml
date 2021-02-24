@@ -1,5 +1,5 @@
 name: pypi-publish
-on: release
+on: push
 jobs:
   build-n-publish:
     name: Build and publish Python distr to TestPyPI
