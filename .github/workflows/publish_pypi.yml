@@ -3,6 +3,8 @@ on:
   push:
     tags:
       - '*'
+    branches:
+      - main
 jobs:
   build-n-publish:
     name: Build and publish Python distr to TestPyPI
@@ -26,13 +28,13 @@ jobs:
         --sdist
         --wheel
         --outdir dist/
-#    - name: Publish distribution 📦 to test PyPI
-#      uses: pypa/gh-action-pypi-publish@master
-#      with:
-#        password: ${{ secrets.testpypikey }}
-#        repository_url: https://test.pypi.org/legacy/
-    - name: Publish distribution 📦 to PyPI
-      if: startsWith(github.ref, 'refs/tags')
+    - name: Publish distribution 📦 to test PyPI
       uses: pypa/gh-action-pypi-publish@master
       with:
-        password: ${{ secrets.pypikey }}
+        password: ${{ secrets.testpypikey }}
+        repository_url: https://test.pypi.org/legacy/
+#    - name: Publish distribution 📦 to PyPI
+#      if: startsWith(github.ref, 'refs/tags')
+#      uses: pypa/gh-action-pypi-publish@master
+#      with:
+#        password: ${{ secrets.pypikey }}
