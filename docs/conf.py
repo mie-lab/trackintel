@@ -66,7 +66,7 @@ author = 'Dominik Bucher, Henry Martin, Ye Hong'
 # The full version, including alpha/beta/rc tags
 #release = version
 
-version = '0.5.0'
+version = '0.5.0.2'
 release = version
 
 
