@@ -19,4 +19,5 @@ class TestStaypoints:
     def test_staypoints_center(self):
         stps_file = os.path.join('tests', 'data', 'staypoints.csv')
         stps = ti.read_staypoints_csv(stps_file, sep=';', index_col='id')
+        # check if stps has methods from gpd and contains (lat, lon) pairs as geometry
         assert len(stps.as_staypoints.center) == 2
