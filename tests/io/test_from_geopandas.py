@@ -38,12 +38,15 @@ class TestFromGeopandas:
     def test_locations_from_gpd(self):
         # TODO: Problem with multiple geometry columns and geojson format
         gdf = gpd.read_file(os.path.join('tests', 'data', 'locations.geojson'))
-        plcs_from_gpd = ti.io.from_geopandas.locations_from_gpd(gdf, user_id='User', center='geometry')
-        plcs_from_csv = ti.read_locations_csv(os.path.join('tests', 'data', 'locations.csv'), sep=';')
+        gdf.set_index('id', inplace=True)
+        locs_from_gpd = ti.io.from_geopandas.locations_from_gpd(gdf, user_id='User', center='geometry')
+        
+        locs_csv = os.path.join('tests', 'data', 'locations.csv')
+        locs_from_csv = ti.read_locations_csv(locs_csv, sep=';', index_col='id')
 
         # drop the second geometry column manually because not storable in GeoJSON (from Geopandas)
-        plcs_from_csv = plcs_from_csv.drop(columns='extent')
-        pd.testing.assert_frame_equal(plcs_from_csv, plcs_from_gpd, check_exact=False)
+        locs_from_csv = locs_from_csv.drop(columns='extent')
+        pd.testing.assert_frame_equal(locs_from_csv, locs_from_gpd, check_exact=False)
 
     def test_trips_from_gpd(self):
         df = pd.read_csv(os.path.join('tests', 'data', 'trips.csv'), sep=';')

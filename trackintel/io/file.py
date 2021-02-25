@@ -282,6 +282,11 @@ def read_locations_csv(*args, **kwargs):
     """
     columns = kwargs.pop('columns', {})
     
+    # Warning if no 'index_col' parameter is provided
+    if not 'index_col' in kwargs:
+        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" + 
+            "argument to avoid a warning when reading csv files.")
+    
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
     df['center'] = df['center'].apply(wkt.loads)

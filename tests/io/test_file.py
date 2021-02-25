@@ -90,11 +90,10 @@ class TestFile:
         orig_file = os.path.join('tests', 'data', 'locations.csv')
         mod_file = os.path.join('tests','data','locations_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'locations_test.csv')
-        mod_plcs = ti.read_locations_csv(mod_file, columns={'geom':'center'},sep=';')
-        locs = ti.read_locations_csv(orig_file, sep=';')
-        assert mod_plcs.equals(locs)
-        locs.as_locations.to_csv(tmp_file, sep=';',
-                              columns=['user_id', 'elevation', 'center', 'extent'])
+        mod_locs = ti.read_locations_csv(mod_file, columns={'geom':'center'},sep=';', index_col="id")
+        locs = ti.read_locations_csv(orig_file, sep=';', index_col="id")
+        assert mod_locs.equals(locs)
+        locs.as_locations.to_csv(tmp_file, sep=';', columns=['user_id', 'elevation', 'center', 'extent'])
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
         
@@ -110,7 +109,8 @@ class TestFile:
         mod_file = os.path.join('tests', 'data', 'trips_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'trips_test.csv')
         tpls = ti.read_trips_csv(orig_file, sep=';')
-        mod_tpls = ti.read_trips_csv(mod_file, columns= {'orig_stp':'origin_staypoint_id','dest_stp':'destination_staypoint_id'},sep=';')
+        column_mapping = {'orig_stp':'origin_staypoint_id','dest_stp':'destination_staypoint_id'}
+        mod_tpls = ti.read_trips_csv(mod_file, columns= column_mapping,sep=';')
         assert mod_tpls.equals(tpls)
         tpls['started_at'] = tpls['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
         tpls['finished_at'] = tpls['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
