@@ -89,7 +89,7 @@ def generate_locations(staypoints,
                     
                 # enforce unique lables across all users without changing noise labels
                 max_label = np.max(labels)
-                labels[labels != -1] = labels[labels != -1] + location_id_counter +1
+                labels[labels != -1] = labels[labels != -1] + location_id_counter
                 if max_label > -1:
                     location_id_counter = location_id_counter + max_label + 1
                 
