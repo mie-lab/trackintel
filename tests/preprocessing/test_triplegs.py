@@ -9,7 +9,8 @@ import trackintel as ti
 
 class TestSmoothen_triplegs():
     def test_smoothen_triplegs(self):
-        tpls = ti.read_triplegs_csv(os.path.join('tests','data','triplegs_with_too_many_points_test.csv'), sep=';')
+        tpls_file = os.path.join('tests','data','triplegs_with_too_many_points_test.csv')
+        tpls = ti.read_triplegs_csv(tpls_file, sep=';', index_col=None)
         tpls_smoothed = ti.preprocessing.triplegs.smoothen_triplegs(tpls, tolerance=0.0001)
         line1 = tpls.iloc[0].geom
         line1_smoothed = tpls_smoothed.iloc[0].geom
@@ -44,7 +45,6 @@ class TestGenerate_trips():
 
         # generate trips and a joint staypoint/triplegs dataframe
         stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=gap_threshold, id_offset=0)
-        trips.set_index('id', inplace=True)
         # test if generated trips are equal
         pd.testing.assert_frame_equal(trips_loaded, trips)
         
@@ -64,7 +64,7 @@ class TestGenerate_trips():
                                                                      id_offset=0)
         
         assert stps['user_id'].dtype == trips['user_id'].dtype
-        assert trips['id'].dtype == "int64"
+        assert trips.index.dtype == "int64"
         
     def test_generate_trips_gap_detection(self):
         """
@@ -117,7 +117,6 @@ class TestGenerate_trips():
                                                                                id_offset=0)
         spts_tpls = _create_debug_spts_tpls_data(stps_proc, tpls_proc, gap_threshold=gap_threshold)
 
-        trips.set_index('id', inplace=True)
         # test if generated trips are equal
         pd.testing.assert_frame_equal(trips_loaded, trips)
 

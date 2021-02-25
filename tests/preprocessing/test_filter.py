@@ -30,7 +30,8 @@ class TestSpatial_filter():
         
     def test_filter_triplegs(self):
         # read triplegs and area file
-        tpls = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv'), tz='utc')
+        tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv')
+        tpls = ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
         extent = gpd.read_file(os.path.join('tests', 'data', 'area', 'tsinghua.geojson'))
         
         # the projection needs to be defined: WGS84

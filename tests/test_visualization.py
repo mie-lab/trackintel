@@ -23,7 +23,7 @@ class TestIO:
         pfs = ti.read_positionfixes_csv(pfs_file, sep=';', index_col='id')
         
         tpls_file = os.path.join('tests', 'data', 'triplegs.csv')
-        tpls = ti.read_triplegs_csv(tpls_file, sep=';')
+        tpls = ti.read_triplegs_csv(tpls_file, sep=';', index_col='id')
         tpls.as_triplegs.plot(out_filename=tmp_file, positionfixes=pfs, plot_osm=False)
         assert os.path.exists(tmp_file)
         os.remove(tmp_file)
@@ -35,7 +35,7 @@ class TestIO:
         pfs = ti.read_positionfixes_csv(pfs_file, sep=';', index_col='id')
         
         stps_file = os.path.join('tests', 'data', 'staypoints.csv')
-        stps = ti.read_staypoints_csv('tests/data/staypoints.csv', sep=';', index_col='id')
+        stps = ti.read_staypoints_csv(stps_file, sep=';', index_col='id')
         stps.as_staypoints.plot(out_filename=tmp_file, radius=0.01, positionfixes=pfs, plot_osm=False)
         assert os.path.exists(tmp_file)
         os.remove(tmp_file)

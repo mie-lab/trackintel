@@ -52,7 +52,12 @@ class TestFile:
         tpls.as_triplegs.to_csv(tmp_file, sep=';', columns=columns)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
-
+        
+    def test_triplegs_csv_index_warning(self):
+        """Test if a warning is raised when not parsing the index_col arguement."""
+        file = os.path.join('tests', 'data', 'triplegs.csv')
+        with pytest.warns(UserWarning):
+            ti.read_triplegs_csv(file, sep=';')
 
     def test_triplegs_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
@@ -96,7 +101,12 @@ class TestFile:
         locs.as_locations.to_csv(tmp_file, sep=';', columns=['user_id', 'elevation', 'center', 'extent'])
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
-        
+    
+    def test_locations_csv_index_warning(self):
+        """Test if a warning is raised when not parsing the index_col arguement."""
+        file = os.path.join('tests', 'data', 'locations.csv')
+        with pytest.warns(UserWarning):
+            ti.read_locations_csv(file, sep=';')
         
     def test_locations_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
@@ -119,7 +129,13 @@ class TestFile:
         trips.as_trips.to_csv(tmp_file, sep=';', columns=columns)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
-        
+    
+    def test_trips_csv_index_warning(self):
+        """Test if a warning is raised when not parsing the index_col arguement."""
+        file = os.path.join('tests', 'data', 'trips.csv')
+        with pytest.warns(UserWarning):
+            ti.read_trips_csv(file, sep=';')
+            
     def test_trips_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass

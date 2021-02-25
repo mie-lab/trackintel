@@ -79,7 +79,7 @@ class TestGenerate_triplegs():
 
         # load pregenerated test-triplegs
         tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs_short.csv')
-        tpls_test = ti.read_triplegs_csv(tpls_file, tz='utc')
+        tpls_test = ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
 
         assert len(tpls) > 0
         assert len(tpls) == len(tpls)

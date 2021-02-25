@@ -61,15 +61,15 @@ class TestCalculate_distance_matrix:
 
     def test_trajectory_distance(self):
         tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv')
-        tpls = ti.read_triplegs_csv(tpls_file, tz='utc')
+        tpls = ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
         D_single = calculate_distance_matrix(X=tpls.iloc[0:4], dist_metric='dtw', n_jobs=1)
         D_multi = calculate_distance_matrix(X=tpls.iloc[0:4], dist_metric='dtw', n_jobs=4)
 
         assert np.isclose(np.sum(np.abs(D_single - D_multi)), 0)
 
     def test_trajectory_distance_via_accessor_x(self):
-        tpls = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv'), tz='utc')
-
+        tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv')
+        tpls = ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
 
         D_single = tpls.iloc[0:4].as_triplegs.similarity(dist_metric='dtw', n_jobs=1)
         D_multi = tpls.iloc[0:4].as_triplegs.similarity(dist_metric='dtw', n_jobs=4)
@@ -77,7 +77,8 @@ class TestCalculate_distance_matrix:
         assert np.isclose(np.sum(np.abs(D_single - D_multi)), 0)
 
     def test_trajectory_distance_via_accessor_xy(self):
-        tpls = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv'), tz='utc')
+        tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv')
+        tpls = ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
 
         x = tpls.iloc[0:2]
         y = tpls.iloc[4:8]
