@@ -35,7 +35,7 @@ class TestGenerate_locations():
         stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
         stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
         
-        # haversine calculation using sklearn.metrics.pairwise_distances, epsilon converted to radius
+        # haversine calculation using sklearn.metrics.pairwise_distances
         stps, locs = stps.as_staypoints.generate_locations(method='dbscan', epsilon=10, 
                                                     num_samples=0, distance_matrix_metric='haversine',
                                                     agg_level='dataset')
@@ -45,7 +45,7 @@ class TestGenerate_locations():
         db = DBSCAN(eps=10, min_samples=0, metric="precomputed")
         labels = db.fit_predict(sp_distance_matrix)
         
-        assert len(set(locs['id'])) == len(set(labels)) , "The #location should be the same"
+        assert len(set(locs.index)) == len(set(labels)) , "The number of locations should be the same"
     
     def test_generate_locations_dbscan_loc(self):
         stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
@@ -71,9 +71,10 @@ class TestGenerate_locations():
                 other_locs = other_locs.append(temp_loc, ignore_index=True)
 
         other_locs = gpd.GeoDataFrame(other_locs, geometry='center', crs=stps.crs)
+        other_locs.set_index('id', inplace=True)
         
         assert all(other_locs['center'] == locs['center']), "The location geometry should be the same"
-        assert all(other_locs['id'] == locs['id']), "The location id should be the same"
+        assert all(other_locs.index == locs.index), "The location id should be the same"
     
     def test_generate_locations_dbscan_user_dataset(self):
         stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
@@ -92,8 +93,8 @@ class TestGenerate_locations():
         _, locs_us = stps.as_staypoints.generate_locations(method='dbscan', epsilon=10, 
                                                           num_samples=0, distance_matrix_metric='haversine',
                                                           agg_level='user')
-        loc_ds_num = len(locs_ds['id'].unique())
-        loc_us_num = len(locs_us['id'].unique())
+        loc_ds_num = len(locs_ds.index.unique())
+        loc_us_num = len(locs_us.index.unique())
         assert loc_ds_num == 1, "Considering all staypoints at once, there should be only one location"
         assert loc_us_num == 2, "Considering user staypoints separately, there should be two locations"
     
@@ -129,7 +130,7 @@ class TestGenerate_locations():
                                                            distance_matrix_metric='haversine',
                                                            agg_level='dataset')
         assert stps['user_id'].dtype == locs['user_id'].dtype
-        assert stps['location_id'].dtype == locs['id'].dtype
+        assert stps['location_id'].dtype == locs.index.dtype
         # change the user_id to string
         stps['user_id'] = stps['user_id'].apply(lambda x: str(x))
         stps, locs = stps.as_staypoints.generate_locations(method='dbscan', 
@@ -138,7 +139,7 @@ class TestGenerate_locations():
                                                            distance_matrix_metric='haversine',
                                                            agg_level='dataset')
         assert stps['user_id'].dtype == locs['user_id'].dtype
-        assert stps['location_id'].dtype == locs['id'].dtype
+        assert stps['location_id'].dtype == locs.index.dtype
         
         
 class TestCreate_activity_flag():
