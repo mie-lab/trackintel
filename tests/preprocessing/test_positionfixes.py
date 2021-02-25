@@ -69,18 +69,63 @@ class TestGenerate_staypoints():
         
 
 class TestGenerate_triplegs():
-    def test_generate_triplegs_global(self):
+    def test_generate_triplegs_case1(self):
+        """Test tripleg generation using the 'between_staypoints' method for case 1.
+        case 1: triplegs from positionfixes with column 'staypoint_id' and staypoints."""
         # generate triplegs from raw-data
         pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
         pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', 
                                                              dist_threshold=25, 
                                                              time_threshold=5 * 60)
-        pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
 
         # load pregenerated test-triplegs
         tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs_short.csv')
         tpls_test = ti.read_triplegs_csv(tpls_file, tz='utc')
 
+        assert len(tpls) > 0
+        assert len(tpls) == len(tpls)
+
+        distance_sum = 0
+        for i in range(len(tpls)):
+            distance = tpls.geom.iloc[i].distance(tpls_test.geom.iloc[i])
+            distance_sum = distance_sum + distance
+        np.testing.assert_almost_equal(distance_sum, 0.0)
+
+    def test_generate_triplegs_case2(self):
+        """Test tripleg generation using the 'between_staypoints' method for case 2.
+        case 2: triplegs from positionfixes (without column 'staypoint_id') and staypoints."""
+
+        # generate triplegs from raw-data using
+        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
+        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
+        pfs.drop('staypoint_id', axis=1, inplace=True)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
+
+        # load pregenerated test-triplegs
+        tpls_test = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs_short.csv'),
+                                         tz='utc')
+        assert len(tpls) > 0
+        assert len(tpls) == len(tpls)
+
+        distance_sum = 0
+        for i in range(len(tpls)):
+            distance = tpls.geom.iloc[i].distance(tpls_test.geom.iloc[i])
+            distance_sum = distance_sum + distance
+        np.testing.assert_almost_equal(distance_sum, 0.0)
+
+    def test_generate_triplegs_case3(self):
+        """Test tripleg generation using the 'between_staypoints' method for case 3.
+        case 3: triplegs from positionfixes with column 'staypoint_id' but without staypoints."""
+
+        # generate triplegs from raw-data using
+        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
+        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(method='between_staypoints')
+
+        # load pregenerated test-triplegs
+        tpls_test = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs_short.csv'),
+                                         tz='utc')
         assert len(tpls) > 0
         assert len(tpls) == len(tpls)
 

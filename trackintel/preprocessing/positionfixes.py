@@ -20,6 +20,7 @@ def generate_staypoints(positionfixes,
     
     Parameters
     ----------
+    
     positionfixes : GeoDataFrame
         The positionfixes have to follow the standard definition for positionfixes DataFrames.
 
@@ -33,8 +34,6 @@ def generate_staypoints(positionfixes,
 
     time_threshold : float, default 300 (seconds)
         The time threshold for the 'sliding' method in seconds, i.e., how long someone has to 
-        stay within an area to consider it as a staypoint.
-
     dist_func : function, defaut haversine_dist
         The distance matrix used by the applied method. Possible metrics are: {'haversine_dist'}
         
@@ -148,12 +147,11 @@ def generate_staypoints(positionfixes,
     return ret_pfs, ret_spts
 
 
-def generate_triplegs(positionfixes, staypoints=None, *args, **kwargs):
-    """
-    Generate triplegs from positionfixes.
-    
+def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints'):
+    """Generates triplegs from positionfixes.
+
     A tripleg is (for now) defined as anything that happens between two consecutive staypoints.
-    
+
     **Attention**: This function requires either a column ``staypoint_id`` on the 
     positionfixes or passing some staypoints that correspond to the positionfixes! 
     This means you usually should call ``extract_staypoints()`` first.
@@ -162,6 +160,11 @@ def generate_triplegs(positionfixes, staypoints=None, *args, **kwargs):
     ----------
     positionfixes : GeoDataFrame
         The positionfixes have to follow the standard definition for positionfixes DataFrames.
+
+    method: str
+        Method to create tripelgs. Can be one of the following: ('between_staypoints', )
+        'between_staypoints': A tripleg is then defined as all positionfixes between two staypoints. This method
+            requires either a column ``staypoint_id`` on the positionfixes or passing staypoints as an input.
 
     staypoints : GeoDataFrame, optional
         The staypoints (corresponding to the positionfixes). If this is not passed, the 
@@ -181,7 +184,9 @@ def generate_triplegs(positionfixes, staypoints=None, *args, **kwargs):
     ret_pfs = positionfixes.copy()
     
     name_geocol = ret_pfs.geometry.name
+
     # Check that data adheres to contract.
+    # todo: check if this check is necessary
     if staypoints is None and len(ret_pfs['staypoint_id'].unique()) < 2:
         raise ValueError("If staypoints is not defined, positionfixes must have more than 1 staypoint_id.")
 
@@ -191,155 +196,245 @@ def generate_triplegs(positionfixes, staypoints=None, *args, **kwargs):
 
     ret_tpls = pd.DataFrame(columns=['id', 'user_id', 'started_at', 'finished_at', 'geom'])
     curr_tripleg_id = 0
+
+    # todo: the cases should be: 1: both exist, 2 only staypoints, 3 only id
+    # get case:
+    # Case 1: Staypoints exist and are connected to positionfixes by user id
+    # Case 2: Staypoints exist but there is no user_id given
+    # case 3: Only positionfixes with staypoint id for tripleg generation
+    if staypoints is not None and "staypoint_id" in ret_pfs:
+        case = 1
+    elif staypoints is not None:
+        case = 2
+    elif "staypoint_id" in ret_pfs:
+        case = 3
+    else:
+        raise Exception('unknown case')
+
     # Do this for each user.
+    generated_triplegs = []
     for user_id_this in ret_pfs['user_id'].unique():
 
         positionfixes_user_this = ret_pfs.loc[ret_pfs['user_id'] == user_id_this]  # this is no copy
         pfs = positionfixes_user_this.sort_values('tracked_at')
-        generated_triplegs = []
 
         # Case 1: Staypoints exist and are connected to positionfixes by user id
-        if staypoints is not None and "staypoint_id" in pfs:
-            stps = staypoints.loc[staypoints['user_id'] == user_id_this].sort_values('started_at')
-            stps = stps.reset_index().to_dict('records')
-            for stp1, stp2 in zip(list(stps), list(stps)[1:]):
-                # Get all positionfixes that lie between these two staypoints.
-
-                # get the last posfix of the first staypoint
-                index_first_posfix_tl = pfs[pfs.staypoint_id == stp1['id']].index[-1]
-                position_first_posfix_tl = pfs.index.get_loc(index_first_posfix_tl)
-
-                # get first posfix of the second staypoint
-                index_last_posfix_tl = pfs[pfs.staypoint_id == stp2['id']].index[0]
-                position_last_posfix_tl = pfs.index.get_loc(index_last_posfix_tl)
-
-                pfs_tripleg = pfs.iloc[position_first_posfix_tl:position_last_posfix_tl + 1]
-
-                # include every positionfix that brings you closer to the center 
-                # of the staypoint
-
-                started_at = pfs_tripleg['tracked_at'].iloc[0]
-                finished_at = pfs_tripleg['tracked_at'].iloc[-1]
-
-                coords = list(pfs_tripleg.geometry.apply(lambda r: (r.x, r.y)))
-
-                if len(coords) > 1:
-                    generated_triplegs.append({
-                        'id': curr_tripleg_id,
-                        'user_id': user_id_this,
-                        'started_at': started_at,  # pfs_tripleg['tracked_at'].iloc[0],
-                        'finished_at': finished_at,  # pfs_tripleg['tracked_at'].iloc[-1],
-                        'geom': LineString(coords)
-                    })
-                    curr_tripleg_id += 1
+        if case == 1:
+            generated_triplegs.extend(_triplegs_between_staypoints_case1(ret_pfs, staypoints, user_id_this))
 
         # Case 2: Staypoints exist but there is no user_id given
-        # TODO Not so efficient, always matching on the time (as things are sorted anyways).
-        elif staypoints is not None:
-            stps = staypoints.loc[staypoints['user_id'] == user_id_this].sort_values('started_at')
-            stps = stps.to_dict('records')
-            for stp1, stp2 in zip(list(stps), list(stps)[1:]):
-                # Get all positionfixes that lie between these two staypoints.
-                pfs_tripleg = pfs[(stp1['finished_at'] <= pfs['tracked_at']) & \
-                                  (pfs['tracked_at'] <= stp2['started_at'])].sort_values('tracked_at')
-
-                coords = list(pfs_tripleg.geometry.apply(lambda r: (r.x, r.y)))
-                if len(coords) > 1:
-                    generated_triplegs.append({
-                        'id': curr_tripleg_id,
-                        'user_id': user_id_this,
-                        'started_at': pfs_tripleg['tracked_at'].iloc[0],
-                        'finished_at': pfs_tripleg['tracked_at'].iloc[-1],
-                        'geom': LineString(list(pfs_tripleg.geometry.apply(lambda r: (r.x, r.y))))
-                    })
-                    curr_tripleg_id += 1
+        elif case == 2:
+            generated_triplegs.extend(_triplegs_between_staypoints_case2(ret_pfs, staypoints, user_id_this))
 
         # case 3: Only positionfixes with staypoint id for tripleg generation
-        else:
-            prev_pf = None
-            curr_tripleg = {
-                'id': curr_tripleg_id,
-                'user_id': user_id_this,
-                'started_at': pfs['tracked_at'].iloc[0],
-                'finished_at': None,
-                'coords': []
-            }
-            for idx, pf in pfs.iterrows():
-                if prev_pf is not None and prev_pf['staypoint_id'] == -1 and pf['staypoint_id'] != -1:
-                    # This tripleg ends. 
-                    pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
-                    curr_tripleg['finished_at'] = pf['tracked_at']
-                    curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
+        elif case == 3:
+            generated_triplegs.extend(_triplegs_between_staypoints_case3(ret_pfs, user_id_this))
 
-                elif (prev_pf is not None and prev_pf['staypoint_id'] != -1 and pf['staypoint_id'] == -1):
-                    # A new tripleg starts (due to a staypoint_id switch from -1 to x).
-                    if len(curr_tripleg['coords']) > 1:
-                        curr_tripleg[name_geocol] = LineString(curr_tripleg['coords'])
-                        del curr_tripleg['coords']
-                        generated_triplegs.append(curr_tripleg)
-                        curr_tripleg_id += 1
 
-                    curr_tripleg = {'id': curr_tripleg_id, 'user_id': user_id_this, 'started_at': None,
-                                    'finished_at': None, 'coords': []}
-                    prev_pf['tripleg_id'] = curr_tripleg_id
-                    pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
-                    curr_tripleg['started_at'] = pf['tracked_at']
-                    curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
 
-                elif prev_pf is not None and prev_pf['staypoint_id'] != -1 and \
-                        pf['staypoint_id'] != -1 and prev_pf['staypoint_id'] != pf['staypoint_id']:
-                    # A new tripleg starts (due to a staypoint_id switch from x to y).
-                    pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
-                    curr_tripleg['finished_at'] = pf['tracked_at']
-                    curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
-
-                    if len(curr_tripleg['coords']) > 1:
-                        curr_tripleg[name_geocol] = LineString(curr_tripleg['coords'])
-                        del curr_tripleg['coords']
-                        generated_triplegs.append(curr_tripleg)
-                        curr_tripleg_id += 1
-
-                    curr_tripleg = {
-                        'id': curr_tripleg_id,
-                        'user_id': user_id_this,
-                        'started_at': None,
-                        'finished_at': None,
-                        'coords': []
-                    }
-                    prev_pf['tripleg_id'] = curr_tripleg_id
-                    pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
-                    curr_tripleg['started_at'] = pf['tracked_at']
-                    curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
-
-                elif prev_pf is not None and prev_pf['staypoint_id'] != -1 and \
-                        prev_pf['staypoint_id'] == pf['staypoint_id']:
-                    # This is still "at the same staypoint". Do nothing.
-                    pass
-
-                else:
-                    pfs.loc[idx, 'tripleg_id'] = curr_tripleg_id
-                    curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
-
-                prev_pf = pf
-        if len(generated_triplegs) > 0:
-            ret_tpls = ret_tpls.append(generated_triplegs)
-
-    ret_tpls = gpd.GeoDataFrame(ret_tpls, geometry='geom', crs=ret_pfs.crs)
-    
+    # todo: generate dataframe
+    # todo: generate ids
+    ret_tpls = gpd.GeoDataFrame(generated_triplegs, geometry='geom', crs=ret_pfs.crs)
+    ret_tpls.index.name = 'id'
     ## ensure dtype consistency 
     # tpls id (generated by this function) should be int64
-    ret_tpls['id'] = ret_tpls['id'].astype('int64')
+    # ret_tpls['id'] = ret_tpls['id'].astype('int64')
     # ISSUE 56: no tripleg_id is assigned for case 1
     # ret_pfs['tripleg_id'] = ret_pfs['tripleg_id'].astype('int64')
     
     # user_id of tpls should be the same as ret_pfs
     ret_tpls['user_id'] = ret_tpls['user_id'].astype(ret_pfs['user_id'].dtype)
-    
-    
+
     # todo: triplegs dataframe has use the index as id
     # todo: proposed fix: ret_triplegs = ret_triplegs.set_index('id')
     return ret_pfs, ret_tpls
 
+def _triplegs_between_staypoints_case1(positionfixes, staypoints, user_id_this):
+    """
+    Create triplegs as the collection of all positionfixes between two consecutive staypoints.
+    This function uses the staypoints and the column 'staypoint_id' in the positionfixes, to identify all
+    positionfixes that lie in between two staypoints. These positionfixes build a new tripleg.
+
+    Parameters
+    ----------
+    positionfixes: trackintel positionfixes
+    staypoints: trackintel staypoints
+    user_id_this:
+
+    Returns
+    --------
+    list
+        a list of dictionaries with individual triplegs
+
+    Notes
+    -------
+    The last positionfix of a staypoint and the first positionfix of the next staypoint are the first and last
+    positionfix of the tripleg.
+
+    """
+
+    generated_triplegs_list = []
+    stps = staypoints.loc[staypoints['user_id'] == user_id_this].sort_values('started_at')
+    stps = stps.to_dict('records') # maybe add .reset_index()
+
+    for stp1, stp2 in zip(list(stps), list(stps)[1:]):
+        # Get all positionfixes that lie between these two staypoints.
+
+        # get the last posfix of the first staypoint
+        index_first_posfix_tl = positionfixes[positionfixes.staypoint_id == stp1['id']].index[-1]
+        position_first_posfix_tl = positionfixes.index.get_loc(index_first_posfix_tl)
+
+        # get first posfix of the second staypoint
+        index_last_posfix_tl = positionfixes[positionfixes.staypoint_id == stp2['id']].index[0]
+        position_last_posfix_tl = positionfixes.index.get_loc(index_last_posfix_tl)
+
+        pfs_tripleg = positionfixes.iloc[position_first_posfix_tl:position_last_posfix_tl + 1]
+
+        started_at = pfs_tripleg['tracked_at'].iloc[0]
+        finished_at = pfs_tripleg['tracked_at'].iloc[-1]
+
+        coords = list(pfs_tripleg.geometry.apply(lambda r: (r.x, r.y)))
+
+        if len(coords) > 1:
+            generated_triplegs_list.append({
+                'user_id': user_id_this,
+                'started_at': started_at,  # pfs_tripleg['tracked_at'].iloc[0],
+                'finished_at': finished_at,  # pfs_tripleg['tracked_at'].iloc[-1],
+                'geom': LineString(coords)
+            })
+
+    return generated_triplegs_list
+
+
+def _triplegs_between_staypoints_case2(positionfixes, staypoints, user_id_this):
+    """
+    Create triplegs as the collection of all positionfixes between two consecutive staypoints.
+    This function uses only staypoints to identify all positionfixes that lie in between two staypoints. These
+    positionfixes build a new tripleg.
+
+    Parameters
+    ----------
+    positionfixes: trackintel positionfixes
+    staypoints: trackintel staypoints
+    user_id_this:
+
+    Returns
+    --------
+    list
+        a list of dictionaries with individual triplegs
+
+    Notes
+    -------
+    The last positionfix of a staypoint and the first positionfix of the next staypoint are the first and last
+    positionfix of the tripleg. This function yields the same results but is less efficient than
+    `_triplegs_between_staypoints_case1`.
+
+    """
+    generated_triplegs_list = []
+    stps = staypoints.loc[staypoints['user_id'] == user_id_this].sort_values('started_at')
+    stps = stps.to_dict('records')
+    for stp1, stp2 in zip(list(stps), list(stps)[1:]):
+        # Get all positionfixes that lie between these two staypoints.
+        # TODO Not so efficient, always matching on the time (as things are sorted anyways).
+        pfs_tripleg = positionfixes[(stp1['finished_at'] <= positionfixes['tracked_at']) & \
+                          (positionfixes['tracked_at'] <= stp2['started_at'])].sort_values('tracked_at')
+
+        coords = list(pfs_tripleg.geometry.apply(lambda r: (r.x, r.y)))
+        if len(coords) > 1:
+            generated_triplegs_list.append({
+                'user_id': user_id_this,
+                'started_at': pfs_tripleg['tracked_at'].iloc[0],
+                'finished_at': pfs_tripleg['tracked_at'].iloc[-1],
+                'geom': LineString(list(pfs_tripleg.geometry.apply(lambda r: (r.x, r.y))))
+            })
+
+    return generated_triplegs_list
+
+def _triplegs_between_staypoints_case3(positionfixes, user_id_this):
+    """
+    Create triplegs as the collection of all positionfixes between two consecutive staypoints.
+    This function uses only positionfixes but requires them to have a column 'staypoint_id'.
+
+    Parameters
+    ----------
+    positionfixes: trackintel positionfixes
+    user_id_this:
+
+    Returns
+    --------
+    list
+        a list of dictionaries with individual triplegs
+
+    Notes
+    -------
+    The last positionfix of a staypoint and the first positionfix of the next staypoint are the first and last
+    positionfix of the tripleg. This function yields the same results but is less efficient than
+    `_triplegs_between_staypoints_case1`.
+
+    """
+
+    generated_triplegs = []
+    # initialize first tripleg
+    prev_pf = None
+    curr_tripleg = {
+        'user_id': user_id_this,
+        'started_at': positionfixes['tracked_at'].iloc[0],
+        'finished_at': None,
+        'coords': []
+    }
+    name_geocol = positionfixes.geometry.name
+    # iterate all positionfixes and check if the current tripleg ends
+    for idx, pf in positionfixes.iterrows():
+
+        if prev_pf is not None and prev_pf['staypoint_id'] == -1 and pf['staypoint_id'] != -1:
+            # This tripleg ends.
+            curr_tripleg['finished_at'] = pf['tracked_at']
+            curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
+
+        elif (prev_pf is not None and prev_pf['staypoint_id'] != -1 and pf['staypoint_id'] == -1):
+            # A new tripleg starts (due to a staypoint_id switch from -1 to x).
+            if len(curr_tripleg['coords']) > 1:
+                curr_tripleg[name_geocol] = LineString(curr_tripleg['coords'])
+                del curr_tripleg['coords']
+                generated_triplegs.append(curr_tripleg)
+
+            curr_tripleg = {'user_id': user_id_this, 'started_at': None,
+                            'finished_at': None, 'coords': []}
+            curr_tripleg['started_at'] = pf['tracked_at']
+            curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
+
+        elif prev_pf is not None and prev_pf['staypoint_id'] != -1 and \
+                pf['staypoint_id'] != -1 and prev_pf['staypoint_id'] != pf['staypoint_id']:
+            # A new tripleg starts (due to a staypoint_id switch from x to y).
+            curr_tripleg['finished_at'] = pf['tracked_at']
+            curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
+
+            if len(curr_tripleg['coords']) > 1:
+                curr_tripleg[name_geocol] = LineString(curr_tripleg['coords'])
+                del curr_tripleg['coords']
+                generated_triplegs.append(curr_tripleg)
+
+            curr_tripleg = {
+                'user_id': user_id_this,
+                'started_at': None,
+                'finished_at': None,
+                'coords': []
+            }
+
+            curr_tripleg['started_at'] = pf['tracked_at']
+            curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
+
+        elif prev_pf is not None and prev_pf['staypoint_id'] != -1 and \
+                prev_pf['staypoint_id'] == pf['staypoint_id']:
+            # This is still "at the same staypoint". Do nothing.
+            pass
+
+        else:
+            curr_tripleg['coords'].append((pf[name_geocol].x, pf[name_geocol].y))
+
+        prev_pf = pf
+    # todo: return positionfix ids per tripleg
+    return generated_triplegs
 
 def _generate_staypoints_sliding_user(df, 
                                       name_geocol, 
