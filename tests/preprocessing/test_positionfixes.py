@@ -1,16 +1,42 @@
 import datetime
 import os
 import sys
+from math import radians
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from sklearn.cluster import DBSCAN
+import pytest
 from shapely.geometry import Point
-from math import radians
+from sklearn.cluster import DBSCAN
 
 import trackintel as ti
 from trackintel.geogr.distances import haversine_dist
+
+
+@pytest.fixture
+def pfs_geolife():
+    return ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
+
+
+@pytest.fixture
+def geolife_pfs_spts_short(pfs_geolife):
+    pfs, spts = pfs_geolife.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25,
+                                                                 time_threshold=5 * 60)
+    return pfs, spts
+
+
+@pytest.fixture
+def testdata_tpls_geolife():
+    tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs_short.csv')
+    return ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
+
+
+@pytest.fixture
+def testdata_pfs_ids_geolife():
+    pfs_file = os.path.join('tests', 'data', 'geolife', 'geolife_positionfixes_with_ids.csv')
+    return ti.read_positionfixes_csv(pfs_file, index_col='id')
+
 
 class TestGenerate_staypoints():
     def test_generate_staypoints_sliding_min(self):
@@ -18,133 +44,145 @@ class TestGenerate_staypoints():
         pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
         pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         assert len(spts) == len(pfs), "With small thresholds, staypoint extraction should yield each positionfix"
-        
+
     def test_generate_staypoints_sliding_max(self):
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
         pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
-        _, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', 
-                                                           dist_threshold=sys.maxsize, 
+        _, spts = pfs.as_positionfixes.generate_staypoints(method='sliding',
+                                                           dist_threshold=sys.maxsize,
                                                            time_threshold=sys.maxsize)
         assert len(spts) == 0, "With large thresholds, staypoint extraction should not yield positionfixes"
-        
+
     def test_generate_staypoints_dtype_consistent(self):
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
         pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
-        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', 
-                                                             dist_threshold=25, 
+        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding',
+                                                             dist_threshold=25,
                                                              time_threshold=5 * 60)
         assert pfs['user_id'].dtype == spts['user_id'].dtype
         # assert pfs['staypoint_id'].dtype == spts['id'].dtype
-        
+
     def test_generate_staypoints_groupby_sliding(self):
         """Test the 'sliding' result obtained using user_id for loop (previous) with groupby.apply (current)."""
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
         pfs_ori = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
-        
+
         # stps detection using groupby
-        pfs_groupby, spts_groupby = pfs_ori.as_positionfixes.generate_staypoints(method='sliding', 
-                                                                                 dist_threshold=25, 
+        pfs_groupby, spts_groupby = pfs_ori.as_positionfixes.generate_staypoints(method='sliding',
+                                                                                 dist_threshold=25,
                                                                                  time_threshold=300)
         # stps detection using for loop
-        pfs_for, spts_for = _generate_staypoints_original(pfs_ori, 
-                                                          method='sliding', 
-                                                          dist_threshold=25, 
+        pfs_for, spts_for = _generate_staypoints_original(pfs_ori,
+                                                          method='sliding',
+                                                          dist_threshold=25,
                                                           time_threshold=300)
-        
+
         pd.testing.assert_frame_equal(spts_groupby, spts_for, check_dtype=False)
         pd.testing.assert_frame_equal(pfs_groupby, pfs_for, check_dtype=False)
-        
+
     def test_generate_staypoints_groupby_dbscan(self):
         """Test the 'dbscan' result obtained using user_id for loop (previous) with groupby.apply (current)."""
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
         pfs_ori = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
-        
+
         # stps detection using groupby
         pfs_groupby, spts_groupby = pfs_ori.as_positionfixes.generate_staypoints(method='dbscan')
         # stps detection using for loop
         pfs_for, spts_for = _generate_staypoints_original(pfs_ori, method='dbscan')
-        
+
         pd.testing.assert_frame_equal(spts_groupby, spts_for, check_dtype=False)
         pd.testing.assert_frame_equal(pfs_groupby, pfs_for, check_dtype=False)
-        
+
 
 class TestGenerate_triplegs():
-    def test_generate_triplegs_case1(self):
+    def test_generate_triplegs_case1(self, geolife_pfs_spts_short, testdata_tpls_geolife):
         """Test tripleg generation using the 'between_staypoints' method for case 1.
         case 1: triplegs from positionfixes with column 'staypoint_id' and staypoints."""
-        # generate triplegs from raw-data
-        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
-        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', 
-                                                             dist_threshold=25, 
-                                                             time_threshold=5 * 60)
+
+        pfs, spts = geolife_pfs_spts_short
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
 
-        # load pregenerated test-triplegs
-        tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs_short.csv')
-        tpls_test = ti.read_triplegs_csv(tpls_file, tz='utc')
+        assert (tpls.geometry.geom_almost_equals(testdata_tpls_geolife.geometry)).all()
+        pd.testing.assert_frame_equal(tpls.drop('geom', axis=1), testdata_tpls_geolife.drop('geom', axis=1),
+                                      check_like=True)
 
-        assert len(tpls) > 0
-        assert len(tpls) == len(tpls)
-
-        distance_sum = 0
-        for i in range(len(tpls)):
-            distance = tpls.geom.iloc[i].distance(tpls_test.geom.iloc[i])
-            distance_sum = distance_sum + distance
-        np.testing.assert_almost_equal(distance_sum, 0.0)
-
-    def test_generate_triplegs_case2(self):
+    def test_generate_triplegs_case2(self, geolife_pfs_spts_short, testdata_tpls_geolife):
         """Test tripleg generation using the 'between_staypoints' method for case 2.
         case 2: triplegs from positionfixes (without column 'staypoint_id') and staypoints."""
 
-        # generate triplegs from raw-data using
-        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
-        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
+        pfs, spts = geolife_pfs_spts_short
         pfs.drop('staypoint_id', axis=1, inplace=True)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
 
-        # load pregenerated test-triplegs
-        tpls_test = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs_short.csv'),
-                                         tz='utc')
-        assert len(tpls) > 0
-        assert len(tpls) == len(tpls)
+        assert (tpls.geometry.geom_almost_equals(testdata_tpls_geolife.geometry)).all()
+        pd.testing.assert_frame_equal(tpls.drop('geom', axis=1), testdata_tpls_geolife.drop('geom', axis=1),
+                                      check_like=True)
 
-        distance_sum = 0
-        for i in range(len(tpls)):
-            distance = tpls.geom.iloc[i].distance(tpls_test.geom.iloc[i])
-            distance_sum = distance_sum + distance
-        np.testing.assert_almost_equal(distance_sum, 0.0)
-
-    def test_generate_triplegs_case3(self):
+    def test_generate_triplegs_case3(self, geolife_pfs_spts_short, testdata_tpls_geolife):
         """Test tripleg generation using the 'between_staypoints' method for case 3.
         case 3: triplegs from positionfixes with column 'staypoint_id' but without staypoints."""
 
-        # generate triplegs from raw-data using
-        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
-        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
+        pfs, spts = geolife_pfs_spts_short
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(method='between_staypoints')
 
-        # load pregenerated test-triplegs
-        tpls_test = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs_short.csv'),
-                                         tz='utc')
-        assert len(tpls) > 0
-        assert len(tpls) == len(tpls)
+        assert (tpls.geometry.geom_almost_equals(testdata_tpls_geolife.geometry)).all()
+        pd.testing.assert_frame_equal(tpls.drop('geom', axis=1), testdata_tpls_geolife.drop('geom', axis=1),
+                                      check_like=True)
 
-        distance_sum = 0
-        for i in range(len(tpls)):
-            distance = tpls.geom.iloc[i].distance(tpls_test.geom.iloc[i])
-            distance_sum = distance_sum + distance
-        np.testing.assert_almost_equal(distance_sum, 0.0)
-    
+    def test_tripleg_ids_in_positionfixes_case1(self, geolife_pfs_spts_short, testdata_pfs_ids_geolife):
+        """
+        checks if positionfixes are not altered and if staypoint/tripleg ids where set correctly during tripleg
+        generation using the 'between_staypoints' method with positionfixes with 'staypoint_id' and staypoints as
+        input (case 2).
+        """
+        pfs, spts = geolife_pfs_spts_short
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
+
+        # check if staypoint/tripleg ids are present
+        assert (pfs.geometry.geom_almost_equals(testdata_pfs_ids_geolife.geometry)).all()
+        pd.testing.assert_frame_equal(pfs.drop('geom', axis=1), testdata_pfs_ids_geolife.drop('geom', axis=1),
+                                      check_like=True)
+
+    def test_tripleg_ids_in_positionfixes_case2(self, geolife_pfs_spts_short, testdata_pfs_ids_geolife):
+        """
+        checks if positionfixes are not altered and if staypoint/tripleg ids where set correctly during tripleg
+        generation using the 'between_staypoints' method with positionfixes without 'staypoint_id' and staypoints as
+        input (case 2).
+        """
+        pfs, spts = geolife_pfs_spts_short
+        pfs.drop('staypoint_id', axis=1, inplace=True)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
+
+        testdata_pfs_ids_geolife.drop('staypoint_id', axis=1, inplace=True)
+
+        # check if staypoint/tripleg ids are present
+        assert (pfs.geometry.geom_almost_equals(testdata_pfs_ids_geolife.geometry)).all()
+        pd.testing.assert_frame_equal(pfs.drop('geom', axis=1), testdata_pfs_ids_geolife.drop('geom', axis=1),
+                                      check_like=True)
+
+    def test_tripleg_ids_in_positionfixes_case3(self, geolife_pfs_spts_short, testdata_pfs_ids_geolife):
+        """
+        checks if positionfixes are not altered and if staypoint/tripleg ids where set correctly during tripleg
+        generation using the 'between_staypoints' method with only positionfixes as input (case 3).
+        """
+        pfs, spts = geolife_pfs_spts_short
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(method='between_staypoints')
+
+        # check if staypoint/tripleg ids are present
+        assert (pfs.geometry.geom_almost_equals(testdata_pfs_ids_geolife.geometry)).all()
+        pd.testing.assert_frame_equal(pfs.drop('geom', axis=1), testdata_pfs_ids_geolife.drop('geom', axis=1),
+                                      check_like=True)
+
     def test_generate_triplegs_dtype_consistent(self):
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
         pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
-        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', 
-                                                             dist_threshold=25, 
+        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding',
+                                                             dist_threshold=25,
                                                              time_threshold=5 * 60)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts)
         assert pfs['user_id'].dtype == tpls['user_id'].dtype
         # assert pfs['tripleg_id'].dtype == tpls['id'].dtype
-        
+
     def test_generate_staypoint_triplegs(self):
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
         pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
@@ -154,8 +192,8 @@ class TestGenerate_triplegs():
         assert len(tpls1) > 0, "There should be more than zero triplegs"
         assert len(tpls2) > 0, "There should be more than zero triplegs"
         assert len(tpls1) == len(tpls2), "If we extract the staypoints in the same way, it should lead to " + \
-            "the same number of triplegs"
-            
+                                         "the same number of triplegs"
+
     def test_generate_staypoints_triplegs_overlap(self):
         """
         Triplegs and staypoints should not overlap when generated using the default extract triplegs method.
@@ -165,8 +203,8 @@ class TestGenerate_triplegs():
         """
         pfs_file = os.path.join('tests', 'data', 'geolife_long')
         pfs = ti.io.dataset_reader.read_geolife(pfs_file)
-        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding', 
-                                                             dist_threshold=25, 
+        pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding',
+                                                             dist_threshold=25,
                                                              time_threshold=5 * 60)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts)
 
@@ -182,10 +220,9 @@ class TestGenerate_triplegs():
             # all values have to greater or equal to zero. Otherwise there is an overlap
             assert all(diff >= np.timedelta64(datetime.timedelta()))
 
-            
 
 def _generate_staypoints_original(positionfixes, method='sliding',
-                                  dist_threshold=50, time_threshold= 300, epsilon=100,
+                                  dist_threshold=50, time_threshold=300, epsilon=100,
                                   dist_func=haversine_dist, num_samples=1):
     """
     Original function using 'user_id' for-loop to generate staypoints based on pfs.
@@ -195,8 +232,8 @@ def _generate_staypoints_original(positionfixes, method='sliding',
     # copy the original pfs for adding 'staypoint_id' column
     ret_pfs = positionfixes.copy()
     ret_pfs.sort_values(by='user_id', inplace=True)
-    
-    elevation_flag = 'elevation' in ret_pfs.columns # if there is elevation data
+
+    elevation_flag = 'elevation' in ret_pfs.columns  # if there is elevation data
 
     name_geocol = ret_pfs.geometry.name
     ret_spts = pd.DataFrame(columns=['id', 'user_id', 'started_at', 'finished_at', 'geom'])
@@ -264,7 +301,7 @@ def _generate_staypoints_original(positionfixes, method='sliding',
                                 staypoint['id'] = staypoint_id_counter
 
                                 # store matching
-                                posfix_staypoint_matching[staypoint_id_counter] = [idx[j]] 
+                                posfix_staypoint_matching[staypoint_id_counter] = [idx[j]]
                                 staypoint_id_counter += 1
                                 ret_spts = ret_spts.append(staypoint, ignore_index=True)
                         i = j
@@ -277,7 +314,7 @@ def _generate_staypoints_original(positionfixes, method='sliding',
                 # note that we use .loc because above we have saved the id 
                 # of the positionfixes not thier absolut position
                 ret_pfs.loc[posfix_idlist, 'staypoint_id'] = staypoints_id
-        
+
 
     elif method == 'dbscan':
 
@@ -311,13 +348,13 @@ def _generate_staypoints_original(positionfixes, method='sliding',
 
                 # point geometry of staypoint
                 staypoint[name_geocol] = Point(group[name_geocol].x.mean(),
-                                           group[name_geocol].y.mean())
+                                               group[name_geocol].y.mean())
 
                 ret_spts = ret_spts.append(staypoint, ignore_index=True)
 
-    ret_spts = gpd.GeoDataFrame(ret_spts, geometry=name_geocol,crs=ret_pfs.crs)
-    ret_pfs = gpd.GeoDataFrame(ret_pfs, geometry=name_geocol,crs=ret_pfs.crs)
-    
+    ret_spts = gpd.GeoDataFrame(ret_spts, geometry=name_geocol, crs=ret_pfs.crs)
+    ret_pfs = gpd.GeoDataFrame(ret_pfs, geometry=name_geocol, crs=ret_pfs.crs)
+
     ## ensure dtype consistency 
     ret_spts['id'] = ret_spts['id'].astype('int64')
     ret_spts.set_index('id', inplace=True)
