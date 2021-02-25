@@ -42,9 +42,6 @@ class TestGenerate_trips():
         stps = stps.as_staypoints.create_activity_flag()
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 
-        # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
-        tpls = tpls.set_index('id')
-
         # generate trips and a joint staypoint/triplegs dataframe
         stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=gap_threshold, id_offset=0)
         trips.set_index('id', inplace=True)
@@ -59,10 +56,7 @@ class TestGenerate_trips():
                                                              time_threshold=5 * 60)
         stps = stps.as_staypoints.create_activity_flag()
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
-
-        # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
-        tpls = tpls.set_index('id')
-
+        
         # generate trips and a joint staypoint/triplegs dataframe
         stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, 
                                                                      tpls, 
@@ -146,9 +140,6 @@ class TestGenerate_trips():
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
         stps = stps.as_staypoints.create_activity_flag()
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
-
-        # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
-        tpls = tpls.set_index('id')
 
         # generate trips and a joint staypoint/triplegs dataframe
         stps, tpls, _ = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=gap_threshold, id_offset=0)

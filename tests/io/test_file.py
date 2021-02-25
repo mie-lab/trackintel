@@ -39,10 +39,10 @@ class TestFile:
         orig_file = os.path.join('tests', 'data', 'triplegs.csv')
         mod_file = os.path.join('tests','data','triplegs_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'triplegs_test.csv')
-        tpls = ti.read_triplegs_csv(orig_file, sep=';', tz='utc')
+        tpls = ti.read_triplegs_csv(orig_file, sep=';', tz='utc', index_col="id")
         
         column_mapping = {'start_time': 'started_at', 'end_time': 'finished_at', 'tripleg': 'geom'}
-        mod_tpls = ti.read_triplegs_csv(mod_file, sep=';', columns=column_mapping)
+        mod_tpls = ti.read_triplegs_csv(mod_file, sep=';', columns=column_mapping, index_col="id")
         
         assert mod_tpls.equals(tpls)
         tpls['started_at'] = tpls['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
@@ -108,15 +108,15 @@ class TestFile:
         orig_file = os.path.join('tests', 'data', 'trips.csv')
         mod_file = os.path.join('tests', 'data', 'trips_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'trips_test.csv')
-        tpls = ti.read_trips_csv(orig_file, sep=';')
+        trips = ti.read_trips_csv(orig_file, sep=';', index_col="id")
         column_mapping = {'orig_stp':'origin_staypoint_id','dest_stp':'destination_staypoint_id'}
-        mod_tpls = ti.read_trips_csv(mod_file, columns= column_mapping,sep=';')
-        assert mod_tpls.equals(tpls)
-        tpls['started_at'] = tpls['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
-        tpls['finished_at'] = tpls['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
-        tpls.as_trips.to_csv(tmp_file, sep=';',
-                             columns=['user_id', 'started_at', 'finished_at', 'origin_staypoint_id',
-                                      'destination_staypoint_id'])
+        mod_trips = ti.read_trips_csv(mod_file, columns= column_mapping, sep=';', index_col="id")
+        assert mod_trips.equals(trips)
+        
+        trips['started_at'] = trips['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
+        trips['finished_at'] = trips['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
+        columns = ['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'destination_staypoint_id']
+        trips.as_trips.to_csv(tmp_file, sep=';', columns=columns)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
         
