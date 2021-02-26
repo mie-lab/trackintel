@@ -269,6 +269,7 @@ def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints
     else:
         raise NameError('Chosen method is not defined')
 
+
 def _generate_staypoints_sliding_user(df,
                                       name_geocol,
                                       elevation_flag,
