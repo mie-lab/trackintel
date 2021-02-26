@@ -31,7 +31,10 @@ You can enter the *trackintel* framework if your data corresponds to any of the 
 * **Enrichment**: Activity semantics for staypoints; Mode of transport semantics for triplegs; High level semantics for locations
 
 ## Installation and Usage
-*trackintel* is on [pypi.org](https://pypi.org/project/trackintel/), you can install it with `pip install trackintel` as long as `GeoPandas` is already installed. 
+*trackintel* is on [pypi.org](https://pypi.org/project/trackintel/), you can install it in a `GeoPandas` available environment using: 
+```{python}
+pip install trackintel
+```
 
 You should then be able to run the examples in the `examples` folder or import trackintel using:
 ```{python}
@@ -39,37 +42,7 @@ import trackintel
 ```
 
 ## Development
-You can install *trackintel* locally using `pip install .`.
-For quick testing, use `trackintel.print_version()`.
-
-Testing is done using [pytest](https://docs.pytest.org/en/latest).
-Simply run the tests using `pytest` in the top-level trackintel folder.
-In case you use `pipenv`, install *pytest* first (`pip install pytest`), then run *pytest* using this version: `python -m pytest`.
-The use of [fixtures](https://pypi.org/project/fixtures/) for data generation (e.g., trips and trackpoints) is still an open todo.
-As for now, there are some smaller datasets in the `tests` folder.
-
-Versions use [semantic numbering](https://semver.org/).
-Commits follow the standard of [Conventional Commits](https://www.conventionalcommits.org).
-You can generate them easily using [Commitizen](https://github.com/commitizen/cz-cli).
-
-You can find the development roadmap under `ROADMAP.md` and coding conventions under `CONTRIBUTING.md`.
-
-### Documentation
-
-The documentation follws the [pandas resp. numpy docstring standard](https://pandas-docs.github.io/pandas-docs-travis/development/contributing.html#contributing-to-the-documentation).
-In particular, it uses [Sphinx](http://www.sphinx-doc.org/en/master/) to create the documentation.
-You can install Sphinx using `pip install -U sphinx` or `conda install sphinx`.
-
-If you use additional dependencies during development, do not forget to add them to `autodoc_mock_imports` in `docs/conf.py` for readthedocs.org to work properly.
-
-You can then generate the documentation using `sphinx-build -b html docs docs.gen`.
-This will put the documentation in `docs.gen`, which is in `.gitignore`.
-
-### Continuous Integration
-
-There are travis and appveyor CIs set up for Unix/Windows builds.
-You can find the corresponding scripts in `.travis.yml` and `appveyor.yml`.
-Adding [Coveralls](https://coveralls.io) is an open todo.
+You can find the development roadmap under `ROADMAP.md` and further development guidelines under `CONTRIBUTING.md`.
 
 ## Contributors
 
