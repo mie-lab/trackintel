@@ -52,14 +52,6 @@ def testdata_pfs_ids_geolife():
     pfs.geometry = pfs.geometry.set_crs(epsg=4326)
     return pfs
 
-
-def assert_geodataframe_equal(gdf1, gdf2, **kwargs):
-    """assert equal geometry and data seperatly for two geodataframes"""
-    assert (gdf1.geometry.geom_almost_equals(gdf2.geometry)).all()
-    pd.testing.assert_frame_equal(gdf1.drop('geom', axis=1), gdf2.drop('geom', axis=1),
-                                  **kwargs)
-
-
 class TestGenerate_staypoints():
     def test_generate_staypoints_sliding_min(self):
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
@@ -124,9 +116,7 @@ class TestGenerate_triplegs():
         pfs, spts = geolife_pfs_spts_short
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
 
-        assert (tpls.geometry.geom_almost_equals(testdata_tpls_geolife.geometry)).all()
-        pd.testing.assert_frame_equal(tpls.drop('geom', axis=1), testdata_tpls_geolife.drop('geom', axis=1),
-                                      check_like=True)
+        assert_geodataframe_equal(tpls, testdata_tpls_geolife)
 
     def test_generate_triplegs_case2(self, geolife_pfs_spts_short, testdata_tpls_geolife):
         """Test tripleg generation using the 'between_staypoints' method for case 2.
@@ -136,20 +126,16 @@ class TestGenerate_triplegs():
         pfs.drop('staypoint_id', axis=1, inplace=True)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
 
-        assert (tpls.geometry.geom_almost_equals(testdata_tpls_geolife.geometry)).all()
-        pd.testing.assert_frame_equal(tpls.drop('geom', axis=1), testdata_tpls_geolife.drop('geom', axis=1),
-                                      check_like=True)
+        assert_geodataframe_equal(tpls, testdata_tpls_geolife)
 
     def test_generate_triplegs_case3(self, geolife_pfs_spts_short, testdata_tpls_geolife):
         """Test tripleg generation using the 'between_staypoints' method for case 3.
         case 3: triplegs from positionfixes with column 'staypoint_id' but without staypoints."""
 
-        pfs, spts = geolife_pfs_spts_short
+        pfs, _ = geolife_pfs_spts_short
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(method='between_staypoints')
 
-        assert (tpls.geometry.geom_almost_equals(testdata_tpls_geolife.geometry)).all()
-        pd.testing.assert_frame_equal(tpls.drop('geom', axis=1), testdata_tpls_geolife.drop('geom', axis=1),
-                                      check_like=True)
+        assert_geodataframe_equal(tpls, testdata_tpls_geolife)
 
     def test_tripleg_ids_in_positionfixes_case1(self, geolife_pfs_spts_short, testdata_pfs_ids_geolife):
         """
@@ -158,12 +144,9 @@ class TestGenerate_triplegs():
         input (case 2).
         """
         pfs, spts = geolife_pfs_spts_short
-        pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
+        pfs, _ = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
 
-        # check if staypoint/tripleg ids are present
-        assert (pfs.geometry.geom_almost_equals(testdata_pfs_ids_geolife.geometry)).all()
-        pd.testing.assert_frame_equal(pfs.drop('geom', axis=1), testdata_pfs_ids_geolife.drop('geom', axis=1),
-                                      check_like=True)
+        assert_geodataframe_equal(pfs, testdata_pfs_ids_geolife)
 
     def test_tripleg_ids_in_positionfixes_case2(self, geolife_pfs_spts_short, testdata_pfs_ids_geolife):
         """
@@ -173,14 +156,10 @@ class TestGenerate_triplegs():
         """
         pfs, spts = geolife_pfs_spts_short
         pfs.drop('staypoint_id', axis=1, inplace=True)
-        pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
+        pfs, _ = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
 
         testdata_pfs_ids_geolife.drop('staypoint_id', axis=1, inplace=True)
-
-        # check if staypoint/tripleg ids are present
-        assert (pfs.geometry.geom_almost_equals(testdata_pfs_ids_geolife.geometry)).all()
-        pd.testing.assert_frame_equal(pfs.drop('geom', axis=1), testdata_pfs_ids_geolife.drop('geom', axis=1),
-                                      check_like=True)
+        assert_geodataframe_equal(pfs, testdata_pfs_ids_geolife)
 
     def test_tripleg_ids_in_positionfixes_case3(self, geolife_pfs_spts_short, testdata_pfs_ids_geolife):
         """
@@ -188,12 +167,9 @@ class TestGenerate_triplegs():
         generation using the 'between_staypoints' method with only positionfixes as input (case 3).
         """
         pfs, spts = geolife_pfs_spts_short
-        pfs, tpls = pfs.as_positionfixes.generate_triplegs(method='between_staypoints')
+        pfs, _ = pfs.as_positionfixes.generate_triplegs(method='between_staypoints')
 
-        # check if staypoint/tripleg ids are present
-        assert (pfs.geometry.geom_almost_equals(testdata_pfs_ids_geolife.geometry)).all()
-        pd.testing.assert_frame_equal(pfs.drop('geom', axis=1), testdata_pfs_ids_geolife.drop('geom', axis=1),
-                                      check_like=True)
+        assert_geodataframe_equal(pfs, testdata_pfs_ids_geolife)
 
     def test_tripleg_generation_stability(self, geolife_pfs_spts_long):
         """
@@ -204,8 +180,8 @@ class TestGenerate_triplegs():
         pfs, spts = geolife_pfs_spts_long
 
         pfs_case1, tpls_case1 = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
-        pfs_case2, tpls_case2 = pfs.drop('staypoint_id', axis=1).as_positionfixes.generate_triplegs \
-            (spts, method='between_staypoints')
+        pfs_case2, tpls_case2 = pfs.drop('staypoint_id',
+                                         axis=1).as_positionfixes.generate_triplegs(spts, method='between_staypoints')
         pfs_case3, tpls_case3 = pfs.as_positionfixes.generate_triplegs(method='between_staypoints')
 
         assert_geodataframe_equal(pfs_case1.drop('staypoint_id', axis=1), pfs_case2)
@@ -389,3 +365,10 @@ def _generate_staypoints_original(positionfixes, method='sliding',
     ret_spts['user_id'] = ret_spts['user_id'].astype(ret_pfs['user_id'].dtype)
 
     return ret_pfs, ret_spts
+
+
+def assert_geodataframe_equal(gdf1, gdf2, **kwargs):
+    """assert equal geometry and data seperatly for two geodataframes"""
+    assert (gdf1.geometry.geom_almost_equals(gdf2.geometry)).all()
+    pd.testing.assert_frame_equal(gdf1.drop(gdf1.geometry.name, axis=1), gdf2.drop(gdf1.geometry.name, axis=1),
+                                  **kwargs)
