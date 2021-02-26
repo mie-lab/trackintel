@@ -1,7 +1,37 @@
 # How to contribute
-This is a place to collect conventions we agreed upon until we find the right place in the doc for them
+
+Thank you for your interest in the *trackintel* development. All contributions, bug reports, bug fixes, documentation improvements, enhancements, and ideas are welcome.
+
+## Development
+You can download the whole repository and install *trackintel* locally using `pip install .`.
+For quick testing, use `trackintel.print_version()`.
+
+Testing is done using [pytest](https://docs.pytest.org/en/latest).
+Simply run the tests using `pytest` in the top-level trackintel folder.
+In case you use `pipenv`, install *pytest* first (`pip install pytest`), then run *pytest* using this version: `python -m pytest`.
+The use of [fixtures](https://pypi.org/project/fixtures/) for data generation (e.g., trips and trackpoints) is still an open todo.
+As for now, there are some smaller datasets in the `tests` folder.
+
+### Documentation
+
+The documentation follws the [pandas resp. numpy docstring standard](https://pandas-docs.github.io/pandas-docs-travis/development/contributing.html#contributing-to-the-documentation).
+In particular, it uses [Sphinx](http://www.sphinx-doc.org/en/master/) to create the documentation.
+You can install Sphinx using `pip install -U sphinx` or `conda install sphinx`.
+
+If you use additional dependencies during development, do not forget to add them to `autodoc_mock_imports` in `docs/conf.py` for readthedocs.org to work properly.
+
+You can then generate the documentation using `sphinx-build -b html docs docs.gen`.
+This will put the documentation in `docs.gen`, which is in `.gitignore`.
+
+### Continuous Integration
+
+There are travis and appveyor CIs set up for Unix/Windows builds.
+You can find the corresponding scripts in `.travis.yml` and `appveyor.yml`.
+Adding [Coveralls](https://coveralls.io) is an open todo.
 
 ## Coding conventions
+This is a place to collect conventions we agreed upon until we find the right place in the doc for them
+
 ### Time stamps
 All timestamps are timezone aware pandas `datetime64[ns, UTC]` objects. The default timezone should be `UTC` but the user should be free to use a different one if he wants. See [Issue 101](https://github.com/mie-lab/trackintel/issues/18). 
 
@@ -11,9 +41,6 @@ See [Issue 23](https://github.com/mie-lab/trackintel/issues/23)
 - Every python module has a single test file
 - Every function has 1 test class
 - Every method of this function should test a single property
-
-### Warnings
-There should be no warnings when running tests.
 
 ### Integrety of input data
 Functions should never change the input dataframe but rather return an altered copy.
@@ -27,11 +54,11 @@ The main function should be on the top of the file, the internal/secondary funct
 ### ID management
 All trackintel objects have an ID that is the index of the dataframe [Issue 97](https://github.com/mie-lab/trackintel/issues/97)
 
-### Commit message conventions
-We use the geopandas [commit message convenctions](https://geopandas.readthedocs.io/en/latest/community/contributing.html#commit-message-conventions)
-
 ### Others
 - We limit all lines to a maximum of 120 characters.
+- New release version tags use [semantic numbering](https://semver.org/).
+- Commits follow the standard of [pandas](https://pandas.pydata.org/pandas-docs/stable/development/contributing.html#committing-your-code).
+- There should be no warnings when running tests.
 
 ## Version release checklist
 Before you release a new version you should check/modify the following files:

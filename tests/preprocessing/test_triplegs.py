@@ -9,8 +9,7 @@ import trackintel as ti
 
 class TestSmoothen_triplegs():
     def test_smoothen_triplegs(self):
-        tpls_file = os.path.join('tests','data','triplegs_with_too_many_points_test.csv')
-        tpls = ti.read_triplegs_csv(tpls_file, sep=';', index_col=None)
+        tpls = ti.read_triplegs_csv(os.path.join('tests', 'data', 'triplegs_with_too_many_points_test.csv'), sep=';')
         tpls_smoothed = ti.preprocessing.triplegs.smoothen_triplegs(tpls, tolerance=0.0001)
         line1 = tpls.iloc[0].geom
         line1_smoothed = tpls_smoothed.iloc[0].geom
@@ -31,10 +30,7 @@ class TestGenerate_trips():
         """
         gap_threshold = 15
         # load pregenerated trips
-        trips_loaded = pd.read_csv(os.path.join('tests', 'data', 'geolife_long', 'trips.csv'), index_col='id')
-        trips_loaded['started_at'] = pd.to_datetime(trips_loaded['started_at'], utc=True)
-        trips_loaded['finished_at'] = pd.to_datetime(trips_loaded['finished_at'], utc=True)
-        trips_loaded['user_id'] = trips_loaded['user_id'].astype("int64")
+        trips_loaded = ti.read_trips_csv(os.path.join('tests', 'data', 'geolife_long', 'trips.csv'), index_col='id')
 
         # create trips from geolife (based on positionfixes)
         pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
@@ -146,8 +142,6 @@ class TestGenerate_trips():
 
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
         pd.testing.assert_frame_equal(stps_tpls_loaded, spts_tpls, check_dtype=False)
-        
-    
 
 # helper function for "test_generate_trips_*"
 def _create_debug_spts_tpls_data(stps, tpls, gap_threshold):
