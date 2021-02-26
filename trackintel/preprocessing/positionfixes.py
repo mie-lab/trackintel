@@ -215,23 +215,30 @@ def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints
         generated_triplegs = []
         for user_id_this in ret_pfs['user_id'].unique():
 
-            positionfixes_user_this = ret_pfs.loc[ret_pfs['user_id'] == user_id_this]  # this is no copy
-            pfs = positionfixes_user_this.sort_values('tracked_at')
+            positionfixes_user_this = ret_pfs.loc[ret_pfs['user_id'] == user_id_this].sort_values(
+                'tracked_at')  # this is no copy
 
             # Case 1: Staypoints exist and are connected to positionfixes by user id
             if case == 1:
-                generated_triplegs.extend(_triplegs_between_staypoints_case1(ret_pfs, staypoints, user_id_this))
+                generated_triplegs.extend(_triplegs_between_staypoints_case1(positionfixes_user_this, staypoints,
+                                                                             user_id_this))
 
             # Case 2: Staypoints exist but there is no user_id given
             elif case == 2:
-                generated_triplegs.extend(_triplegs_between_staypoints_case2(ret_pfs, staypoints, user_id_this))
+                generated_triplegs.extend(_triplegs_between_staypoints_case2(positionfixes_user_this, staypoints,
+                                                                             user_id_this))
 
             # case 3: Only positionfixes with staypoint id for tripleg generation
             elif case == 3:
-                generated_triplegs.extend(_triplegs_between_staypoints_case3(ret_pfs, user_id_this))
+                generated_triplegs.extend(_triplegs_between_staypoints_case3(positionfixes_user_this, user_id_this))
 
         # create tripleg dataframe
-        ret_tpls = gpd.GeoDataFrame(generated_triplegs, geometry='geom', crs=ret_pfs.crs)
+        if len(generated_triplegs) == 0:
+            ret_tpls = gpd.GeoDataFrame(columns=['id', 'user_id', 'started_at', 'finished_at', 'geom', 'pfs_ids'],
+                                        geometry='geom', crs=ret_pfs.crs)
+        else:
+            ret_tpls = gpd.GeoDataFrame(generated_triplegs, geometry='geom', crs=ret_pfs.crs)
+
         ret_tpls.index.name = 'id'
 
         # assign tripleg_id to positionfixes

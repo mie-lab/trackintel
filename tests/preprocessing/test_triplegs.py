@@ -9,7 +9,7 @@ import trackintel as ti
 
 class TestSmoothen_triplegs():
     def test_smoothen_triplegs(self):
-        tpls = ti.read_triplegs_csv(os.path.join('tests','data','triplegs_with_too_many_points_test.csv'), sep=';')
+        tpls = ti.read_triplegs_csv(os.path.join('tests', 'data', 'triplegs_with_too_many_points_test.csv'), sep=';')
         tpls_smoothed = ti.preprocessing.triplegs.smoothen_triplegs(tpls, tolerance=0.0001)
         line1 = tpls.iloc[0].geom
         line1_smoothed = tpls_smoothed.iloc[0].geom
@@ -30,10 +30,7 @@ class TestGenerate_trips():
         """
         gap_threshold = 15
         # load pregenerated trips
-        trips_loaded = pd.read_csv(os.path.join('tests', 'data', 'geolife_long', 'trips.csv'), index_col='id')
-        trips_loaded['started_at'] = pd.to_datetime(trips_loaded['started_at'], utc=True)
-        trips_loaded['finished_at'] = pd.to_datetime(trips_loaded['finished_at'], utc=True)
-        trips_loaded['user_id'] = trips_loaded['user_id'].astype("int64")
+        trips_loaded = ti.read_trips_csv(os.path.join('tests', 'data', 'geolife_long', 'trips.csv'), index_col='id')
 
         # create trips from geolife (based on positionfixes)
         pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
@@ -41,9 +38,6 @@ class TestGenerate_trips():
                                                              time_threshold=5 * 60)
         stps = stps.as_staypoints.create_activity_flag()
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
-
-        # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
-        tpls = tpls.set_index('id')
 
         # generate trips and a joint staypoint/triplegs dataframe
         stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=gap_threshold, id_offset=0)
@@ -59,9 +53,6 @@ class TestGenerate_trips():
                                                              time_threshold=5 * 60)
         stps = stps.as_staypoints.create_activity_flag()
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
-
-        # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
-        tpls = tpls.set_index('id')
 
         # generate trips and a joint staypoint/triplegs dataframe
         stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, 
@@ -147,17 +138,12 @@ class TestGenerate_trips():
         stps = stps.as_staypoints.create_activity_flag()
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 
-        # temporary fix ID bug (issue  #56) so that we work with valid staypoint/tripleg files
-        tpls = tpls.set_index('id')
-
         # generate trips and a joint staypoint/triplegs dataframe
         stps, tpls, _ = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=gap_threshold, id_offset=0)
         spts_tpls = _create_debug_spts_tpls_data(stps, tpls, gap_threshold=gap_threshold)
 
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
         pd.testing.assert_frame_equal(stps_tpls_loaded, spts_tpls, check_dtype=False)
-        
-    
 
 # helper function for "test_generate_trips_*"
 def _create_debug_spts_tpls_data(stps, tpls, gap_threshold):
