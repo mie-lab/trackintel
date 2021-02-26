@@ -9,7 +9,8 @@ import trackintel as ti
 
 class TestSmoothen_triplegs():
     def test_smoothen_triplegs(self):
-        tpls = ti.read_triplegs_csv(os.path.join('tests', 'data', 'triplegs_with_too_many_points_test.csv'), sep=';')
+        tpls_file = os.path.join('tests', 'data', 'triplegs_with_too_many_points_test.csv')
+        tpls = ti.read_triplegs_csv(tpls_file, sep=';', index_col=None)
         tpls_smoothed = ti.preprocessing.triplegs.smoothen_triplegs(tpls, tolerance=0.0001)
         line1 = tpls.iloc[0].geom
         line1_smoothed = tpls_smoothed.iloc[0].geom
@@ -25,9 +26,7 @@ class TestSmoothen_triplegs():
 
 class TestGenerate_trips():
     def test_generate_trips(self):
-        """
-        Test if we can generate the example trips based on example data
-        """
+        """Test if we can generate the example trips based on example data"""
         gap_threshold = 15
         # load pregenerated trips
         trips_loaded = ti.read_trips_csv(os.path.join('tests', 'data', 'geolife_long', 'trips.csv'), index_col='id')
