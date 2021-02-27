@@ -129,6 +129,9 @@ def read_triplegs_csv(*args, **kwargs):
         The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
     tz : str
         pytz compatible timezone string. If None UTC is assumed.
+    index_col : str
+        column name to be used as index. If None the default index is assumed 
+        as unique identifier.
 
     Returns
     -------
@@ -143,6 +146,11 @@ def read_triplegs_csv(*args, **kwargs):
 
     columns = kwargs.pop('columns', {})
     tz = kwargs.pop('tz', None)
+    
+    # Warning if no 'index_col' parameter is provided
+    if not 'index_col' in kwargs:
+        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" + 
+            "argument to avoid a warning when reading csv files.")
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
@@ -282,6 +290,11 @@ def read_locations_csv(*args, **kwargs):
     """
     columns = kwargs.pop('columns', {})
     
+    # Warning if no 'index_col' parameter is provided
+    if not 'index_col' in kwargs:
+        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" + 
+            "argument to avoid a warning when reading csv files.")
+    
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
     df['center'] = df['center'].apply(wkt.loads)
@@ -322,7 +335,10 @@ def read_trips_csv(*args, **kwargs):
         The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
     tz : str
         pytz compatible timezone string. If None UTC is assumed.
-
+    index_col : str
+        column name to be used as index. If None the default index is assumed 
+        as unique identifier.
+        
     Returns
     -------
     DataFrame
@@ -337,6 +353,10 @@ def read_trips_csv(*args, **kwargs):
 
     columns = kwargs.pop('columns', {})
     tz = kwargs.pop('tz', None)
+    
+    if not 'index_col' in kwargs:
+        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" + 
+            "argument to avoid a warning when reading csv files.")
     
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)

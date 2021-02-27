@@ -39,10 +39,10 @@ class TestFile:
         orig_file = os.path.join('tests', 'data', 'triplegs.csv')
         mod_file = os.path.join('tests','data','triplegs_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'triplegs_test.csv')
-        tpls = ti.read_triplegs_csv(orig_file, sep=';', tz='utc')
+        tpls = ti.read_triplegs_csv(orig_file, sep=';', tz='utc', index_col="id")
         
         column_mapping = {'start_time': 'started_at', 'end_time': 'finished_at', 'tripleg': 'geom'}
-        mod_tpls = ti.read_triplegs_csv(mod_file, sep=';', columns=column_mapping)
+        mod_tpls = ti.read_triplegs_csv(mod_file, sep=';', columns=column_mapping, index_col="id")
         
         assert mod_tpls.equals(tpls)
         tpls['started_at'] = tpls['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
@@ -52,7 +52,12 @@ class TestFile:
         tpls.as_triplegs.to_csv(tmp_file, sep=';', columns=columns)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
-
+        
+    def test_triplegs_csv_index_warning(self):
+        """Test if a warning is raised when not parsing the index_col arguement."""
+        file = os.path.join('tests', 'data', 'triplegs.csv')
+        with pytest.warns(UserWarning):
+            ti.read_triplegs_csv(file, sep=';')
 
     def test_triplegs_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
@@ -90,14 +95,18 @@ class TestFile:
         orig_file = os.path.join('tests', 'data', 'locations.csv')
         mod_file = os.path.join('tests','data','locations_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'locations_test.csv')
-        mod_plcs = ti.read_locations_csv(mod_file, columns={'geom':'center'},sep=';')
-        locs = ti.read_locations_csv(orig_file, sep=';')
-        assert mod_plcs.equals(locs)
-        locs.as_locations.to_csv(tmp_file, sep=';',
-                              columns=['user_id', 'elevation', 'center', 'extent'])
+        mod_locs = ti.read_locations_csv(mod_file, columns={'geom':'center'},sep=';', index_col="id")
+        locs = ti.read_locations_csv(orig_file, sep=';', index_col="id")
+        assert mod_locs.equals(locs)
+        locs.as_locations.to_csv(tmp_file, sep=';', columns=['user_id', 'elevation', 'center', 'extent'])
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
-        
+    
+    def test_locations_csv_index_warning(self):
+        """Test if a warning is raised when not parsing the index_col arguement."""
+        file = os.path.join('tests', 'data', 'locations.csv')
+        with pytest.warns(UserWarning):
+            ti.read_locations_csv(file, sep=';')
         
     def test_locations_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
@@ -109,17 +118,24 @@ class TestFile:
         orig_file = os.path.join('tests', 'data', 'trips.csv')
         mod_file = os.path.join('tests', 'data', 'trips_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'trips_test.csv')
-        tpls = ti.read_trips_csv(orig_file, sep=';')
-        mod_tpls = ti.read_trips_csv(mod_file, columns= {'orig_stp':'origin_staypoint_id','dest_stp':'destination_staypoint_id'},sep=';')
-        assert mod_tpls.equals(tpls)
-        tpls['started_at'] = tpls['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
-        tpls['finished_at'] = tpls['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
-        tpls.as_trips.to_csv(tmp_file, sep=';',
-                             columns=['user_id', 'started_at', 'finished_at', 'origin_staypoint_id',
-                                      'destination_staypoint_id'])
+        trips = ti.read_trips_csv(orig_file, sep=';', index_col="id")
+        column_mapping = {'orig_stp':'origin_staypoint_id','dest_stp':'destination_staypoint_id'}
+        mod_trips = ti.read_trips_csv(mod_file, columns= column_mapping, sep=';', index_col="id")
+        assert mod_trips.equals(trips)
+        
+        trips['started_at'] = trips['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
+        trips['finished_at'] = trips['finished_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
+        columns = ['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'destination_staypoint_id']
+        trips.as_trips.to_csv(tmp_file, sep=';', columns=columns)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
-        
+    
+    def test_trips_csv_index_warning(self):
+        """Test if a warning is raised when not parsing the index_col arguement."""
+        file = os.path.join('tests', 'data', 'trips.csv')
+        with pytest.warns(UserWarning):
+            ti.read_trips_csv(file, sep=';')
+            
     def test_trips_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
