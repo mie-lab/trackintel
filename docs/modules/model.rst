@@ -15,6 +15,21 @@ provides functionality to generate everything starting from the raw GPS position
 * **tours**: Sequences of trips which start and end at the same location (if ``journey`` 
   is set to ``True``, this location is *home*).
 
+.. image:: /assets/hierarchy.png
+	:align: center
+	:height: 390px
+	:width: 492px
+	:alt: model image
+
+The image above shows the hierarchy of the trackintel data model. The image below explicitly shows the definition of locations as clustered staypoints (of one ore more user).
+
+.. image:: /assets/locations_with_pfs.png
+	:align: center
+	:height: 405px
+	:width: 720px 
+	:scale: 70
+	
+
 A detailed (and SQL-specific) explanation of the different classes can be found under 
 :doc:`/content/data_model_sql`.
 
