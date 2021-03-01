@@ -50,7 +50,7 @@ def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=No
         staypoints = staypoints.to_crs(crs_wgs84)
 
     if positionfixes is not None:
-        ax = positionfixes.as_positionfixes().plot(plot_osm=plot_osm, axis=ax)
+        positionfixes.as_positionfixes.plot(plot_osm=plot_osm, axis=ax)
     else:
         west = staypoints.geometry.x.min() - 0.03
         east = staypoints.geometry.x.max() + 0.03
@@ -74,4 +74,3 @@ def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=No
         save_fig(out_filename, formats=['png'])
     elif axis is None:
         plt.show()
-    return ax

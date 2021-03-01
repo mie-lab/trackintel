@@ -54,4 +54,3 @@ def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False, axis=No
         save_fig(out_filename, formats=['png'])
     elif axis is None:
         plt.show()
-    return ax
