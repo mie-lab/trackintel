@@ -63,8 +63,8 @@ def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=No
 
     if radius is None:
         radius = 100
-    center_angle = (ax.get_ylim()[0] + ax.get_ylim()[1]) / 2
-    radius = meters_to_decimal_degrees(radius, center_angle)
+    center_latitude = (ax.get_ylim()[0] + ax.get_ylim()[1]) / 2
+    radius = meters_to_decimal_degrees(radius, center_latitude)
     for pt in staypoints.to_dict('records'):
         circle = mpatches.Circle((pt[name_geocol].x, pt[name_geocol].y), radius,
                                  facecolor='none', edgecolor='g', zorder=3)

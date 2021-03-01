@@ -1,12 +1,13 @@
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 
+from trackintel.geogr.distances import meters_to_decimal_degrees
 from trackintel.visualization.osm import plot_osm_streets
 from trackintel.visualization.util import regular_figure, save_fig
 
 
 def plot_center_of_locations(locations, out_filename=None, radius=None, positionfixes=None, 
-                          staypoints=None, staypoints_radius=None, plot_osm=False):
+                          staypoints=None, staypoints_radius=None, plot_osm=False, axis=None):
     """Plots locations (optionally to a file). Optionally, you can specify several other
     datasets to be plotted beneath the locations.
 
@@ -31,42 +32,46 @@ def plot_center_of_locations(locations, out_filename=None, radius=None, position
         If this is set to True, it will download an OSM street network and plot 
         below the staypoints.
 
+    axis : matplotlib.pyplot.Artist, optional
+        axis on which to draw the plot
+
     Examples
     --------
     >>> df.as_locations.plot('output.png', radius=10, positionfixes=pdf, 
     >>>                   staypoints=spf, staypoints_radius=8, plot_osm=True)
     """
-    _, ax = regular_figure()
+    if axis is None:
+        _, ax = regular_figure()
+    else:
+        ax = axis
 
-    if plot_osm:
-        if positionfixes is not None:
-            west = positionfixes.geometry.x.min()
-            east = positionfixes.geometry.x.max()
-            north = positionfixes.geometry.y.max()
-            south = positionfixes.geometry.y.min()
-        else:
-            west = locations['center'].x.min() - 0.03
-            east = locations['center'].x.max() + 0.03
-            north = locations['center'].y.max() + 0.03
-            south = locations['center'].y.min() - 0.03
-        plot_osm_streets(north, south, east, west, ax)
-
-    if positionfixes is not None:
-        positionfixes.plot(ax=ax, markersize=0.5, zorder=2)
+    crs_wgs84 = 'EPSG:4326'
+    if locations.crs is None:
+        Warning("Coordinate System (CRS) is not set, default to WGS84.")
+        locations.crs = crs_wgs84
+    elif locations.crs != crs_wgs84:
+        locations = locations.to_crs(crs_wgs84)
 
     if staypoints is not None:
-        if staypoints_radius is None:
-            staypoints_radius = 3
-        for pt in staypoints.to_dict('records'):
-            circle = mpatches.Circle((pt.geometry.x, pt.geometry.y), staypoints_radius,
-                                     facecolor='none', edgecolor='c', zorder=3)
-            ax.add_artist(circle)
+        staypoints.as_staypoints.plot(radius=staypoints_radius,
+                                      positionfixes=positionfixes,
+                                      plot_osm=plot_osm, axis=ax)
+    elif positionfixes is not None:
+        positionfixes.as_positionfixes.plot(plot_osm=plot_osm, axis=ax)
+    elif plot_osm:
+        west = locations['center'].x.min() - 0.03
+        east = locations['center'].x.max() + 0.03
+        north = locations['center'].y.max() + 0.03
+        south = locations['center'].y.min() - 0.03
+        plot_osm_streets(north, south, east, west, ax)
 
     if radius is None:
-        radius = 5
+        radius = 125
+    center_latitude = (ax.get_ylim()[0] + ax.get_ylim()[1]) / 2
+    radius = meters_to_decimal_degrees(radius, center_latitude)
     for pt in locations.to_dict('records'):
-        circle = mpatches.Circle((pt['center'].x, pt['center'].y), radius, 
-                                  facecolor='none', edgecolor='r', zorder=4)
+        circle = mpatches.Circle((pt['center'].x, pt['center'].y), radius,
+                                 facecolor='none', edgecolor='r', zorder=4)
         ax.add_artist(circle)
     if out_filename is not None:
         save_fig(out_filename, formats=['png'])
