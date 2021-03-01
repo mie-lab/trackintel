@@ -56,14 +56,14 @@ def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=No
         east = staypoints.geometry.x.max() + 0.03
         north = staypoints.geometry.y.max() + 0.03
         south = staypoints.geometry.y.min() - 0.03
-        plot_osm_streets(north, south, east, west, ax)
+        if plot_osm:
+            plot_osm_streets(north, south, east, west, ax)
         ax.set_xlim([west, east])
         ax.set_ylim([south, north])
 
     if radius is None:
         radius = 100
-    ylim = ax.get_ylim()
-    center_angle = (ylim[0] + ylim[1]) / 2
+    center_angle = (ax.get_ylim()[0] + ax.get_ylim()[1]) / 2
     radius = meters_to_decimal_degrees(radius, center_angle)
     for pt in staypoints.to_dict('records'):
         circle = mpatches.Circle((pt[name_geocol].x, pt[name_geocol].y), radius,
