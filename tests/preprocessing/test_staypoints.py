@@ -122,6 +122,7 @@ class TestGenerate_locations():
         assert len(locs_data) == 0, "With large hyperparameters, every dataset location is an outlier"
     
     def test_generate_locations_dtype_consistent(self):
+        """Test the dtypes for the generated columns."""
         stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
         stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
         # 
