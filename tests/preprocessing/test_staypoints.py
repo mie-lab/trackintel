@@ -122,14 +122,14 @@ class TestGenerate_locations():
         assert len(locs_data) == 0, "With large hyperparameters, every dataset location is an outlier"
     
     def test_generate_locations_missing_link(self):
-        """Test nan is assigned for missing link between stps and trips."""
+        """Test nan is assigned for missing link between stps and locs."""
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
         pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
         _, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
         stps, _ = stps.as_staypoints.generate_locations(method='dbscan', epsilon=1e18,
                                                         num_samples=1000, agg_level='user')
     
-        assert pd.isna(stps['location_id']).all()
+        assert pd.isna(stps['location_id']).any()
         
     def test_generate_locations_dtype_consistent(self):
         stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
@@ -141,7 +141,8 @@ class TestGenerate_locations():
                                                            distance_matrix_metric='haversine',
                                                            agg_level='dataset')
         assert stps['user_id'].dtype == locs['user_id'].dtype
-        assert stps['location_id'].dtype == locs.index.dtype
+        assert stps['location_id'].dtype == 'float'
+        assert locs.index.dtype == 'int64'
         # change the user_id to string
         stps['user_id'] = stps['user_id'].apply(lambda x: str(x))
         stps, locs = stps.as_staypoints.generate_locations(method='dbscan', 
@@ -150,7 +151,8 @@ class TestGenerate_locations():
                                                            distance_matrix_metric='haversine',
                                                            agg_level='dataset')
         assert stps['user_id'].dtype == locs['user_id'].dtype
-        assert stps['location_id'].dtype == locs.index.dtype
+        assert stps['location_id'].dtype == 'float'
+        assert locs.index.dtype == 'int64'
         
         
 class TestCreate_activity_flag():
