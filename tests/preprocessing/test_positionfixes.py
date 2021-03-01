@@ -25,14 +25,16 @@ def pfs_geolife_long():
 
 @pytest.fixture
 def geolife_pfs_stps_short(pfs_geolife):
-    pfs, stps = pfs_geolife.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25,
+    pfs, stps = pfs_geolife.as_positionfixes.generate_staypoints(method='sliding',
+                                                                 dist_threshold=25,
                                                                  time_threshold=5 * 60)
     return pfs, stps
 
 
 @pytest.fixture
 def geolife_pfs_stps_long(pfs_geolife_long):
-    pfs, stps = pfs_geolife_long.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25,
+    pfs, stps = pfs_geolife_long.as_positionfixes.generate_staypoints(method='sliding',
+                                                                      dist_threshold=25,
                                                                       time_threshold=5 * 60)
     return pfs, stps
 
@@ -68,14 +70,29 @@ class TestGenerate_staypoints():
         assert len(stps) == 0, "With large thresholds, staypoint extraction should not yield positionfixes"
 
     def test_generate_staypoints_dtype_consistent(self):
+        """Test the dtypes for the generated columns."""
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
         pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                              dist_threshold=25,
                                                              time_threshold=5 * 60)
         assert pfs['user_id'].dtype == stps['user_id'].dtype
-        # assert pfs['staypoint_id'].dtype == stps['id'].dtype
-
+        assert pfs['staypoint_id'].dtype == "float"
+        assert stps.index.dtype == "int64"
+            
+    def test_generate_staypoints_index_start(self):
+        """Test the generated index start from 0 for different methods."""
+        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
+        pfs_ori = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
+        
+        _, stps_sliding = pfs_ori.as_positionfixes.generate_staypoints(method='sliding',
+                                                                       dist_threshold=25,
+                                                                       time_threshold=300)
+        _, stps_dbscan = pfs_ori.as_positionfixes.generate_staypoints(method='dbscan')
+        
+        assert (stps_sliding.index == np.arange(len(stps_sliding))).any()
+        assert (stps_dbscan.index == np.arange(len(stps_dbscan))).any()
+        
     def test_generate_staypoints_groupby_sliding(self):
         """Test the 'sliding' result obtained using user_id for loop (previous) with groupby.apply (current)."""
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
@@ -190,12 +207,28 @@ class TestGenerate_triplegs():
         _assert_geodataframe_equal(tpls_case1, tpls_case3)
 
     def test_generate_triplegs_dtype_consistent(self, pfs_geolife):
+        """Test the dtypes for the generated columns."""
         pfs, stps = pfs_geolife.as_positionfixes.generate_staypoints(method='sliding',
                                                                      dist_threshold=25,
                                                                      time_threshold=5 * 60)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
         assert pfs['user_id'].dtype == tpls['user_id'].dtype
-
+        assert pfs['tripleg_id'].dtype == "float"
+        assert tpls.index.dtype == "int64"
+    
+    def test_generate_triplegs_index_start(self, geolife_pfs_stps_long):
+        """Test the generated index start from 0 for different methods."""
+        pfs, stps = geolife_pfs_stps_long
+        
+        _, tpls_case1 = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
+        _, tpls_case2 = pfs.drop('staypoint_id',
+                                 axis=1).as_positionfixes.generate_triplegs(stps, method='between_staypoints')
+        _, tpls_case3 = pfs.as_positionfixes.generate_triplegs(method='between_staypoints')
+        
+        assert (tpls_case1.index == np.arange(len(tpls_case1))).any()
+        assert (tpls_case2.index == np.arange(len(tpls_case2))).any()
+        assert (tpls_case3.index == np.arange(len(tpls_case3))).any()
+        
     def test_generate_staypoints_triplegs_overlap(self):
         """
         Triplegs and staypoints should not overlap when generated using the default extract triplegs method.
