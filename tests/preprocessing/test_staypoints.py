@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import geopandas as gpd
 import pandas as pd
 from shapely.geometry import Point
@@ -113,13 +114,23 @@ class TestGenerate_locations():
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
         pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
         _, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
-        _, locs_user = stps.as_staypoints.generate_locations(method='dbscan', epsilon=1e18, 
-                                                            num_samples=1000, agg_level='user')
-        _, locs_data = stps.as_staypoints.generate_locations(method='dbscan', epsilon=1e18, 
-                                                            num_samples=1000, agg_level='dataset')
+        _, locs_user = stps.as_staypoints.generate_locations(method='dbscan', epsilon=1e18,
+                                                             num_samples=1000, agg_level='user')
+        _, locs_data = stps.as_staypoints.generate_locations(method='dbscan', epsilon=1e18,
+                                                             num_samples=1000, agg_level='dataset')
         assert len(locs_user) == 0, "With large hyperparameters, every user location is an outlier"
         assert len(locs_data) == 0, "With large hyperparameters, every dataset location is an outlier"
     
+    def test_generate_locations_missing_link(self):
+        """Test nan is assigned for missing link between stps and trips."""
+        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
+        _, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=0, time_threshold=0)
+        stps, _ = stps.as_staypoints.generate_locations(method='dbscan', epsilon=1e18,
+                                                        num_samples=1000, agg_level='user')
+    
+        assert pd.isna(stps['location_id']).all()
+        
     def test_generate_locations_dtype_consistent(self):
         stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
         stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
