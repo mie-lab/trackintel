@@ -123,7 +123,7 @@ def read_triplegs_csv(*args, **kwargs):
     conforms to the trackintel understanding of triplegs (see :doc:`/modules/model`).
 
 
-   Parameters
+    Parameters
     ----------
     columns : dict
         The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
