@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import geopandas as gpd
 import pandas as pd
 from shapely.geometry import Point, LineString
@@ -26,7 +27,7 @@ class TestSmoothen_triplegs():
 
 class TestGenerate_trips():
     def test_generate_trips(self):
-        """Test if we can generate the example trips based on example data"""
+        """Test if we can generate the example trips based on example data."""
         gap_threshold = 15
         # load pregenerated trips
         trips_loaded = ti.read_trips_csv(os.path.join('tests', 'data', 'geolife_long', 'trips.csv'), index_col='id')
@@ -62,6 +63,7 @@ class TestGenerate_trips():
         assert pd.isna(stps['next_trip_id']).any()
         
     def test_generate_trips_dtype_consistent(self):
+        """Test the dtypes for the generated columns."""
         # create trips from geolife (based on positionfixes)
         pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', 
@@ -71,13 +73,33 @@ class TestGenerate_trips():
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
         
         # generate trips and a joint staypoint/triplegs dataframe
-        stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, 
-                                                                     tpls, 
+        stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls,
                                                                      gap_threshold=15, 
                                                                      id_offset=0)
         
         assert stps['user_id'].dtype == trips['user_id'].dtype
         assert trips.index.dtype == "int64"
+        
+        assert stps['trip_id'].dtype == "float"
+        assert stps['prev_trip_id'].dtype == "float"
+        assert stps['next_trip_id'].dtype == "float"
+        assert tpls['trip_id'].dtype == "float"
+    
+    def test_generate_trips_index_start(self):
+        """Test the generated index start from 0 for different methods."""
+        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
+                                                             dist_threshold=25,
+                                                             time_threshold=5 * 60)
+        stps = stps.as_staypoints.create_activity_flag()
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
+        
+        # generate trips and a joint staypoint/triplegs dataframe
+        _, _, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls,
+                                                               gap_threshold=15, 
+                                                               id_offset=0)
+        
+        assert (trips.index == np.arange(len(trips))).any()
         
     def test_generate_trips_gap_detection(self):
         """

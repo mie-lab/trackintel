@@ -132,6 +132,7 @@ class TestGenerate_locations():
         assert pd.isna(stps['location_id']).any()
         
     def test_generate_locations_dtype_consistent(self):
+        """Test the dtypes for the generated columns."""
         stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
         stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
         # 
@@ -154,6 +155,24 @@ class TestGenerate_locations():
         assert stps['location_id'].dtype == 'float'
         assert locs.index.dtype == 'int64'
         
+    def test_generate_locations_index_start(self):
+        """Test the generated index start from 0 for different methods."""
+        stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+        stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
+        
+        _, locs_ds = stps.as_staypoints.generate_locations(method='dbscan',
+                                                           epsilon=10,
+                                                           num_samples=0,
+                                                           distance_matrix_metric='haversine',
+                                                           agg_level='dataset')
+        _, locs_us = stps.as_staypoints.generate_locations(method='dbscan',
+                                                           epsilon=10,
+                                                           num_samples=0,
+                                                           distance_matrix_metric='haversine',
+                                                           agg_level='user')
+        
+        assert (locs_ds.index == np.arange(len(locs_ds))).any()
+        assert (locs_us.index == np.arange(len(locs_us))).any()
         
 class TestCreate_activity_flag():
     pass
