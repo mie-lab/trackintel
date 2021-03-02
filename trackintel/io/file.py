@@ -39,11 +39,11 @@ def localize_timestamp(dt_series, pytz_tzinfo, col_name):
 
 
 def read_positionfixes_csv(*args, **kwargs):
-    """Wraps the pandas read_csv function, extracts longitude and latitude and 
+    """Wraps the pandas read_csv function, extracts longitude and latitude and
     builds a geopandas GeoDataFrame. This also validates that the ingested data
-    conforms to the trackintel understanding of positionfixes (see 
-    :doc:`/modules/model`). 
-    
+    conforms to the trackintel understanding of positionfixes (see
+    :doc:`/modules/model`).
+
     Parameters
     ----------
     columns : dict
@@ -51,24 +51,25 @@ def read_positionfixes_csv(*args, **kwargs):
     tz : str
         pytz compatible timezone string. If None UTC is assumed.
     index_col : str
-        column name to be used as index. If None the default index is assumed 
+        column name to be used as index. If None the default index is assumed
         as unique identifier.
-
-    Note that this function is primarily useful if data is available in a 
-    longitude/latitude format. If your data already contains a WKT column, it
-    might be easier to just use the GeoPandas import functions.
 
     Returns
     -------
     GeoDataFrame
         A GeoDataFrame containing the positionfixes.
 
+    Notes
+    -----
+    Note that this function is primarily useful if data is available in a
+    longitude/latitude format. If your data already contains a WKT column, it
+    might be easier to just use the GeoPandas import functions.
+
     Examples
     --------
     >>> trackintel.read_positionfixes_csv('data.csv')
     >>> trackintel.read_positionfixes_csv('data.csv', columns={'time':'tracked_at', 'User':'user_id'})
     """
-
     columns = kwargs.pop('columns', {})
     tz = kwargs.pop('tz', None)
     
