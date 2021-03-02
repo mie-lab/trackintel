@@ -20,6 +20,9 @@ def plot_triplegs(triplegs, out_filename=None, positionfixes=None, staypoints=No
     positionfixes : GeoDataFrame
         If available, some positionfixes that can additionally be plotted.
 
+    staypoints_radius : float, optional
+        The radius in meter with which circles around staypoints should be drawn.
+
     plot_osm : bool
         If this is set to True, it will download an OSM street network and plot 
         below the triplegs.

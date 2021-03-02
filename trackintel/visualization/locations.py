@@ -20,7 +20,7 @@ def plot_center_of_locations(locations, out_filename=None, radius=None, position
         The file to plot to, if this is not set, the plot will simply be shown.
 
     radius : float, optional
-        The radius with which circles around locations should be drawn.
+        The radius in meter with which circles around locations should be drawn.
 
     positionfixes : GeoDataFrame, optional
         If available, some positionfixes that can additionally be plotted.
