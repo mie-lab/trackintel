@@ -68,7 +68,17 @@ class TestGenerate_staypoints():
                                                            dist_threshold=sys.maxsize,
                                                            time_threshold=sys.maxsize)
         assert len(stps) == 0, "With large thresholds, staypoint extraction should not yield positionfixes"
-
+        
+    def test_generate_staypoints_missing_link(self, geolife_pfs_stps_long):
+        """Test nan is assigned for missing link between pfs and stps."""
+        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
+        pfs, _ = pfs.as_positionfixes.generate_staypoints(method='sliding',
+                                                           dist_threshold=sys.maxsize,
+                                                           time_threshold=sys.maxsize)
+        
+        assert pd.isna(pfs['staypoint_id']).any()
+        
     def test_generate_staypoints_dtype_consistent(self):
         """Test the dtypes for the generated columns."""
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
@@ -215,6 +225,14 @@ class TestGenerate_triplegs():
         assert pfs['user_id'].dtype == tpls['user_id'].dtype
         assert pfs['tripleg_id'].dtype == "float"
         assert tpls.index.dtype == "int64"
+        
+    def test_generate_triplegs_missing_link(self, geolife_pfs_stps_long):
+        """Test nan is assigned for missing link between pfs and tpls."""
+        pfs, stps = geolife_pfs_stps_long
+        
+        pfs, _ = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
+        
+        assert pd.isna(pfs['tripleg_id']).any()
     
     def test_generate_triplegs_index_start(self, geolife_pfs_stps_long):
         """Test the generated index start from 0 for different methods."""
