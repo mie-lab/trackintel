@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import geopandas as gpd
 import pandas as pd
 from shapely.geometry import Point
@@ -121,6 +122,7 @@ class TestGenerate_locations():
         assert len(locs_data) == 0, "With large hyperparameters, every dataset location is an outlier"
     
     def test_generate_locations_dtype_consistent(self):
+        """Test the dtypes for the generated columns."""
         stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
         stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
         # 
@@ -141,6 +143,24 @@ class TestGenerate_locations():
         assert stps['user_id'].dtype == locs['user_id'].dtype
         assert stps['location_id'].dtype == locs.index.dtype
         
+    def test_generate_locations_index_start(self):
+        """Test the generated index start from 0 for different methods."""
+        stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+        stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
+        
+        _, locs_ds = stps.as_staypoints.generate_locations(method='dbscan',
+                                                           epsilon=10,
+                                                           num_samples=0,
+                                                           distance_matrix_metric='haversine',
+                                                           agg_level='dataset')
+        _, locs_us = stps.as_staypoints.generate_locations(method='dbscan',
+                                                           epsilon=10,
+                                                           num_samples=0,
+                                                           distance_matrix_metric='haversine',
+                                                           agg_level='user')
+        
+        assert (locs_ds.index == np.arange(len(locs_ds))).any()
+        assert (locs_us.index == np.arange(len(locs_us))).any()
         
 class TestCreate_activity_flag():
     pass
