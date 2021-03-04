@@ -142,7 +142,7 @@ class TestGenerate_locations():
                                                            distance_matrix_metric='haversine',
                                                            agg_level='dataset')
         assert stps['user_id'].dtype == locs['user_id'].dtype
-        assert stps['location_id'].dtype == 'float'
+        assert stps['location_id'].dtype == 'Int64'
         assert locs.index.dtype == 'int64'
         # change the user_id to string
         stps['user_id'] = stps['user_id'].apply(lambda x: str(x))
@@ -152,7 +152,7 @@ class TestGenerate_locations():
                                                            distance_matrix_metric='haversine',
                                                            agg_level='dataset')
         assert stps['user_id'].dtype == locs['user_id'].dtype
-        assert stps['location_id'].dtype == 'float'
+        assert stps['location_id'].dtype == 'Int64'
         assert locs.index.dtype == 'int64'
         
     def test_generate_locations_index_start(self):
