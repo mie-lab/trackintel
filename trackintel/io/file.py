@@ -53,6 +53,10 @@ def read_positionfixes_csv(*args, **kwargs):
     index_col : str
         column name to be used as index. If None the default index is assumed
         as unique identifier.
+    crs: pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg “EPSG:4326”) or a WKT string.
 
     Returns
     -------
@@ -72,6 +76,7 @@ def read_positionfixes_csv(*args, **kwargs):
     """
     columns = kwargs.pop('columns', {})
     tz = kwargs.pop('tz', None)
+    crs = kwargs.pop('crs', None)
     
     # Warning if no 'index_col' parameter is provided
     if not 'index_col' in kwargs:
@@ -95,6 +100,8 @@ def read_positionfixes_csv(*args, **kwargs):
 
     df = df.drop(['longitude', 'latitude'], axis=1)
     gdf = gpd.GeoDataFrame(df, geometry='geom')
+    if not crs:
+        gdf.set_crs(crs, inplace=True)
     assert gdf.as_positionfixes
     return gdf
 
@@ -133,6 +140,10 @@ def read_triplegs_csv(*args, **kwargs):
     index_col : str
         column name to be used as index. If None the default index is assumed 
         as unique identifier.
+    crs: pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg “EPSG:4326”) or a WKT string.
 
     Returns
     -------
@@ -147,7 +158,8 @@ def read_triplegs_csv(*args, **kwargs):
 
     columns = kwargs.pop('columns', {})
     tz = kwargs.pop('tz', None)
-    
+    crs = kwargs.pop('crs', None)
+
     # Warning if no 'index_col' parameter is provided
     if not 'index_col' in kwargs:
         warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" + 
@@ -169,6 +181,8 @@ def read_triplegs_csv(*args, **kwargs):
             df[col] = df[col].dt.tz_convert(tz)
 
     gdf = gpd.GeoDataFrame(df, geometry='geom')
+    if not crs:
+        gdf.set_crs(crs, inplace=True)
     assert gdf.as_triplegs
     return gdf
 
@@ -206,6 +220,10 @@ def read_staypoints_csv(*args, **kwargs):
     index_col : str
         column name to be used as index. If None the default index is assumed 
         as unique identifier.
+    crs: pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg “EPSG:4326”) or a WKT string.
 
     Returns
     -------
@@ -220,6 +238,7 @@ def read_staypoints_csv(*args, **kwargs):
 
     columns = kwargs.pop('columns', {})
     tz = kwargs.pop('tz', None)
+    crs = kwargs.pop('crs', None)
     
     # Warning if no 'index_col' parameter is provided
     if not 'index_col' in kwargs:
@@ -242,6 +261,8 @@ def read_staypoints_csv(*args, **kwargs):
             df[col] = df[col].dt.tz_convert(tz)
         
     gdf = gpd.GeoDataFrame(df, geometry='geom')
+    if not crs:
+        gdf.set_crs(crs, inplace=True)
     assert gdf.as_staypoints
     return gdf
 
@@ -282,7 +303,10 @@ def read_locations_csv(*args, **kwargs):
     index_col : str
         column name to be used as index. If None the default index is assumed 
         as unique identifier.
-        
+    crs: pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg “EPSG:4326”) or a WKT string.
             
     Examples
     --------
@@ -290,6 +314,7 @@ def read_locations_csv(*args, **kwargs):
     >>> trackintel.read_locations_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
     columns = kwargs.pop('columns', {})
+    crs = kwargs.pop('crs', None)
     
     # Warning if no 'index_col' parameter is provided
     if not 'index_col' in kwargs:
@@ -302,6 +327,8 @@ def read_locations_csv(*args, **kwargs):
     if 'extent' in df.columns:
         df['extent'] = df['extent'].apply(wkt.loads)
     gdf = gpd.GeoDataFrame(df, geometry='center')
+    if not crs:
+        gdf.set_crs(crs, inplace=True)
     assert gdf.as_locations
     return gdf
 
