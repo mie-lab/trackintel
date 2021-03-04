@@ -80,10 +80,10 @@ class TestGenerate_trips():
         assert stps['user_id'].dtype == trips['user_id'].dtype
         assert trips.index.dtype == "int64"
         
-        assert stps['trip_id'].dtype == "float"
-        assert stps['prev_trip_id'].dtype == "float"
-        assert stps['next_trip_id'].dtype == "float"
-        assert tpls['trip_id'].dtype == "float"
+        assert stps['trip_id'].dtype == "Int64"
+        assert stps['prev_trip_id'].dtype == "Int64"
+        assert stps['next_trip_id'].dtype == "Int64"
+        assert tpls['trip_id'].dtype == "Int64"
     
     def test_generate_trips_index_start(self):
         """Test the generated index start from 0 for different methods."""

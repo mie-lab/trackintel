@@ -51,6 +51,8 @@ def testdata_tpls_geolife():
 def testdata_pfs_ids_geolife():
     pfs_file = os.path.join('tests', 'data', 'geolife', 'geolife_positionfixes_with_ids.csv')
     pfs = ti.read_positionfixes_csv(pfs_file, index_col='id')
+    pfs['staypoint_id'] = pfs['staypoint_id'].astype('Int64')
+    pfs['tripleg_id'] = pfs['tripleg_id'].astype('Int64')
     pfs.geometry = pfs.geometry.set_crs(epsg=4326)
     return pfs
 
@@ -87,7 +89,7 @@ class TestGenerate_staypoints():
                                                              dist_threshold=25,
                                                              time_threshold=5 * 60)
         assert pfs['user_id'].dtype == stps['user_id'].dtype
-        assert pfs['staypoint_id'].dtype == "float"
+        assert pfs['staypoint_id'].dtype == "Int64"
         assert stps.index.dtype == "int64"
             
     def test_generate_staypoints_index_start(self):
@@ -223,7 +225,7 @@ class TestGenerate_triplegs():
                                                                      time_threshold=5 * 60)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
         assert pfs['user_id'].dtype == tpls['user_id'].dtype
-        assert pfs['tripleg_id'].dtype == "float"
+        assert pfs['tripleg_id'].dtype == "Int64"
         assert tpls.index.dtype == "int64"
         
     def test_generate_triplegs_missing_link(self, geolife_pfs_stps_long):
@@ -294,7 +296,7 @@ def _generate_staypoints_original(positionfixes, method='sliding',
     if method == 'sliding':
         # Algorithm from Li et al. (2008). For details, please refer to the paper.
         staypoint_id_counter = 0
-        ret_pfs['staypoint_id'] = np.NaN  # this marks all that are not part of a SP
+        ret_pfs['staypoint_id'] = np.nan  # this marks all that are not part of a SP
 
         for user_id_this in ret_pfs['user_id'].unique():
 
