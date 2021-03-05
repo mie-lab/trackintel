@@ -8,12 +8,12 @@ import trackintel as ti
 class TestFile:
     def test_positionfixes_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'positionfixes.csv')
-        mod_file = os.path.join('tests','data', 'positionfixes_mod_columns.csv')
+        mod_file = os.path.join('tests', 'data', 'positionfixes_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'positionfixes_test.csv')
 
         pfs = ti.read_positionfixes_csv(orig_file, sep=';', index_col="id")
         
-        column_mapping = {'lat':'latitude', 'lon':'longitude', 'time':'tracked_at'}
+        column_mapping = {'lat': 'latitude', 'lon': 'longitude', 'time': 'tracked_at'}
         mod_pfs = ti.read_positionfixes_csv(mod_file, sep=';', index_col="id", columns=column_mapping)
         assert mod_pfs.equals(pfs)
         pfs['tracked_at'] = pfs['tracked_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
@@ -40,7 +40,7 @@ class TestFile:
 
     def test_triplegs_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'triplegs.csv')
-        mod_file = os.path.join('tests','data','triplegs_mod_columns.csv')
+        mod_file = os.path.join('tests', 'data', 'triplegs_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'triplegs_test.csv')
         tpls = ti.read_triplegs_csv(orig_file, sep=';', tz='utc', index_col="id")
         
@@ -103,9 +103,9 @@ class TestFile:
 
     def test_locations_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'locations.csv')
-        mod_file = os.path.join('tests','data','locations_mod_columns.csv')
+        mod_file = os.path.join('tests', 'data', 'locations_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'locations_test.csv')
-        mod_locs = ti.read_locations_csv(mod_file, columns={'geom':'center'},sep=';', index_col="id")
+        mod_locs = ti.read_locations_csv(mod_file, columns={'geom': 'center'}, sep=';', index_col="id")
         locs = ti.read_locations_csv(orig_file, sep=';', index_col="id")
         assert mod_locs.equals(locs)
         locs.as_locations.to_csv(tmp_file, sep=';', columns=['user_id', 'elevation', 'center', 'extent'])
@@ -127,15 +127,13 @@ class TestFile:
         # TODO Implement some tests for PostGIS.
         pass
 
-    
-
     def test_trips_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'trips.csv')
         mod_file = os.path.join('tests', 'data', 'trips_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'trips_test.csv')
         trips = ti.read_trips_csv(orig_file, sep=';', index_col="id")
-        column_mapping = {'orig_stp':'origin_staypoint_id','dest_stp':'destination_staypoint_id'}
-        mod_trips = ti.read_trips_csv(mod_file, columns= column_mapping, sep=';', index_col="id")
+        column_mapping = {'orig_stp': 'origin_staypoint_id', 'dest_stp': 'destination_staypoint_id'}
+        mod_trips = ti.read_trips_csv(mod_file, columns=column_mapping, sep=';', index_col="id")
         assert mod_trips.equals(trips)
         
         trips['started_at'] = trips['started_at'].apply(lambda d: d.isoformat().replace('+00:00', 'Z'))
@@ -154,8 +152,7 @@ class TestFile:
     def test_trips_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
-    
-    
+
     def test_tours_from_to_csv(self):
         # TODO Implement some tests for reading and writing tours.
         pass
