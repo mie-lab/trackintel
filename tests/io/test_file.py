@@ -24,7 +24,7 @@ class TestFile:
         os.remove(tmp_file)
         
     def test_positionfixes_csv_index_warning(self):
-        """Test if a warning is raised when not parsing the index_col arguement."""
+        """Test if a warning is raised when not parsing the index_col argument."""
         file = os.path.join('tests', 'data', 'positionfixes.csv')
         with pytest.warns(UserWarning):
             ti.read_positionfixes_csv(file, sep=';')
@@ -54,7 +54,7 @@ class TestFile:
         os.remove(tmp_file)
         
     def test_triplegs_csv_index_warning(self):
-        """Test if a warning is raised when not parsing the index_col arguement."""
+        """Test if a warning is raised when not parsing the index_col argument."""
         file = os.path.join('tests', 'data', 'triplegs.csv')
         with pytest.warns(UserWarning):
             ti.read_triplegs_csv(file, sep=';')
@@ -81,7 +81,7 @@ class TestFile:
         os.remove(tmp_file)
     
     def test_staypoints_csv_index_warning(self):
-        """Test if a warning is raised when not parsing the index_col arguement."""
+        """Test if a warning is raised when not parsing the index_col argument."""
         file = os.path.join('tests', 'data', 'staypoints.csv')
         with pytest.warns(UserWarning):
             ti.read_staypoints_csv(file, sep=';')
@@ -103,7 +103,7 @@ class TestFile:
         os.remove(tmp_file)
     
     def test_locations_csv_index_warning(self):
-        """Test if a warning is raised when not parsing the index_col arguement."""
+        """Test if a warning is raised when not parsing the index_col argument."""
         file = os.path.join('tests', 'data', 'locations.csv')
         with pytest.warns(UserWarning):
             ti.read_locations_csv(file, sep=';')
@@ -131,7 +131,7 @@ class TestFile:
         os.remove(tmp_file)
     
     def test_trips_csv_index_warning(self):
-        """Test if a warning is raised when not parsing the index_col arguement."""
+        """Test if a warning is raised when not parsing the index_col argument."""
         file = os.path.join('tests', 'data', 'trips.csv')
         with pytest.warns(UserWarning):
             ti.read_trips_csv(file, sep=';')
@@ -144,4 +144,3 @@ class TestFile:
     def test_tours_from_to_csv(self):
         # TODO Implement some tests for reading and writing tours.
         pass
-    
