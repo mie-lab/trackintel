@@ -100,7 +100,7 @@ def read_positionfixes_csv(*args, **kwargs):
 
     df = df.drop(['longitude', 'latitude'], axis=1)
     gdf = gpd.GeoDataFrame(df, geometry='geom')
-    if not crs:
+    if crs:
         gdf.set_crs(crs, inplace=True)
     assert gdf.as_positionfixes
     return gdf
@@ -181,7 +181,7 @@ def read_triplegs_csv(*args, **kwargs):
             df[col] = df[col].dt.tz_convert(tz)
 
     gdf = gpd.GeoDataFrame(df, geometry='geom')
-    if not crs:
+    if crs:
         gdf.set_crs(crs, inplace=True)
     assert gdf.as_triplegs
     return gdf
@@ -261,7 +261,7 @@ def read_staypoints_csv(*args, **kwargs):
             df[col] = df[col].dt.tz_convert(tz)
         
     gdf = gpd.GeoDataFrame(df, geometry='geom')
-    if not crs:
+    if crs:
         gdf.set_crs(crs, inplace=True)
     assert gdf.as_staypoints
     return gdf
@@ -327,7 +327,7 @@ def read_locations_csv(*args, **kwargs):
     if 'extent' in df.columns:
         df['extent'] = df['extent'].apply(wkt.loads)
     gdf = gpd.GeoDataFrame(df, geometry='center')
-    if not crs:
+    if crs:
         gdf.set_crs(crs, inplace=True)
     assert gdf.as_locations
     return gdf
