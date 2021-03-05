@@ -148,7 +148,7 @@ def generate_staypoints(positionfixes,
     return ret_pfs, ret_spts
 
 
-def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints', gap_threshold=100):
+def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints', gap_threshold=100000):
     """Generates triplegs from positionfixes.
 
     A tripleg is (for now) defined as anything that happens between two consecutive staypoints.
