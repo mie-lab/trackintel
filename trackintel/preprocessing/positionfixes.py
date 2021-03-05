@@ -493,8 +493,9 @@ def __get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, gap_threshold, min
 
         coords = list(pfs_tripleg_to_store.geometry.apply(lambda r: (r.x, r.y)))
 
-        if len(coords) > min_nb_of_points:  # at least 1 posfix that is not part of a staypoint
-            
+        if len(coords) < min_nb_of_points:  # at least 1 posfix that is not part of a staypoint
+            return [None]
+        else:
             tripleg_entry.append({
                 'user_id': user_id_this,
                 'started_at': pfs_tripleg_to_store['tracked_at'].iloc[0],
