@@ -48,7 +48,7 @@ class TripsAccessor(object):
     @staticmethod
     def _validate(obj):
         if any([c not in obj.columns for c in TripsAccessor.required_columns]):
-            raise AttributeError("To process a DataFrame as a collection of staypoints, "
+            raise AttributeError("To process a DataFrame as a collection of trips, "
                                  + "it must have the properties [%s], but it has [%s]."
                                  % (', '.join(TripsAccessor.required_columns), ', '.join(obj.columns)))
 
