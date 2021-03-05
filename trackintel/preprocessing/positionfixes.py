@@ -148,7 +148,7 @@ def generate_staypoints(positionfixes,
     return ret_pfs, ret_spts
 
 
-def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints'):
+def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints', gap_threshold=100):
     """Generates triplegs from positionfixes.
 
     A tripleg is (for now) defined as anything that happens between two consecutive staypoints.
@@ -222,16 +222,16 @@ def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints
             # Case 1: Staypoints exist and are connected to positionfixes by user id
             if case == 1:
                 generated_triplegs.extend(_triplegs_between_staypoints_case1(positionfixes_user_this, staypoints,
-                                                                             user_id_this))
+                                                                             user_id_this, gap_threshold))
 
             # Case 2: Staypoints exist but there is no user_id given
             elif case == 2:
                 generated_triplegs.extend(_triplegs_between_staypoints_case2(positionfixes_user_this, staypoints,
-                                                                             user_id_this))
+                                                                             user_id_this, gap_threshold))
 
             # case 3: Only positionfixes with staypoint id for tripleg generation
             elif case == 3:
-                generated_triplegs.extend(_triplegs_between_staypoints_case3(positionfixes_user_this, user_id_this))
+                generated_triplegs.extend(_triplegs_between_staypoints_case3(positionfixes_user_this, user_id_this, gap_threshold))
 
         # create tripleg dataframe
         columns_triplegs = ['user_id', 'started_at', 'finished_at', 'geom', 'pfs_ids']
@@ -363,7 +363,7 @@ def _generate_staypoints_dbscan_user(pfs,
     return pfs
 
 
-def _triplegs_between_staypoints_case1(positionfixes, staypoints, user_id_this):
+def _triplegs_between_staypoints_case1(positionfixes, staypoints, user_id_this, gap_threshold):
     """
     This function uses the staypoints and the column 'staypoint_id' in the positionfixes, to identify all
     positionfixes that lie in between two staypoints.
@@ -399,28 +399,30 @@ def _triplegs_between_staypoints_case1(positionfixes, staypoints, user_id_this):
 
         # create tripleg from all positionfixes in between the two staypoints
         pfs_tripleg = positionfixes.iloc[position_first_posfix_tl:position_last_posfix_tl + 1]
-        generated_triplegs_list.append(__get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, min_nb_of_points=3))
+        generated_triplegs_list.extend(__get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, gap_threshold,
+                                                                      min_nb_of_points=3))
 
     # add first tripleg to the beginning of generated_tripleg_list
     index_first_posfix_first_stp = positionfixes[positionfixes.staypoint_id == spts[0]['id']].index[0]
     position_first_posfix_first_stp = positionfixes.index.get_loc(index_first_posfix_first_stp)
 
     pfs_tripleg = positionfixes.iloc[0:position_first_posfix_first_stp + 1]
-    generated_triplegs_list = [__get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, min_nb_of_points=2)] + \
-                              generated_triplegs_list
+    generated_triplegs_list = __get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, gap_threshold,
+                                                              min_nb_of_points=2) + generated_triplegs_list
 
     # add last tripleg to the end of generated_triplegs
     index_last_posfix_last_stp = positionfixes[positionfixes.staypoint_id == spts[-1]['id']].index[-1]
     position_last_posfix_last_stp = positionfixes.index.get_loc(index_last_posfix_last_stp)
 
     pfs_tripleg = positionfixes.iloc[position_last_posfix_last_stp:]
-    generated_triplegs_list.append(__get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, min_nb_of_points=2))
+    generated_triplegs_list.extend(__get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, gap_threshold,
+                                                                  min_nb_of_points=2))
 
     # filter None values
     return list(filter(None, generated_triplegs_list))
 
 
-def _triplegs_between_staypoints_case2(positionfixes, staypoints, user_id_this):
+def _triplegs_between_staypoints_case2(positionfixes, staypoints, user_id_this, gap_threshold):
     """
     This function uses the timestamps of staypoints to identify all positionfixes that lie in between two staypoints.
 
@@ -447,24 +449,24 @@ def _triplegs_between_staypoints_case2(positionfixes, staypoints, user_id_this):
         # Not so efficient, always matching on the time (as things are sorted anyways).
         pfs_tripleg = positionfixes[(stp1['finished_at'] <= positionfixes['tracked_at']) &
                                     (positionfixes['tracked_at'] <= stp2['started_at'])]
-        generated_triplegs_list.append(__get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, min_nb_of_points=3))
+        generated_triplegs_list.extend(__get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, gap_threshold, min_nb_of_points=3))
 
     # add first tripleg
     pfs_first_tripleg = positionfixes[positionfixes['tracked_at'] <= stps[0]['started_at']]
-    generated_triplegs_list = [__get_tripleg_record_from_psfs(pfs_first_tripleg, user_id_this, min_nb_of_points=2
-                                                              )] + generated_triplegs_list
+    generated_triplegs_list = __get_tripleg_record_from_psfs(pfs_first_tripleg, user_id_this, gap_threshold, min_nb_of_points=2
+                                                              ) + generated_triplegs_list
 
     # add last tripleg
     pfs_first_tripleg = positionfixes[positionfixes['tracked_at'] >= stps[-1]['finished_at']]
-    generated_triplegs_list.append(__get_tripleg_record_from_psfs(pfs_first_tripleg, user_id_this, min_nb_of_points=2))
+    generated_triplegs_list.extend(__get_tripleg_record_from_psfs(pfs_first_tripleg, user_id_this, gap_threshold, min_nb_of_points=2))
 
     # filter None values
     return list(filter(None, generated_triplegs_list))
 
 
-def __get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, min_nb_of_points):
+def __get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, gap_threshold, min_nb_of_points):
     """
-    Create a tripleg from a collection of positionfixes
+    Create a tripleg from a collection of positionfixes.
 
     Parameters
     ----------
@@ -482,22 +484,41 @@ def __get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, min_nb_of_points):
     -------
     dict or None
     """
+    tripleg_entry = []
+
+    gap_loc = check_tripleg_on_gaps(pfs_tripleg, gap_threshold)
+    while gap_loc != -1:
+        pfs_tripleg_to_store = pfs_tripleg.iloc[0:gap_loc-1]
+        pfs_tripleg = pfs_tripleg.iloc[gap_loc:-1]
+
+        coords = list(pfs_tripleg_to_store.geometry.apply(lambda r: (r.x, r.y)))
+
+        if len(coords) > min_nb_of_points:  # at least 1 posfix that is not part of a staypoint
+            
+            tripleg_entry.append({
+                'user_id': user_id_this,
+                'started_at': pfs_tripleg_to_store['tracked_at'].iloc[0],
+                'finished_at': pfs_tripleg_to_store['tracked_at'].iloc[-1],
+                'geom': LineString(coords),
+                'pfs_ids': list(pfs_tripleg_to_store.index)
+            })
+        gap_loc = check_tripleg_on_gaps(pfs_tripleg, gap_threshold)
     coords = list(pfs_tripleg.geometry.apply(lambda r: (r.x, r.y)))
 
     if len(coords) < min_nb_of_points:  # at least 1 posfix that is not part of a staypoint
-        return None
+        return [None]
     else:
-        tripleg_entry = {
+        tripleg_entry.append({
             'user_id': user_id_this,
             'started_at': pfs_tripleg['tracked_at'].iloc[0],
             'finished_at': pfs_tripleg['tracked_at'].iloc[-1],
             'geom': LineString(coords),
             'pfs_ids': list(pfs_tripleg.index)
-        }
-        return tripleg_entry
+            })
+    return tripleg_entry
 
 
-def _triplegs_between_staypoints_case3(positionfixes, user_id_this):
+def _triplegs_between_staypoints_case3(positionfixes, user_id_this, gap_threshold):
     """
     This function uses column 'staypoint_id' to identify all positionfixes that lie in between two staypoints.
 
@@ -572,6 +593,14 @@ def _triplegs_between_staypoints_case3(positionfixes, user_id_this):
             status = 'in_tripleg'
 
         if status == 'in_tripleg':
+            try:
+                t_diff = positionfixes.iloc[idx+1]['tracked_at']-pf.tracked_at
+                if t_diff.total_seconds() > gap_threshold:
+                    status = 'tripleg_ends'
+            except:
+                IndexError #case at the end of the last tripleg (without staypoint)
+            
+            
             curr_tripleg['geom'].append((pf[name_geocol].x, pf[name_geocol].y))
             curr_tripleg['pfs_ids'].append(idx)
 
@@ -579,6 +608,7 @@ def _triplegs_between_staypoints_case3(positionfixes, user_id_this):
             curr_tripleg['finished_at'] = pf['tracked_at']
             curr_tripleg['geom'].append((pf[name_geocol].x, pf[name_geocol].y))
             curr_tripleg['pfs_ids'].append(idx)
+
             curr_tripleg['geom'] = LineString([(x, y) for x, y in curr_tripleg['geom']])
             generated_triplegs.append(curr_tripleg)
 
@@ -596,5 +626,33 @@ def _triplegs_between_staypoints_case3(positionfixes, user_id_this):
         # NB: geom and id where already added during the loop
         curr_tripleg['geom'] = LineString([(x, y) for x, y in curr_tripleg['geom']])
         generated_triplegs.append(curr_tripleg)
+        
 
     return generated_triplegs
+
+
+def check_tripleg_on_gaps(pfs_tripleg, gap_threshold):
+    """
+    Check a tripleg on gaps and return the index of the gap (for case 1 and 2 of tripleg generation).
+
+    Parameters
+    ----------
+    pfs_tripleg : GeoDataFrame
+        The positionfixes that form the tripleg to check.
+    gap_threshold : float
+        The temporal threshold for the difference between to positionfixes
+        to be considered as a gap.
+
+    Returns
+    -------
+    int
+        index of the positionfix after the gap, -1 if no gap could be found.
+
+    """
+    for i in range(pfs_tripleg.shape[0]-1):
+        t_diff = pfs_tripleg.iloc[i+1].tracked_at - pfs_tripleg.iloc[i].tracked_at
+        if t_diff.total_seconds()/60 > gap_threshold:
+            return i+1
+            break
+
+    return -1
