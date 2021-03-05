@@ -22,6 +22,11 @@ class TestFile:
         pfs.as_positionfixes.to_csv(tmp_file, sep=';', columns=columns)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
+
+        crs = "EPSG:2056"
+        assert pfs.crs is None
+        pfs = ti.read_positionfixes_csv(orig_file, sep=';', index_col="id", crs=crs)
+        assert pfs.crs == crs
         
     def test_positionfixes_csv_index_warning(self):
         """Test if a warning is raised when not parsing the index_col argument."""
@@ -32,8 +37,6 @@ class TestFile:
     def test_positionfixes_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
-    
-
 
     def test_triplegs_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'triplegs.csv')
@@ -52,6 +55,11 @@ class TestFile:
         tpls.as_triplegs.to_csv(tmp_file, sep=';', columns=columns)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
+
+        crs = "EPSG:2056"
+        assert tpls.crs is None
+        tpls = ti.read_triplegs_csv(orig_file, sep=';', tz='utc', index_col="id", crs=crs)
+        assert tpls.crs == crs
         
     def test_triplegs_csv_index_warning(self):
         """Test if a warning is raised when not parsing the index_col argument."""
@@ -62,8 +70,6 @@ class TestFile:
     def test_triplegs_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
-    
-    
 
     def test_staypoints_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'staypoints.csv')
@@ -79,17 +85,21 @@ class TestFile:
         stps.as_staypoints.to_csv(tmp_file, sep=';', columns=columns)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
+
+        crs = "EPSG:2056"
+        assert stps.crs is None
+        stps = ti.read_staypoints_csv(orig_file, sep=';', tz='utc', index_col="id", crs=crs)
+        assert stps.crs == crs
     
     def test_staypoints_csv_index_warning(self):
         """Test if a warning is raised when not parsing the index_col argument."""
         file = os.path.join('tests', 'data', 'staypoints.csv')
         with pytest.warns(UserWarning):
             ti.read_staypoints_csv(file, sep=';')
-            
+
     def test_staypoints_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
-    
 
     def test_locations_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'locations.csv')
@@ -101,7 +111,12 @@ class TestFile:
         locs.as_locations.to_csv(tmp_file, sep=';', columns=['user_id', 'elevation', 'center', 'extent'])
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
-    
+
+        crs = "EPSG:2056"
+        assert locs.crs is None
+        locs = ti.read_locations_csv(orig_file, sep=';', index_col="id", crs=crs)
+        assert locs.crs == crs
+
     def test_locations_csv_index_warning(self):
         """Test if a warning is raised when not parsing the index_col argument."""
         file = os.path.join('tests', 'data', 'locations.csv')
