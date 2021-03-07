@@ -47,12 +47,16 @@ def read_positionfixes_csv(*args, **kwargs):
     Parameters
     ----------
     columns : dict
-        The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
+        The column names to rename in the format {'old_name':'trackintel_standard_name'}.
     tz : str
         pytz compatible timezone string. If None UTC is assumed.
     index_col : str
         column name to be used as index. If None the default index is assumed
         as unique identifier.
+    crs: pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg “EPSG:4326”) or a WKT string.
 
     Returns
     -------
@@ -72,11 +76,12 @@ def read_positionfixes_csv(*args, **kwargs):
     """
     columns = kwargs.pop('columns', {})
     tz = kwargs.pop('tz', None)
+    crs = kwargs.pop('crs', None)
     
     # Warning if no 'index_col' parameter is provided
-    if not 'index_col' in kwargs:
-        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" + 
-            "argument to avoid a warning when reading csv files.")
+    if 'index_col' not in kwargs:
+        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
+                      "argument to avoid a warning when reading csv files.")
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
@@ -95,6 +100,8 @@ def read_positionfixes_csv(*args, **kwargs):
 
     df = df.drop(['longitude', 'latitude'], axis=1)
     gdf = gpd.GeoDataFrame(df, geometry='geom')
+    if crs:
+        gdf.set_crs(crs, inplace=True)
     assert gdf.as_positionfixes
     return gdf
 
@@ -127,12 +134,16 @@ def read_triplegs_csv(*args, **kwargs):
     Parameters
     ----------
     columns : dict
-        The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
+        The column names to rename in the format {'old_name':'trackintel_standard_name'}.
     tz : str
         pytz compatible timezone string. If None UTC is assumed.
     index_col : str
         column name to be used as index. If None the default index is assumed 
         as unique identifier.
+    crs: pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg “EPSG:4326”) or a WKT string.
 
     Returns
     -------
@@ -147,11 +158,12 @@ def read_triplegs_csv(*args, **kwargs):
 
     columns = kwargs.pop('columns', {})
     tz = kwargs.pop('tz', None)
-    
+    crs = kwargs.pop('crs', None)
+
     # Warning if no 'index_col' parameter is provided
-    if not 'index_col' in kwargs:
-        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" + 
-            "argument to avoid a warning when reading csv files.")
+    if 'index_col' not in kwargs:
+        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
+                      "argument to avoid a warning when reading csv files.")
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
@@ -169,6 +181,8 @@ def read_triplegs_csv(*args, **kwargs):
             df[col] = df[col].dt.tz_convert(tz)
 
     gdf = gpd.GeoDataFrame(df, geometry='geom')
+    if crs:
+        gdf.set_crs(crs, inplace=True)
     assert gdf.as_triplegs
     return gdf
 
@@ -200,12 +214,16 @@ def read_staypoints_csv(*args, **kwargs):
     Parameters
     ----------
     columns : dict
-        The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
+        The column names to rename in the format {'old_name':'trackintel_standard_name'}.
     tz : str
         pytz compatible timezone string. If None UTC is assumed.
     index_col : str
         column name to be used as index. If None the default index is assumed 
         as unique identifier.
+    crs: pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg “EPSG:4326”) or a WKT string.
 
     Returns
     -------
@@ -220,11 +238,12 @@ def read_staypoints_csv(*args, **kwargs):
 
     columns = kwargs.pop('columns', {})
     tz = kwargs.pop('tz', None)
+    crs = kwargs.pop('crs', None)
     
     # Warning if no 'index_col' parameter is provided
-    if not 'index_col' in kwargs:
-        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" + 
-            "argument to avoid a warning when reading csv files.")
+    if 'index_col' not in kwargs:
+        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
+                      "argument to avoid a warning when reading csv files.")
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
@@ -242,6 +261,8 @@ def read_staypoints_csv(*args, **kwargs):
             df[col] = df[col].dt.tz_convert(tz)
         
     gdf = gpd.GeoDataFrame(df, geometry='geom')
+    if crs:
+        gdf.set_crs(crs, inplace=True)
     assert gdf.as_staypoints
     return gdf
 
@@ -273,28 +294,32 @@ def read_locations_csv(*args, **kwargs):
     Parameters
     ----------
     columns : dict
-        The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
+        The column names to rename in the format {'old_name':'trackintel_standard_name'}.
+    index_col : str
+        column name to be used as index. If None the default index is assumed
+        as unique identifier.
+    crs: pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg “EPSG:4326”) or a WKT string.
 
     Returns
     -------
     GeoDataFrame
         A GeoDataFrame containing the locations.
-    index_col : str
-        column name to be used as index. If None the default index is assumed 
-        as unique identifier.
-        
-            
+
     Examples
     --------
     >>> trackintel.read_locations_csv('data.csv')
     >>> trackintel.read_locations_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
     columns = kwargs.pop('columns', {})
+    crs = kwargs.pop('crs', None)
     
     # Warning if no 'index_col' parameter is provided
-    if not 'index_col' in kwargs:
-        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" + 
-            "argument to avoid a warning when reading csv files.")
+    if 'index_col' not in kwargs:
+        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
+                      "argument to avoid a warning when reading csv files.")
     
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
@@ -302,6 +327,8 @@ def read_locations_csv(*args, **kwargs):
     if 'extent' in df.columns:
         df['extent'] = df['extent'].apply(wkt.loads)
     gdf = gpd.GeoDataFrame(df, geometry='center')
+    if crs:
+        gdf.set_crs(crs, inplace=True)
     assert gdf.as_locations
     return gdf
 
@@ -326,14 +353,14 @@ def write_locations_csv(locations, filename, *args, **kwargs):
 
 
 def read_trips_csv(*args, **kwargs):
-    """Wraps the pandas read_csv function and extraces proper datetimes. This also 
+    """Wraps the pandas read_csv function and extracts proper datetimes. This also
     validates that the ingested data conforms to the trackintel understanding 
     of trips (see :doc:`/modules/model`).
     
     Parameters
     ----------
     columns : dict
-        The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
+        The column names to rename in the format {'old_name':'trackintel_standard_name'}.
     tz : str
         pytz compatible timezone string. If None UTC is assumed.
     index_col : str
@@ -355,9 +382,9 @@ def read_trips_csv(*args, **kwargs):
     columns = kwargs.pop('columns', {})
     tz = kwargs.pop('tz', None)
     
-    if not 'index_col' in kwargs:
-        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" + 
-            "argument to avoid a warning when reading csv files.")
+    if 'index_col' not in kwargs:
+        warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
+                      "argument to avoid a warning when reading csv files.")
     
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
@@ -393,12 +420,12 @@ def write_trips_csv(trips, filename, *args, **kwargs):
 
 
 def read_tours_csv(*args, **kwargs):
-    """Wraps the pandas read_csv function and extraces proper datetimes. This also 
+    """Wraps the pandas read_csv function and extracts proper datetimes. This also
     validates that the ingested data conforms to the trackintel understanding 
     of tours (see :doc:`/modules/model`).
 
     columns : dict
-        The columnnames to rename in the format {'old_name':'trackintel_standard_name'}.
+        The column names to rename in the format {'old_name':'trackintel_standard_name'}.
     tz : str
         pytz compatible timezone string. If None UTC is assumed.
 
