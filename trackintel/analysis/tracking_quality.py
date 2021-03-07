@@ -11,15 +11,22 @@ def temporal_tracking_quality(source, granularity="all"):
     df : GeoDataFrame (as trackintel datamodels)
         The source dataframe to perform the spatial filtering
 
-    granularity : str, {'all', 'day', 'hour'}, default 'day'
-        - 'all' : overall tracking quality
-        - 'day' : tracking quality by days
-        - 'hour': tracking quality by hours
+    granularity : {"all", "day", "hour"}, default="all"
+        The level of which the tracking quality is claculated. The default "all" returns
+        the overall tracking quality, and "day" and "hour" returns the tracking quality
+        by days and hours, respectively.
 
     Returns
     -------
     DataFrame
         A per-user temporal tracking quality dataframe.
+
+    Note
+    ----
+    The temporal tracking quality is the time proportion of tracked period with the possible
+    time extent. The possible time extent of the different granularities are different: "all"
+    considers the time between the latest "finished_at" and the earliest "started_at", whereas
+    "day" considers the whole day (86399 sec) and "hour" considers the whole hour (3599 sec).
     """
     df = source.copy()
     df.reset_index(inplace=True)
@@ -56,11 +63,9 @@ def _get_tracking_quality_user(df, granularity="all"):
     df : GeoDataFrame (as trackintel datamodels)
         The source dataframe
 
-    granularity : str, {'all', 'day', 'hour'}, default 'all'
-        Determines the extent of the tracking
-        - 'all' : the entire tracking period
-        - 'day' : a whole day
-        - 'hour': a whole hour
+    granularity : {"all", "day", "hour"}, default "all"
+        Determines the extent of the tracking. "all" the entire tracking period,
+        "day" a whole day and "hour" a whole hour.
 
     Returns
     -------
@@ -90,9 +95,9 @@ def _split_overlaps(source, granularity="day"):
     source : GeoDataFrame (as trackintel datamodels)
         The source to perform the split
 
-    granularity : str, {'day', 'hour'}, default 'day'
-        - 'day' : split records that have duration of several days
-        - 'hour': split records that have duration of several hours
+    granularity : {'day', 'hour'}, default 'day'
+        The criteria of spliting. "day" splits records that have duration of several
+        days and "hour" splits records that have duration of several hours.
 
     Returns
     -------
