@@ -37,11 +37,7 @@ def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
 
 
 def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_progress=False):
-    """ Generate trips based on staypoints and triplegs
-
-    `generate_trips` aggregates the staypoints `stps_input` and `tpls_input` into `trips` which are returned
-    in a new DataFrame. The function returns new versions of `stps_input` and `tpls_input` that are identically except
-    for additional id's that allow the matching between staypoints, triplegs and trips.
+    """Generate trips based on staypoints and triplegs.
 
     Parameters
     ----------
@@ -57,8 +53,12 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
 
     Returns
     -------
-    (GeoDataFrame, GeoDataFrame, GeoDataFrame)
-        Tuple containing (staypoints, triplegs, trips)
+    staypoints: GeoDataFrame
+    
+    triplegs: GeoDataFrame
+    
+    trips: GeoDataFrame
+        the generated trips.
 
     Notes
     -----
@@ -67,6 +67,7 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     The function returns altered versions of the input staypoints and triplegs. Staypoints receive the fields
     [`trip_id` `prev_trip_id` and `next_trip_id`], triplegs receive the field [`trip_id`].
     The following assumptions are implemented
+    
         - All movement before the first and after the last activity is omitted
         - If we do not record a person for more than `gap_threshold` minutes, \
             we assume that the person performed an activity in the recording gap and split the trip at the gap.
@@ -76,7 +77,6 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     Examples
     ---------
     >>> staypoints, triplegs, trips = generate_trips(staypoints, triplegs)
-
     """
     assert 'activity' in stps_input.columns, "staypoints need the column 'activities' \
                                          to be able to generate trips"

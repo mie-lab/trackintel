@@ -21,7 +21,6 @@ def generate_staypoints(positionfixes,
     
     Parameters
     ----------
-    
     positionfixes : GeoDataFrame
         The positionfixes have to follow the standard definition for positionfixes DataFrames.
 
@@ -46,9 +45,10 @@ def generate_staypoints(positionfixes,
     
     Returns
     -------
-    (GeoDataFrame, GeoDataFrame)
-        Tuple of (positionfixes, staypoints). Positionfixes is the original GeoDataFrame with 
-        a new column 'staypoint_id'. 
+    ret_pfs: GeoDataFrame as trackintel positionfixes
+        the original GeoDataFrame with a new column 'staypoint_id'. 
+    ret_spts: GeoDataFrame as trackintel staypoints
+        the generated triplegs.
 
     Examples
     --------
@@ -166,21 +166,24 @@ def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints
         The staypoints (corresponding to the positionfixes). If this is not passed, the
         positionfixes need staypoint_id associated with them.
 
-    method: str
-        Method to create tripelgs. Can be one of the following: ('between_staypoints', )
-        'between_staypoints': A tripleg is then defined as all positionfixes between two staypoints. This method
-            requires either a column ``staypoint_id`` on the positionfixes or passing staypoints as an input.
+    method: {between_staypoints}
+        Method to create tripelgs. 
+        
+        - 'between_staypoints': A tripleg is then defined as all positionfixes \
+            between two staypoints. This method requires either a column ``staypoint_id`` on \
+            the positionfixes or passing staypoints as an input.
 
     Returns
     -------
-    (GeoDataFrame, GeoDataFrame)
-        Tuple of (positionfixes, triplegs). Positionfixes is the original GeoDataFrame with 
-        a new column 'tripleg_id'.
+    ret_pfs: GeoDataFrame as trackintel positionfixes
+        the original GeoDataFrame with a new column 'tripleg_id'.
+        
+    ret_tpls: GeoDataFrame as trackintel triplegs
+        the generated trackintel triplegs.
 
     Notes
-    ______
-    Methods 'between_staypoints'
-    This methods creates a tripleg from all positionfixes between two sequential
+    -----
+    Methods ``between_staypoints`` creates a tripleg from all positionfixes between two sequential
     staypoinst. The latest positionfix of a staypoint is at the same time the first positionfix of corresponding
     tripleg. This means that the a staypoint and the following tripleg share 1 trackpoint.
     To use the method 'between_staypoints' you need to provide staypoints, positionfixes with a column 'staypoint_id'

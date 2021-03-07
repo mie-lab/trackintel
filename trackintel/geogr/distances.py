@@ -14,37 +14,44 @@ import warnings
 def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kwds):
     """
     Calculate a distance matrix based on a specific distance metric.
-
+    
     If only X is given, the pair-wise distances between all elements in X are calculated. If X and Y are given, the
-     distances between all combinations of X and Y are calculated. Distances between elements of X and X, and distances
-     between elements of Y and Y are not calculated.
+    distances between all combinations of X and Y are calculated. Distances between elements of X and X, and distances
+    between elements of Y and Y are not calculated.
 
     Parameters
     ----------
-    X : GeoDataFrame
-         GeoPandas DataFrame in trackintel staypoints or triplegs format.
-    Y : GeoDataFrame
-         [optional] GeoPandas DataFrame in trackintel staypoints or triplegs format.
-    dist_metric: str, {'haversine', 'euclidean', 'dtw', 'frechet'}, default 'haversine'
-         The distance metric to be used for calculating the matrix. This function wraps around the
-         ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
-         `scipy.spatial.distance.cdist` function if X and Y are given. Therefore the following metrics are also
-         accepted:
-         via scikit-learn: `[‘cityblock’, ‘cosine’, ‘euclidean’, ‘l1’, ‘l2’, ‘manhattan’]`
-         via scipy.spatial.distance: `[‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘correlation’, ‘dice’, ‘hamming’, ‘jaccard’,
-         ‘kulsinski’, ‘mahalanobis’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’,
-         ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]`
-         triplegs can only be used in combination with `['dtw', 'frechet']`
+    X : GeoDataFrame (as trackintel staypoints or triplegs)
+        
+    Y : GeoDataFrame (as trackintel staypoints or triplegs), optional
+        
+    dist_metric: {'haversine', 'euclidean', 'dtw', 'frechet'}
+        The distance metric to be used for calculating the matrix. This function wraps around the
+        ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
+        ``scipy.spatial.distance.cdist`` function if X and Y are given. Therefore the following metrics 
+        are also accepted:
+        
+        via ``scikit-learn``: `[‘cityblock’, ‘cosine’, ‘euclidean’, ‘l1’, ‘l2’, ‘manhattan’]`
+        
+        via ``scipy.spatial.distance``: `[‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘correlation’, ‘dice’, ‘hamming’, ‘jaccard’,
+        ‘kulsinski’, ‘mahalanobis’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’,
+        ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]`
+        
+        triplegs can only be used in combination with `['dtw', 'frechet']`.
+        
     n_jobs: int
-         Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available
-         if only X is given) are parallelized
-    kwds: optional keywords passed to the distance functions
+        Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available 
+        if only X is given) are parallelized.
+         
+    **kwds: 
+        optional keywords passed to the distance functions.
 
-    Returns numpy array
-         returns matrix of shape (len(X), len(X)) or of shape (len(X), len(Y))
+    Returns
     -------
+    np.array
+        matrix of shape (len(X), len(X)) or of shape (len(X), len(Y))
+        
     """
-
     geom_type = X.geometry.iat[0].geom_type
     if Y is None:
         Y = X
