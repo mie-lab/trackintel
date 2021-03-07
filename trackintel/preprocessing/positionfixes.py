@@ -488,13 +488,13 @@ def __get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, gap_threshold, min
 
     gap_loc = check_tripleg_on_gaps(pfs_tripleg, gap_threshold)
     while gap_loc != -1:
-        pfs_tripleg_to_store = pfs_tripleg.iloc[0:gap_loc-1]
-        pfs_tripleg = pfs_tripleg.iloc[gap_loc:-1]
+        pfs_tripleg_to_store = pfs_tripleg.iloc[:gap_loc]
+        pfs_tripleg = pfs_tripleg.iloc[gap_loc:]
 
         coords = list(pfs_tripleg_to_store.geometry.apply(lambda r: (r.x, r.y)))
 
         if len(coords) < min_nb_of_points:  # at least 1 posfix that is not part of a staypoint
-            return [None]
+            pass
         else:
             tripleg_entry.append({
                 'user_id': user_id_this,
@@ -507,7 +507,7 @@ def __get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, gap_threshold, min
     coords = list(pfs_tripleg.geometry.apply(lambda r: (r.x, r.y)))
 
     if len(coords) < min_nb_of_points:  # at least 1 posfix that is not part of a staypoint
-        return [None]
+        pass
     else:
         tripleg_entry.append({
             'user_id': user_id_this,

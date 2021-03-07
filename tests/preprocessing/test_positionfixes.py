@@ -221,7 +221,39 @@ class TestGenerate_triplegs():
 
             # all values have to greater or equal to zero. Otherwise there is an overlap
             assert all(diff >= np.timedelta64(datetime.timedelta()))
+            
+    def test_generate_triplegs_gap_case1(self, pfs_geolife):
+        pfs_no_gap = pfs_geolife
 
+        pfs_gap = pfs_no_gap.drop(pfs_no_gap.index[13:45]) #create a gap in the positionfixes
+        pfs_gap = pfs_gap.reset_index(drop=True)        #reset the index to simulate a "real" gap
+        pfs_gap.index = pfs_gap.index.set_names(['id'])
+        
+        pfs_no_gap, stps_no_gap = pfs_no_gap.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5*60)
+        pfs_gap, stps_gap = pfs_gap.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5*60)
+        
+        pfs_no_gap, tpls_no_gap = pfs_no_gap.as_positionfixes.generate_triplegs(stps_no_gap)
+        pfs_gap, tpls_gap = pfs_gap.as_positionfixes.generate_triplegs(stps_gap, gap_threshold=2)
+        
+        assert pfs_gap.tripleg_id.nunique() == tpls_gap.index.nunique()
+        
+    def test_generate_triplegs_gap_case2(self, pfs_geolife):
+        
+        pfs_no_gap = pfs_geolife
+
+        pfs_gap = pfs_no_gap.drop(pfs_no_gap.index[13:45]) #create a gap in the positionfixes
+        pfs_gap = pfs_gap.reset_index(drop=True)        #reset the index to simulate a "real" gap
+        pfs_gap.index = pfs_gap.index.set_names(['id'])
+
+        pfs_no_gap, stps_no_gap = pfs_no_gap.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5*60)
+        pfs_no_gap.drop('staypoint_id', axis=1, inplace=True)
+        pfs_gap, stps_gap = pfs_gap.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5*60)
+        pfs_gap.drop('staypoint_id', axis=1, inplace=True)
+
+        pfs_no_gap, tpls_no_gap = pfs_no_gap.as_positionfixes.generate_triplegs(stps_no_gap)
+        pfs_gap, tpls_gap = pfs_gap.as_positionfixes.generate_triplegs(stps_gap, gap_threshold=2)
+
+        assert pfs_gap.tripleg_id.nunique() == tpls_gap.index.nunique()
 
 def _generate_staypoints_original(positionfixes, method='sliding',
                                   dist_threshold=50, time_threshold=300, epsilon=100,
