@@ -11,9 +11,9 @@ from trackintel.geogr.distances import haversine_dist
 
 def generate_staypoints(positionfixes,
                         method='sliding',
+                        dist_func=haversine_dist,
                         dist_threshold=50,
                         time_threshold=300,
-                        dist_func=haversine_dist,
                         epsilon=100,
                         num_samples=1):
     """
@@ -21,21 +21,24 @@ def generate_staypoints(positionfixes,
     
     Parameters
     ----------
-    positionfixes : GeoDataFrame
+    positionfixes : GeoDataFrame (as trackintel positionfixes)
         The positionfixes have to follow the standard definition for positionfixes DataFrames.
 
-    method : str, {'sliding' or '   '}, default 'sliding'
+    method : {'sliding' or 'dbscan'}
+        Method to create staypoints. 
+        
         - 'sliding' : Applies a sliding window over the data.
         - 'dbscan' : Uses the DBSCAN algorithm to find clusters of staypoints.
-
+        
+    dist_func : {'haversine_dist'}
+        The distance metric used by the applied method.
+        
     dist_threshold : float, default 50
         The distance threshold for the 'sliding' method, i.e., how far someone has to travel to
         generate a new staypoint. Units depend on the dist_func parameter.
 
     time_threshold : float, default 300 (seconds)
-        The time threshold for the 'sliding' method in seconds, i.e., how long someone has to 
-    dist_func : function, defaut haversine_dist
-        The distance matrix used by the applied method. Possible metrics are: {'haversine_dist'}
+        The time threshold for the 'sliding' method in seconds
         
     epsilon : float, default 100
         The epsilon for the 'dbscan' method. Units depend on the dist_func parameter.
@@ -45,10 +48,11 @@ def generate_staypoints(positionfixes,
     
     Returns
     -------
-    ret_pfs: GeoDataFrame as trackintel positionfixes
-        the original GeoDataFrame with a new column 'staypoint_id'. 
-    ret_spts: GeoDataFrame as trackintel staypoints
-        the generated triplegs.
+    ret_pfs: GeoDataFrame (as trackintel positionfixes)
+        The original positionfixes with a new column ``[`staypoint_id`]``.
+        
+    ret_spts: GeoDataFrame (as trackintel staypoints)
+        The generated triplegs.
 
     Examples
     --------
@@ -149,7 +153,8 @@ def generate_staypoints(positionfixes,
 
 
 def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints'):
-    """Generates triplegs from positionfixes.
+    """
+    Generate triplegs from positionfixes.
 
     A tripleg is (for now) defined as anything that happens between two consecutive staypoints.
 
@@ -159,27 +164,27 @@ def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints
 
     Parameters
     ----------
-    positionfixes : GeoDataFrame
+    positionfixes : GeoDataFrame (as trackintel positionfixes)
         The positionfixes have to follow the standard definition for positionfixes DataFrames.
 
-    staypoints : GeoDataFrame, optional
+    staypoints : GeoDataFrame (as trackintel staypoints), optional
         The staypoints (corresponding to the positionfixes). If this is not passed, the
         positionfixes need staypoint_id associated with them.
 
-    method: {between_staypoints}
-        Method to create tripelgs. 
+    method: {'between_staypoints'}
+        Method to create triplegs. 
         
-        - 'between_staypoints': A tripleg is then defined as all positionfixes \
+        - 'between_staypoints': A tripleg is defined as all positionfixes \
             between two staypoints. This method requires either a column ``staypoint_id`` on \
             the positionfixes or passing staypoints as an input.
 
     Returns
     -------
-    ret_pfs: GeoDataFrame as trackintel positionfixes
-        the original GeoDataFrame with a new column 'tripleg_id'.
+    ret_pfs: GeoDataFrame (as trackintel positionfixes)
+        The original positionfixes with a new column ``[`tripleg_id`]``.
         
-    ret_tpls: GeoDataFrame as trackintel triplegs
-        the generated trackintel triplegs.
+    ret_tpls: GeoDataFrame (as trackintel triplegs)
+        The generated triplegs.
 
     Notes
     -----
@@ -193,7 +198,6 @@ def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints
     --------
     >>> pfs.as_positionfixes.generate_triplegs(staypoints)
     """
-
     # copy the original pfs for adding 'staypoint_id' column
     ret_pfs = positionfixes.copy()
 

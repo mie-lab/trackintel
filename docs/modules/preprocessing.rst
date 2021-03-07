@@ -16,7 +16,7 @@ As positionfixes are usually the data we receive from a tracking application of 
 there are various functions that extract meaningful information from it (and in the process
 turn it into a higher-level *trackintel* data structure).
 
-In particular, we can extract staypoints and triplegs from positionfixes.
+In particular, we can generate staypoints and triplegs from positionfixes.
 
 .. autofunction:: trackintel.preprocessing.positionfixes.generate_staypoints
 
@@ -39,9 +39,13 @@ with a single mode of transport. Depending on the tracking data, they can be rat
 for which reason we often want to smoothen them.
 
 .. autofunction:: trackintel.preprocessing.triplegs.smoothen_triplegs
+
+From staypoints and triplegs, we can generate trips that summarize all movement and 
+all non-essential actions (e.g., waiting) between two relevant activity staypoints.
+
 .. autofunction:: trackintel.preprocessing.triplegs.generate_trips
 
-The extraction of triplegs in `generate_trips` follows this algorithm:
+The function `generate_trips` follows this algorithm:
 
 .. image:: /_static/tripalgorithm.png
    :scale: 100 %

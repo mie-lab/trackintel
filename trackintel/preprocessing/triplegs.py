@@ -6,13 +6,15 @@ import pandas as pd
 from tqdm import tqdm
 
 def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
-    """Reduces number of points while retaining structure of tripleg. 
+    """
+    Reduce number of points while retaining structure of tripleg.
+    
     A wrapper function using shapely.simplify():
     https://shapely.readthedocs.io/en/stable/manual.html#object.simplify
     
     Parameters
     ----------
-    triplegs: GeoDataFrame
+    triplegs: GeoDataFrame (as trackintel triplegs)
         triplegs to be simplified
         
     tolerance: float, default 1.0
@@ -23,10 +25,9 @@ def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
         whether to preserve topology. If set to False the Douglas-Peucker algorithm is used.
     
     Returns
-    ----------
-    GeoDataFrame
+    -------
+    ret_tpls: GeoDataFrame (as trackintel triplegs)
         The simplified triplegs GeoDataFrame
-    
     """
     ret_tpls = triplegs.copy()
     origin_geom = ret_tpls.geom
@@ -40,25 +41,30 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     """Generate trips based on staypoints and triplegs.
 
     Parameters
-    ----------
-    stps_input : GeoDataFrame
-                Staypoints that are used for the trip generation
-    tpls_input : GeoDataFrame
-                Triplegs that are used for the trip generation
-    gap_threshold : float
-                Maximum allowed temporal gap size in minutes. If tracking data is misisng for more than `gap_threshold`
-                minutes, then a new trip begins after the gap.
-    id_offset : int
-                IDs for trips are incremented starting from this value.
+    ---------- 
+    stps_input : GeoDataFrame (as trackintel staypoints)
+        The staypoints have to follow the standard definition for staypoints DataFrames.
+                
+    tpls_input : GeoDataFrame (as trackintel triplegs)
+        The triplegs have to follow the standard definition for triplegs DataFrames.
+                
+    gap_threshold : float, default 15 (minutes)
+        Maximum allowed temporal gap size in minutes. If tracking data is missing for more than 
+        `gap_threshold` minutes, then a new trip begins after the gap.
+                
+    id_offset : int, default 0
+        IDs for trips are incremented starting from this value.
 
     Returns
     -------
-    staypoints: GeoDataFrame
+    staypoints: GeoDataFrame (as trackintel staypoints)
+        the original staypoints with new columns ``[`trip_id`, `prev_trip_id`, `next_trip_id`]``.
+        
+    triplegs: GeoDataFrame (as trackintel triplegs)
+        The original triplegs with a new column ``[`trip_id`]``.
     
-    triplegs: GeoDataFrame
-    
-    trips: GeoDataFrame
-        the generated trips.
+    trips: GeoDataFrame (as trackintel trips)
+        The generated trips. 
 
     Notes
     -----
@@ -75,7 +81,7 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
         - There are no trips without a (recored) tripleg
 
     Examples
-    ---------
+    --------
     >>> staypoints, triplegs, trips = generate_trips(staypoints, triplegs)
     """
     assert 'activity' in stps_input.columns, "staypoints need the column 'activities' \
@@ -272,19 +278,18 @@ def _generate_trips_user(df, gap_threshold):
 
 def _check_trip_stack_has_tripleg(temp_trip_stack):
     """
-    Check if a trip has at least 1 tripleg
+    Check if a trip has at least 1 tripleg.
+    
     Parameters
     ----------
-        temp_trip_stack : list
-                    list of dictionary like elements (either pandas series or
-                    python dictionary). Contains all elements
-                    that will be aggregated into a trip
+    temp_trip_stack : list
+        list of dictionary like elements (either pandas series or python dictionary). 
+        Contains all elements that will be aggregated into a trip
 
     Returns
     -------
-    Bool
+    has_tripleg: Bool
     """
-
     has_tripleg = False
     for row in temp_trip_stack:
         if row['type'] == 'tripleg':
@@ -296,24 +301,25 @@ def _check_trip_stack_has_tripleg(temp_trip_stack):
 
 def _create_trip_from_stack(temp_trip_stack, origin_activity, destination_activity):
     """
-    Aggregate information of trip elements in a structured dictionary
+    Aggregate information of trip elements in a structured dictionary.
 
     Parameters
     ----------
     temp_trip_stack : list
-                    list of dictionary like elements (either pandas series or python dictionary). Contains all elements
-                    that will be aggregated into a trip
+        list of dictionary like elements (either pandas series or python dictionary). 
+        Contains all elements that will be aggregated into a trip
+        
     origin_activity : dictionary like
-                    Either dictionary or pandas series
+        Either dictionary or pandas series
+        
     destination_activity : dictionary like
-                    Either dictionary or pandas series
+        Either dictionary or pandas series
 
     Returns
     -------
-    dictionary
+    trip_dict_entry: dictionary
 
     """
-
     # this function return and empty dict if no tripleg is in the stack
     first_trip_element = temp_trip_stack[0]
     last_trip_element = temp_trip_stack[-1]
