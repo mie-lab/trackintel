@@ -62,15 +62,22 @@ Available Accessors
 The following accessors are available within *trackintel*.
 
 .. autoclass:: trackintel.model.users.UsersAccessor
+	:members:
 
 .. autoclass:: trackintel.model.positionfixes.PositionfixesAccessor
+	:members:
 
 .. autoclass:: trackintel.model.staypoints.StaypointsAccessor
+	:members:
 
 .. autoclass:: trackintel.model.triplegs.TriplegsAccessor
+	:members:
 
 .. autoclass:: trackintel.model.locations.LocationsAccessor
+	:members:
 
 .. autoclass:: trackintel.model.trips.TripsAccessor
+	:members:
 
 .. autoclass:: trackintel.model.tours.ToursAccessor
+	:members:
