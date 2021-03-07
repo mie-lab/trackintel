@@ -158,13 +158,14 @@ html_sidebars = {
     ]
 }
 
-html_theme_options = {
-    "logo": "trackintel_logo.png",
-    "description": "The human mobility analysis toolkit. Ingests GPS tracking data, preprocesses and validates it, provides analysis and visualization.",
-    "github_user": "mie-lab",
-    "github_repo": "trackintel",
-    "github_banner": True,
-}
+# only defined in 'Alabaster' html_theme
+# html_theme_options = {
+#     "logo": "trackintel_logo.png",
+#     "description": "The human mobility analysis toolkit. Ingests GPS tracking data, preprocesses and validates it, provides analysis and visualization.",
+#     "github_user": "mie-lab",
+#     "github_repo": "trackintel",
+#     "github_banner": True,
+# }
 
 html_logo = "_static/trackintel_logo_squash.png"
 
