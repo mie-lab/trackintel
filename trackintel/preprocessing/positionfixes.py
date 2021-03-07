@@ -279,6 +279,11 @@ def _generate_staypoints_sliding_user(df,
                                       dist_threshold=50,
                                       time_threshold=300,
                                       dist_func=haversine_dist):
+    """
+    User-level generate staypoints algorithm.
+    
+    Algorithm from Li et al. (2008). For details, please refer to the paper.
+    """
     ret_spts = pd.DataFrame(columns=['user_id', 'started_at', 'finished_at', 'geom'])
     df.sort_values('tracked_at', inplace=True)
 
@@ -313,7 +318,7 @@ def _generate_staypoints_sliding_user(df,
                     if elevation_flag:
                         staypoint['elevation'] = np.mean([pfs[k]['elevation'] for k in range(i, j)])
                     staypoint['started_at'] = pfs[i]['tracked_at']
-                    staypoint['finished_at'] = pfs[j - 1]['tracked_at']
+                    staypoint['finished_at'] = pfs[j]['tracked_at']
 
                     # store matching, index should be the id of pfs
                     staypoint['pfs_id'] = [idx[k] for k in range(i, j)]

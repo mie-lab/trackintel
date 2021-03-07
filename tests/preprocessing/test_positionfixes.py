@@ -70,8 +70,26 @@ class TestGenerate_staypoints():
                                                            dist_threshold=sys.maxsize,
                                                            time_threshold=sys.maxsize)
         assert len(stps) == 0, "With large thresholds, staypoint extraction should not yield positionfixes"
+    
+    def test_generate_staypoints_time_threshold(self, pfs_geolife_long):
+        """Test the generated staypoints have duration larger than the defined time_threshold."""
+        # using the default time_threshold (5min)
+        time_threshold = 5*60
+        _, stps = pfs_geolife_long.as_positionfixes.generate_staypoints(method='sliding',
+                                                                          dist_threshold=25,
+                                                                          time_threshold=time_threshold)
         
-    def test_generate_staypoints_missing_link(self, geolife_pfs_stps_long):
+        assert ((stps['finished_at'] - stps['started_at']).dt.total_seconds() > time_threshold).all()
+        
+        # try a larger time_threshold (30min) and dist_threshold
+        time_threshold = 30*60
+        _, stps = pfs_geolife_long.as_positionfixes.generate_staypoints(method='sliding',
+                                                                          dist_threshold=200,
+                                                                          time_threshold=time_threshold)
+        
+        assert ((stps['finished_at'] - stps['started_at']).dt.total_seconds() > time_threshold).all()
+        
+    def test_generate_staypoints_missing_link(self):
         """Test nan is assigned for missing link between pfs and stps."""
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
         pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
