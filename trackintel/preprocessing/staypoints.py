@@ -15,14 +15,17 @@ def generate_locations(staypoints,
                        num_samples=1,
                        distance_matrix_metric='euclidean',
                        agg_level='user'):
-    """Generate locations from the staypoints.
+    """
+    Generate locations from the staypoints.
 
     Parameters
     ----------
-    staypoints : GeoDataFrame
+    staypoints : GeoDataFrame (as trackintel staypoints)
         The staypoints have to follow the standard definition for staypoints DataFrames.
 
-    method : str, {'dbscan'}, default 'dbscan'
+    method : {'dbscan'}
+        Method to create locations.
+        
         - 'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
 
     epsilon : float, default 100
@@ -32,22 +35,23 @@ def generate_locations(staypoints,
     num_samples : int, default 1
         The minimal number of samples in a cluster. 
 
-    distance_matrix_metric: str, default 'euclidean'
-        The distance matrix used by the applied method. Possible metrics
-        are: {'haversine', 'euclidean'} or any mentioned in: 
+    distance_matrix_metric: {'haversine', 'euclidean'}
+        The distance matrix used by the applied method. Any mentioned below are possible: 
         https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html
         
-    agg_level: str, {'user','dataset'}, default 'user'
+    agg_level: {'user','dataset'}
         The level of aggregation when generating locations:
+        
         - 'user'      : locations are generated independently per-user.
         - 'dataset'   : shared locations are generated for all users.
     
     Returns
     -------
-    ret_sp: GeoDataFrame
-        Original 'staypoints' containing one additional column 'location_id' linking to the 'ret_loc'
-    ret_loc: GeoDataFrame
-        A new GeoDataFrame containing locations that a person visited multiple times.
+    ret_sp: GeoDataFrame (as trackintel staypoints)
+        The original staypoints with a new column ``[`location_id`]``.
+        
+    ret_loc: GeoDataFrame (as trackintel locations)
+        The generated locations. 
         
     Examples
     --------
