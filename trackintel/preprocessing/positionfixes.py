@@ -52,7 +52,7 @@ def generate_staypoints(positionfixes,
         The original positionfixes with a new column ``[`staypoint_id`]``.
         
     ret_spts: GeoDataFrame (as trackintel staypoints)
-        The generated triplegs.
+        The generated staypoints.
 
     Examples
     --------
