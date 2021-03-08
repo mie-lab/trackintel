@@ -18,7 +18,7 @@ def temporal_tracking_quality(source, granularity="all"):
 
     Returns
     -------
-    DataFrame
+    quality: DataFrame
         A per-user temporal tracking quality dataframe.
 
     Note
@@ -101,7 +101,7 @@ def _split_overlaps(source, granularity="day"):
 
     Returns
     -------
-    GeoDataFrame (as original trackintel datamodels)
+    GeoDataFrame (as trackintel datamodels)
         The GeoDataFrame object after the spliting
     """
     df = source.copy()

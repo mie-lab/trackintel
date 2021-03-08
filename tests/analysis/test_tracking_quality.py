@@ -1,9 +1,7 @@
-import sys
+
 import os
-import glob
 import pytest
 
-sys.path.append(os.path.join(os.getcwd(), "trackintel"))
 import trackintel as ti
 
 
