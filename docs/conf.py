@@ -73,7 +73,7 @@ def setup(app):
 # The full version, including alpha/beta/rc tags
 # release = version
 
-version = "0.5.0"
+version = "0.5.1"
 release = version
 
 
