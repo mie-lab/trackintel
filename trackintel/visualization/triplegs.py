@@ -30,6 +30,9 @@ def plot_triplegs(triplegs, out_filename=None, positionfixes=None, staypoints=No
     axis : matplotlib.pyplot.Artist, optional
         axis on which to draw the plot
 
+    Example
+    -------
+    >>> df.as_triplegs.plot('output.png', positionfixes=pf, staypoints=stps, plot_osm=True)
     """
     if axis is None:
         _, ax = regular_figure()

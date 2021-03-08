@@ -37,7 +37,7 @@ def plot_center_of_locations(locations, out_filename=None, radius=None, position
 
     Examples
     --------
-    >>> df.as_locations.plot('output.png', radius=10, positionfixes=pdf, 
+    >>> df.as_locations.plot('output.png', radius=100, positionfixes=pdf,
     >>>                   staypoints=spf, staypoints_radius=80, plot_osm=True)
     """
     if axis is None:
