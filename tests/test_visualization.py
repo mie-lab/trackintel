@@ -31,7 +31,7 @@ class TestIO:
         os.remove(tmp_file)
 
     def test_locations_plot(self):
-        tmp_file = 'tests/data/locations_plot.png'
+        tmp_file = os.path.join("tests", "data", "locations_plot.png")
         pfs = pfs = ti.read_positionfixes_csv('tests/data/positionfixes.csv', sep=';')
         stps = ti.read_staypoints_csv('tests/data/staypoints.csv', sep=';')
         locs = ti.read_locations_csv('tests/data/locations.csv', sep=';')
@@ -39,3 +39,31 @@ class TestIO:
                                staypoints=stps, staypoints_radius=100, plot_osm=False)
         assert os.path.exists(tmp_file)
         os.remove(tmp_file)
+
+    def test_positionfixes_crs_warning(self):
+        file = os.path.join('tests', 'data', 'positionfixes.csv')
+        _, ax = mpl.pyplot.subplots()
+        pfs = ti.read_positionfixes_csv(file, sep=';')
+        with pytest.warns(UserWarning):
+            pfs.as_positionfixes.plot(axis=ax)
+
+    def test_staypoints_crs_warning(self):
+        file = os.path.join('tests', 'data', 'staypoints.csv')
+        _, ax = mpl.pyplot.subplots()
+        pfs = ti.read_staypoints_csv(file, sep=';')
+        with pytest.warns(UserWarning):
+            pfs.as_staypoints.plot(axis=ax)
+
+    def test_triplegs_crs_warning(self):
+        file = os.path.join('tests', 'data', 'triplegs.csv')
+        _, ax = mpl.pyplot.subplots()
+        pfs = ti.read_triplegs_csv(file, sep=';')
+        with pytest.warns(UserWarning):
+            pfs.as_triplegs.plot(axis=ax)
+
+    def test_locations_crs_warning(self):
+        file = os.path.join('tests', 'data', 'locations.csv')
+        _, ax = mpl.pyplot.subplots()
+        pfs = ti.read_locations_csv(file, sep=';')
+        with pytest.warns(UserWarning):
+            pfs.as_locations.plot(axis=ax)
