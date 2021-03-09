@@ -87,10 +87,10 @@ class TestTemporal_tracking_quality:
 
         # split the records according to day
         stps_tpls.reset_index(inplace=True)
-        spliited = ti.analysis.tracking_quality._split_overlaps(stps_tpls, granularity="day")
+        splitted = ti.analysis.tracking_quality._split_overlaps(stps_tpls, granularity="day")
 
         # no record spans several day after the split
-        multi_day_records = spliited["finished_at"].dt.day - spliited["started_at"].dt.day
+        multi_day_records = splitted["finished_at"].dt.day - splitted["started_at"].dt.day
         assert (multi_day_records == 0).all()
 
     def test_temporal_split_overlaps_hours(self, testdata_stps_tpls_geolife_long):
@@ -103,8 +103,8 @@ class TestTemporal_tracking_quality:
 
         # split the records according to hour
         stps_tpls.reset_index(inplace=True)
-        spliited = ti.analysis.tracking_quality._split_overlaps(stps_tpls, granularity="hour")
+        splitted = ti.analysis.tracking_quality._split_overlaps(stps_tpls, granularity="hour")
 
         # no record spans several hour after the split
-        multi_hour_records = spliited["finished_at"].dt.hour - spliited["started_at"].dt.hour
+        multi_hour_records = splitted["finished_at"].dt.hour - splitted["started_at"].dt.hour
         assert (multi_hour_records == 0).all()

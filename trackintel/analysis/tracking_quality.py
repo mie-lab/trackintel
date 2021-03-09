@@ -9,7 +9,7 @@ def temporal_tracking_quality(source, granularity="all"):
     Parameters
     ----------
     df : GeoDataFrame (as trackintel datamodels)
-        The source dataframe to perform the spatial filtering
+        The source dataframe to calculate temporal tracking quality.
 
     granularity : {"all", "day", "hour"}, default="all"
         The level of which the tracking quality is claculated. The default "all" returns
@@ -24,9 +24,16 @@ def temporal_tracking_quality(source, granularity="all"):
     Note
     ----
     The temporal tracking quality is the time proportion of tracked period with the possible
-    time extent. The possible time extent of the different granularities are different: "all"
+    time extent. The possible time extents of the different granularities are different: "all"
     considers the time between the latest "finished_at" and the earliest "started_at", whereas
-    "day" considers the whole day (86399 sec) and "hour" considers the whole hour (3599 sec).
+    "day" considers the whole day (86400 sec) and "hour" considers the whole hour (3600 sec).
+    
+    Examples
+    --------
+    >>> # calculate overall tracking quality of stps
+    >>> temporal_tracking_quality(stps, granularity="all")
+    >>> # calculate per-day tracking quality of stps and tpls sequence 
+    >>> temporal_tracking_quality(spts_tpls, granularity="day")
     """
     df = source.copy()
     df.reset_index(inplace=True)
@@ -77,13 +84,11 @@ def _get_tracking_quality_user(df, granularity="all"):
         # the whole tracking period
         extent = (df["finished_at"].max() - df["started_at"].min()).total_seconds()
     elif granularity == "day":
-        # total seconds of a day
-        extent = 60 * 60 * 24 - 1
+        # total seconds in a day
+        extent = 60 * 60 * 24
     elif granularity == "hour":
-        # total seconds of a day times number of different days
-        extent = (60 * 60 - 1) * len(df["day"].unique())
-        print(df[["started_at", "finished_at"]])
-        print(extent)
+        # total seconds in an hour times number of different days
+        extent = (60 * 60) * len(df["day"].unique())
     return pd.Series([tracked_duration / extent], index=["quality"])
 
 
@@ -109,7 +114,6 @@ def _split_overlaps(source, granularity="day"):
         change_flag = df["started_at"].dt.date != df["finished_at"].dt.date
     elif granularity == "hour":
         change_flag = df["started_at"].dt.hour != df["finished_at"].dt.hour
-    i = 0
 
     while change_flag.sum() > 0:
 
@@ -134,6 +138,5 @@ def _split_overlaps(source, granularity="day"):
             change_flag = df["started_at"].dt.date != df["finished_at"].dt.date
         elif granularity == "hour":
             change_flag = df["started_at"].dt.hour != df["finished_at"].dt.hour
-        i = i + 1
 
     return df
