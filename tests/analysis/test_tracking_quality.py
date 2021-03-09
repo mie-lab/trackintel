@@ -82,6 +82,7 @@ class TestTemporal_tracking_quality:
 
         with pytest.raises(AttributeError):
             ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity=12345)
+            ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="random")
 
     def test_split_overlaps_days(self, testdata_stps_tpls_geolife_long):
         """Test if _split_overlaps() function can split records that span several days."""
