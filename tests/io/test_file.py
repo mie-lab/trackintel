@@ -38,6 +38,7 @@ class TestFile:
             ti.read_positionfixes_csv(file, sep=';')
 
     def test_positionfixes_csv_index_col(self):
+        """Test if `index_col` can be set."""
         file = os.path.join('tests', 'data', 'positionfixes.csv')
         ind_name = 'id'
         pfs = ti.read_positionfixes_csv(file, sep=";", index_col=ind_name)
@@ -82,6 +83,7 @@ class TestFile:
             ti.read_triplegs_csv(file, sep=';')
 
     def test_triplegs_csv_index_col(self):
+        """Test if `index_col` can be set."""
         file = os.path.join('tests', 'data', 'triplegs.csv')
         ind_name = 'id'
         pfs = ti.read_triplegs_csv(file, sep=";", index_col=ind_name)
@@ -122,12 +124,13 @@ class TestFile:
         with pytest.warns(UserWarning):
             ti.read_staypoints_csv(file, sep=';')
 
-    def test_locations_csv_index_col(self):
-        file = os.path.join('tests', 'data', 'locations.csv')
+    def test_staypoints_csv_index_col(self):
+        """Test if `index_col` can be set."""
+        file = os.path.join('tests', 'data', 'staypoints.csv')
         ind_name = 'id'
-        pfs = ti.read_locations_csv(file, sep=";", index_col=ind_name)
+        pfs = ti.read_staypoints_csv(file, sep=";", index_col=ind_name)
         assert pfs.index.name == ind_name
-        pfs = ti.read_locations_csv(file, sep=";", index_col=None)
+        pfs = ti.read_staypoints_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
     def test_staypoints_from_to_postgis(self):
@@ -166,7 +169,7 @@ class TestFile:
         assert pfs.index.name == ind_name
         pfs = ti.read_locations_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
-        
+
     def test_locations_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
@@ -193,7 +196,8 @@ class TestFile:
         with pytest.warns(UserWarning):
             ti.read_trips_csv(file, sep=';')
 
-    def test_locations_csv_index_col(self):
+    def test_trips_csv_index_col(self):
+        """Test if `index_col` can be set."""
         file = os.path.join('tests', 'data', 'trips.csv')
         ind_name = 'id'
         gdf = ti.read_trips_csv(file, sep=";", index_col=ind_name)
