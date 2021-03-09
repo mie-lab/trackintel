@@ -1,5 +1,6 @@
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import warnings
 
 from trackintel.visualization.osm import plot_osm_streets
 from trackintel.visualization.util import regular_figure, save_fig
@@ -41,7 +42,7 @@ def plot_triplegs(triplegs, out_filename=None, positionfixes=None, staypoints=No
 
     crs_wgs84 = 'EPSG:4326'
     if triplegs.crs is None:
-        Warning("Coordinate System (CRS) is not set, default to WGS84.")
+        warnings.warn("Coordinate System (CRS) is not set, default to WGS84.")
         triplegs.crs = crs_wgs84
     elif triplegs.crs != crs_wgs84:
         triplegs = triplegs.to_crs(crs_wgs84)

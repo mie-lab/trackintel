@@ -1,5 +1,6 @@
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import warnings
 
 from trackintel.geogr.distances import meters_to_decimal_degrees
 from trackintel.visualization.osm import plot_osm_streets
@@ -47,7 +48,7 @@ def plot_center_of_locations(locations, out_filename=None, radius=None, position
 
     crs_wgs84 = 'EPSG:4326'
     if locations.crs is None:
-        Warning("Coordinate System (CRS) is not set, default to WGS84.")
+        warnings.warn("Coordinate System (CRS) is not set, default to WGS84.")
         locations.crs = crs_wgs84
     elif locations.crs != crs_wgs84:
         locations = locations.to_crs(crs_wgs84)

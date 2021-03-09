@@ -1,5 +1,6 @@
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import warnings
 
 from trackintel.geogr.distances import meters_to_decimal_degrees
 from trackintel.visualization.osm import plot_osm_streets
@@ -44,7 +45,7 @@ def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=No
 
     crs_wgs84 = 'EPSG:4326'
     if staypoints.crs is None:
-        Warning("Coordinate System (CRS) is not set, default to WGS84.")
+        warnings.warn("Coordinate System (CRS) is not set, default to WGS84.")
         staypoints.crs = crs_wgs84
     elif staypoints.crs != crs_wgs84:
         staypoints = staypoints.to_crs(crs_wgs84)
