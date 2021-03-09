@@ -1,6 +1,7 @@
 import pytest
 import os
 import matplotlib as mpl
+from geopandas.testing import assert_geodataframe_equal
 
 mpl.use('Agg')
 
@@ -56,38 +57,19 @@ class TestIO:
         assert os.path.exists(tmp_file)
         os.remove(tmp_file)
 
-    def test_positionfixes_crs_warning(self):
+    def test_transform_gdf_to_wgs84_crs_warning(self):
         """Check if warning is raised for data without crs."""
 
         file = os.path.join('tests', 'data', 'positionfixes.csv')
-        _, ax = mpl.pyplot.subplots()
-        pfs = ti.read_positionfixes_csv(file, sep=';')
+        pfs = ti.read_positionfixes_csv(file, sep=';', crs=None)
         with pytest.warns(UserWarning):
-            pfs.as_positionfixes.plot(axis=ax)
+            ti.visualization.util.transform_gdf_to_wgs84(pfs)
 
-    def test_staypoints_crs_warning(self):
-        """Check if warning is raised for data without crs."""
+    def test_transform_gdf_to_wgs84(self):
+        """Check if data gets transformed."""
 
-        file = os.path.join('tests', 'data', 'staypoints.csv')
-        _, ax = mpl.pyplot.subplots()
-        pfs = ti.read_staypoints_csv(file, sep=';')
-        with pytest.warns(UserWarning):
-            pfs.as_staypoints.plot(axis=ax)
-
-    def test_triplegs_crs_warning(self):
-        """Check if warning is raised for data without crs."""
-
-        file = os.path.join('tests', 'data', 'triplegs.csv')
-        _, ax = mpl.pyplot.subplots()
-        pfs = ti.read_triplegs_csv(file, sep=';')
-        with pytest.warns(UserWarning):
-            pfs.as_triplegs.plot(axis=ax)
-
-    def test_locations_crs_warning(self):
-        """Check if warning is raised for data without crs."""
-
-        file = os.path.join('tests', 'data', 'locations.csv')
-        _, ax = mpl.pyplot.subplots()
-        pfs = ti.read_locations_csv(file, sep=';')
-        with pytest.warns(UserWarning):
-            pfs.as_locations.plot(axis=ax)
+        file = os.path.join('tests', 'data', 'positionfixes.csv')
+        pfs = ti.read_positionfixes_csv(file, sep=';', crs='EPSG:4326')
+        pfs_2056 = pfs.to_crs("EPSG:2056")
+        pfs_4326 = ti.visualization.util.transform_gdf_to_wgs84(pfs_2056)
+        assert_geodataframe_equal(pfs, pfs_4326, check_less_precise=True)
