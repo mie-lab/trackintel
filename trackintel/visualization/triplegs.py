@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import warnings
 
 from trackintel.visualization.osm import plot_osm_streets
-from trackintel.visualization.util import regular_figure, save_fig
+from trackintel.visualization.util import regular_figure, save_fig, transform_gdf_to_wgs84
 
 
 def plot_triplegs(triplegs, out_filename=None, positionfixes=None, staypoints=None, 
@@ -39,13 +39,7 @@ def plot_triplegs(triplegs, out_filename=None, positionfixes=None, staypoints=No
         _, ax = regular_figure()
     else:
         ax = axis
-
-    crs_wgs84 = 'EPSG:4326'
-    if triplegs.crs is None:
-        warnings.warn("Coordinate System (CRS) is not set, default to WGS84.")
-        triplegs.crs = crs_wgs84
-    elif triplegs.crs != crs_wgs84:
-        triplegs = triplegs.to_crs(crs_wgs84)
+    triplegs = transform_gdf_to_wgs84(triplegs)
 
     if staypoints is not None:
         staypoints.as_staypoints.plot(radius=staypoints_radius,
