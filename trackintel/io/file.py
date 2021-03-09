@@ -38,7 +38,7 @@ def localize_timestamp(dt_series, pytz_tzinfo, col_name):
     return dt_series.apply(pd.Timestamp, tz=timezone)
 
 
-def read_positionfixes_csv(*args, **kwargs):
+def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, crs=None, **kwargs):
     """Wraps the pandas read_csv function, extracts longitude and latitude and
     builds a geopandas GeoDataFrame. This also validates that the ingested data
     conforms to the trackintel understanding of positionfixes (see
@@ -74,12 +74,10 @@ def read_positionfixes_csv(*args, **kwargs):
     >>> trackintel.read_positionfixes_csv('data.csv')
     >>> trackintel.read_positionfixes_csv('data.csv', columns={'time':'tracked_at', 'User':'user_id'})
     """
-    columns = kwargs.pop('columns', {})
-    tz = kwargs.pop('tz', None)
-    crs = kwargs.pop('crs', None)
-    
+    columns = {} if columns is None else columns
+
     # Warning if no 'index_col' parameter is provided
-    if 'index_col' not in kwargs:
+    if index_col is None:
         warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
                       "argument to avoid a warning when reading csv files.")
 
@@ -125,7 +123,7 @@ def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
     gdf.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_triplegs_csv(*args, **kwargs):
+def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, crs=None, **kwargs):
     """Wraps the pandas read_csv function, extracts a WKT for the leg geometry and
     builds a geopandas GeoDataFrame. This also validates that the ingested data
     conforms to the trackintel understanding of triplegs (see :doc:`/modules/model`).
@@ -155,13 +153,10 @@ def read_triplegs_csv(*args, **kwargs):
     >>> trackintel.read_triplegs_csv('data.csv')
     >>> trackintel.read_triplegs_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
-
-    columns = kwargs.pop('columns', {})
-    tz = kwargs.pop('tz', None)
-    crs = kwargs.pop('crs', None)
+    columns = {} if columns is None else columns
 
     # Warning if no 'index_col' parameter is provided
-    if 'index_col' not in kwargs:
+    if index_col is None:
         warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
                       "argument to avoid a warning when reading csv files.")
 
@@ -205,7 +200,7 @@ def write_triplegs_csv(triplegs, filename, *args, **kwargs):
     gdf.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_staypoints_csv(*args, **kwargs):
+def read_staypoints_csv(*args, columns=None, tz=None, index_col=None, crs=None, **kwargs):
     """Wraps the pandas read_csv function, extracts a WKT for the staypoint 
     geometry and builds a geopandas GeoDataFrame. This also validates that 
     the ingested data conforms to the trackintel understanding of staypoints 
@@ -235,13 +230,10 @@ def read_staypoints_csv(*args, **kwargs):
     >>> trackintel.read_staypoints_csv('data.csv')
     >>> trackintel.read_staypoints_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
-
-    columns = kwargs.pop('columns', {})
-    tz = kwargs.pop('tz', None)
-    crs = kwargs.pop('crs', None)
+    columns = {} if columns is None else columns
     
     # Warning if no 'index_col' parameter is provided
-    if 'index_col' not in kwargs:
+    if index_col is None:
         warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
                       "argument to avoid a warning when reading csv files.")
 
@@ -285,7 +277,7 @@ def write_staypoints_csv(staypoints, filename, *args, **kwargs):
     gdf.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_locations_csv(*args, **kwargs):
+def read_locations_csv(*args, columns=None, index_col=None, crs=None, **kwargs):
     """Wraps the pandas read_csv function, extracts a WKT for the location 
     center (and extent) and builds a geopandas GeoDataFrame. This also 
     validates that the ingested data conforms to the trackintel understanding 
@@ -313,11 +305,10 @@ def read_locations_csv(*args, **kwargs):
     >>> trackintel.read_locations_csv('data.csv')
     >>> trackintel.read_locations_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
-    columns = kwargs.pop('columns', {})
-    crs = kwargs.pop('crs', None)
+    columns = {} if columns is None else columns
     
     # Warning if no 'index_col' parameter is provided
-    if 'index_col' not in kwargs:
+    if index_col is None:
         warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
                       "argument to avoid a warning when reading csv files.")
     
@@ -352,7 +343,7 @@ def write_locations_csv(locations, filename, *args, **kwargs):
     gdf.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_trips_csv(*args, **kwargs):
+def read_trips_csv(*args, columns=None, tz=None, index_col=None, **kwargs):
     """Wraps the pandas read_csv function and extracts proper datetimes. This also
     validates that the ingested data conforms to the trackintel understanding 
     of trips (see :doc:`/modules/model`).
@@ -378,11 +369,9 @@ def read_trips_csv(*args, **kwargs):
     >>> trackintel.read_trips_csv('data.csv')
     >>> trackintel.read_trips_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
     """
+    columns = {} if columns is None else columns
 
-    columns = kwargs.pop('columns', {})
-    tz = kwargs.pop('tz', None)
-    
-    if 'index_col' not in kwargs:
+    if index_col is None:
         warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
                       "argument to avoid a warning when reading csv files.")
     
@@ -419,7 +408,7 @@ def write_trips_csv(trips, filename, *args, **kwargs):
     df.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_tours_csv(*args, **kwargs):
+def read_tours_csv(*args, columns=None, tz=None, **kwargs):
     """Wraps the pandas read_csv function and extracts proper datetimes. This also
     validates that the ingested data conforms to the trackintel understanding 
     of tours (see :doc:`/modules/model`).
