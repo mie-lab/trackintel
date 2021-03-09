@@ -80,6 +80,8 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, crs=Non
     if index_col is None:
         warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
                       "argument to avoid a warning when reading csv files.")
+    else:
+        kwargs['index_col'] = index_col
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
@@ -159,6 +161,8 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, crs=None, **
     if index_col is None:
         warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
                       "argument to avoid a warning when reading csv files.")
+    else:
+        kwargs['index_col'] = index_col
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
@@ -236,6 +240,8 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=None, crs=None, 
     if index_col is None:
         warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
                       "argument to avoid a warning when reading csv files.")
+    else:
+        kwargs['index_col'] = index_col
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
@@ -311,6 +317,8 @@ def read_locations_csv(*args, columns=None, index_col=None, crs=None, **kwargs):
     if index_col is None:
         warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
                       "argument to avoid a warning when reading csv files.")
+    else:
+        kwargs['index_col'] = index_col
     
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
@@ -374,6 +382,8 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=None, **kwargs):
     if index_col is None:
         warnings.warn("Assuming default index as unique identifier. Pass 'index_col=None' as explicit" +
                       "argument to avoid a warning when reading csv files.")
+    else:
+        kwargs['index_col'] = index_col
     
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
