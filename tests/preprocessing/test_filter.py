@@ -9,7 +9,8 @@ class TestSpatial_filter():
     
     def test_filter_staypoints(self):
         # read staypoints and area file
-        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'), tz='utc')
+        spts_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+        spts = ti.read_staypoints_csv(spts_file, tz='utc', index_col='id')
         extent = gpd.read_file(os.path.join('tests', 'data', 'area', 'tsinghua.geojson'))
         
         # the projection needs to be defined: WGS84
@@ -29,14 +30,15 @@ class TestSpatial_filter():
         
     def test_filter_triplegs(self):
         # read triplegs and area file
-        tl = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv'), tz='utc')
+        tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv')
+        tpls = ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
         extent = gpd.read_file(os.path.join('tests', 'data', 'area', 'tsinghua.geojson'))
         
         # the projection needs to be defined: WGS84
-        tl.crs = 'epsg:4326'
-        within_tl = tl.as_triplegs.spatial_filter(areas=extent, method="within", re_project=True)
-        intersects_tl = tl.as_triplegs.spatial_filter(areas=extent, method="intersects", re_project=True)
-        crosses_tl = tl.as_triplegs.spatial_filter(areas=extent, method="crosses", re_project=True)
+        tpls.crs = 'epsg:4326'
+        within_tl = tpls.as_triplegs.spatial_filter(areas=extent, method="within", re_project=True)
+        intersects_tl = tpls.as_triplegs.spatial_filter(areas=extent, method="intersects", re_project=True)
+        crosses_tl = tpls.as_triplegs.spatial_filter(areas=extent, method="crosses", re_project=True)
         
         # the result obtained from ArcGIS
         gis_within_num = 9
@@ -51,7 +53,8 @@ class TestSpatial_filter():
     
     def test_filter_locations(self):
         # read staypoints and area file
-        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'), tz='utc')
+        spts_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+        spts = ti.read_staypoints_csv(spts_file, tz='utc', index_col='id')
         extent = gpd.read_file(os.path.join('tests', 'data', 'area', 'tsinghua.geojson'))
         
         # cluster staypoints to locations

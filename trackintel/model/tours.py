@@ -34,8 +34,8 @@ class ToursAccessor(object):
     @staticmethod
     def _validate(obj):
         if any([c not in obj.columns for c in ToursAccessor.required_columns]):
-            raise AttributeError("To process a DataFrame as a collection of staypoints, " \
-                                 + "it must have the properties [%s], but it has [%s]." \
+            raise AttributeError("To process a DataFrame as a collection of tours, "
+                                 + "it must have the properties [%s], but it has [%s]."
                                  % (', '.join(ToursAccessor.required_columns), ', '.join(obj.columns)))
 
         # check timestamp dtypes

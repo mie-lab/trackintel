@@ -11,7 +11,8 @@ from trackintel.geogr.distances import meters_to_decimal_degrees, calculate_dist
 class TestCalculate_distance_matrix:
 
     def test_shape_for_different_array_length(self):
-        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'), tz='utc')
+        spts_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+        spts = ti.read_staypoints_csv(spts_file, tz='utc', index_col='id')
 
         x = spts.iloc[0:5]
         y = spts.iloc[5:15]
@@ -27,7 +28,8 @@ class TestCalculate_distance_matrix:
         assert np.isclose(0, np.sum(np.abs(d_hav1 - d_hav2.T)))
 
     def test_keyword_combinations(self):
-        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'), tz='utc')
+        spts_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+        spts = ti.read_staypoints_csv(spts_file, tz='utc', index_col='id')
 
         x = spts.iloc[0:5]
         y = spts.iloc[5:15]
@@ -43,7 +45,8 @@ class TestCalculate_distance_matrix:
 
 
     def test_compare_haversine_to_scikit_xy(self):
-        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'), tz='utc')
+        spts_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+        spts = ti.read_staypoints_csv(spts_file, tz='utc', index_col='id')
         our_d_matrix = calculate_distance_matrix(X=spts, Y=spts, dist_metric='haversine')
 
         x = spts.geometry.x.values
@@ -57,15 +60,16 @@ class TestCalculate_distance_matrix:
         assert np.allclose(np.abs(our_d_matrix - their_d_matrix), 0, atol=0.001) # atol = 1mm
 
     def test_trajectory_distance(self):
-        tpls = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv'), tz='utc')
+        tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv')
+        tpls = ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
         D_single = calculate_distance_matrix(X=tpls.iloc[0:4], dist_metric='dtw', n_jobs=1)
         D_multi = calculate_distance_matrix(X=tpls.iloc[0:4], dist_metric='dtw', n_jobs=4)
 
         assert np.isclose(np.sum(np.abs(D_single - D_multi)), 0)
 
     def test_trajectory_distance_via_accessor_x(self):
-        tpls = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv'), tz='utc')
-
+        tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv')
+        tpls = ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
 
         D_single = tpls.iloc[0:4].as_triplegs.similarity(dist_metric='dtw', n_jobs=1)
         D_multi = tpls.iloc[0:4].as_triplegs.similarity(dist_metric='dtw', n_jobs=4)
@@ -73,7 +77,8 @@ class TestCalculate_distance_matrix:
         assert np.isclose(np.sum(np.abs(D_single - D_multi)), 0)
 
     def test_trajectory_distance_via_accessor_xy(self):
-        tpls = ti.read_triplegs_csv(os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv'), tz='utc')
+        tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv')
+        tpls = ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
 
         x = tpls.iloc[0:2]
         y = tpls.iloc[4:8]

@@ -24,7 +24,8 @@ def positionfixes_from_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom
 
     Returns
     -------
-    gdf : a validated positionfixes GeoDataFrame
+    gdf : GeoDataFrame
+        A GeoDataFrame containing the positionfixes
 
     """
 
@@ -40,9 +41,8 @@ def positionfixes_from_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom
     for col in ['tracked_at']:
         if not pd.api.types.is_datetime64tz_dtype(pfs[col]):
             pfs[col] = localize_timestamp(dt_series=pfs[col], pytz_tzinfo=tz, col_name=col)
-
+        
     assert pfs.as_positionfixes
-
     return pfs
 
 
@@ -71,7 +71,8 @@ def staypoints_from_gpd(gdf, started_at='started_at', finished_at='finished_at',
 
     Returns
     -------
-    gdf : a validated staypoints GeoDataFrame
+    gdf : GeoDataFrame
+        A GeoDataFrame containing the staypoints
 
     """
 
@@ -88,9 +89,8 @@ def staypoints_from_gpd(gdf, started_at='started_at', finished_at='finished_at',
     for col in ['started_at', 'finished_at']:
         if not pd.api.types.is_datetime64tz_dtype(stp[col]):
             stp[col] = localize_timestamp(dt_series=stp[col], pytz_tzinfo=tz, col_name=col)
-
+        
     assert stp.as_staypoints
-
     return stp
 
 
@@ -118,7 +118,8 @@ def triplegs_from_gpd(gdf, started_at='started_at', finished_at='finished_at', u
 
     Returns
     -------
-    gdf : a validated triplegs GeoDataFrame
+    gdf : GeoDataFrame
+        A GeoDataFrame containing the triplegs
 
     """
 
@@ -168,7 +169,8 @@ def trips_from_gpd(gdf, started_at='started_at', finished_at='finished_at', user
 
     Returns
     -------
-    gdf : a validated trips GeoDataFrame
+    gdf : GeoDataFrame
+        A GeoDataFrame containing the trips
 
     """
 
@@ -210,7 +212,8 @@ def locations_from_gpd(gdf, user_id='user_id', center='center', mapper={}):
 
     Returns
     -------
-    gdf : a validated locations GeoDataFrame
+    gdf : GeoDataFrame
+        A GeoDataFrame containing the locations
 
     """
 
@@ -252,7 +255,7 @@ def tours_from_gpd(gdf, user_id='user_id', started_at='started_at', finished_at=
     Returns
     -------
     gdf : GeoDataFrame
-        a validated locations GeoDataFrame
+        A GeoDataFrame containing the tours
 
     """
 

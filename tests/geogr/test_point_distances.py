@@ -34,9 +34,10 @@ class TestHaversineDist:
             assert np.isclose(haversine_output, haversine, atol=0.1)
 
     def test_haversine_vectorized(self):
-        spts = ti.read_staypoints_csv(os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv'), tz='utc')
-        x = spts.geometry.x.values
-        y = spts.geometry.y.values
+        stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+        stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
+        x = stps.geometry.x.values
+        y = stps.geometry.y.values
 
         n = len(x)
         # our distance
