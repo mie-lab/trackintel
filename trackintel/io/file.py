@@ -46,11 +46,11 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, crs=Non
 
     Parameters
     ----------
-    columns : dict
+    columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
-    tz : str
+    tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
-    index_col : str
+    index_col : str, optional
         column name to be used as index. If None the default index is assumed
         as unique identifier.
     crs: pyproj.crs or str, optional
@@ -131,11 +131,11 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, crs=None, **
 
     Parameters
     ----------
-    columns : dict
+    columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
-    tz : str
+    tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
-    index_col : str
+    index_col : str, optional
         column name to be used as index. If None the default index is assumed 
         as unique identifier.
     crs: pyproj.crs or str, optional
@@ -208,11 +208,11 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=None, crs=None, 
     
     Parameters
     ----------
-    columns : dict
+    columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
-    tz : str
+    tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
-    index_col : str
+    index_col : str, optional
         column name to be used as index. If None the default index is assumed 
         as unique identifier.
     crs: pyproj.crs or str, optional
@@ -285,9 +285,9 @@ def read_locations_csv(*args, columns=None, index_col=None, crs=None, **kwargs):
 
     Parameters
     ----------
-    columns : dict
+    columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
-    index_col : str
+    index_col : str, optional
         column name to be used as index. If None the default index is assumed
         as unique identifier.
     crs: pyproj.crs or str, optional
@@ -350,11 +350,11 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=None, **kwargs):
     
     Parameters
     ----------
-    columns : dict
+    columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
-    tz : str
+    tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
-    index_col : str
+    index_col : str, optional
         column name to be used as index. If None the default index is assumed 
         as unique identifier.
         
@@ -413,9 +413,9 @@ def read_tours_csv(*args, columns=None, tz=None, **kwargs):
     validates that the ingested data conforms to the trackintel understanding 
     of tours (see :doc:`/modules/model`).
 
-    columns : dict
+    columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
-    tz : str
+    tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
 
     Returns
