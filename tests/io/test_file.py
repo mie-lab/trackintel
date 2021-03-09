@@ -36,7 +36,15 @@ class TestFile:
         file = os.path.join('tests', 'data', 'positionfixes.csv')
         with pytest.warns(UserWarning):
             ti.read_positionfixes_csv(file, sep=';')
-        
+
+    def test_positionfixes_csv_index_col(self):
+        file = os.path.join('tests', 'data', 'positionfixes.csv')
+        ind_name = 'id'
+        pfs = ti.read_positionfixes_csv(file, sep=";", index_col=ind_name)
+        assert pfs.index.name == ind_name
+        pfs = ti.read_positionfixes_csv(file, sep=";", index_col=None)
+        assert pfs.index.name is None
+
     def test_positionfixes_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
@@ -73,6 +81,14 @@ class TestFile:
         with pytest.warns(UserWarning):
             ti.read_triplegs_csv(file, sep=';')
 
+    def test_triplegs_csv_index_col(self):
+        file = os.path.join('tests', 'data', 'triplegs.csv')
+        ind_name = 'id'
+        pfs = ti.read_triplegs_csv(file, sep=";", index_col=ind_name)
+        assert pfs.index.name == ind_name
+        pfs = ti.read_triplegs_csv(file, sep=";", index_col=None)
+        assert pfs.index.name is None
+
     def test_triplegs_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
@@ -106,6 +122,14 @@ class TestFile:
         with pytest.warns(UserWarning):
             ti.read_staypoints_csv(file, sep=';')
 
+    def test_locations_csv_index_col(self):
+        file = os.path.join('tests', 'data', 'locations.csv')
+        ind_name = 'id'
+        pfs = ti.read_locations_csv(file, sep=";", index_col=ind_name)
+        assert pfs.index.name == ind_name
+        pfs = ti.read_locations_csv(file, sep=";", index_col=None)
+        assert pfs.index.name is None
+
     def test_staypoints_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
@@ -134,6 +158,14 @@ class TestFile:
         file = os.path.join('tests', 'data', 'locations.csv')
         with pytest.warns(UserWarning):
             ti.read_locations_csv(file, sep=';')
+
+    def test_locations_csv_index_col(self):
+        file = os.path.join('tests', 'data', 'locations.csv')
+        ind_name = 'id'
+        pfs = ti.read_locations_csv(file, sep=";", index_col=ind_name)
+        assert pfs.index.name == ind_name
+        pfs = ti.read_locations_csv(file, sep=";", index_col=None)
+        assert pfs.index.name is None
         
     def test_locations_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
@@ -160,7 +192,15 @@ class TestFile:
         file = os.path.join('tests', 'data', 'trips.csv')
         with pytest.warns(UserWarning):
             ti.read_trips_csv(file, sep=';')
-            
+
+    def test_locations_csv_index_col(self):
+        file = os.path.join('tests', 'data', 'trips.csv')
+        ind_name = 'id'
+        gdf = ti.read_trips_csv(file, sep=";", index_col=ind_name)
+        assert gdf.index.name == ind_name
+        gdf = ti.read_trips_csv(file, sep=";", index_col=None)
+        assert gdf.index.name is None
+
     def test_trips_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
