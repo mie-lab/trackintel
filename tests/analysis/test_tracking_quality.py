@@ -1,4 +1,3 @@
-
 import os
 import pytest
 
@@ -21,7 +20,7 @@ def testdata_stps_tpls_geolife_long():
 class TestTemporal_tracking_quality:
     """Tests for the temporal_tracking_quality() function and its subfunctions."""
 
-    def test_temporal_all(self, testdata_stps_tpls_geolife_long):
+    def test_tracking_quality_all(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated total tracking quality is correct."""
         stps_tpls = testdata_stps_tpls_geolife_long
 
@@ -36,7 +35,7 @@ class TestTemporal_tracking_quality:
 
         assert quality_manual == quality.loc[quality["user_id"] == 0, "quality"].values[0]
 
-    def test_temporal_day(self, testdata_stps_tpls_geolife_long):
+    def test_tracking_quality_day(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated tracking quality per day is correct."""
         stps_tpls = testdata_stps_tpls_geolife_long
         splitted_records = ti.analysis.tracking_quality._split_overlaps(stps_tpls, granularity="day")
@@ -46,7 +45,7 @@ class TestTemporal_tracking_quality:
         splitted_records["day"] = splitted_records["started_at"].apply(lambda x: (x.date() - start_date).days)
         # calculate tracking quality of the first day for the first user
         user_0 = splitted_records.loc[(splitted_records["user_id"] == 0) & (splitted_records["day"] == 0)]
-        extent = 60 * 60 * 24 - 1
+        extent = 60 * 60 * 24
         tracked = (user_0["finished_at"] - user_0["started_at"]).dt.total_seconds().sum()
         quality_manual = tracked / extent
         # test if the result of the user agrees
@@ -54,7 +53,7 @@ class TestTemporal_tracking_quality:
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["day"] == 0), "quality"].values[0]
 
-    def test_temporal_hour(self, testdata_stps_tpls_geolife_long):
+    def test_tracking_quality_hour(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated tracking quality per hour is correct."""
         stps_tpls = testdata_stps_tpls_geolife_long
 
@@ -68,7 +67,7 @@ class TestTemporal_tracking_quality:
 
         # calculate tracking quality of a hour for the first user
         user_0 = splitted.loc[(splitted["user_id"] == 0) & (splitted["hour"] == 2)]
-        extent = (60 * 60 - 1) * len(user_0["day"].unique())
+        extent = (60 * 60) * len(user_0["day"].unique())
         tracked = (user_0["finished_at"] - user_0["started_at"]).dt.total_seconds().sum()
         quality_manual = tracked / extent
 
@@ -77,7 +76,14 @@ class TestTemporal_tracking_quality:
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["hour"] == 2), "quality"].values[0]
 
-    def test_temporal_split_overlaps_days(self, testdata_stps_tpls_geolife_long):
+    def test_tracking_quality_error(self, testdata_stps_tpls_geolife_long):
+        """Test if the an error is raised when passing unknown 'granularity'."""
+        stps_tpls = testdata_stps_tpls_geolife_long
+
+        with pytest.raises(AttributeError):
+            ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity=12345)
+
+    def test_split_overlaps_days(self, testdata_stps_tpls_geolife_long):
         """Test if _split_overlaps() function can split records that span several days."""
         stps_tpls = testdata_stps_tpls_geolife_long
 
@@ -93,18 +99,42 @@ class TestTemporal_tracking_quality:
         multi_day_records = splitted["finished_at"].dt.day - splitted["started_at"].dt.day
         assert (multi_day_records == 0).all()
 
-    def test_temporal_split_overlaps_hours(self, testdata_stps_tpls_geolife_long):
+    def test_split_overlaps_hours(self, testdata_stps_tpls_geolife_long):
         """Test if _split_overlaps() function can split records that span several hours."""
         stps_tpls = testdata_stps_tpls_geolife_long
 
         # some of the records spans several hours
-        multi_hour_records = stps_tpls["finished_at"].dt.hour - stps_tpls["started_at"].dt.hour
-        assert (multi_hour_records > 0).any()
+        hour_diff = stps_tpls["finished_at"].dt.hour - stps_tpls["started_at"].dt.hour
+        assert (hour_diff > 0).any()
 
         # split the records according to hour
         stps_tpls.reset_index(inplace=True)
         splitted = ti.analysis.tracking_quality._split_overlaps(stps_tpls, granularity="hour")
 
         # no record spans several hour after the split
-        multi_hour_records = splitted["finished_at"].dt.hour - splitted["started_at"].dt.hour
-        assert (multi_hour_records == 0).all()
+        hour_diff = splitted["finished_at"].dt.hour - splitted["started_at"].dt.hour
+        assert (hour_diff == 0).all()
+
+    def test_split_overlaps_hours_case2(self, testdata_stps_tpls_geolife_long):
+        """Test if _split_overlaps() function can split record that have the same hour but different days."""
+        stps_tpls = testdata_stps_tpls_geolife_long
+
+        # get the first two records
+        head2 = stps_tpls.head(2).copy()
+        # construct the finished_at exactly one day after started_at
+        head2["finished_at"] = head2.apply(lambda x: x["started_at"].replace(day=x["started_at"].day + 1), axis=1)
+
+        # the records have the same hour
+        hour_diff = head2["finished_at"].dt.hour - head2["started_at"].dt.hour
+        assert (hour_diff == 0).all()
+        # but have different days
+        day_diff = head2["finished_at"].dt.day - head2["started_at"].dt.day
+        assert (day_diff > 0).all()
+
+        # split the records according to hour
+        head2.reset_index(inplace=True)
+        splitted = ti.analysis.tracking_quality._split_overlaps(head2, granularity="hour")
+
+        # no record have different days after the split
+        day_diff = splitted["finished_at"].dt.day - splitted["started_at"].dt.day
+        assert (day_diff == 0).all()

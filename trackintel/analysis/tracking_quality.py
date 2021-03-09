@@ -27,12 +27,12 @@ def temporal_tracking_quality(source, granularity="all"):
     time extent. The possible time extents of the different granularities are different: "all"
     considers the time between the latest "finished_at" and the earliest "started_at", whereas
     "day" considers the whole day (86400 sec) and "hour" considers the whole hour (3600 sec).
-    
+
     Examples
     --------
     >>> # calculate overall tracking quality of stps
     >>> temporal_tracking_quality(stps, granularity="all")
-    >>> # calculate per-day tracking quality of stps and tpls sequence 
+    >>> # calculate per-day tracking quality of stps and tpls sequence
     >>> temporal_tracking_quality(spts_tpls, granularity="day")
     """
     df = source.copy()
@@ -87,7 +87,8 @@ def _get_tracking_quality_user(df, granularity="all"):
         # total seconds in a day
         extent = 60 * 60 * 24
     elif granularity == "hour":
-        # total seconds in an hour times number of different days
+        # total seconds in an hour * number of different days
+        # (entries from multiple days may be grouped together)
         extent = (60 * 60) * len(df["day"].unique())
     return pd.Series([tracked_duration / extent], index=["quality"])
 
@@ -110,11 +111,9 @@ def _split_overlaps(source, granularity="day"):
         The GeoDataFrame object after the spliting
     """
     df = source.copy()
-    if granularity == "day":
-        change_flag = df["started_at"].dt.date != df["finished_at"].dt.date
-    elif granularity == "hour":
-        change_flag = df["started_at"].dt.hour != df["finished_at"].dt.hour
+    change_flag = __get_split_index(df, granularity=granularity)
 
+    # Iteratively split one day/hour from multi day/hour entries until no entry spans over multiple days/hours
     while change_flag.sum() > 0:
 
         # calculate new finished_at timestamp (1sec before midnight)
@@ -134,9 +133,34 @@ def _split_overlaps(source, granularity="day"):
         new_df.loc[change_flag, "finished_at"] = finished_at_temp
 
         df = df.append(new_df, ignore_index=True, sort=True)
-        if granularity == "day":
-            change_flag = df["started_at"].dt.date != df["finished_at"].dt.date
-        elif granularity == "hour":
-            change_flag = df["started_at"].dt.hour != df["finished_at"].dt.hour
+
+        change_flag = __get_split_index(df, granularity=granularity)
 
     return df
+
+
+def __get_split_index(df, granularity="day"):
+    """
+    Get the index that needs to be splitted.
+
+    Parameters
+    ----------
+    df : GeoDataFrame (as trackintel datamodels)
+        The source to perform the split.
+
+    granularity : {'day', 'hour'}, default 'day'
+        The criteria of spliting. "day" splits records that have duration of several
+        days and "hour" splits records that have duration of several hours.
+
+    Returns
+    -------
+    change_flag: pd.Series
+        Boolean index indicating which records needs to be splitted
+    """
+    change_flag = df["started_at"].dt.date != df["finished_at"].dt.date
+    if granularity == "hour":
+        hour_flag = df["started_at"].dt.hour != df["finished_at"].dt.hour
+        # union of day and hour change flag
+        change_flag = change_flag | hour_flag
+
+    return change_flag
