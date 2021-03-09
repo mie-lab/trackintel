@@ -4,7 +4,8 @@ import pandas as pd
 
 
 def temporal_tracking_quality(source, granularity="all"):
-    """Calculate per-user temporal tracking quality.
+    """
+    Calculate per-user temporal tracking quality.
 
     Parameters
     ----------
@@ -63,7 +64,8 @@ def temporal_tracking_quality(source, granularity="all"):
 
 
 def _get_tracking_quality_user(df, granularity="all"):
-    """Tracking quality per-user per-granularity.
+    """
+    Tracking quality per-user per-granularity.
 
     Parameters
     ----------
@@ -94,7 +96,8 @@ def _get_tracking_quality_user(df, granularity="all"):
 
 
 def _split_overlaps(source, granularity="day"):
-    """Split input df that have a duration of several days or hours.
+    """
+    Split input df that have a duration of several days or hours.
 
     Parameters
     ----------
