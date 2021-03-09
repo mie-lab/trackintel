@@ -30,6 +30,7 @@ transfer between two transport modes). We can cluster these into locations that 
 frequently visits.
 
 .. autofunction:: trackintel.preprocessing.staypoints.generate_locations
+.. autofunction:: trackintel.preprocessing.staypoints.create_activity_flag
 
 Triplegs
 ========
