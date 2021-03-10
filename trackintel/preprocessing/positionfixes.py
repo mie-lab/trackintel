@@ -148,7 +148,7 @@ def generate_staypoints(positionfixes,
     return ret_pfs, ret_spts
 
 
-def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints', gap_threshold=20*60):
+def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints', gap_threshold=1000*60):
     """Generates triplegs from positionfixes.
 
     A tripleg is (for now) defined as anything that happens between two consecutive staypoints.
@@ -660,7 +660,7 @@ def check_tripleg_on_gaps(pfs_tripleg, gap_threshold):
     """
     for i in range(pfs_tripleg.shape[0]-1):
         t_diff = pfs_tripleg.iloc[i+1].tracked_at - pfs_tripleg.iloc[i].tracked_at
-        if t_diff.total_seconds()/60 > gap_threshold:
+        if t_diff.total_seconds() > gap_threshold:
             return i+1
             break
 
