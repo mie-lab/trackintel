@@ -1,7 +1,9 @@
 import numpy as np
 
 def haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000):
-    """Computes the great circle or haversine distance between two coordinates in WGS84.
+    """
+    Compute the great circle or haversine distance between two coordinates in WGS84.
+    
     Serialized version of the haversine distance.
 
     Parameters
@@ -37,7 +39,6 @@ def haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000):
     https://en.wikipedia.org/wiki/Haversine_formula
     https://stackoverflow.com/questions/19413259/efficient-way-to-calculate-distance-matrix-given-latitude-and-longitude-data-in
     """
-
     lon_1 = np.asarray(lon_1).ravel() * np.pi / 180
     lat_1 = np.asarray(lat_1).ravel() * np.pi / 180
     lon_2 = np.asarray(lon_2).ravel() * np.pi / 180

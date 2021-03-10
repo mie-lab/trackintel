@@ -54,6 +54,18 @@ The main function should be on the top of the file, the internal/secondary funct
 ### ID management
 All trackintel objects have an ID that is the index of the dataframe [Issue 97](https://github.com/mie-lab/trackintel/issues/97)
 
+### Docstrings
+See [issue 117](https://github.com/mie-lab/trackintel/issues/117)
+- All docstrings follow the [numpy format](https://numpydoc.readthedocs.io/en/latest/format.html).
+- The example section is mandatory.
+- Naming of trackintel data types in the docstring:
+  - Positionfixes: `GeoDataFrame (as trackintel positionfixes)`  
+  - Staypoints: `GeoDataFrame (as trackintel staypoints)`
+  - Triplegs: `GeoDataFrame (as trackintel triplegs)`
+  - Locations: `GeoDataFrame (as trackintel locations)`  
+  - Trips: `DataFrame (as trackintel trips)`
+  - Tours: `DataFrame (as trackintel tours)` 
+
 ### Others
 - We limit all lines to a maximum of 120 characters.
 - New release version tags use [semantic numbering](https://semver.org/).

@@ -1,12 +1,13 @@
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import warnings
 
 from trackintel.visualization.osm import plot_osm_streets
 from trackintel.visualization.util import regular_figure, save_fig
 
 
 def plot_triplegs(triplegs, out_filename=None, positionfixes=None, staypoints=None, 
-                  staypoints_radius=None, plot_osm=False):
+                  staypoints_radius=None, plot_osm=False, axis=None):
     """Plots triplegs (optionally to a file).
 
     Parameters
@@ -20,36 +21,45 @@ def plot_triplegs(triplegs, out_filename=None, positionfixes=None, staypoints=No
     positionfixes : GeoDataFrame
         If available, some positionfixes that can additionally be plotted.
 
+    staypoints_radius : float, optional
+        The radius in meter with which circles around staypoints should be drawn.
+
     plot_osm : bool
         If this is set to True, it will download an OSM street network and plot 
         below the triplegs.
+
+    axis : matplotlib.pyplot.Artist, optional
+        axis on which to draw the plot
+
+    Example
+    -------
+    >>> df.as_triplegs.plot('output.png', positionfixes=pf, staypoints=stps, plot_osm=True)
     """
-    _, ax = regular_figure()
+    if axis is None:
+        _, ax = regular_figure()
+    else:
+        ax = axis
 
-    if plot_osm:
-        if positionfixes is not None:
-            west = positionfixes.geometry.x.min()
-            east = positionfixes.geometry.x.max()
-            north = positionfixes.geometry.y.max()
-            south = positionfixes.geometry.y.min()
-        else:
-            triplegs_bounds = triplegs.bounds 
-            west = min(triplegs_bounds.minx) - 0.03 #TODO: maybe a relative value instead of 0.03
-            east = max(triplegs_bounds.maxx) + 0.03
-            north = max(triplegs_bounds.maxy) + 0.03
-            south = min(triplegs_bounds.miny) - 0.03
-        plot_osm_streets(north, south, east, west, ax)
-
-    if positionfixes is not None:
-        positionfixes.plot(ax=ax, markersize=0.5, zorder=2)
+    crs_wgs84 = 'EPSG:4326'
+    if triplegs.crs is None:
+        warnings.warn("Coordinate System (CRS) is not set, default to WGS84.")
+        triplegs.crs = crs_wgs84
+    elif triplegs.crs != crs_wgs84:
+        triplegs = triplegs.to_crs(crs_wgs84)
 
     if staypoints is not None:
-        if staypoints_radius is None:
-            staypoints_radius = 3
-        for pt in staypoints.to_dict('records'):
-            circle = mpatches.Circle((pt.geometry.x, pt.geometry.y), staypoints_radius,
-                                     facecolor='none', edgecolor='c', zorder=3)
-            ax.add_artist(circle)
+        staypoints.as_staypoints.plot(radius=staypoints_radius,
+                                      positionfixes=positionfixes,
+                                      plot_osm=plot_osm, axis=ax)
+    elif positionfixes is not None:
+        positionfixes.as_positionfixes.plot(plot_osm=plot_osm, axis=ax)
+    elif plot_osm:
+        triplegs_bounds = triplegs.bounds
+        west = min(triplegs_bounds.minx) - 0.03  # TODO: maybe a relative value instead of 0.03
+        east = max(triplegs_bounds.maxx) + 0.03
+        north = max(triplegs_bounds.maxy) + 0.03
+        south = min(triplegs_bounds.miny) - 0.03
+        plot_osm_streets(north, south, east, west, ax)
 
     triplegs.plot(ax=ax, cmap='viridis')
 

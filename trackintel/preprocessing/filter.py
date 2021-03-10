@@ -3,18 +3,21 @@ import geopandas as gpd
 
 
 def spatial_filter(source, areas, method="within", re_project=False):
-    """Filter staypoints, locations or triplegs with a geo extent. 
+    """
+    Filter staypoints, locations or triplegs with a geo extent.
 
     Parameters
     ----------
-    source : GeoDataFrame
+    source : GeoDataFrame (as trackintel datamodels)
         The source feature to perform the spatial filtering 
 
     areas : GeoDataFrame
         The areas used to perform the spatial filtering. Note, you can have multiple Polygons 
         and it will return all the features intersect with ANY of those geometries.
 
-    method : str, {'within', 'intersects', 'crosses'}, default 'within'
+    method : {'within', 'intersects', 'crosses'}
+        The method to filter the 'source' GeoDataFrame
+        
         - 'within'    : return instances in 'source' where no points of these instances lies in the \
             exterior of the 'areas' and at least one point of the interior of these instances lies \
             in the interior of 'areas'.
@@ -29,14 +32,13 @@ def spatial_filter(source, areas, method="within", re_project=False):
     
     Returns
     -------
-    GeoDataFrame
+    ret_gdf: GeoDataFrame (as trackintel datamodels)
         A new GeoDataFrame containing the features after the spatial filtering.
         
     Examples
     --------
     >>> spts.as_staypoints.spatial_filter(areas, method="within", re_project=False)
     """
-    
     gdf = source.copy()
     
     if re_project:
