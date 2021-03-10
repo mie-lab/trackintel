@@ -1,8 +1,8 @@
+# This workflow will check if the current repo adheres to the black format
+
 name: Lint
 
 on: [push, pull_request]
-
-
 
 jobs:
   lint:
@@ -29,4 +29,4 @@ jobs:
 
       - uses: psf/black@stable
         with:
-            args: ". --line-length 120 --diff"
+            args: ". --line-length 120 --check"
