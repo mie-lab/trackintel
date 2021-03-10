@@ -16,7 +16,8 @@ class StaypointsAccessor(object):
     of the `Staypoints`
 
     For several usecases, the following additional columns are required:
-    ``['elevation', 'radius', 'context', 'purpose', 'activity', 'next_trip_id', 'prev_trip_id', 'trip_id']``
+    ``['elevation', 'radius', 'context', 'purpose', 'activity', 'next_trip_id', 'prev_trip_id', 'trip_id',
+    location_id]``
 
     Notes
     -------
