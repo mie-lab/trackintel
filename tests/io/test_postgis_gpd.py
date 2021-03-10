@@ -10,6 +10,7 @@ from geopandas.io.sql import _write_postgis as write_postgis
 from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
 import pytest
 
+
 @pytest.fixture()
 def engine_postgis():
     """
@@ -42,6 +43,7 @@ def engine_postgis():
     yield con
     con.dispose()
 
+
 @pytest.fixture
 def df_nybb():
     nybb_path = geopandas.datasets.get_path("nybb")
@@ -64,14 +66,13 @@ def connection_postgis():
     host = os.environ.get("PGHOST")
     port = os.environ.get("PGPORT")
     try:
-        con = psycopg2.connect(
-            dbname=dbname, user=user, password=password, host=host, port=port
-        )
+        con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host, port=port)
     except OperationalError:
         pytest.skip("Cannot connect with postgresql database")
 
     yield con
     con.close()
+
 
 class TestIO:
     def test_read_postgis_default(self, connection_postgis, df_nybb):

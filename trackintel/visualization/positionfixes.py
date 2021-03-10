@@ -19,7 +19,7 @@ def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False, axis=No
         The file to plot to, if this is not set, the plot will simply be shown.
 
     plot_osm : bool, default False
-        If this is set to True, it will download an OSM street network and plot 
+        If this is set to True, it will download an OSM street network and plot
         below the staypoints.
 
     axis : matplotlib.pyplot.Artist, optional
@@ -34,7 +34,7 @@ def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False, axis=No
     else:
         ax = axis
 
-    crs_wgs84 = 'EPSG:4326'
+    crs_wgs84 = "EPSG:4326"
     if positionfixes.crs is None:
         warnings.warn("Coordinate System (CRS) is not set, default to WGS84.")
         positionfixes.crs = crs_wgs84
@@ -51,6 +51,6 @@ def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False, axis=No
     positionfixes.plot(ax=ax, markersize=0.5, zorder=2)
 
     if out_filename is not None:
-        save_fig(out_filename, formats=['png'])
+        save_fig(out_filename, formats=["png"])
     elif axis is None:
         plt.show()

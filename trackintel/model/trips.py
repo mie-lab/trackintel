@@ -41,7 +41,7 @@ class TripsAccessor(object):
 
     # ToDo primary mode of transport
 
-    required_columns = ['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'destination_staypoint_id']
+    required_columns = ["user_id", "started_at", "finished_at", "origin_staypoint_id", "destination_staypoint_id"]
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -50,18 +50,22 @@ class TripsAccessor(object):
     @staticmethod
     def _validate(obj):
         if any([c not in obj.columns for c in TripsAccessor.required_columns]):
-            raise AttributeError("To process a DataFrame as a collection of trips, "
-                                 + "it must have the properties [%s], but it has [%s]."
-                                 % (', '.join(TripsAccessor.required_columns), ', '.join(obj.columns)))
+            raise AttributeError(
+                "To process a DataFrame as a collection of trips, "
+                + "it must have the properties [%s], but it has [%s]."
+                % (", ".join(TripsAccessor.required_columns), ", ".join(obj.columns))
+            )
 
         # check timestamp dtypes
-        assert pd.api.types.is_datetime64tz_dtype(obj['started_at']), \
-            "dtype of started_at is {} but has to be datetime64 and timezone aware".format(obj['started_at'].dtype)
-        assert pd.api.types.is_datetime64tz_dtype(obj['finished_at']), \
-            "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj['finished_at'].dtype)
+        assert pd.api.types.is_datetime64tz_dtype(
+            obj["started_at"]
+        ), "dtype of started_at is {} but has to be datetime64 and timezone aware".format(obj["started_at"].dtype)
+        assert pd.api.types.is_datetime64tz_dtype(
+            obj["finished_at"]
+        ), "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj["finished_at"].dtype)
 
     def plot(self, *args, **kwargs):
-        """Plots this collection of trips. 
+        """Plots this collection of trips.
         See :func:`trackintel.visualization.trips.plot_trips`."""
         raise NotImplementedError
 
@@ -70,9 +74,7 @@ class TripsAccessor(object):
         See :func:`trackintel.io.file.write_trips_csv`."""
         ti.io.file.write_trips_csv(self._obj, filename, *args, **kwargs)
 
-    def to_postgis(self, conn_string, table_name, schema=None,
-                   sql_chunksize=None, if_exists='replace'):
+    def to_postgis(self, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
         """Stores this collection of trips to PostGIS.
         See :func:`trackintel.io.postgis.write_trips_postgis`."""
-        ti.io.postgis.write_trips_postgis(self._obj, conn_string, table_name,
-                                          schema, sql_chunksize, if_exists)
+        ti.io.postgis.write_trips_postgis(self._obj, conn_string, table_name, schema, sql_chunksize, if_exists)

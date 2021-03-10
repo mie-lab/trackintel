@@ -11,10 +11,10 @@ from trackintel.geogr.trajectory_distances import dtw, frechet_dist
 import warnings
 
 
-def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kwds):
+def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
     """
     Calculate a distance matrix based on a specific distance metric.
-    
+
     If only X is given, the pair-wise distances between all elements in X are calculated. If X and Y are given, the
     distances between all combinations of X and Y are calculated. Distances between elements of X and X, and distances
     between elements of Y and Y are not calculated.
@@ -22,50 +22,50 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
     Parameters
     ----------
     X : GeoDataFrame (as trackintel staypoints or triplegs)
-        
+
     Y : GeoDataFrame (as trackintel staypoints or triplegs), optional
-        
+
     dist_metric: {'haversine', 'euclidean', 'dtw', 'frechet'}
         The distance metric to be used for calculating the matrix. This function wraps around the
         ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
-        ``scipy.spatial.distance.cdist`` function if X and Y are given. Therefore the following metrics 
+        ``scipy.spatial.distance.cdist`` function if X and Y are given. Therefore the following metrics
         are also accepted:
-        
+
         via ``scikit-learn``: `[‘cityblock’, ‘cosine’, ‘euclidean’, ‘l1’, ‘l2’, ‘manhattan’]`
-        
+
         via ``scipy.spatial.distance``: `[‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘correlation’, ‘dice’, ‘hamming’, ‘jaccard’,
         ‘kulsinski’, ‘mahalanobis’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’,
         ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]`
-        
+
         triplegs can only be used in combination with `['dtw', 'frechet']`.
-        
+
     n_jobs: int
-        Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available 
+        Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available
         if only X is given) are parallelized.
-         
-    **kwds: 
+
+    **kwds:
         optional keywords passed to the distance functions.
 
     Returns
     -------
     np.array
         matrix of shape (len(X), len(X)) or of shape (len(X), len(Y))
-        
+
     """
     geom_type = X.geometry.iat[0].geom_type
     if Y is None:
         Y = X
-    assert Y.geometry.iat[0].geom_type == Y.geometry.iat[0].geom_type, "x and y need same geometry type " \
-                                                                       "(only first column checked)"
+    assert Y.geometry.iat[0].geom_type == Y.geometry.iat[0].geom_type, (
+        "x and y need same geometry type " "(only first column checked)"
+    )
 
-    if geom_type == 'Point':
+    if geom_type == "Point":
         x1 = X.geometry.x.values
         y1 = X.geometry.y.values
         x2 = Y.geometry.x.values
         y2 = Y.geometry.y.values
 
-
-        if dist_metric == 'haversine':
+        if dist_metric == "haversine":
             # create point pairs for distance calculation
             nx = len(X)
             ny = len(Y)
@@ -103,15 +103,15 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
 
         return D
 
-    elif geom_type == 'LineString':
+    elif geom_type == "LineString":
 
-        if dist_metric in ['dtw', 'frechet']:
+        if dist_metric in ["dtw", "frechet"]:
             # these are the preparation steps for all distance functions based only on coordinates
 
-            if dist_metric == 'dtw':
+            if dist_metric == "dtw":
                 d_fun = partial(dtw, **kwds)
 
-            elif dist_metric == 'frechet':
+            elif dist_metric == "frechet":
                 d_fun = partial(frechet_dist, **kwds)
 
             # get combinations of distances that have to be calculated
@@ -145,11 +145,11 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
             return D
 
         else:
-            raise AttributeError("Metric unknown. We only support ['dtw', 'frechet'] for LineStrings. "
-                                 f"You passed {dist_metric}")
+            raise AttributeError(
+                "Metric unknown. We only support ['dtw', 'frechet'] for LineStrings. " f"You passed {dist_metric}"
+            )
     else:
         raise AttributeError(f"We only support 'Point' and 'LineString'. Your geometry is {geom_type}")
-
 
 
 def meters_to_decimal_degrees(meters, latitude):
@@ -161,7 +161,7 @@ def meters_to_decimal_degrees(meters, latitude):
         The meters to convert to degrees.
 
     latitude : float
-        As the conversion is dependent (approximatively) on the latitude where 
+        As the conversion is dependent (approximatively) on the latitude where
         the conversion happens, this needs to be specified. Use 0 for the equator.
 
     Returns

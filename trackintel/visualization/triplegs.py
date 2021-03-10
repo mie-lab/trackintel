@@ -6,15 +6,16 @@ from trackintel.visualization.osm import plot_osm_streets
 from trackintel.visualization.util import regular_figure, save_fig
 
 
-def plot_triplegs(triplegs, out_filename=None, positionfixes=None, staypoints=None, 
-                  staypoints_radius=None, plot_osm=False, axis=None):
+def plot_triplegs(
+    triplegs, out_filename=None, positionfixes=None, staypoints=None, staypoints_radius=None, plot_osm=False, axis=None
+):
     """Plots triplegs (optionally to a file).
 
     Parameters
     ----------
     triplegs : GeoDataFrame
         The triplegs to plot.
-    
+
     out_filename : str
         The file to plot to, if this is not set, the plot will simply be shown.
 
@@ -25,7 +26,7 @@ def plot_triplegs(triplegs, out_filename=None, positionfixes=None, staypoints=No
         The radius in meter with which circles around staypoints should be drawn.
 
     plot_osm : bool
-        If this is set to True, it will download an OSM street network and plot 
+        If this is set to True, it will download an OSM street network and plot
         below the triplegs.
 
     axis : matplotlib.pyplot.Artist, optional
@@ -40,7 +41,7 @@ def plot_triplegs(triplegs, out_filename=None, positionfixes=None, staypoints=No
     else:
         ax = axis
 
-    crs_wgs84 = 'EPSG:4326'
+    crs_wgs84 = "EPSG:4326"
     if triplegs.crs is None:
         warnings.warn("Coordinate System (CRS) is not set, default to WGS84.")
         triplegs.crs = crs_wgs84
@@ -48,9 +49,7 @@ def plot_triplegs(triplegs, out_filename=None, positionfixes=None, staypoints=No
         triplegs = triplegs.to_crs(crs_wgs84)
 
     if staypoints is not None:
-        staypoints.as_staypoints.plot(radius=staypoints_radius,
-                                      positionfixes=positionfixes,
-                                      plot_osm=plot_osm, axis=ax)
+        staypoints.as_staypoints.plot(radius=staypoints_radius, positionfixes=positionfixes, plot_osm=plot_osm, axis=ax)
     elif positionfixes is not None:
         positionfixes.as_positionfixes.plot(plot_osm=plot_osm, axis=ax)
     elif plot_osm:
@@ -61,9 +60,9 @@ def plot_triplegs(triplegs, out_filename=None, positionfixes=None, staypoints=No
         south = min(triplegs_bounds.miny) - 0.03
         plot_osm_streets(north, south, east, west, ax)
 
-    triplegs.plot(ax=ax, cmap='viridis')
+    triplegs.plot(ax=ax, cmap="viridis")
 
     if out_filename is not None:
-        save_fig(out_filename, formats=['png'])
+        save_fig(out_filename, formats=["png"])
     else:
         plt.show()

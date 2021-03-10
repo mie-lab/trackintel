@@ -11,11 +11,11 @@ from shapely.geometry import Point
 
 FEET2METER = 0.3048
 
-CRS_WGS84 = 'epsg:4326'
+CRS_WGS84 = "epsg:4326"
 
 
 def read_geolife(geolife_path):
-    """ Read raw geolife data and return geopandas dataframe
+    """Read raw geolife data and return geopandas dataframe
 
     The geolife dataset as it can be downloaded from
     https://www.microsoft.com/en-us/research/publication/geolife-gps-trajectory-dataset-user-guide/
@@ -56,13 +56,13 @@ def read_geolife(geolife_path):
     'tracked_at': datetime64[ns]; 'user_id': int64; 'geom': geopandas/shapely geometry; 'accuracy': None
     """
 
-    geolife_path = os.path.join(geolife_path, '*')
+    geolife_path = os.path.join(geolife_path, "*")
     user_folder = sorted(glob.glob(geolife_path))
 
     df_list_users = []
 
     if len(user_folder) == 0:
-        raise NameError('No folders found with working directory {} and path {}'.format(os.getcwd(), geolife_path))
+        raise NameError("No folders found with working directory {} and path {}".format(os.getcwd(), geolife_path))
 
     for user_folder_this in user_folder:
 
@@ -75,26 +75,28 @@ def read_geolife(geolife_path):
         user_id = int(tail)
         print("start importing geolife user_id: ", user_id)
 
-        input_files = sorted(glob.glob(os.path.join(
-            user_folder_this, "Trajectory", "*.plt")))
+        input_files = sorted(glob.glob(os.path.join(user_folder_this, "Trajectory", "*.plt")))
         df_list_days = []
 
         # read every day of every user and concatenate input files
         for input_file_this in input_files:
-            data_this = pd.read_csv(input_file_this, skiprows=6, header=None,
-                                    names=['lat', 'lon', 'zeros', 'elevation',
-                                           'date days', 'date', 'time'])
+            data_this = pd.read_csv(
+                input_file_this,
+                skiprows=6,
+                header=None,
+                names=["lat", "lon", "zeros", "elevation", "date days", "date", "time"],
+            )
 
-            data_this['tracked_at'] = pd.to_datetime(data_this['date']
-                                                     + ' ' + data_this['time'], format="%Y-%m-%d %H:%M:%S", utc=True)
+            data_this["tracked_at"] = pd.to_datetime(
+                data_this["date"] + " " + data_this["time"], format="%Y-%m-%d %H:%M:%S", utc=True
+            )
 
-            data_this.drop(['zeros', 'date days', 'date', 'time'], axis=1,
-                           inplace=True)
-            data_this['user_id'] = user_id
-            data_this['elevation'] = data_this['elevation'] * FEET2METER
+            data_this.drop(["zeros", "date days", "date", "time"], axis=1, inplace=True)
+            data_this["user_id"] = user_id
+            data_this["elevation"] = data_this["elevation"] * FEET2METER
 
-            data_this['geom'] = list(zip(data_this.lon, data_this.lat))
-            data_this['geom'] = data_this['geom'].apply(Point)
+            data_this["geom"] = list(zip(data_this.lon, data_this.lat))
+            data_this["geom"] = data_this["geom"].apply(Point)
 
             df_list_days.append(data_this)
 
@@ -108,6 +110,6 @@ def read_geolife(geolife_path):
     gdf = gpd.GeoDataFrame(df, geometry="geom", crs=CRS_WGS84)
     gdf["accuracy"] = np.nan
 
-    gdf.index.name = 'id'
+    gdf.index.name = "id"
 
     return gdf

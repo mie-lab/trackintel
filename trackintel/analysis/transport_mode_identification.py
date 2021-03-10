@@ -1,4 +1,3 @@
-
 import trackintel as ti
 from trackintel.geogr.distances import haversine_dist
 import geopandas as gpd
@@ -6,10 +5,10 @@ import warnings
 import numpy as np
 
 
-def predict_transport_mode(triplegs, method='simple-coarse', **kwargs):
+def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
     """
     Predict the transport mode of triplegs.
-    
+
     Predict/impute the transport mode that was likely chosen to cover the given
     tripleg, e.g., car, bicycle, or walk.
 
@@ -17,47 +16,48 @@ def predict_transport_mode(triplegs, method='simple-coarse', **kwargs):
     ----------
     method: {'simple-coarse'}
         The following methods are available for transport mode inference/prediction:
-        
-        - 'simple-coarse' : Uses simple heuristics to predict coarse transport classes. 
-    
+
+        - 'simple-coarse' : Uses simple heuristics to predict coarse transport classes.
+
     Returns
     -------
     triplegs : GeoDataFrame (as trackintel triplegs)
         The triplegs with added column mode, containing the predicted transport modes.
-    
+
     Notes
     -----
-    ``simple-coarse`` method includes ``{'slow_mobility', 'motorized_mobility', 'fast_mobility'}``. 
-    In the default classification, ``slow_mobility`` (<15 km/h) includes transport modes such as 
-    walking or cycling, ``motorized_mobility`` (<100 km/h) modes such as car or train, and 
-    ``fast_mobility`` (>100 km/h) modes such as high-speed rail or airplanes. 
+    ``simple-coarse`` method includes ``{'slow_mobility', 'motorized_mobility', 'fast_mobility'}``.
+    In the default classification, ``slow_mobility`` (<15 km/h) includes transport modes such as
+    walking or cycling, ``motorized_mobility`` (<100 km/h) modes such as car or train, and
+    ``fast_mobility`` (>100 km/h) modes such as high-speed rail or airplanes.
     These categories are default values and can be overwritten using the keyword argument categories.
-        
+
     """
-    if method == 'simple-coarse':
+    if method == "simple-coarse":
         # implemented as keyword argument if later other methods that don't use categories are added
-        categories = kwargs.pop('categories', {15/3.6: 'slow_mobility', 100/3.6: 'motorized_mobility',
-                                               np.inf: 'fast_mobility'})
+        categories = kwargs.pop(
+            "categories", {15 / 3.6: "slow_mobility", 100 / 3.6: "motorized_mobility", np.inf: "fast_mobility"}
+        )
 
         return predict_transport_mode_simple_coarse(triplegs, categories)
     else:
-        raise NameError(f'Method {method} not known for predicting tripleg transport modes.')
+        raise NameError(f"Method {method} not known for predicting tripleg transport modes.")
 
 
 def predict_transport_mode_simple_coarse(triplegs, categories):
     """
-    Predict a transport mode out of three coarse classes. 
-    
-    Implements a simple speed based heuristic (over the whole tripleg). 
+    Predict a transport mode out of three coarse classes.
+
+    Implements a simple speed based heuristic (over the whole tripleg).
     As such, it is very fast, but also very simple and coarse.
 
     Parameters
     ----------
     triplegs : trackintel triplegs GeoDataFrame
         The triplegs for the transport mode prediction.
-        
+
     categories : dict, optional
-        The categories for the speed classification {upper_boundary:'category_name'}. 
+        The categories for the speed classification {upper_boundary:'category_name'}.
         The unit for the upper boundary is m/s.
         The default is {15/3.6: 'slow_mobility', 100/3.6: 'motorized_mobility', np.inf: 'fast_mobility'}.
 
@@ -75,8 +75,8 @@ def predict_transport_mode_simple_coarse(triplegs, categories):
     :func:`trackintel.analysis.transport_mode_identification.predict_transport_mode`.
 
     """
-    if not(check_categories(categories)):
-        raise ValueError('the catecories must be in increasing order')
+    if not (check_categories(categories)):
+        raise ValueError("the catecories must be in increasing order")
 
     triplegs = triplegs.copy()
     wgs = False
@@ -86,11 +86,12 @@ def predict_transport_mode_simple_coarse(triplegs, categories):
 
     elif triplegs.crs is None:
         wgs = True
-        warnings.warn('Your data is not projected. WGS84 is assumed and for length calculation the haversine '
-                      'distance is used')
+        warnings.warn(
+            "Your data is not projected. WGS84 is assumed and for length calculation the haversine " "distance is used"
+        )
 
     elif triplegs.crs.is_geographic:
-        raise UserWarning('Your data is in a geographic coordinate system, length calculation fails')
+        raise UserWarning("Your data is in a geographic coordinate system, length calculation fails")
 
     def identify_mode(tripleg, wgs, categories):
         """
@@ -112,19 +113,23 @@ def predict_transport_mode_simple_coarse(triplegs, categories):
         """
         # Computes distance over whole tripleg geometry (using the Haversine distance).
         if wgs:
-            distance = sum([haversine_dist(pt1[0], pt1[1], pt2[0], pt2[1]) for pt1, pt2
-                            in zip(tripleg.geom.coords[:-1], tripleg.geom.coords[1:])])
+            distance = sum(
+                [
+                    haversine_dist(pt1[0], pt1[1], pt2[0], pt2[1])
+                    for pt1, pt2 in zip(tripleg.geom.coords[:-1], tripleg.geom.coords[1:])
+                ]
+            )
         else:
             distance = tripleg.geom.length
 
-        duration = (tripleg['finished_at'] - tripleg['started_at']).total_seconds()
+        duration = (tripleg["finished_at"] - tripleg["started_at"]).total_seconds()
         speed = distance / duration  # The unit of the speed is m/s
 
         for bound in categories:
             if speed < bound:
                 return categories[bound]
 
-    triplegs['mode'] = triplegs.apply(lambda l: identify_mode(l, wgs, categories), axis=1)
+    triplegs["mode"] = triplegs.apply(lambda l: identify_mode(l, wgs, categories), axis=1)
     return triplegs
 
 
@@ -145,7 +150,7 @@ def check_categories(cat):
     """
     correct = True
     bounds = list(cat.keys())
-    for i in range(len(bounds)-1):
-        if bounds[i] >= bounds[i+1]:
+    for i in range(len(bounds) - 1):
+        if bounds[i] >= bounds[i + 1]:
             correct = False
     return correct

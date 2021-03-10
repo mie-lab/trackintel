@@ -3,7 +3,7 @@ import pandas as pd
 from trackintel.io.file import localize_timestamp
 
 
-def positionfixes_from_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom='geom', tz=None, mapper={}):
+def positionfixes_from_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom="geom", tz=None, mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -29,26 +29,24 @@ def positionfixes_from_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom
 
     """
 
-    columns = {tracked_at: 'tracked_at',
-               user_id: 'user_id',
-               geom: 'geom'}
+    columns = {tracked_at: "tracked_at", user_id: "user_id", geom: "geom"}
     columns.update(mapper)
 
     pfs = gdf.rename(columns=columns)
-    pfs = pfs.set_geometry('geom')
+    pfs = pfs.set_geometry("geom")
 
     # check and/or set timezone
-    for col in ['tracked_at']:
+    for col in ["tracked_at"]:
         if not pd.api.types.is_datetime64tz_dtype(pfs[col]):
             pfs[col] = localize_timestamp(dt_series=pfs[col], pytz_tzinfo=tz, col_name=col)
-        
+
     assert pfs.as_positionfixes
     return pfs
 
 
-def staypoints_from_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', geom='geom',
-                        tz=None,
-                        mapper={}):
+def staypoints_from_gpd(
+    gdf, started_at="started_at", finished_at="finished_at", user_id="user_id", geom="geom", tz=None, mapper={}
+):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -76,26 +74,24 @@ def staypoints_from_gpd(gdf, started_at='started_at', finished_at='finished_at',
 
     """
 
-    columns = {started_at: 'started_at',
-               finished_at: 'finished_at',
-               user_id: 'user_id',
-               geom: 'geom'}
+    columns = {started_at: "started_at", finished_at: "finished_at", user_id: "user_id", geom: "geom"}
     columns.update(mapper)
 
     stp = gdf.rename(columns=columns)
-    stp = stp.set_geometry('geom')
+    stp = stp.set_geometry("geom")
 
     # check and/or set timezone
-    for col in ['started_at', 'finished_at']:
+    for col in ["started_at", "finished_at"]:
         if not pd.api.types.is_datetime64tz_dtype(stp[col]):
             stp[col] = localize_timestamp(dt_series=stp[col], pytz_tzinfo=tz, col_name=col)
-        
+
     assert stp.as_staypoints
     return stp
 
 
-def triplegs_from_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', geom='geometry',
-                      tz=None, mapper={}):
+def triplegs_from_gpd(
+    gdf, started_at="started_at", finished_at="finished_at", user_id="user_id", geom="geometry", tz=None, mapper={}
+):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -123,17 +119,14 @@ def triplegs_from_gpd(gdf, started_at='started_at', finished_at='finished_at', u
 
     """
 
-    columns = {started_at: 'started_at',
-               finished_at: 'finished_at',
-               user_id: 'user_id',
-               geom: 'geom'}
+    columns = {started_at: "started_at", finished_at: "finished_at", user_id: "user_id", geom: "geom"}
     columns.update(mapper)
 
     tpl = gdf.rename(columns=columns)
-    tpl = tpl.set_geometry('geom')
+    tpl = tpl.set_geometry("geom")
 
     # check and/or set timezone
-    for col in ['started_at', 'finished_at']:
+    for col in ["started_at", "finished_at"]:
         if not pd.api.types.is_datetime64tz_dtype(tpl[col]):
             tpl[col] = localize_timestamp(dt_series=tpl[col], pytz_tzinfo=tz, col_name=col)
 
@@ -142,9 +135,16 @@ def triplegs_from_gpd(gdf, started_at='started_at', finished_at='finished_at', u
     return tpl
 
 
-def trips_from_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id',
-                   origin_staypoint_id='origin_staypoint_id', destination_staypoint_id='destination_staypoint_id',
-                   tz=None, mapper={}):
+def trips_from_gpd(
+    gdf,
+    started_at="started_at",
+    finished_at="finished_at",
+    user_id="user_id",
+    origin_staypoint_id="origin_staypoint_id",
+    destination_staypoint_id="destination_staypoint_id",
+    tz=None,
+    mapper={},
+):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -174,18 +174,19 @@ def trips_from_gpd(gdf, started_at='started_at', finished_at='finished_at', user
 
     """
 
-    columns = {started_at: 'started_at',
-               finished_at: 'finished_at',
-               user_id: 'user_id',
-               origin_staypoint_id: 'origin_staypoint_id',
-               destination_staypoint_id: 'destination_staypoint_id'
-               }
+    columns = {
+        started_at: "started_at",
+        finished_at: "finished_at",
+        user_id: "user_id",
+        origin_staypoint_id: "origin_staypoint_id",
+        destination_staypoint_id: "destination_staypoint_id",
+    }
     columns.update(mapper)
 
     tps = gdf.rename(columns=columns)
 
     # check and/or set timezone
-    for col in ['started_at', 'finished_at']:
+    for col in ["started_at", "finished_at"]:
         if not pd.api.types.is_datetime64tz_dtype(tps[col]):
             tps[col] = localize_timestamp(dt_series=tps[col], pytz_tzinfo=tz, col_name=col)
 
@@ -193,7 +194,7 @@ def trips_from_gpd(gdf, started_at='started_at', finished_at='finished_at', user
     return tps
 
 
-def locations_from_gpd(gdf, user_id='user_id', center='center', mapper={}):
+def locations_from_gpd(gdf, user_id="user_id", center="center", mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -217,21 +218,27 @@ def locations_from_gpd(gdf, user_id='user_id', center='center', mapper={}):
 
     """
 
-    columns = {user_id: 'user_id',
-               center: 'center'}
+    columns = {user_id: "user_id", center: "center"}
     columns.update(mapper)
 
     lcs = gdf.rename(columns=columns)
-    lcs = lcs.set_geometry('center')
+    lcs = lcs.set_geometry("center")
 
     assert lcs.as_locations
 
     return lcs
 
 
-def tours_from_gpd(gdf, user_id='user_id', started_at='started_at', finished_at='finished_at',
-                   origin_destination_location_id='origin_destination_location_id', journey='journey',
-                   tz=None, mapper={}):
+def tours_from_gpd(
+    gdf,
+    user_id="user_id",
+    started_at="started_at",
+    finished_at="finished_at",
+    origin_destination_location_id="origin_destination_location_id",
+    journey="journey",
+    tz=None,
+    mapper={},
+):
     """
     wraps the pd.rename function to simplify the import of GeoDataFrames
 
@@ -259,17 +266,19 @@ def tours_from_gpd(gdf, user_id='user_id', started_at='started_at', finished_at=
 
     """
 
-    columns = {user_id: 'user_id',
-               started_at: 'tracked_at',
-               finished_at: 'finished_at',
-               origin_destination_location_id: 'origin_destination_location_id',
-               journey: 'journey'}
+    columns = {
+        user_id: "user_id",
+        started_at: "tracked_at",
+        finished_at: "finished_at",
+        origin_destination_location_id: "origin_destination_location_id",
+        journey: "journey",
+    }
     columns.update(mapper)
 
     trs = gdf.rename(columns=columns)
 
     # check and/or set timezone
-    for col in ['started_at', 'finished_at']:
+    for col in ["started_at", "finished_at"]:
         if not pd.api.types.is_datetime64tz_dtype(trs[col]):
             trs[col] = localize_timestamp(dt_series=trs[col], pytz_tzinfo=tz, col_name=col)
 
