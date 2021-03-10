@@ -148,7 +148,7 @@ def generate_staypoints(positionfixes,
     return ret_pfs, ret_spts
 
 
-def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints', gap_threshold=100000):
+def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints', gap_threshold=20*60):
     """Generates triplegs from positionfixes.
 
     A tripleg is (for now) defined as anything that happens between two consecutive staypoints.
@@ -168,8 +168,14 @@ def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints
 
     method: str
         Method to create tripelgs. Can be one of the following: ('between_staypoints', )
-        'between_staypoints': A tripleg is then defined as all positionfixes between two staypoints. This method
-            requires either a column ``staypoint_id`` on the positionfixes or passing staypoints as an input.
+        'between_staypoints': A tripleg is then defined as all positionfixes
+        between two staypoints. This method requires either a column
+        ``staypoint_id`` on the positionfixes or passing staypoints as an input.
+
+    gap_threshold: float
+        The temporal threshold for a gap in the positionfixes. If the time
+        difference between two positionfixes exceeds the threshold, a new
+        tripleg is started.
 
     Returns
     -------

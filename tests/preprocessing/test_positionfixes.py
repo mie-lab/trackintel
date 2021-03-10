@@ -233,7 +233,7 @@ class TestGenerate_triplegs():
         pfs_gap, stps_gap = pfs_gap.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5*60)
         
         pfs_no_gap, tpls_no_gap = pfs_no_gap.as_positionfixes.generate_triplegs(stps_no_gap, method='between_staypoints')
-        pfs_gap, tpls_gap = pfs_gap.as_positionfixes.generate_triplegs(stps_gap, method='between_staypoints', gap_threshold=2)
+        pfs_gap, tpls_gap = pfs_gap.as_positionfixes.generate_triplegs(stps_gap, method='between_staypoints', gap_threshold=2*60)
         
         assert pfs_gap.tripleg_id.nunique() == tpls_gap.index.nunique()
         
@@ -251,7 +251,7 @@ class TestGenerate_triplegs():
         pfs_gap.drop('staypoint_id', axis=1, inplace=True)
 
         pfs_no_gap, tpls_no_gap = pfs_no_gap.as_positionfixes.generate_triplegs(stps_no_gap, method='between_staypoints')
-        pfs_gap, tpls_gap = pfs_gap.as_positionfixes.generate_triplegs(stps_gap, method='between_staypoints', gap_threshold=2)
+        pfs_gap, tpls_gap = pfs_gap.as_positionfixes.generate_triplegs(stps_gap, method='between_staypoints', gap_threshold=2*60)
 
         assert pfs_gap.tripleg_id.nunique() == tpls_gap.index.nunique()
         
@@ -267,7 +267,7 @@ class TestGenerate_triplegs():
 
 
         pfs_no_gap, tpls_no_gap = pfs_no_gap.as_positionfixes.generate_triplegs(method='between_staypoints')
-        pfs_gap, tpls_gap = pfs_gap.as_positionfixes.generate_triplegs(method='between_staypoints', gap_threshold=2)
+        pfs_gap, tpls_gap = pfs_gap.as_positionfixes.generate_triplegs(method='between_staypoints', gap_threshold=2*60)
 
         assert pfs_gap.tripleg_id.nunique() == tpls_gap.index.nunique()
 
