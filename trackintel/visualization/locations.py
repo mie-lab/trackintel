@@ -4,7 +4,7 @@ import warnings
 
 from trackintel.geogr.distances import meters_to_decimal_degrees
 from trackintel.visualization.osm import plot_osm_streets
-from trackintel.visualization.util import regular_figure, save_fig
+from trackintel.visualization.util import regular_figure, save_fig, transform_gdf_to_wgs84
 
 
 def plot_center_of_locations(locations, out_filename=None, radius=None, positionfixes=None, 
@@ -45,13 +45,7 @@ def plot_center_of_locations(locations, out_filename=None, radius=None, position
         _, ax = regular_figure()
     else:
         ax = axis
-
-    crs_wgs84 = 'EPSG:4326'
-    if locations.crs is None:
-        warnings.warn("Coordinate System (CRS) is not set, default to WGS84.")
-        locations.crs = crs_wgs84
-    elif locations.crs != crs_wgs84:
-        locations = locations.to_crs(crs_wgs84)
+    locations = transform_gdf_to_wgs84(locations)
 
     if staypoints is not None:
         staypoints.as_staypoints.plot(radius=staypoints_radius,

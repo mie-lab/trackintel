@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import warnings
 from trackintel.visualization.osm import plot_osm_streets
-from trackintel.visualization.util import regular_figure, save_fig
+from trackintel.visualization.util import regular_figure, save_fig, transform_gdf_to_wgs84
 
 
 def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False, axis=None):
@@ -33,13 +33,7 @@ def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False, axis=No
         _, ax = regular_figure()
     else:
         ax = axis
-
-    crs_wgs84 = 'EPSG:4326'
-    if positionfixes.crs is None:
-        warnings.warn("Coordinate System (CRS) is not set, default to WGS84.")
-        positionfixes.crs = crs_wgs84
-    elif positionfixes.crs != crs_wgs84:
-        positionfixes = positionfixes.to_crs(crs_wgs84)
+    positionfixes = transform_gdf_to_wgs84(positionfixes)
 
     if plot_osm:
         west = positionfixes.geometry.x.min()

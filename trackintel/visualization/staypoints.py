@@ -4,7 +4,7 @@ import warnings
 
 from trackintel.geogr.distances import meters_to_decimal_degrees
 from trackintel.visualization.osm import plot_osm_streets
-from trackintel.visualization.util import regular_figure, save_fig
+from trackintel.visualization.util import regular_figure, save_fig, transform_gdf_to_wgs84
 
 
 def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=None, plot_osm=False, axis=None):
@@ -42,13 +42,7 @@ def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=No
     else:
         ax = axis
     name_geocol = staypoints.geometry.name
-
-    crs_wgs84 = 'EPSG:4326'
-    if staypoints.crs is None:
-        warnings.warn("Coordinate System (CRS) is not set, default to WGS84.")
-        staypoints.crs = crs_wgs84
-    elif staypoints.crs != crs_wgs84:
-        staypoints = staypoints.to_crs(crs_wgs84)
+    staypoints = transform_gdf_to_wgs84(staypoints)
 
     if positionfixes is not None:
         positionfixes.as_positionfixes.plot(plot_osm=plot_osm, axis=ax)
