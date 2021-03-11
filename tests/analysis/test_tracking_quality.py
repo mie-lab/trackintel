@@ -65,7 +65,7 @@ class TestTemporal_tracking_quality:
         # get the hour of the record
         splitted["hour"] = splitted["started_at"].dt.hour
 
-        # calculate tracking quality of a hour for the first user
+        # calculate tracking quality of an hour for the first user
         user_0 = splitted.loc[(splitted["user_id"] == 0) & (splitted["hour"] == 2)]
         extent = (60 * 60) * len(user_0["day"].unique())
         tracked = (user_0["finished_at"] - user_0["started_at"]).dt.total_seconds().sum()
@@ -82,13 +82,14 @@ class TestTemporal_tracking_quality:
 
         with pytest.raises(AttributeError):
             ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity=12345)
+        with pytest.raises(AttributeError):
             ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="random")
 
     def test_split_overlaps_days(self, testdata_stps_tpls_geolife_long):
         """Test if _split_overlaps() function can split records that span several days."""
         stps_tpls = testdata_stps_tpls_geolife_long
 
-        # some of the records spans several day
+        # some of the records span several day
         multi_day_records = stps_tpls["finished_at"].dt.day - stps_tpls["started_at"].dt.day
         assert (multi_day_records > 0).any()
 
@@ -96,7 +97,7 @@ class TestTemporal_tracking_quality:
         stps_tpls.reset_index(inplace=True)
         splitted = ti.analysis.tracking_quality._split_overlaps(stps_tpls, granularity="day")
 
-        # no record spans several day after the split
+        # no record spans several days after the split
         multi_day_records = splitted["finished_at"].dt.day - splitted["started_at"].dt.day
         assert (multi_day_records == 0).all()
 
@@ -104,7 +105,7 @@ class TestTemporal_tracking_quality:
         """Test if _split_overlaps() function can split records that span several hours."""
         stps_tpls = testdata_stps_tpls_geolife_long
 
-        # some of the records spans several hours
+        # some of the records span several hours
         hour_diff = stps_tpls["finished_at"].dt.hour - stps_tpls["started_at"].dt.hour
         assert (hour_diff > 0).any()
 
@@ -112,7 +113,7 @@ class TestTemporal_tracking_quality:
         stps_tpls.reset_index(inplace=True)
         splitted = ti.analysis.tracking_quality._split_overlaps(stps_tpls, granularity="hour")
 
-        # no record spans several hour after the split
+        # no record spans several hours after the split
         hour_diff = splitted["finished_at"].dt.hour - splitted["started_at"].dt.hour
         assert (hour_diff == 0).all()
 
@@ -136,6 +137,6 @@ class TestTemporal_tracking_quality:
         head2.reset_index(inplace=True)
         splitted = ti.analysis.tracking_quality._split_overlaps(head2, granularity="hour")
 
-        # no record have different days after the split
+        # no record has different days after the split
         day_diff = splitted["finished_at"].dt.day - splitted["started_at"].dt.day
         assert (day_diff == 0).all()
