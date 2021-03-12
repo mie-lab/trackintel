@@ -292,7 +292,8 @@ def _generate_staypoints_sliding_user(
     """
     User-level generate staypoints algorithm.
 
-    Algorithm from Li et al. (2008). For details, please refer to the paper.
+    Algorithm from "Mining user similarity based on location history" from Li et al. (2008). For details,
+    please refer to the paper.
     """
     ret_spts = pd.DataFrame(columns=["user_id", "started_at", "finished_at", "geom"])
     df.sort_values("tracked_at", inplace=True)
@@ -323,16 +324,16 @@ def _generate_staypoints_sliding_user(
                     staypoint = {}
                     staypoint["user_id"] = pfs[i]["user_id"]
                     staypoint[name_geocol] = Point(
-                        np.mean([pfs[k][name_geocol].x for k in range(i, j)]),
-                        np.mean([pfs[k][name_geocol].y for k in range(i, j)]),
+                        np.mean([pfs[k][name_geocol].x for k in range(i, j+1)]),
+                        np.mean([pfs[k][name_geocol].y for k in range(i, j+1)]),
                     )
                     if elevation_flag:
-                        staypoint["elevation"] = np.mean([pfs[k]["elevation"] for k in range(i, j)])
+                        staypoint["elevation"] = np.mean([pfs[k]["elevation"] for k in range(i, j+1)])
                     staypoint["started_at"] = pfs[i]["tracked_at"]
                     staypoint["finished_at"] = pfs[j]["tracked_at"]
 
                     # store matching, index should be the id of pfs
-                    staypoint["pfs_id"] = [idx[k] for k in range(i, j)]
+                    staypoint["pfs_id"] = [idx[k] for k in range(i, j+1)]
 
                     # add staypoint
                     ret_spts = ret_spts.append(staypoint, ignore_index=True)
