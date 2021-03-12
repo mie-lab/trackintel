@@ -105,6 +105,10 @@ def generate_staypoints(
                 for value in values:
                     ls.append([value, key])
             temp = pd.DataFrame(ls, columns=["id", "staypoint_id"]).set_index("id")
+
+            # if the index in "temp" is not unique, the join below will duplicate some positionfixes.
+            assert temp.index.is_unique, "Positionfixes can only be assigned to a single staypoint when using the " \
+                                         "sliding method"
             # pfs with no stps receives nan in 'staypoint_id'
             ret_pfs = ret_pfs.join(temp, how="left")
             ret_spts.drop(columns={"pfs_id"}, inplace=True)
@@ -204,6 +208,11 @@ def generate_triplegs(positionfixes, staypoints=None, method="between_staypoints
     """
     # copy the original pfs for adding 'staypoint_id' column
     ret_pfs = positionfixes.copy()
+
+    # The necessity of the uniqueness of the positionfix index was only tested for tripleg extraction
+    # method="between_staypoints" for "case 1" (there it is a strict requirement!) but it is likely that the others
+    # will require it as well.
+    assert positionfixes.index.is_unique, "Tripleg generation requires unique index for positionfixes"
 
     ret_tpls = pd.DataFrame(columns=["id", "user_id", "started_at", "finished_at", "geom"])
     if method == "between_staypoints":
@@ -316,7 +325,8 @@ def _generate_staypoints_sliding_user(
 
         while j < num_pfs:
             # TODO: Can we make distance function independent of projection?
-            dist = dist_func(pfs[i][name_geocol].x, pfs[i][name_geocol].y, pfs[j][name_geocol].x, pfs[j][name_geocol].y)
+            dist = dist_func(pfs[i][name_geocol].x, pfs[i][name_geocol].y, pfs[j][name_geocol].x,
+                             pfs[j][name_geocol].y)[0]
 
             if dist > dist_threshold:
                 delta_t = pfs[j]["tracked_at"] - pfs[i]["tracked_at"]
