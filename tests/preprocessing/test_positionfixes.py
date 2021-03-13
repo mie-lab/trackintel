@@ -16,11 +16,14 @@ from trackintel.geogr.distances import haversine_dist
 
 @pytest.fixture
 def pfs_geolife():
-    return ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
+    pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
+    return pfs
+
 
 @pytest.fixture
 def pfs_geolife_long():
-    return ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+    pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+    return pfs
 
 
 @pytest.fixture
@@ -239,17 +242,17 @@ class TestGenerate_triplegs():
     def test_generate_triplegs_index_start(self, geolife_pfs_stps_long):
         """Test the generated index start from 0 for different methods."""
         pfs, stps = geolife_pfs_stps_long
-        
+
         _, tpls_case1 = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
         _, tpls_case2 = pfs.drop('staypoint_id',
                                  axis=1).as_positionfixes.generate_triplegs(stps, method='between_staypoints')
         _, tpls_case3 = pfs.as_positionfixes.generate_triplegs(method='between_staypoints')
-        
+
         assert (tpls_case1.index == np.arange(len(tpls_case1))).any()
         assert (tpls_case2.index == np.arange(len(tpls_case2))).any()
         assert (tpls_case3.index == np.arange(len(tpls_case3))).any()
-        
-    def test_generate_staypoints_triplegs_overlap(self):
+
+    def test_generate_staypoints_triplegs_overlap(self, pfs_geolife_long):
         """
         Triplegs and staypoints should not overlap when generated using the default extract triplegs method.
         This test extracts triplegs and staypoints from positionfixes and stores them in a single dataframe.
@@ -257,7 +260,7 @@ class TestGenerate_triplegs():
         the next one started.
         """
         pfs_file = os.path.join('tests', 'data', 'geolife_long')
-        pfs = ti.io.dataset_reader.read_geolife(pfs_file)
+        pfs = pfs_geolife_long
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                              dist_threshold=25,
                                                              time_threshold=5 * 60)
