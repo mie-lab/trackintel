@@ -5,12 +5,12 @@ import pytest
 from trackintel.preprocessing.util import calc_temp_overlap
 
 
-@pytest.fixture()
+@pytest.fixture
 def time_1():
     return datetime.datetime(year=1, month=1, day=1, hour=0, minute=0, second=0)
 
 
-@pytest.fixture()
+@pytest.fixture
 def one_hour():
     return datetime.timedelta(hours=1)
 

@@ -208,6 +208,8 @@ def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints
         # Case 1: Staypoints are provided and are connected to positionfixes which have a column 'staypoint_id'
         # Case 2: Staypoints are provided but positionfixes do not have a column 'staypoint_id'
         # case 3: Staypoints are not provided but positionfixes have a column 'staypoint_id'
+        if staypoints.empty:
+            staypoints = None
 
         if staypoints is not None and "staypoint_id" in ret_pfs:
             case = 1
