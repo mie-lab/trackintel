@@ -553,6 +553,7 @@ def _triplegs_between_staypoints_case3(positionfixes, user_id_this, gap_threshol
         'pfs_ids': []
     }
 
+    gap = False
     first_iteration = True
     for idx, pf in positionfixes.iterrows():
 
@@ -584,6 +585,9 @@ def _triplegs_between_staypoints_case3(positionfixes, user_id_this, gap_threshol
                     status = 'tripleg_ends'
                 elif np.isnan(pf['staypoint_id']):
                     status = 'in_tripleg'
+                    if gap:
+                        status = 'tripleg_starts'
+                        gap=False
                 else:
                     raise Exception("case not defined")
             else:
@@ -606,22 +610,25 @@ def _triplegs_between_staypoints_case3(positionfixes, user_id_this, gap_threshol
                 t_diff = positionfixes.iloc[idx+1]['tracked_at']-pf.tracked_at
                 if t_diff.total_seconds() > gap_threshold:
                     status = 'tripleg_ends'
+                    gap = True
             except:
-                IndexError #case at the end of the last tripleg (without staypoint)
-            
-            
+                IndexError  # case at the end of the last tripleg (without staypoint)
+
             curr_tripleg['geom'].append((pf[name_geocol].x, pf[name_geocol].y))
             curr_tripleg['pfs_ids'].append(idx)
 
-        elif status == 'tripleg_ends':
-            curr_tripleg['finished_at'] = pf['tracked_at']
-            curr_tripleg['geom'].append((pf[name_geocol].x, pf[name_geocol].y))
-            curr_tripleg['pfs_ids'].append(idx)
+        if status == 'tripleg_ends':
+            try: 
+                curr_tripleg['finished_at'] = pf['tracked_at']
+                curr_tripleg['geom'].append((pf[name_geocol].x, pf[name_geocol].y))
+                curr_tripleg['pfs_ids'].append(idx)
+    
+                curr_tripleg['geom'] = LineString([(x, y) for x, y in curr_tripleg['geom']])
+                if len(curr_tripleg['pfs_ids']) > 1:
+                    generated_triplegs.append(curr_tripleg)
+                    del curr_tripleg
+            except UnboundLocalError: pass  #case if staypoint follows too short tripleg, caused by a gap
 
-            curr_tripleg['geom'] = LineString([(x, y) for x, y in curr_tripleg['geom']])
-            generated_triplegs.append(curr_tripleg)
-
-            del curr_tripleg
         elif status == 'in_staypoint':
             pass
 

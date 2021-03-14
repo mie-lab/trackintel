@@ -284,7 +284,7 @@ class TestGenerate_triplegs():
 
 
         pfs_no_gap, tpls_no_gap = pfs_no_gap.as_positionfixes.generate_triplegs(method='between_staypoints')
-        pfs_gap, tpls_gap = pfs_gap.as_positionfixes.generate_triplegs(method='between_staypoints', gap_threshold=2*60)
+        pfs_gap, tpls_gap = pfs_gap.as_positionfixes.generate_triplegs(method='between_staypoints', gap_threshold=1*60)
 
         assert pfs_gap.tripleg_id.nunique() == tpls_gap.index.nunique()
         assert pfs_no_gap.tripleg_id.nunique()+1 == pfs_gap.tripleg_id.nunique()
