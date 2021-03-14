@@ -587,7 +587,6 @@ def _triplegs_between_staypoints_case3(positionfixes, user_id_this, gap_threshol
                     status = 'in_tripleg'
                     if gap:
                         status = 'tripleg_starts'
-                        gap=False
                 else:
                     raise Exception("case not defined")
             else:
@@ -596,26 +595,42 @@ def _triplegs_between_staypoints_case3(positionfixes, user_id_this, gap_threshol
         # take action depending on status
         if status == 'tripleg_starts':
             # initialize tripleg with last staypoint
-            curr_tripleg = {
-                'user_id': user_id_this,
-                'started_at': prev_pf['tracked_at'],
-                'finished_at': None,
-                'geom': [(prev_pf[name_geocol].x, prev_pf[name_geocol].y), ],
-                'pfs_ids': [prev_idx, ]
-            }
+
+
+            if (pf.tracked_at-prev_pf.tracked_at).total_seconds() < gap_threshold:
+                curr_tripleg = {
+                    'user_id': user_id_this,
+                    'started_at': prev_pf['tracked_at'],
+                    'finished_at': None,
+                    'geom': [(prev_pf[name_geocol].x, prev_pf[name_geocol].y), ],
+                    'pfs_ids': [prev_idx, ]
+                }
+            else:
+                curr_tripleg = {
+                    'user_id': user_id_this,
+                    'started_at': pf['tracked_at'],
+                    'finished_at': None,
+                    'geom': [],
+                    'pfs_ids': []
+                }
+                gap = False
+                
             status = 'in_tripleg'
+
 
         if status == 'in_tripleg':
             try:
-                t_diff = positionfixes.iloc[idx+1]['tracked_at']-pf.tracked_at
+                t_diff = positionfixes.iloc[idx+1]['tracked_at']-positionfixes.iloc[idx]['tracked_at']
                 if t_diff.total_seconds() > gap_threshold:
                     status = 'tripleg_ends'
                     gap = True
-            except:
-                IndexError  # case at the end of the last tripleg (without staypoint)
+                else:
+                    curr_tripleg['geom'].append((pf[name_geocol].x, pf[name_geocol].y))
+                    curr_tripleg['pfs_ids'].append(idx)
+            except IndexError:  # case at the end of the last tripleg (without staypoint)
+                curr_tripleg['geom'].append((pf[name_geocol].x, pf[name_geocol].y))
+                curr_tripleg['pfs_ids'].append(idx)
 
-            curr_tripleg['geom'].append((pf[name_geocol].x, pf[name_geocol].y))
-            curr_tripleg['pfs_ids'].append(idx)
 
         if status == 'tripleg_ends':
             try: 
@@ -623,11 +638,14 @@ def _triplegs_between_staypoints_case3(positionfixes, user_id_this, gap_threshol
                 curr_tripleg['geom'].append((pf[name_geocol].x, pf[name_geocol].y))
                 curr_tripleg['pfs_ids'].append(idx)
     
-                curr_tripleg['geom'] = LineString([(x, y) for x, y in curr_tripleg['geom']])
-                if len(curr_tripleg['pfs_ids']) > 1:
+
+                if len(curr_tripleg['pfs_ids']) > 3:
+                    curr_tripleg['geom'] = LineString([(x, y) for x, y in curr_tripleg['geom']])
                     generated_triplegs.append(curr_tripleg)
                     del curr_tripleg
+                
             except UnboundLocalError: pass  #case if staypoint follows too short tripleg, caused by a gap
+                
 
         elif status == 'in_staypoint':
             pass

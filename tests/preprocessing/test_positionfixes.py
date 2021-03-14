@@ -288,6 +288,25 @@ class TestGenerate_triplegs():
 
         assert pfs_gap.tripleg_id.nunique() == tpls_gap.index.nunique()
         assert pfs_no_gap.tripleg_id.nunique()+1 == pfs_gap.tripleg_id.nunique()
+        
+        
+    def test_generate_triplegs_gaps_stability(self, pfs_geolife_long):
+        pfs_no_gap = pfs_geolife_long
+        pfs_gap = pfs_no_gap.drop(pfs_no_gap.index[13:45]) #create a gap in the positionfixes
+        pfs_gap = pfs_gap.reset_index(drop=True)        #reset the index to simulate a "real" gap
+        pfs_gap.index = pfs_gap.index.set_names(['id'])
+        
+        pfs_gap, stps_gap = pfs_gap.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5*60)
+        pfs_gap2 = pfs_gap.drop('staypoint_id', axis=1)
+        
+        pfs_gap1, tpls_gap1 = pfs_gap.as_positionfixes.generate_triplegs(stps_gap, method='between_staypoints', gap_threshold=2*60)
+        pfs_gap2, tpls_gap2 = pfs_gap2.as_positionfixes.generate_triplegs(stps_gap, method='between_staypoints', gap_threshold=2*60)
+        pfs_gap3, tpls_gap3 = pfs_gap.as_positionfixes.generate_triplegs(method='between_staypoints', gap_threshold=2*60)
+        
+        _assert_geodataframe_equal(pfs_gap1, pfs_gap2)
+        _assert_geodataframe_equal(pfs_gap1, pfs_gap3)
+        _assert_geodataframe_equal(tpls_gap1, tpls_gap2)
+        _assert_geodataframe_equal(tpls_gap1, tpls_gap3)
 
 def _generate_staypoints_original(positionfixes, method='sliding',
                                   dist_threshold=50, time_threshold=300, epsilon=100,
