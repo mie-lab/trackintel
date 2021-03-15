@@ -1,10 +1,104 @@
+import datetime
 import os
 
 import numpy as np
 import pandas as pd
+import pytest
 
 import trackintel as ti
-from trackintel.io.dataset_reader import read_geolife
+from trackintel.io.dataset_reader import read_geolife, geolife_add_modes_to_triplegs
+
+
+@pytest.fixture
+def temp_geolife_modes_triplegs():
+    pfs, labels = read_geolife(os.path.join('tests', 'data', 'geolife_temp'))
+    pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding',
+                                                         dist_threshold=25,
+                                                         time_threshold=5 * 60)
+
+    _, tpls = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
+
+    return tpls, labels
+
+
+@pytest.fixture
+def read_geolife_modes():
+    return read_geolife(os.path.join('tests', 'data', 'geolife_modes'))
+
+
+@pytest.fixture
+def geolife_modes_triplegs(read_geolife_modes):
+    pfs, labels = read_geolife_modes
+    pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding',
+                                                         dist_threshold=25,
+                                                         time_threshold=5 * 60)
+    _, tpls = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
+
+    return tpls, labels
+
+
+@pytest.fixture
+def time_1():
+    # return datetime.datetime(year=1, month=1, day=1, hour=0, minute=0, second=0, tzinfo=pytz.UTC)
+    return pd.Timestamp("1970-01-01", tz='utc')
+
+
+@pytest.fixture
+def one_hour():
+    return datetime.timedelta(hours=1)
+
+
+@pytest.fixture
+def one_min():
+    return datetime.timedelta(minutes=1)
+
+
+@pytest.fixture
+def matching_data(time_1, one_hour, one_min):
+    """generate test data for tripleg mode matching
+
+    There are two labels given:
+        Tripleg_0 overlaps from the left and is almost fully included in label_0
+        Tripleg_1 is fully included in label_0
+        Tripleg_2 overlaps and extents to the right but is almost not covered by label_0
+        Tripleg_3 overlaps label_1 to the right and the left but is almost fully covered by it.
+    """
+
+    triplegs = [{'id': 0, 'started_at': time_1, 'finished_at': time_1 + one_hour},
+                {'id': 1, 'started_at': time_1 + 2 * one_hour, 'finished_at': time_1 + 3 * one_hour},
+                {'id': 2, 'started_at': time_1 + 4 * one_hour, 'finished_at': time_1 + 5 * one_hour},
+                {'id': 3, 'started_at': time_1 + 6 * one_hour - one_min,
+                 'finished_at': time_1 + 7 * one_hour + one_min}]
+
+    labels_raw = [{'id': 0, 'started_at': time_1 + one_min, 'finished_at': time_1 + 4 * one_hour + one_min,
+                   'mode': 'walk'},
+                  {'id': 1, 'started_at': time_1 + 6 * one_hour, 'finished_at': time_1 + 7 * one_hour, 'mode': 'bike'}]
+
+    triplegs = pd.DataFrame(triplegs).set_index('id')
+    labels_raw = pd.DataFrame(labels_raw).set_index('id')
+
+    return triplegs, labels_raw
+
+
+@pytest.fixture
+def matching_data_same_user(matching_data):
+    triplegs, labels_raw = matching_data
+    triplegs['user_id'] = 0
+    labels = {0: labels_raw}
+
+    return triplegs, labels
+
+
+@pytest.fixture
+def matching_data_multi_user(matching_data):
+    triplegs, labels_raw = matching_data
+    triplegs['user_id'] = 0
+    labels = {0: labels_raw,
+              1: pd.DataFrame(columns=labels_raw.columns)}
+
+    triplegs.loc[1, 'user_id'] = 1
+
+    return triplegs, labels
 
 
 class TestReadGeolife:
@@ -27,10 +121,10 @@ class TestReadGeolife:
 
         # it has the keys of the users 10 and 20, the values are pandas dataframes
         for key, value in labels.items():
-            assert key in [10, 20]
+            assert key in [10, 20, 178]
             assert isinstance(value, pd.DataFrame)
 
-    def test_unavailble_label_reading(self):
+    def test_unavailable_label_reading(self):
         """test data types of the labels returned by read_geolife from a dictionary without label files"""
 
         pfs, labels = read_geolife(os.path.join('tests', 'data', 'geolife_long'))
@@ -41,3 +135,38 @@ class TestReadGeolife:
         # the values are pandas dataframes
         for key, value in labels.items():
             assert isinstance(value, pd.DataFrame)
+
+
+class TestGeolife_add_modes_to_triplegs:
+
+    def test_geolife_mode_matching(self, geolife_modes_triplegs):
+        """Test that the matching runs with geolife.
+        We only check that there are nan's and non nan's in the results."""
+
+        tpls, labels = geolife_modes_triplegs
+        tpls = geolife_add_modes_to_triplegs(tpls, labels)
+
+        assert pd.isna(tpls['mode']).any()
+        assert (~pd.isna(tpls['mode'])).any()
+        assert pd.isna(tpls['label_id']).any()
+        assert (~pd.isna(tpls['label_id'])).any()
+
+        assert 'started_at_s' not in tpls.columns
+
+    def test_mode_matching(self, matching_data_same_user):
+        tpls, labels = matching_data_same_user
+        tpls = geolife_add_modes_to_triplegs(tpls, labels)
+
+        assert tpls.loc[0, 'mode'] == 'walk' and tpls.loc[0, 'label_id'] == 0
+        assert tpls.loc[1, 'mode'] == 'walk' and tpls.loc[1, 'label_id'] == 0
+        assert pd.isna(tpls.loc[2, 'mode']) and pd.isna(tpls.loc[2, 'label_id'])
+        assert tpls.loc[3, 'mode'] == 'bike' and tpls.loc[3, 'label_id'] == 1
+
+    def test_mode_matching_multi_user(self, matching_data_multi_user):
+        tpls, labels = matching_data_multi_user
+        tpls = geolife_add_modes_to_triplegs(tpls, labels)
+
+        assert tpls.loc[0, 'mode'] == 'walk' and tpls.loc[0, 'label_id'] == 0
+        assert pd.isna(tpls.loc[1, 'mode']) and pd.isna(tpls.loc[1, 'label_id'])
+        assert pd.isna(tpls.loc[2, 'mode']) and pd.isna(tpls.loc[2, 'label_id'])
+        assert tpls.loc[3, 'mode'] == 'bike' and tpls.loc[3, 'label_id'] == 1
