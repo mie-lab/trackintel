@@ -8,26 +8,28 @@ from trackintel.visualization.util import regular_figure, save_fig, transform_gd
 
 
 def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=None, plot_osm=False, axis=None):
-    """Plots staypoints (optionally to a file). You can specify the radius with which 
-    each staypoint should be drawn, as well as if underlying positionfixes and OSM streets
-    should be drawn. The data gets transformed to wgs84 for the plotting.
+    """Plot staypoints (optionally to a file).
+
+    You can specify the radius with which  each staypoint should be drawn, as well as
+    if underlying positionfixes and OSM streets should be drawn. The data gets transformed
+    to wgs84 for the plotting.
 
     Parameters
     ----------
-    staypoints : GeoDataFrame
+    staypoints : GeoDataFrame (as trackintel staypoints)
         The staypoints to plot.
-    
+
     out_filename : str, optional
         The file to plot to, if this is not set, the plot will simply be shown.
 
     radius : float, optional
         The radius in meter with which circles around staypoints should be drawn.
 
-    positionfixes : GeoDataFrame, optional
+    positionfixes : GeoDataFrame (as trackintel positionfixes), optional
         If available, some positionfixes that can additionally be plotted.
 
     plot_osm : bool, default False
-        If this is set to True, it will download an OSM street network and plot 
+        If this is set to True, it will download an OSM street network and plot
         below the staypoints.
 
     axis : matplotlib.pyplot.Artist, optional
@@ -60,12 +62,13 @@ def plot_staypoints(staypoints, out_filename=None, radius=None, positionfixes=No
         radius = 100
     center_latitude = (ax.get_ylim()[0] + ax.get_ylim()[1]) / 2
     radius = meters_to_decimal_degrees(radius, center_latitude)
-    for pt in staypoints.to_dict('records'):
-        circle = mpatches.Circle((pt[name_geocol].x, pt[name_geocol].y), radius,
-                                 facecolor='none', edgecolor='g', zorder=3)
+    for pt in staypoints.to_dict("records"):
+        circle = mpatches.Circle(
+            (pt[name_geocol].x, pt[name_geocol].y), radius, facecolor="none", edgecolor="g", zorder=3
+        )
         ax.add_artist(circle)
 
     if out_filename is not None:
-        save_fig(out_filename, formats=['png'])
+        save_fig(out_filename, formats=["png"])
     elif axis is None:
         plt.show()
