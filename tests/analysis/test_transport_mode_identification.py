@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import datetime
 import os
 
-import pytest
 import numpy as np
-import geopandas as gpd
-from numpy.testing import assert_almost_equal
+import pytest
 
 import trackintel as ti
-from trackintel.io.dataset_reader import read_geolife
 
 
 class TestTransportModeIdentification:
@@ -30,9 +26,8 @@ class TestTransportModeIdentification:
         tpls_file = os.path.join('tests', 'data', 'triplegs_transport_mode_identification.csv')
         tpls = ti.read_triplegs_csv(tpls_file, sep=';', index_col="id")
 
-        with pytest.warns(UserWarning, 
-                          match='Your data is not projected. WGS84 is assumed and for length ' + 
-                          'calculation the haversine distance is used'):
+        with pytest.warns(UserWarning, match='Your data is not projected. WGS84 is assumed and for length calculation'
+                                             ' the haversine distance is used'):
             tpls_transport_mode = tpls.as_triplegs.predict_transport_mode(method='simple-coarse')
 
         assert tpls_transport_mode.iloc[0]['mode'] == 'slow_mobility'
@@ -62,13 +57,12 @@ class TestTransportModeIdentification:
         assert tpls_transport_mode_3.iloc[2]['mode'] == 'fast_mobility'
 
     def test_simple_coarse_identification_geographic(self):
-        """Asserts the correct behaviour with data in geographic coordinate systems."""
+        """Asserts that a warning is thrown if data in non-WGS geographic coordinate systems."""
         tpls_file = os.path.join('tests', 'data', 'triplegs_transport_mode_identification.csv')
         tpls = ti.read_triplegs_csv(tpls_file, sep=';', index_col="id")
         tpls_2 = tpls.set_crs(epsg=4326)
         tpls_4 = tpls_2.to_crs(epsg=4269)
-        with pytest.raises(UserWarning,
-                           match='Your data is in a geographic coordinate system, length calculation fails'):
+        with pytest.warns(UserWarning):
             tpls_4.as_triplegs.predict_transport_mode(method='simple-coarse')
 
     def test_check_categories(self):
