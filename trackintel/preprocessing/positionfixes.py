@@ -209,6 +209,7 @@ def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints
         # Case 2: Staypoints are provided but positionfixes do not have a column 'staypoint_id'
         # case 3: Staypoints are not provided but positionfixes have a column 'staypoint_id'
 
+
         if staypoints is not None and "staypoint_id" in ret_pfs:
             case = 1
         elif staypoints is not None:
@@ -225,6 +226,8 @@ def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints
 
             positionfixes_user_this = ret_pfs.loc[ret_pfs['user_id'] == user_id_this].sort_values(
                 'tracked_at')  # this is no copy
+            if positionfixes_user_this.empty:
+                continue
 
             # Case 1: Staypoints exist and are connected to positionfixes by user id
             if case == 1:
@@ -389,6 +392,9 @@ def _triplegs_between_staypoints_case1(positionfixes, staypoints, user_id_this):
 
     generated_triplegs_list = []
     spts = staypoints.loc[staypoints['user_id'] == user_id_this].sort_values('started_at')
+    if spts.empty:
+        return []
+
     spts = spts.reset_index().to_dict('records')
 
     for spt1, spt2 in zip(list(spts), list(spts)[1:]):
@@ -444,10 +450,13 @@ def _triplegs_between_staypoints_case2(positionfixes, staypoints, user_id_this):
 
     """
     generated_triplegs_list = []
-    stps = staypoints.loc[staypoints['user_id'] == user_id_this].sort_values('started_at')
-    stps = stps.reset_index().to_dict('records')
+    spts = staypoints.loc[staypoints['user_id'] == user_id_this].sort_values('started_at')
+    if spts.empty:
+        return []
+
+    spts = spts.reset_index().to_dict('records')
     positionfixes = positionfixes.sort_values('tracked_at')
-    for stp1, stp2 in zip(list(stps), list(stps)[1:]):
+    for stp1, stp2 in zip(list(spts), list(spts)[1:]):
         # - Get all positionfixes that lie between these two staypoints by comparing timestamps.
         # - generate tripleg
 
@@ -457,12 +466,12 @@ def _triplegs_between_staypoints_case2(positionfixes, staypoints, user_id_this):
         generated_triplegs_list.append(__get_tripleg_record_from_psfs(pfs_tripleg, user_id_this, min_nb_of_points=3))
 
     # add first tripleg
-    pfs_first_tripleg = positionfixes[positionfixes['tracked_at'] <= stps[0]['started_at']]
+    pfs_first_tripleg = positionfixes[positionfixes['tracked_at'] <= spts[0]['started_at']]
     generated_triplegs_list = [__get_tripleg_record_from_psfs(pfs_first_tripleg, user_id_this, min_nb_of_points=2
                                                               )] + generated_triplegs_list
 
     # add last tripleg
-    pfs_first_tripleg = positionfixes[positionfixes['tracked_at'] >= stps[-1]['finished_at']]
+    pfs_first_tripleg = positionfixes[positionfixes['tracked_at'] >= spts[-1]['finished_at']]
     generated_triplegs_list.append(__get_tripleg_record_from_psfs(pfs_first_tripleg, user_id_this, min_nb_of_points=2))
 
     # filter None values

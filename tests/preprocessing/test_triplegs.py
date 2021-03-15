@@ -1,7 +1,7 @@
 import os
 
-import numpy as np
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 from shapely.geometry import Point, LineString
 
@@ -33,7 +33,7 @@ class TestGenerate_trips():
         trips_loaded = ti.read_trips_csv(os.path.join('tests', 'data', 'geolife_long', 'trips.csv'), index_col='id')
 
         # create trips from geolife (based on positionfixes)
-        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25,
                                                              time_threshold=5 * 60)
         stps = stps.as_staypoints.create_activity_flag()
@@ -47,13 +47,13 @@ class TestGenerate_trips():
     def test_generate_trips_missing_link(self):
         """Test nan is assigned for missing link between spts and trips, and tpls and trips."""
         # create trips from geolife (based on positionfixes)
-        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
-        pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', 
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                              dist_threshold=25,
                                                              time_threshold=5 * 60)
         stps = stps.as_staypoints.create_activity_flag()
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
-        
+
         # generate trips and a joint staypoint/triplegs dataframe
         stps, tpls, _ = ti.preprocessing.triplegs.generate_trips(stps, tpls,
                                                                  gap_threshold=15,
@@ -65,16 +65,16 @@ class TestGenerate_trips():
     def test_generate_trips_dtype_consistent(self):
         """Test the dtypes for the generated columns."""
         # create trips from geolife (based on positionfixes)
-        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
-        pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', 
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                              dist_threshold=25,
                                                              time_threshold=5 * 60)
         stps = stps.as_staypoints.create_activity_flag()
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
-        
+
         # generate trips and a joint staypoint/triplegs dataframe
         stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls,
-                                                                     gap_threshold=15, 
+                                                                     gap_threshold=15,
                                                                      id_offset=0)
         
         assert stps['user_id'].dtype == trips['user_id'].dtype
@@ -87,7 +87,7 @@ class TestGenerate_trips():
     
     def test_generate_trips_index_start(self):
         """Test the generated index start from 0 for different methods."""
-        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                              dist_threshold=25,
                                                              time_threshold=5 * 60)
@@ -169,7 +169,7 @@ class TestGenerate_trips():
         stps_tpls_loaded['finished_at'] = pd.to_datetime(stps_tpls_loaded['finished_at'])
 
         # create trips from geolife (based on positionfixes)
-        pfs = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
         stps = stps.as_staypoints.create_activity_flag()
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
