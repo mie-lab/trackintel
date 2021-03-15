@@ -25,6 +25,8 @@ Staypoints
 Triplegs
 ========
 
+.. autofunction:: trackintel.visualization.triplegs.plot_triplegs
+
 Locations
 =========
 
