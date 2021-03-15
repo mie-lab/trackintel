@@ -1,9 +1,6 @@
-
-import trackintel as ti
-from trackintel.geogr.distances import haversine_dist
-import geopandas as gpd
-import warnings
 import numpy as np
+
+from trackintel.geogr.distances import check_wgs_for_distance_calculation, calc_haversine_length_of_linestrings
 
 
 def predict_transport_mode(triplegs, method='simple-coarse', **kwargs):
@@ -36,7 +33,7 @@ def predict_transport_mode(triplegs, method='simple-coarse', **kwargs):
     """
     if method == 'simple-coarse':
         # implemented as keyword argument if later other methods that don't use categories are added
-        categories = kwargs.pop('categories', {15/3.6: 'slow_mobility', 100/3.6: 'motorized_mobility',
+        categories = kwargs.pop('categories', {15 / 3.6: 'slow_mobility', 100 / 3.6: 'motorized_mobility',
                                                np.inf: 'fast_mobility'})
 
         return predict_transport_mode_simple_coarse(triplegs, categories)
@@ -44,7 +41,7 @@ def predict_transport_mode(triplegs, method='simple-coarse', **kwargs):
         raise NameError(f'Method {method} not known for predicting tripleg transport modes.')
 
 
-def predict_transport_mode_simple_coarse(triplegs, categories):
+def predict_transport_mode_simple_coarse(triplegs_in, categories):
     """
     Predict a transport mode out of three coarse classes. 
     
@@ -75,24 +72,18 @@ def predict_transport_mode_simple_coarse(triplegs, categories):
     :func:`trackintel.analysis.transport_mode_identification.predict_transport_mode`.
 
     """
-    if not(check_categories(categories)):
-        raise ValueError('the catecories must be in increasing order')
+    if not (check_categories(categories)):
+        raise ValueError('the categories must be in increasing order')
 
-    triplegs = triplegs.copy()
-    wgs = False
+    triplegs = triplegs_in.copy()
+    wgs = check_wgs_for_distance_calculation(triplegs.crs)
+    #
+    if wgs:
+        triplegs['distance'] = calc_haversine_length_of_linestrings(triplegs)
+    else:
+        triplegs['distance'] = triplegs.length
 
-    if triplegs.crs == 4326:
-        wgs = True
-
-    elif triplegs.crs is None:
-        wgs = True
-        warnings.warn('Your data is not projected. WGS84 is assumed and for length calculation the haversine '
-                      'distance is used')
-
-    elif triplegs.crs.is_geographic:
-        raise UserWarning('Your data is in a geographic coordinate system, length calculation fails')
-
-    def identify_mode(tripleg, wgs, categories):
+    def identify_mode(tripleg, categories):
         """
         Identify the mode based on the (overall) tripleg speed.
 
@@ -110,21 +101,15 @@ def predict_transport_mode_simple_coarse(triplegs, categories):
         str
             the identified mode.
         """
-        # Computes distance over whole tripleg geometry (using the Haversine distance).
-        if wgs:
-            distance = sum([haversine_dist(pt1[0], pt1[1], pt2[0], pt2[1]) for pt1, pt2
-                            in zip(tripleg.geom.coords[:-1], tripleg.geom.coords[1:])])
-        else:
-            distance = tripleg.geom.length
 
         duration = (tripleg['finished_at'] - tripleg['started_at']).total_seconds()
-        speed = distance / duration  # The unit of the speed is m/s
+        speed = tripleg['distance'] / duration  # The unit of the speed is m/s
 
         for bound in categories:
             if speed < bound:
                 return categories[bound]
 
-    triplegs['mode'] = triplegs.apply(lambda l: identify_mode(l, wgs, categories), axis=1)
+    triplegs['mode'] = triplegs.apply(lambda l: identify_mode(l, categories), axis=1)
     return triplegs
 
 
@@ -145,7 +130,7 @@ def check_categories(cat):
     """
     correct = True
     bounds = list(cat.keys())
-    for i in range(len(bounds)-1):
-        if bounds[i] >= bounds[i+1]:
+    for i in range(len(bounds) - 1):
+        if bounds[i] >= bounds[i + 1]:
             correct = False
     return correct
