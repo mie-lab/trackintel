@@ -1,14 +1,15 @@
 import multiprocessing
+import warnings
 from functools import partial
 from math import cos, pi
 
 import numpy as np
+import pandas as pd
 from scipy.spatial.distance import cdist
 from sklearn.metrics import pairwise_distances
 
 from trackintel.geogr.point_distances import haversine_dist
 from trackintel.geogr.trajectory_distances import dtw, frechet_dist
-import warnings
 
 
 def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kwds):
@@ -63,7 +64,6 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
         y1 = X.geometry.y.values
         x2 = Y.geometry.x.values
         y2 = Y.geometry.y.values
-
 
         if dist_metric == 'haversine':
             # create point pairs for distance calculation
@@ -151,7 +151,6 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
         raise AttributeError(f"We only support 'Point' and 'LineString'. Your geometry is {geom_type}")
 
 
-
 def meters_to_decimal_degrees(meters, latitude):
     """Converts meters to decimal degrees (approximately).
 
@@ -170,3 +169,96 @@ def meters_to_decimal_degrees(meters, latitude):
         An approximation of a distance (given in meters) in degrees.
     """
     return meters / (111.32 * 1000.0 * cos(latitude * (pi / 180.0)))
+
+
+def check_wgs_for_distance_calculation(crs):
+    """
+    This functions evaluates if the crs is wgs 84 and warns if no crs is defined.
+
+    Parameters
+    ----------
+    crs : 'pyproj.crs.crs.CRS'
+        Can be the result of `gdf.crs`
+
+    Returns
+    -------
+    is_wgs : bool
+        True if wgs84 is assumed
+
+    Notes
+    ______
+    We do not check for planar crs as this is already done when geopandas.length is called.
+
+    Examples
+    ---------
+    >>> from trackintel.geogr.distances import check_wgs_for_distance_calculation
+    >>> check_wgs_for_distance_calculation(triplegs.crs)
+    """
+
+    is_wgs = False
+
+    if crs == 4326:
+        is_wgs = True
+
+    elif crs is None:
+        is_wgs = True
+        warnings.warn('Your data is not projected. WGS84 is assumed and for length calculation the haversine '
+                      'distance is used')
+    return is_wgs
+
+
+def calc_haversine_length_of_linestrings(gdf):
+    """
+    Calculate the length of linestrings using the haversine distance.
+
+    Parameters
+    ----------
+    gdf : GeoDataFrame with linestring geometry
+        The coordinates are expected to be in WGS84
+
+    Returns
+    -------
+    length: Pandas Series
+        The length of each linestring in meters
+
+    Examples
+    --------
+    >>> from trackintel.geogr.distances import calc_haversine_length_of_linestrings
+    >>> triplegs['length'] = calc_haversine_length_of_linestrings(triplegs)
+    """
+
+    assert all(gdf.geom_type == "LineString")
+
+    length = gdf.geometry.apply(calc_haversine_length_of_single_linestring)
+    return length
+
+
+def calc_haversine_length_of_single_linestring(linestring):
+    """
+    calculate the length of a single linestring using the haversine distance
+
+    Parameters
+    ----------
+    linestring : 'shapely.geometry.linestring.LineString'
+        Coordinates of the linestring are expected to be in WGS84
+
+    Returns
+    -------
+    int
+        length of the linestring in meter
+
+    Examples
+    --------
+    >>> from shapely.geometry import LineString
+    >>> from trackintel.geogr.distances import calc_haversine_length_of_single_linestring
+    >>> ls = LineString([(13.476808430, 48.573711823), (11.5675446, 48.1485459), (8.5067847, 47.4084269)])
+    >>> calc_haversine_length_of_single_linestring(ls)
+    """
+
+    coords_df = pd.DataFrame(linestring.xy, index=['x_0', 'y_0']).transpose()
+    coords_df['x_1'] = coords_df['x_0'].shift(-1)
+    coords_df['y_1'] = coords_df['y_0'].shift(-1)
+    coords_df.dropna(axis=0, inplace=True)
+
+    distances = haversine_dist(coords_df.x_0, coords_df.y_0, coords_df.x_1, coords_df.y_1)
+    return np.sum(distances)

@@ -1,11 +1,51 @@
 import os
 from math import radians
 
+import geopandas as gpd
 import numpy as np
+import pytest
+from shapely import wkt
+from shapely.geometry import LineString
 from sklearn.metrics import pairwise_distances
 
 import trackintel as ti
-from trackintel.geogr.distances import meters_to_decimal_degrees, calculate_distance_matrix
+from trackintel.geogr.distances import meters_to_decimal_degrees, calculate_distance_matrix, \
+    calc_haversine_length_of_linestrings, calc_haversine_length_of_single_linestring
+
+
+@pytest.fixture
+def ls_short():
+    return LineString([(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)])
+
+
+@pytest.fixture
+def ls_long():
+    return LineString([(13.476808430, 48.573711823), (11.5675446, 48.1485459), (8.5067847, 47.4084269)])
+
+
+@pytest.fixture
+def gdf_ls(ls_short, ls_long):
+    a_list = [(0, ls_short), (1, ls_long)]
+    gdf = gpd.GeoDataFrame(a_list, columns=['id', 'geometry']).set_geometry('geometry')
+    gdf = gdf.set_crs('wgs84')
+    return gdf
+
+
+@pytest.fixture
+def single_linestring():
+    # measured length in qgis: ~1024 m
+
+    return wkt.loads("""LineString(13.47671401745228259 
+    48.57364142178052901, 13.47510901146785933
+    48.5734004715611789, 13.47343656825720082
+    48.57335585102421049, 13.47172366271079369
+    48.57318629262447018, 13.4697275208142031
+    48.57325768570418489, 13.4680415901582915
+    48.57348971251707326, 13.46604544826169914
+    48.57348971251707326, 13.46473716607271243
+    48.57319521676494389, 13.46319959731452798
+    48.57253482611510975, 13.46319959731452798
+    48.57253482611510975)""")
 
 
 class TestCalculate_distance_matrix:
@@ -40,9 +80,8 @@ class TestCalculate_distance_matrix:
         d_mink2 = calculate_distance_matrix(X=x, Y=x, dist_metric='minkowski', p=2)
         d_euc = calculate_distance_matrix(X=x, Y=x, dist_metric='euclidean')
 
-        assert not np.array_equal(d_mink1,d_mink2)
+        assert not np.array_equal(d_mink1, d_mink2)
         assert np.array_equal(d_euc, d_mink2)
-
 
     def test_compare_haversine_to_scikit_xy(self):
         spts_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
@@ -57,7 +96,7 @@ class TestCalculate_distance_matrix:
         yx = np.concatenate((y_rad.reshape(-1, 1), x_rad.reshape(-1, 1)), axis=1)
 
         their_d_matrix = pairwise_distances(yx, metric='haversine') * 6371000
-        assert np.allclose(np.abs(our_d_matrix - their_d_matrix), 0, atol=0.001) # atol = 1mm
+        assert np.allclose(np.abs(our_d_matrix - their_d_matrix), 0, atol=0.001)  # atol = 1mm
 
     def test_trajectory_distance(self):
         tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv')
@@ -89,7 +128,6 @@ class TestCalculate_distance_matrix:
         assert np.isclose(np.sum(np.abs(D_single - D_multi)), 0)
 
 
-
 class TestMetersToDecimalDegrees:
     def test_meters_to_decimal_degrees(self):
         input_result_dict = {1.0: {0: 111320, 23: 102470, 45: 78710, 67: 43496},
@@ -99,8 +137,17 @@ class TestMetersToDecimalDegrees:
 
         for degree, lat_output in input_result_dict.items():
             for lat, meters in lat_output.items():
-
                 decimal_degree_output = meters_to_decimal_degrees(meters, lat)
                 assert np.isclose(decimal_degree_output, degree, atol=0.1)
 
 
+class Testcalc_haversine_length_of_linestring:
+    def test_distance(self, gdf_ls):
+        dist = calc_haversine_length_of_linestrings(gdf_ls)
+
+
+class TestCalc_haversine_length_of_single_linestring:
+    def test_calc_haversine_length_of_single_linestring(self, single_linestring):
+        length = calc_haversine_length_of_single_linestring(single_linestring)
+
+        assert length > 1020 and length < 1030
