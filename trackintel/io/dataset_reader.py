@@ -186,7 +186,6 @@ def geolife_add_modes_to_triplegs(tpls_in, labels, ratio_threshold=0.5, max_trip
     tpls_id_mode_list = list()
 
     for user_this in all_users:
-        print(user_this)
         tpls_this = tpls[tpls['user_id'] == user_this]
         labels_this = labels[user_this]
         if labels_this.empty:
@@ -253,8 +252,8 @@ def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_thres
     Returns
     -------
     tpls_id_mode_list : list
-    tpls_id_mode_list is used to collect tripleg-mode matches. It will be filled with dictionaries with the
-    following keys: [id', 'label_id', 'mode']
+        tpls_id_mode_list is used to collect tripleg-mode matches. It will be filled with dictionaries with the
+        following keys: [id', 'label_id', 'mode']
 
     Notes
     ------
@@ -267,8 +266,8 @@ def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_thres
     # iterate all rows
     for label_pos, row in candidates.iterrows():
         potential_label = labels_this.iloc[label_pos, :]
-        # for every row, iterate all columns
-        for cand_col, tpls_pos in row.iteritems():
+        # for every row, iterate all columns. Unused column index would indicate the nth column.
+        for _, tpls_pos in row.iteritems():
 
             # skip if tripleg was prefiltered and set to nan
             if pd.isna(tpls_pos):
