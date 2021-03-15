@@ -40,6 +40,7 @@ def temporal_tracking_quality(source, granularity="all"):
     df.reset_index(inplace=True)
     if granularity == "all":
         quality = df.groupby("user_id", as_index=False).apply(_get_tracking_quality_user, granularity)
+
     elif granularity == "day":
         # split records that span several days
         df = _split_overlaps(df, granularity=granularity)
@@ -48,9 +49,12 @@ def temporal_tracking_quality(source, granularity="all"):
         df["day"] = df["started_at"].apply(lambda x: (x.date() - start_date).days)
         # calculate per-user per-day tracking quality
         quality = df.groupby(["user_id", "day"], as_index=False).apply(_get_tracking_quality_user, granularity)
+
     elif granularity == "hour":
-        # split records that span several hours
-        df = _split_overlaps(df, granularity="hour")
+        # first do a day split to speed up the hour split
+        df = _split_overlaps(df, granularity="day")
+        df = _split_overlaps(df, granularity=granularity)
+
         # get the tracked day relative to the first day
         start_date = df["started_at"].min().date()
         df["day"] = df["started_at"].apply(lambda x: (x.date() - start_date).days)
@@ -58,8 +62,10 @@ def temporal_tracking_quality(source, granularity="all"):
         df["hour"] = df["started_at"].dt.hour
         # calculate per-user per-hour tracking quality
         quality = df.groupby(["user_id", "hour"], as_index=False).apply(_get_tracking_quality_user, granularity)
+
     else:
         raise AttributeError(f"granularity unknown. We only support ['all', 'day', 'hour']. You passed {granularity}")
+
     return quality
 
 
