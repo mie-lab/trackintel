@@ -105,7 +105,13 @@ def read_geolife(geolife_path):
 
         # extract user id from path
         _, tail = ntpath.split(user_folder_this)
-        user_id = int(tail)
+        try:
+            user_id = int(tail)
+        except ValueError as err:
+            errmsg = "Invalid user_id '{}' found in geolife path '{}'. The geolife path can only contain folders" \
+                     " named with integers that represent the user id.".format(tail, user_folder_this)
+            raise Exception(errmsg) from err
+
         print("start importing geolife user_id: ", user_id)
 
         input_files = sorted(glob.glob(os.path.join(
