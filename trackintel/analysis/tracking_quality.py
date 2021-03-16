@@ -12,10 +12,10 @@ def temporal_tracking_quality(source, granularity="all"):
     df : GeoDataFrame (as trackintel datamodels)
         The source dataframe to calculate temporal tracking quality.
 
-    granularity : {"all", "day", "hour"}, default="all"
-        The level of which the tracking quality is claculated. The default "all" returns
-        the overall tracking quality, and "day" and "hour" returns the tracking quality
-        by days and hours, respectively.
+    granularity : {"all", "day", "week", "weekday", "hour"}, default "all"
+        The level of which the tracking quality is calculated. The default "all" returns
+        the overall tracking quality; "day" the tracking quality by days; "week" the quality
+        by weeks; "weekday" the quality by weekdays and "hour" the quality by hours.
 
     Returns
     -------
@@ -27,7 +27,8 @@ def temporal_tracking_quality(source, granularity="all"):
     The temporal tracking quality is the time proportion of tracked period with the possible
     time extent. The possible time extents of the different granularities are different: "all"
     considers the time between the latest "finished_at" and the earliest "started_at", whereas
-    "day" considers the whole day (86400 sec) and "hour" considers the whole hour (3600 sec).
+    "week" considers the whole week (604800 sec), "day" and "weekday" considers the whole day
+    (86400 sec) and "hour" considers the whole hour (3600 sec).
 
     Examples
     --------
@@ -49,6 +50,27 @@ def temporal_tracking_quality(source, granularity="all"):
         df["day"] = df["started_at"].apply(lambda x: (x.date() - start_date).days)
         # calculate per-user per-day tracking quality
         quality = df.groupby(["user_id", "day"], as_index=False).apply(_get_tracking_quality_user, granularity)
+
+    elif granularity == "week":
+        # split records that span several days
+        df = _split_overlaps(df, granularity="day")
+        # get the tracked week relative to the first day
+        start_date = df["started_at"].min().date()
+        df["week"] = df["started_at"].apply(lambda x: (x.date() - start_date).days // 7)
+        # calculate per-user per-week tracking quality
+        quality = df.groupby(["user_id", "week"], as_index=False).apply(_get_tracking_quality_user, granularity)
+
+    elif granularity == "weekday":
+        # split records that span several days
+        df = _split_overlaps(df, granularity="day")
+
+        # get the tracked week relative to the first day
+        start_date = df["started_at"].min().date()
+        df["week"] = df["started_at"].apply(lambda x: (x.date() - start_date).days // 7)
+        # get the weekday
+        df["weekday"] = df["started_at"].dt.weekday
+        # calculate per-user per-weekday tracking quality
+        quality = df.groupby(["user_id", "weekday"], as_index=False).apply(_get_tracking_quality_user, granularity)
 
     elif granularity == "hour":
         # first do a day split to speed up the hour split
@@ -78,9 +100,9 @@ def _get_tracking_quality_user(df, granularity="all"):
     df : GeoDataFrame (as trackintel datamodels)
         The source dataframe
 
-    granularity : {"all", "day", "hour"}, default "all"
+    granularity : {"all", "day", "weekday", "week", "hour"}, default "all"
         Determines the extent of the tracking. "all" the entire tracking period,
-        "day" a whole day and "hour" a whole hour.
+        "day" and "weekday" a whole day, "week" a whole week, and "hour" a whole hour.
 
     Returns
     -------
@@ -94,10 +116,17 @@ def _get_tracking_quality_user(df, granularity="all"):
     elif granularity == "day":
         # total seconds in a day
         extent = 60 * 60 * 24
+    elif granularity == "weekday":
+        # total seconds in an day * number of different weeks
+        # (entries from multiple weeks may be grouped together)
+        extent = 60 * 60 * 24 * df["week"].max()
+    elif granularity == "week":
+        # total seconds in a week
+        extent = 60 * 60 * 24 * 7
     elif granularity == "hour":
         # total seconds in an hour * number of different days
         # (entries from multiple days may be grouped together)
-        extent = (60 * 60) * len(df["day"].unique())
+        extent = (60 * 60) * df["day"].max()
     return pd.Series([tracked_duration / extent], index=["quality"])
 
 

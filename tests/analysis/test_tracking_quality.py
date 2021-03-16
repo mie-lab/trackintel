@@ -54,6 +54,52 @@ class TestTemporal_tracking_quality:
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["day"] == 0), "quality"].values[0]
 
+    def test_tracking_quality_week(self, testdata_stps_tpls_geolife_long):
+        """Test if the calculated tracking quality per week is correct."""
+        stps_tpls = testdata_stps_tpls_geolife_long
+
+        splitted = ti.analysis.tracking_quality._split_overlaps(stps_tpls, granularity="day")
+
+        # get the day relative to the start day
+        start_date = splitted["started_at"].min().date()
+        splitted["week"] = splitted["started_at"].apply(lambda x: (x.date() - start_date).days // 7)
+
+        print(splitted)
+        # calculate tracking quality of the first week for the first user
+        user_0 = splitted.loc[splitted["user_id"] == 0]
+        extent = 60 * 60 * 24 * 7
+        tracked = (user_0["finished_at"] - user_0["started_at"]).dt.total_seconds().sum()
+        quality_manual = tracked / extent
+
+        # test if the result of the user agrees
+        quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="week")
+
+        assert quality_manual == quality.loc[(quality["user_id"] == 0), "quality"].values[0]
+
+    def test_tracking_quality_weekday(self, testdata_stps_tpls_geolife_long):
+        """Test if the calculated tracking quality per weekday is correct."""
+        stps_tpls = testdata_stps_tpls_geolife_long
+
+        splitted = ti.analysis.tracking_quality._split_overlaps(stps_tpls, granularity="day")
+
+        # get the day relative to the start day
+        start_date = splitted["started_at"].min().date()
+        splitted["week"] = splitted["started_at"].apply(lambda x: (x.date() - start_date).days // 7)
+
+        splitted["weekday"] = splitted["started_at"].dt.weekday
+
+        print(splitted)
+        # calculate tracking quality of the first week for the first user
+        user_0 = splitted.loc[(splitted["user_id"] == 0) & (splitted["weekday"] == 3)]
+        extent = (60 * 60 * 24) * len(user_0["week"].unique())
+        tracked = (user_0["finished_at"] - user_0["started_at"]).dt.total_seconds().sum()
+        quality_manual = tracked / extent
+
+        # test if the result of the user agrees
+        quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="weekday")
+
+        assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["weekday"] == 3), "quality"].values[0]
+
     def test_tracking_quality_hour(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated tracking quality per hour is correct."""
         stps_tpls = testdata_stps_tpls_geolife_long
