@@ -88,10 +88,9 @@ class TestTemporal_tracking_quality:
 
         splitted["weekday"] = splitted["started_at"].dt.weekday
 
-        print(splitted)
         # calculate tracking quality of the first week for the first user
         user_0 = splitted.loc[(splitted["user_id"] == 0) & (splitted["weekday"] == 3)]
-        extent = (60 * 60 * 24) * len(user_0["week"].unique())
+        extent = (60 * 60 * 24) * (user_0["week"].max() - user_0["week"].min() + 1)
         tracked = (user_0["finished_at"] - user_0["started_at"]).dt.total_seconds().sum()
         quality_manual = tracked / extent
 
@@ -114,7 +113,7 @@ class TestTemporal_tracking_quality:
 
         # calculate tracking quality of an hour for the first user
         user_0 = splitted.loc[(splitted["user_id"] == 0) & (splitted["hour"] == 2)]
-        extent = (60 * 60) * len(user_0["day"].unique())
+        extent = (60 * 60) * (user_0["day"].max() - user_0["day"].min() + 1)
         tracked = (user_0["finished_at"] - user_0["started_at"]).dt.total_seconds().sum()
         quality_manual = tracked / extent
 
