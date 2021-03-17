@@ -4,11 +4,10 @@ import sys
 from math import radians
 
 import geopandas as gpd
-from geopandas.testing import assert_geodataframe_equal
-
 import numpy as np
 import pandas as pd
 import pytest
+from geopandas.testing import assert_geodataframe_equal
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
 
@@ -225,15 +224,16 @@ class TestGenerate_triplegs():
         """
 
         pfs, stps = geolife_pfs_stps_long
-
-        pfs_case1, tpls_case1 = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
-        pfs_case2, tpls_case2 = pfs.drop('staypoint_id',
-                                         axis=1).as_positionfixes.generate_triplegs(stps, method='between_staypoints')
+        #
+        # pfs_case1, tpls_case1 = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
+        # pfs_case2, tpls_case2 = pfs.drop('staypoint_id',
+        #                                  axis=1).as_positionfixes.generate_triplegs(stps, method='between_staypoints')
         pfs_case3, tpls_case3 = pfs.as_positionfixes.generate_triplegs(method='between_staypoints')
-        
-        assert_geodataframe_equal(pfs_case1.drop('staypoint_id', axis=1), pfs_case2, check_less_precise=True, check_like=True)
+
+        assert_geodataframe_equal(pfs_case1.drop('staypoint_id', axis=1), pfs_case2, check_less_precise=True,
+                                  check_like=True)
         assert_geodataframe_equal(pfs_case1, pfs_case3, check_less_precise=True, check_like=True)
-        
+
         assert_geodataframe_equal(tpls_case1, tpls_case2, check_less_precise=True, check_like=True)
         assert_geodataframe_equal(tpls_case1, tpls_case3, check_less_precise=True, check_like=True)
 
