@@ -6,7 +6,7 @@ import numpy as np
 
 def temporal_tracking_quality(source, granularity="all"):
     """
-    Calculate per-user temporal tracking quality.
+    Calculate per-user temporal tracking quality defined as the temporal coverage.
 
     Parameters
     ----------
@@ -16,7 +16,8 @@ def temporal_tracking_quality(source, granularity="all"):
     granularity : {"all", "day", "week", "weekday", "hour"}, default "all"
         The level of which the tracking quality is calculated. The default "all" returns
         the overall tracking quality; "day" the tracking quality by days; "week" the quality
-        by weeks; "weekday" the quality by weekdays and "hour" the quality by hours.
+        by weeks; "weekday" the quality by day of the week (e.g, Mondays, Tuesdays, etc.) and "hour" the
+        quality by hours.
 
     Returns
     -------
@@ -25,14 +26,17 @@ def temporal_tracking_quality(source, granularity="all"):
 
     Note
     ----
-    The temporal tracking quality is the time proportion of tracked period with the possible
-    time extent. The possible time extents of the different granularities are different: "all"
-    considers the time between the latest "finished_at" and the earliest "started_at", whereas
-    "week" considers the whole week (604800 sec), "day" and "weekday" considers the whole day
-    (86400 sec) and "hour" considers the whole hour (3600 sec).
+    The temporal tracking quality is the ratio of tracking time and the total time extent. It is
+    calculated and returned per-user in the defined granularity. The possible time extents of the
+    different granularities are different:
 
-    The tracking quality of each user is calculated based on his or her own tracking extent. But
-    for granularity = "day" or "week", the quality["day"] or quality["week"] column displays the
+    - "all" considers the time between the latest "finished_at" and the earliest "started_at";
+    - "week" considers the whole week (604800 sec)
+    - "day" and "weekday" consider the whole day (86400 sec)
+    - "hour" considers the whole hour (3600 sec).
+
+    The tracking quality of each user is calculated based on his or her own tracking extent.
+    For granularity = "day" or "week", the quality["day"] or quality["week"] column displays the
     time relative to the first record in the entire dataset.
 
     Examples
@@ -112,15 +116,14 @@ def temporal_tracking_quality(source, granularity="all"):
 
 def _get_all_quality(df, raw_quality, granularity):
     """
-    Construct the full tracking quality based on the calculated raw_quality.
+    Add tracking quality values for empty bins.
 
-    As raw_quality is calcuated using groupby, the units that has entirely no tracking info
-    is not included in raw_quality (quality = 0). They are added using this function.
+    raw_quality is calculated using `groupby` and does not report bins (=granularties) with
+    quality = 0. This function adds these values.
 
     Parameters
     ----------
     df : GeoDataFrame (as trackintel datamodels)
-        The source dataframe
 
     raw_quality: DataFrame
         The calculated raw tracking quality directly from the groupby operations.
@@ -193,13 +196,13 @@ def _split_overlaps(source, granularity="day"):
         The source to perform the split
 
     granularity : {'day', 'hour'}, default 'day'
-        The criteria of spliting. "day" splits records that have duration of several
+        The criteria of splitting. "day" splits records that have duration of several
         days and "hour" splits records that have duration of several hours.
 
     Returns
     -------
     GeoDataFrame (as trackintel datamodels)
-        The GeoDataFrame object after the spliting
+        The GeoDataFrame object after the splitting
     """
     df = source.copy()
     change_flag = __get_split_index(df, granularity=granularity)
