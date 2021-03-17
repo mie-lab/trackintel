@@ -1,5 +1,5 @@
-import pandas as pd
 import geopandas as gpd
+import pandas as pd
 from geoalchemy2 import Geometry, WKTElement
 from sqlalchemy import create_engine
 
@@ -99,7 +99,8 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
         conn.close()
 
 
-def read_triplegs_postgis(conn_string, table_name, geom_col='geom', *args, **kwargs):
+def read_triplegs_postgis(sql, con, geom_col='geom', crs=None,
+                          index_col=None, coerce_float=True, parse_dates=None, params=None, chunksize=None):
     """Reads triplegs from a PostGIS database.
 
     Parameters
@@ -121,8 +122,13 @@ def read_triplegs_postgis(conn_string, table_name, geom_col='geom', *args, **kwa
     """
     engine = create_engine(conn_string)
     conn = engine.connect()
+
+    conn_string, table_name
+
+    triplegs_from_gpd
+
     try:
-        pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, 
+        pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn,
                                             geom_col=geom_col, index_col='id',
                                             *args, **kwargs)
     finally:
@@ -131,8 +137,8 @@ def read_triplegs_postgis(conn_string, table_name, geom_col='geom', *args, **kwa
     return pfs
 
 
-def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None,
-                           sql_chunksize=None, if_exists='replace'):
+def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None, if_exists='replace',
+                           *args, **kwargs):
     """Stores triplegs to PostGIS. Usually, this is directly called on a triplegs 
     DataFrame (see example below).
 
@@ -143,7 +149,7 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None,
     triplegs : GeoDataFrame
         The triplegs to store to the database.
 
-    conn_string : str
+    conn_string : engine or str
         A connection string to connect to a database, e.g., 
         ``postgresql://username:password@host:socket/database``.
     
@@ -163,25 +169,15 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None,
     --------
     >>> df.as_triplegs.to_postgis(conn_string, table_name)
     """
-    
-    # make a copy in order to avoid changing the geometry of the original array
-    triplegs_postgis = triplegs.copy()
-    
-    srid = int(triplegs_postgis.crs.to_epsg())
-    triplegs_postgis['geom'] = \
-        triplegs_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=srid))
-    if 'id' not in triplegs_postgis.columns:
-        triplegs_postgis['id'] = triplegs_postgis.index
 
-    engine = create_engine(conn_string)
-    conn = engine.connect()
-    try:
-        triplegs_postgis.to_sql(table_name, engine, schema=schema,
-                                if_exists=if_exists, index=False, 
-                                dtype={'geom': Geometry('LINESTRING', srid=srid)},
-                                chunksize=sql_chunksize)
-    finally:
-        conn.close()
+    if isinstance(conn_string, str):
+        engine = create_engine(conn_string)
+    else:
+        engine = conn_string
+
+    index_name = triplegs.index.name
+    triplegs.to_postgis(table_name, con=engine, schema=schema, if_exists=if_exists, index=True, index_label=index_name,
+                        *args, **kwargs)
 
 
 def read_staypoints_postgis(conn_string, table_name, geom_col='geom', *args, **kwargs):
