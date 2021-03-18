@@ -10,7 +10,7 @@ from sklearn.metrics import pairwise_distances
 
 import trackintel as ti
 from trackintel.geogr.distances import meters_to_decimal_degrees, calculate_distance_matrix, \
-    calc_haversine_length_of_linestrings, calc_haversine_length_of_single_linestring
+    calculate_haversine_length, _calculate_haversine_length_single
 
 
 @pytest.fixture
@@ -142,12 +142,16 @@ class TestMetersToDecimalDegrees:
 
 
 class Testcalc_haversine_length_of_linestring:
-    def test_distance(self, gdf_ls):
-        dist = calc_haversine_length_of_linestrings(gdf_ls)
+    def test_length(self, gdf_ls):
+        """check if `calculate_haversine_length` runs without errors"""
+        length = calculate_haversine_length(gdf_ls)
+
+        assert length[0] < length[1]
 
 
-class TestCalc_haversine_length_of_single_linestring:
-    def test_calc_haversine_length_of_single_linestring(self, single_linestring):
-        length = calc_haversine_length_of_single_linestring(single_linestring)
+class Test_calculate_haversine_length_single:
+    def Test_length(self, single_linestring):
+        """check if the length of a longer linestring is calculated correctly up to some meters"""
+        length = _calculate_haversine_length_single(single_linestring)
 
-        assert length > 1020 and length < 1030
+        assert 1020 < length < 1030

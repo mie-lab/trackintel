@@ -1,6 +1,6 @@
 import numpy as np
 
-from trackintel.geogr.distances import check_wgs_for_distance_calculation, calc_haversine_length_of_linestrings
+from trackintel.geogr.distances import check_wgs_for_distance_calculation, calculate_haversine_length
 
 
 def predict_transport_mode(triplegs, method='simple-coarse', **kwargs):
@@ -79,7 +79,7 @@ def predict_transport_mode_simple_coarse(triplegs_in, categories):
     wgs = check_wgs_for_distance_calculation(triplegs.crs)
     #
     if wgs:
-        triplegs['distance'] = calc_haversine_length_of_linestrings(triplegs)
+        triplegs['distance'] = calculate_haversine_length(triplegs)
     else:
         triplegs['distance'] = triplegs.length
 
@@ -109,7 +109,7 @@ def predict_transport_mode_simple_coarse(triplegs_in, categories):
             if speed < bound:
                 return categories[bound]
 
-    triplegs['mode'] = triplegs.apply(lambda l: identify_mode(l, categories), axis=1)
+    triplegs['mode'] = triplegs.apply(identify_mode, args=((categories,)), axis=1)
     return triplegs
 
 

@@ -207,7 +207,7 @@ def check_wgs_for_distance_calculation(crs):
     return is_wgs
 
 
-def calc_haversine_length_of_linestrings(gdf):
+def calculate_haversine_length(gdf):
     """
     Calculate the length of linestrings using the haversine distance.
 
@@ -223,17 +223,17 @@ def calc_haversine_length_of_linestrings(gdf):
 
     Examples
     --------
-    >>> from trackintel.geogr.distances import calc_haversine_length_of_linestrings
-    >>> triplegs['length'] = calc_haversine_length_of_linestrings(triplegs)
+    >>> from trackintel.geogr.distances import calculate_haversine_length
+    >>> triplegs['length'] = calculate_haversine_length(triplegs)
     """
 
     assert all(gdf.geom_type == "LineString")
 
-    length = gdf.geometry.apply(calc_haversine_length_of_single_linestring)
+    length = gdf.geometry.apply(_calculate_haversine_length_single)
     return length
 
 
-def calc_haversine_length_of_single_linestring(linestring):
+def _calculate_haversine_length_single(linestring):
     """
     calculate the length of a single linestring using the haversine distance
 
@@ -250,9 +250,9 @@ def calc_haversine_length_of_single_linestring(linestring):
     Examples
     --------
     >>> from shapely.geometry import LineString
-    >>> from trackintel.geogr.distances import calc_haversine_length_of_single_linestring
+    >>> from trackintel.geogr.distances import _calculate_haversine_length_single
     >>> ls = LineString([(13.476808430, 48.573711823), (11.5675446, 48.1485459), (8.5067847, 47.4084269)])
-    >>> calc_haversine_length_of_single_linestring(ls)
+    >>> _calculate_haversine_length_single(ls)
     """
 
     coords_df = pd.DataFrame(linestring.xy, index=['x_0', 'y_0']).transpose()
