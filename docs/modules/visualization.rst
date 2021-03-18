@@ -44,8 +44,8 @@ Locations
 Modal split
 ===========
 
-.. autofunction:: trackintel.visualization.modal_split.py
+.. autofunction:: trackintel.visualization.modal_split.plot_modal_split
 
 .. image:: /_static/example_modal_split_geolife.png
-   :scale: 50 %
+   :scale: 18 %
    :align: center

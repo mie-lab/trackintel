@@ -32,8 +32,10 @@ def calculate_modal_split(tpls_in, freq=None, metric='count', per_user=False, no
     Notes
     ------
         `freq='W-MON'` is used for a weekly aggregation that starts on mondays.
+
         If `freq=None` and `per_user=False` are passed the modal split collapses to a single column.
 
+        The modal split can be visualized using :func:`trackintel.visualization.modal_split.plot_modal_split`
 
     Examples
     --------

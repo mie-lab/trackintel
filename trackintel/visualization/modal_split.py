@@ -42,9 +42,9 @@ def plot_modal_split(df_modal_split_in, out_path=None, date_fmt_x_axis='%W', axi
 
     Examples
     --------
-    >>>modal_split = calculate_modal_split(triplegs, metric='count', freq='D', per_user=False)
-    >>>plot_modal_split(modal_split, out_path=tmp_file, date_fmt_x_axis='%d',
-    >>>                 y_label='Percentage of daily count', x_label='days')
+    >>> modal_split = calculate_modal_split(triplegs, metric='count', freq='D', per_user=False)
+    >>> plot_modal_split(modal_split, out_path=tmp_file, date_fmt_x_axis='%d',
+    >>>                  y_label='Percentage of daily count', x_label='days')
     """
 
     df_modal_split = df_modal_split_in.copy()
