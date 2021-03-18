@@ -54,6 +54,50 @@ class TestTemporal_tracking_quality:
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["day"] == 0), "quality"].values[0]
 
+    def test_tracking_quality_week(self, testdata_stps_tpls_geolife_long):
+        """Test if the calculated tracking quality per week is correct."""
+        stps_tpls = testdata_stps_tpls_geolife_long
+
+        splitted = ti.analysis.tracking_quality._split_overlaps(stps_tpls, granularity="day")
+
+        # get the day relative to the start day
+        start_date = splitted["started_at"].min().date()
+        splitted["week"] = splitted["started_at"].apply(lambda x: (x.date() - start_date).days // 7)
+
+        # calculate tracking quality of the first week for the first user
+        user_0 = splitted.loc[splitted["user_id"] == 0]
+        extent = 60 * 60 * 24 * 7
+        tracked = (user_0["finished_at"] - user_0["started_at"]).dt.total_seconds().sum()
+        quality_manual = tracked / extent
+
+        # test if the result of the user agrees
+        quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="week")
+
+        assert quality_manual == quality.loc[(quality["user_id"] == 0), "quality"].values[0]
+
+    def test_tracking_quality_weekday(self, testdata_stps_tpls_geolife_long):
+        """Test if the calculated tracking quality per weekday is correct."""
+        stps_tpls = testdata_stps_tpls_geolife_long
+
+        splitted = ti.analysis.tracking_quality._split_overlaps(stps_tpls, granularity="day")
+
+        # get the day relative to the start day
+        start_date = splitted["started_at"].min().date()
+        splitted["week"] = splitted["started_at"].apply(lambda x: (x.date() - start_date).days // 7)
+
+        splitted["weekday"] = splitted["started_at"].dt.weekday
+
+        # calculate tracking quality of the first week for the first user
+        user_0 = splitted.loc[(splitted["user_id"] == 0) & (splitted["weekday"] == 3)]
+        extent = (60 * 60 * 24) * (user_0["week"].max() - user_0["week"].min() + 1)
+        tracked = (user_0["finished_at"] - user_0["started_at"]).dt.total_seconds().sum()
+        quality_manual = tracked / extent
+
+        # test if the result of the user agrees
+        quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="weekday")
+
+        assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["weekday"] == 3), "quality"].values[0]
+
     def test_tracking_quality_hour(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated tracking quality per hour is correct."""
         stps_tpls = testdata_stps_tpls_geolife_long
@@ -68,7 +112,7 @@ class TestTemporal_tracking_quality:
 
         # calculate tracking quality of an hour for the first user
         user_0 = splitted.loc[(splitted["user_id"] == 0) & (splitted["hour"] == 2)]
-        extent = (60 * 60) * len(user_0["day"].unique())
+        extent = (60 * 60) * (user_0["day"].max() - user_0["day"].min() + 1)
         tracked = (user_0["finished_at"] - user_0["started_at"]).dt.total_seconds().sum()
         quality_manual = tracked / extent
 
@@ -78,13 +122,23 @@ class TestTemporal_tracking_quality:
         assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["hour"] == 2), "quality"].values[0]
 
     def test_tracking_quality_error(self, testdata_stps_tpls_geolife_long):
-        """Test if the an error is raised when passing unknown 'granularity'."""
+        """Test if the an error is raised when passing unknown 'granularity' to temporal_tracking_quality()."""
         stps_tpls = testdata_stps_tpls_geolife_long
 
         with pytest.raises(AttributeError):
             ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity=12345)
         with pytest.raises(AttributeError):
             ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="random")
+            
+    def test_tracking_quality_user_error(self, testdata_stps_tpls_geolife_long):
+        """Test if the an error is raised when passing unknown 'granularity' to _get_tracking_quality_user()."""
+        stps_tpls = testdata_stps_tpls_geolife_long
+        user_0 = stps_tpls.loc[stps_tpls['user_id'] == 0] 
+
+        with pytest.raises(AttributeError):
+            ti.analysis.tracking_quality._get_tracking_quality_user(user_0, granularity=12345)
+        with pytest.raises(AttributeError):
+            ti.analysis.tracking_quality._get_tracking_quality_user(user_0, granularity="random")
 
     def test_split_overlaps_days(self, testdata_stps_tpls_geolife_long):
         """Test if _split_overlaps() function can split records that span several days."""
