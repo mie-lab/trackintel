@@ -42,7 +42,7 @@ Locations
 
 
 Modal split
-==========
+===========
 
 .. autofunction:: trackintel.visualization.modal_split.py
 
