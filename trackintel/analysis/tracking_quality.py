@@ -13,11 +13,11 @@ def temporal_tracking_quality(source, granularity="all"):
     df : GeoDataFrame (as trackintel datamodels)
         The source dataframe to calculate temporal tracking quality.
 
-    granularity : {"all", "day", "week", "weekday", "hour"}, default "all"
+    granularity : {"all", "day", "week", "weekday", "hour"}
         The level of which the tracking quality is calculated. The default "all" returns
         the overall tracking quality; "day" the tracking quality by days; "week" the quality
-        by weeks; "weekday" the quality by day of the week (e.g, Mondays, Tuesdays, etc.) and "hour" the
-        quality by hours.
+        by weeks; "weekday" the quality by day of the week (e.g, Mondays, Tuesdays, etc.) and 
+        "hour" the quality by hours.
 
     Returns
     -------
@@ -27,16 +27,16 @@ def temporal_tracking_quality(source, granularity="all"):
     Note
     ----
     The temporal tracking quality is the ratio of tracking time and the total time extent. It is
-    calculated and returned per-user in the defined granularity. The possible time extents of the
-    different granularities are different:
+    calculated and returned per-user in the defined ``granularity``. The possible time extents of 
+    the different granularities are different:
 
-    - "all" considers the time between the latest "finished_at" and the earliest "started_at";
-    - "week" considers the whole week (604800 sec)
-    - "day" and "weekday" consider the whole day (86400 sec)
-    - "hour" considers the whole hour (3600 sec).
+    - ``all`` considers the time between the latest "finished_at" and the earliest "started_at";
+    - ``week`` considers the whole week (604800 sec)
+    - ``day`` and ``weekday`` consider the whole day (86400 sec)
+    - ``hour`` considers the whole hour (3600 sec).
 
     The tracking quality of each user is calculated based on his or her own tracking extent.
-    For granularity = "day" or "week", the quality["day"] or quality["week"] column displays the
+    For granularity = ``day`` or ``week``, the quality["day"] or quality["week"] column displays the
     time relative to the first record in the entire dataset.
 
     Examples
@@ -183,6 +183,10 @@ def _get_tracking_quality_user(df, granularity="all"):
         # total seconds in an hour * number of tracked days
         # (entries from multiple days may be grouped together)
         extent = (60 * 60) * (df["day"].max() - df["day"].min() + 1)
+    else:
+        raise AttributeError(
+            f"granularity unknown. We only support ['all', 'day', 'week', 'weekday', 'hour']. You passed {granularity}"
+        )
     return pd.Series([tracked_duration / extent], index=["quality"])
 
 
