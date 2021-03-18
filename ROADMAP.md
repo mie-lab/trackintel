@@ -46,7 +46,7 @@ Steps until we get to version 1.0.0.
 
 ### v0.8.0
 
-* Data quality assessments: statistical measures of temporal tracking frequency.
+* :heavy_check_mark: Data quality assessments: statistical measures of temporal tracking frequency.
 
 ### v0.9.0
 
@@ -55,7 +55,7 @@ Steps until we get to version 1.0.0.
 ### Final Steps for v1.0.0
 
 * Documentation
-  * Link a guide to the readme how to contribute to the documentation
+  * :heavy_check_mark: Link a guide to the readme how to contribute to the documentation
   * The documentation should be complete (all functions and methods are mentioned)
   * The documentation should not be focused on PostGIS 
 
