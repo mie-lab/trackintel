@@ -82,3 +82,9 @@ PostGIS Export
 .. autofunction:: trackintel.io.postgis.write_locations_postgis
 
 .. autofunction:: trackintel.io.postgis.write_trips_postgis
+
+Predefined dataset readers
+==========================
+We also provide functionality to parse well-known datasets directly into the trackintel framework.
+
+.. autofunction:: trackintel.io.dataset_reader.read_geolife

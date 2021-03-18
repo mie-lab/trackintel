@@ -16,7 +16,7 @@ class TripsAccessor(object):
     The ``index`` of the GeoDataFrame will be treated as unique identifier of the `trips`
 
     For several usecases, the following additional columns are required:
-    ``['context', 'origin_activity', 'destination_activity', 'modes', 'primary_mode']``
+    ``['context', 'origin_activity', 'destination_activity', 'modes', 'primary_mode', 'tour_id']``
 
     Notes
     -----

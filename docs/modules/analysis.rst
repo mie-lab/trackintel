@@ -4,6 +4,11 @@ Analysis
 The analysis module provides a variety of functions to analyze the mobility
 datasets computed by trackintel. 
 
+Tracking Quality
+================
+
+.. autofunction:: trackintel.analysis.tracking_quality.temporal_tracking_quality
+
 Triplegs
 ========
 
