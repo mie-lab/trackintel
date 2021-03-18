@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from trackintel.geogr.distances import check_wgs_for_distance_calculation, \
-    calc_haversine_length_of_linestrings
+    calculate_haversine_length
 
 
 def calculate_modal_split(tpls_in, freq=None, metric='count', per_user=False, norm=False):
@@ -47,7 +47,7 @@ def calculate_modal_split(tpls_in, freq=None, metric='count', per_user=False, no
     if metric == 'distance':
         wgs = check_wgs_for_distance_calculation(tpls.crs)
         if wgs:
-            tpls['distance'] = calc_haversine_length_of_linestrings(tpls)
+            tpls['distance'] = calculate_haversine_length(tpls)
         else:
             tpls['distance'] = tpls.length
     elif metric == 'duration':

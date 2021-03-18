@@ -1,10 +1,5 @@
 import matplotlib.pyplot as plt
-import warnings
-
-from trackintel.visualization.util import regular_figure, save_fig
-import warnings
-
-import matplotlib.pyplot as plt
+from pandas.api.types import is_datetime64_any_dtype
 
 from trackintel.visualization.util import regular_figure, save_fig
 
@@ -60,12 +55,13 @@ def plot_modal_split(df_modal_split_in, out_path=None, date_fmt_x_axis='%W', axi
 
     # make sure that modal split is only of a single user
     if isinstance(df_modal_split.index[0], tuple):
-        warnings.warn("It seems that your index has several levels. This function can only plot a single user. Filter "
-                      "your data or pass the `per_user=False` flag in calculate_modal_split")
+        raise ValueError("This function can not support multiindex types. Use 'pandas.MultiIndex.droplevel' or pass "
+                         "the `per_user=False` flag in 'calculate_modal_split' function.")
 
+    if not is_datetime64_any_dtype(df_modal_split.index.dtype):
+        raise ValueError("Index of modal split has to be a datetime type. This problem can be solved if the 'freq' "
+                         "keyword of 'calculate_modal_split is not None'")
     # set date formatter
-    # myFmt = mdates.DateFormatter(date_fmt_x_axis)
-    # ax.xaxis.set_major_formatter(myFmt)
     df_modal_split = df_modal_split.set_index(df_modal_split.index.map(lambda s: s.strftime(date_fmt_x_axis)))
 
     # plotting

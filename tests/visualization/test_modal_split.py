@@ -42,22 +42,31 @@ def get_test_triplegs_with_modes():
 class TestPlot_modal_split:
     def test_create_plot_geolife(self, get_geolife_triplegs_with_modes):
         """Check if we can run the plot function with geolife data without error"""
-        modal_split = calculate_modal_split(get_geolife_triplegs_with_modes)
+        modal_split = calculate_modal_split(get_geolife_triplegs_with_modes, freq='d', per_user=False)
+        plot_modal_split(modal_split)
+        assert True
+
+    def test_check_dtype_error(self, get_geolife_triplegs_with_modes):
+        """Check if error is thrown correctly when index is not datetime
+
+        freq=None calculates the modal split over the whole period
+        """
+        modal_split = calculate_modal_split(get_geolife_triplegs_with_modes, freq=None, per_user=False)
+        with pytest.raises(ValueError):
+            plot_modal_split(modal_split)
+        assert True
+
+    def test_multi_user_error(self, get_test_triplegs_with_modes):
+        """Create a modal split plot based on randomly generated test data"""
+        modal_split = calculate_modal_split(get_test_triplegs_with_modes, freq='d', per_user=True, norm=True)
+        with pytest.raises(ValueError):
+            plot_modal_split(modal_split)
+
+        # make sure that there is no error if the data was correctly created
+        modal_split = calculate_modal_split(get_test_triplegs_with_modes, freq='d', per_user=False, norm=True)
         plot_modal_split(modal_split)
 
         assert True
-
-    def test_multi_user_warning(self, get_test_triplegs_with_modes):
-        """Create a modal split plot based on randomly generated test data"""
-        modal_split = calculate_modal_split(get_test_triplegs_with_modes, freq='d', per_user=True, norm=True)
-        with pytest.warns(UserWarning):
-            plot_modal_split(modal_split)
-
-        # make sure that there is no warning if the data was correctly created
-        modal_split = calculate_modal_split(get_test_triplegs_with_modes, freq='d', per_user=False, norm=True)
-        with pytest.warns(None) as record:
-            plot_modal_split(modal_split)
-        assert len(record) == 0
 
     def test_create_plot_testdata(self, get_test_triplegs_with_modes):
         """Create a modal split plot based on randomly generated test data"""

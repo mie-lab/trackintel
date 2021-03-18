@@ -88,3 +88,9 @@ class TriplegsAccessor(object):
         See :func:`trackintel.analysis.transport_mode_identification.predict_transport_mode`.
         """
         return ti.analysis.transport_mode_identification.predict_transport_mode(self._obj, *args, **kwargs)
+
+    def calculate_modal_split(self, *args, **kwargs):
+        """Calculates the modal split of the triplegs.
+        See :func:`trackintel.analysis.modal_split.calculate_modal_split`.
+        """
+        return ti.analysis.modal_split.calculate_modal_split(self._obj, *args, **kwargs)
