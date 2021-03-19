@@ -174,24 +174,27 @@ def generate_locations(staypoints,
 
 def create_activity_flag(staypoints, method='time_threshold', time_threshold=5., activity_column_name='activity'):
     """
-    Adds a flag whether or not a staypoint is considered an activity
+    Add a flag whether or not a staypoint is considered an activity.
 
     Parameters
     ----------
     staypoints: GeoDataFrame (as trackintel staypoints)
-    method: {'time_threshold'}, default 'time_threshold'
+        The original input staypoints
 
-        - 'time_threshold' : All staypoints with a duration greater than the threshold are considered an activity.
+    method: {'time_threshold'}, default = 'time_threshold'
 
-    time_threshold : float, default 5 (minutes)
+        - 'time_threshold' : All staypoints with a duration greater than the time_threshold are considered an activity.
+
+    time_threshold : float, default = 5 (minutes)
         The time threshold for which a staypoint is considered an activity in minutes. Used by method 'time_threshold'
-    activity_column_name : str , default 'activity'
+    
+    activity_column_name : str , default = 'activity'
         The name of the newly created column that holds the activity flag.
 
     Returns
     -------
     staypoints : GeoDataFrame (as trackintel staypoints)
-        Staypoints with the additional activity column
+        Original staypoints with the additional activity column
 
     Examples
     --------

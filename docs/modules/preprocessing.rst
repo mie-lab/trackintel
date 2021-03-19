@@ -27,9 +27,10 @@ Staypoints
 
 Staypoints are points where someone stayed for a longer period of time (e.g., during a
 transfer between two transport modes). We can cluster these into locations that a user 
-frequently visits.
+frequently visits and/or infer if they correspond to activities.
 
 .. autofunction:: trackintel.preprocessing.staypoints.generate_locations
+
 .. autofunction:: trackintel.preprocessing.staypoints.create_activity_flag
 
 Triplegs
