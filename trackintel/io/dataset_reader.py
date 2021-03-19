@@ -110,7 +110,7 @@ def read_geolife(geolife_path):
         except ValueError as err:
             errmsg = "Invalid user_id '{}' found in geolife path '{}'. The geolife path can only contain folders" \
                      " named with integers that represent the user id.".format(tail, user_folder_this)
-            raise Exception(errmsg) from err
+            raise ValueError(errmsg) from err
 
         print("start importing geolife user_id: ", user_id)
 

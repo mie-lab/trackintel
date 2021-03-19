@@ -14,7 +14,9 @@ def calculate_modal_split(tpls_in, freq=None, metric='count', per_user=False, no
         triplegs require the column `mode`.
     freq : str
         frequency string passed on as `freq` keyword to the pandas.Grouper class. If `freq=None` the modal split is
-        calculated on all data.
+        calculated on all data. A list of possible
+        values can be found `here <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset
+        -aliases>`_.
     metric : {'count', 'distance', 'duration'}
         Aggregation used to represent the modal split. 'distance' returns in the same unit as the crs. 'duration'
         returns values in seconds.
