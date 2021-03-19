@@ -39,3 +39,13 @@ Locations
 .. image:: /_static/example_locations.png
    :scale: 50 %
    :align: center
+
+
+Modal split
+===========
+
+.. autofunction:: trackintel.visualization.modal_split.plot_modal_split
+
+.. image:: /_static/example_modal_split_geolife.png
+   :scale: 18 %
+   :align: center

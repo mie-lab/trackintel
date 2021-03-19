@@ -9,7 +9,13 @@ Tracking Quality
 
 .. autofunction:: trackintel.analysis.tracking_quality.temporal_tracking_quality
 
-Triplegs
-========
+Transport mode identification
+=============================
 
 .. autofunction:: trackintel.analysis.transport_mode_identification.predict_transport_mode
+
+
+Modal Split
+===========
+
+.. autofunction:: trackintel.analysis.modal_split.calculate_modal_split

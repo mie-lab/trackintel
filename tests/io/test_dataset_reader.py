@@ -111,6 +111,18 @@ class TestReadGeolife:
         for key, value in labels.items():
             assert isinstance(value, pd.DataFrame)
 
+    def test_wrong_folder_name(self):
+        """Check if invalid folder names raise an exception"""
+        geolife_path = os.path.join('tests', 'data', 'geolife')
+        temp_dir = os.path.join(geolife_path, '123 - invalid folder ()%')
+        os.mkdir(temp_dir)
+
+        try:
+            with pytest.raises(ValueError):
+                _, _ = read_geolife(geolife_path)
+        finally:
+            os.rmdir(temp_dir)
+
 
 class TestGeolife_add_modes_to_triplegs:
 
