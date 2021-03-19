@@ -3,7 +3,7 @@ import pandas as pd
 from trackintel.io.file import localize_timestamp
 
 
-def positionfixes_from_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom='geom', tz=None, mapper={}):
+def read_positionfixes_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom='geom', tz=None, mapper={}):
     """
     warps the pd.rename function to simplify the import of GeoDataFrames
 
