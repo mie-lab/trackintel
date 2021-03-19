@@ -7,10 +7,10 @@ import trackintel as ti
 
 
 class TestFromGeopandas:
-    def test_positionfixes_from_gpd(self):
+    def test_read_positionfixes_gpd(self):
         gdf = gpd.read_file(os.path.join('tests', 'data', 'positionfixes.geojson'))
         gdf.set_index('id', inplace=True)
-        pfs_from_gpd = ti.io.from_geopandas.positionfixes_from_gpd(gdf, user_id='User', geom='geometry', tz='utc')
+        pfs_from_gpd = ti.io.from_geopandas.read_positionfixes_gpd(gdf, user_id='User', geom='geometry', tz='utc')
         
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
         pfs_from_csv = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')

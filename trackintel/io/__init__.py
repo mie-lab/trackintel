@@ -2,7 +2,7 @@ from .file import read_positionfixes_csv
 from .file import write_positionfixes_csv
 from .postgis import read_positionfixes_postgis
 from .postgis import write_positionfixes_postgis
-from .from_geopandas import positionfixes_from_gpd
+from .from_geopandas import read_positionfixes_gpd
 
 from .file import read_triplegs_csv
 from .file import write_triplegs_csv
