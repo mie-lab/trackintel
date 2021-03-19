@@ -62,7 +62,7 @@ def plot_modal_split(df_modal_split_in, out_path=None, date_fmt_x_axis='%W', axi
         raise ValueError("Index of modal split has to be a datetime type. This problem can be solved if the 'freq' "
                          "keyword of 'calculate_modal_split is not None'")
     # set date formatter
-    df_modal_split = df_modal_split.set_index(df_modal_split.index.map(lambda s: s.strftime(date_fmt_x_axis)))
+    df_modal_split.index = df_modal_split.index.map(lambda s: s.strftime(date_fmt_x_axis))
 
     # plotting
     df_modal_split.plot.bar(stacked=True, ax=ax)
