@@ -93,14 +93,10 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs
     # transform to datatime
     df["tracked_at"] = pd.to_datetime(df["tracked_at"])
 
-    # check and/or set timezone
+    # set timezone if none is recognized
     for col in ['tracked_at']:
         if not pd.api.types.is_datetime64tz_dtype(df[col]):
             df[col] = localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
-        else:
-            # dateutil parser timezones are sometimes not compatible with pandas (e.g., in asserts)
-            tz = df[col].iloc[0].tzinfo.tzname(df[col].iloc[0])
-            df[col] = df[col].dt.tz_convert(tz)
 
     df = df.drop(['longitude', 'latitude'], axis=1)
     gdf = gpd.GeoDataFrame(df, geometry='geom')
