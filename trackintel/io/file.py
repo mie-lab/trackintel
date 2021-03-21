@@ -85,9 +85,13 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
-    df['geom'] = list(zip(df.longitude, df.latitude))
+    
+    # construct geom column from lon and lat
+    df['geom'] = list(zip(df['longitude'], df['latitude']))
     df['geom'] = df['geom'].apply(Point)
-    df['tracked_at'] = df['tracked_at'].apply(dateutil.parser.parse)
+    
+    # transform to datatime
+    df["tracked_at"] = pd.to_datetime(df["tracked_at"])
 
     # check and/or set timezone
     for col in ['tracked_at']:
@@ -121,8 +125,9 @@ def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
     gdf = positionfixes.copy()
     gdf['longitude'] = positionfixes.geometry.apply(lambda p: p.coords[0][0])
     gdf['latitude'] = positionfixes.geometry.apply(lambda p: p.coords[0][1])
-    gdf = gdf.drop(gdf.geometry.name, axis=1)
-    gdf.to_csv(filename, index=True, *args, **kwargs)
+    df = gdf.drop(gdf.geometry.name, axis=1)
+    
+    df.to_csv(filename, index=True, *args, **kwargs)
 
 
 def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), crs=None, **kwargs):

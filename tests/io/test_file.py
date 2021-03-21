@@ -5,8 +5,8 @@ import pytest
 import trackintel as ti
 
 
-class TestFile:
-    def test_positionfixes_from_to_csv(self):
+class TestPositionfixes:
+    def test_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'positionfixes.csv')
         mod_file = os.path.join('tests', 'data', 'positionfixes_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'positionfixes_test.csv')
@@ -23,21 +23,22 @@ class TestFile:
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
-    def test_read_positionfixes_csv_crs_parameter(self):
+    def test_set_crs(self):
         file = os.path.join('tests', 'data', 'positionfixes.csv')
         pfs = ti.read_positionfixes_csv(file, sep=';', index_col="id")
-        crs = "EPSG:2056"
         assert pfs.crs is None
+        
+        crs = "EPSG:2056"
         pfs = ti.read_positionfixes_csv(file, sep=';', index_col="id", crs=crs)
         assert pfs.crs == crs
 
-    def test_positionfixes_csv_index_warning(self):
+    def test_index_warning(self):
         """Test if a warning is raised when not parsing the index_col argument."""
         file = os.path.join('tests', 'data', 'positionfixes.csv')
         with pytest.warns(UserWarning):
             ti.read_positionfixes_csv(file, sep=';')
 
-    def test_positionfixes_csv_index_col(self):
+    def test_index_col(self):
         """Test if `index_col` can be set."""
         file = os.path.join('tests', 'data', 'positionfixes.csv')
         ind_name = 'id'
@@ -46,9 +47,11 @@ class TestFile:
         pfs = ti.read_positionfixes_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
-    def test_positionfixes_from_to_postgis(self):
+    def test_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
+
+class TestFile:
 
     def test_triplegs_from_to_csv(self):
         orig_file = os.path.join('tests', 'data', 'triplegs.csv')
