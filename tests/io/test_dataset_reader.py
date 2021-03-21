@@ -78,8 +78,7 @@ def impossible_matching_data():
 
 class TestReadGeolife:
     def test_loop_read(self):
-        """use read_geolife reader, store posfix as .csv, load them again"""
-
+        """Use read_geolife reader, store posfix as .csv, load them again."""
         pfs, _ = read_geolife(os.path.join('tests', 'data', 'geolife'))
         tmp_file = os.path.join('tests', 'data', 'positionfixes_test.csv')
         pfs.as_positionfixes.to_csv(tmp_file)

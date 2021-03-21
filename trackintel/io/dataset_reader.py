@@ -132,7 +132,7 @@ def read_geolife(geolife_path):
             data_this['user_id'] = user_id
             data_this['elevation'] = data_this['elevation'] * FEET2METER
 
-            data_this['geom'] = list(zip(data_this.lon, data_this.lat))
+            data_this['geom'] = list(zip(data_this['lon'], data_this['lat']))
             data_this['geom'] = data_this['geom'].apply(Point)
 
             df_list_days.append(data_this)
