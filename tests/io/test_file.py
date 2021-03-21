@@ -1,12 +1,17 @@
 import filecmp
 import os
 import pytest
+import pandas as pd
 
 import trackintel as ti
 
 
+
 class TestPositionfixes:
+    """Test for 'read_positionfixes_csv' and 'write_positionfixes_csv' functions."""
+    
     def test_from_to_csv(self):
+        """Test basic reading and writing functions."""
         orig_file = os.path.join('tests', 'data', 'positionfixes.csv')
         mod_file = os.path.join('tests', 'data', 'positionfixes_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'positionfixes_test.csv')
@@ -24,6 +29,7 @@ class TestPositionfixes:
         os.remove(tmp_file)
 
     def test_set_crs(self):
+        """Test setting the crs when reading."""
         file = os.path.join('tests', 'data', 'positionfixes.csv')
         pfs = ti.read_positionfixes_csv(file, sep=';', index_col="id")
         assert pfs.crs is None
@@ -31,14 +37,37 @@ class TestPositionfixes:
         crs = "EPSG:2056"
         pfs = ti.read_positionfixes_csv(file, sep=';', index_col="id", crs=crs)
         assert pfs.crs == crs
+        
+    def test_set_datatime_tz(self):
+        """Test setting the timezone infomation when reading."""
+        # check if tz is added to the datatime column
+        file = os.path.join('tests', 'data', 'positionfixes.csv')
+        pfs = ti.read_positionfixes_csv(file, sep=';', index_col="id")
+        assert pd.api.types.is_datetime64tz_dtype(pfs["tracked_at"])
+        
+        # check if a timezone will be set after manually deleting the timezone
+        pfs['tracked_at'] = pfs['tracked_at'].dt.tz_localize(None)
+        assert not pd.api.types.is_datetime64tz_dtype(pfs["tracked_at"])
+        tmp_file = os.path.join('tests', 'data', 'positionfixes_test.csv')
+        pfs.as_positionfixes.to_csv(tmp_file, sep=';')
+        pfs = ti.read_positionfixes_csv(tmp_file, sep=';', index_col="id", tz = 'utc')
+        
+        assert pd.api.types.is_datetime64tz_dtype(pfs["tracked_at"])
+        
+        # check if a warning is raised if 'tz' is not provided
+        with pytest.warns(UserWarning):
+            ti.read_positionfixes_csv(tmp_file, sep=';', index_col="id")
+        
+        os.remove(tmp_file)
+        
 
-    def test_index_warning(self):
+    def test_set_index_warning(self):
         """Test if a warning is raised when not parsing the index_col argument."""
         file = os.path.join('tests', 'data', 'positionfixes.csv')
         with pytest.warns(UserWarning):
             ti.read_positionfixes_csv(file, sep=';')
 
-    def test_index_col(self):
+    def test_set_index(self):
         """Test if `index_col` can be set."""
         file = os.path.join('tests', 'data', 'positionfixes.csv')
         ind_name = 'id'
