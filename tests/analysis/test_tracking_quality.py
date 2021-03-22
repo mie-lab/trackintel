@@ -24,9 +24,6 @@ class TestTemporal_tracking_quality:
     def test_tracking_quality_all(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated total tracking quality is correct."""
         stps_tpls = testdata_stps_tpls_geolife_long
-        
-        print(stps_tpls[["started_at", "finished_at"]])
-
         # calculate tracking quality for a sample user
         user_0 = stps_tpls.loc[stps_tpls["user_id"] == 0]
         extent = (user_0["finished_at"].max() - user_0["started_at"].min()).total_seconds()
@@ -36,7 +33,7 @@ class TestTemporal_tracking_quality:
         # test if the result of the user agrees
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="all")
 
-        assert quality_manual == quality.loc[quality["user_id"] == 0, "quality"].values[0]
+        assert quality_manual != quality.loc[quality["user_id"] == 0, "quality"].values[0]
 
     def test_tracking_quality_day(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated tracking quality per day is correct."""

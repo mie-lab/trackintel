@@ -124,17 +124,13 @@ def generate_staypoints(positionfixes,
             # pfs with no stps receives nan in 'staypoint_id'
             ret_pfs = ret_pfs.join(temp, how='left')
             ret_spts.drop(columns={'pfs_id'}, inplace=True)
-        # if no staypoint is identified
+            
+        # if no staypoint at all is identified
         else:
             ret_pfs['staypoint_id'] = np.nan
     
-    ret_pfs = gpd.GeoDataFrame(ret_pfs, crs=ret_pfs.crs).set_geometry(geo_col)
-    ret_spts = gpd.GeoDataFrame(ret_spts, crs=ret_pfs.crs).set_geometry(geo_col)
-    
-    # sanity check for tripleg generation
-    assert len(spts_column) == len(ret_spts.columns), "Unexpected or missing column in staypoint generation"
-    for col in spts_column:
-        assert col in ret_spts.columns, "Unexpected columns in staypoint generation."
+    ret_pfs = gpd.GeoDataFrame(ret_pfs, geometry=geo_col, crs=ret_pfs.crs)
+    ret_spts = gpd.GeoDataFrame(ret_spts, columns=spts_column, geometry=geo_col, crs=ret_pfs.crs)
     # rearange column order
     ret_spts = ret_spts[spts_column]
                 

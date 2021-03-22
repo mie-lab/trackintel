@@ -32,7 +32,7 @@ def pfs_geolife_long():
 def geolife_pfs_stps_short(pfs_geolife):
     pfs, stps = pfs_geolife.as_positionfixes.generate_staypoints(method='sliding',
                                                                  dist_threshold=25,
-                                                                 time_threshold=5 * 60)
+                                                                 time_threshold=5.0)
     return pfs, stps
 
 
@@ -40,7 +40,7 @@ def geolife_pfs_stps_short(pfs_geolife):
 def geolife_pfs_stps_long(pfs_geolife_long):
     pfs, stps = pfs_geolife_long.as_positionfixes.generate_staypoints(method='sliding',
                                                                       dist_threshold=25,
-                                                                      time_threshold=5 * 60)
+                                                                      time_threshold=5.0)
     return pfs, stps
 
 
@@ -77,7 +77,7 @@ class TestGenerate_staypoints():
                                                            time_threshold=sys.maxsize)
         assert len(stps) == 0, "With large thresholds, staypoint extraction should not yield positionfixes"
 
-    def test_generate_staypoints_missing_link(self, geolife_pfs_stps_long):
+    def test_generate_staypoints_missing_link(self):
         """Test nan is assigned for missing link between pfs and stps."""
         pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
         pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
@@ -93,7 +93,7 @@ class TestGenerate_staypoints():
         pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                              dist_threshold=25,
-                                                             time_threshold=5 * 60)
+                                                             time_threshold=5)
         assert pfs['user_id'].dtype == stps['user_id'].dtype
         assert pfs['staypoint_id'].dtype == "Int64"
         assert stps.index.dtype == "int64"
@@ -105,11 +105,11 @@ class TestGenerate_staypoints():
 
         _, stps_sliding = pfs_ori.as_positionfixes.generate_staypoints(method='sliding',
                                                                        dist_threshold=25,
-                                                                       time_threshold=300)
-        _, stps_dbscan = pfs_ori.as_positionfixes.generate_staypoints(method='dbscan')
+                                                                       time_threshold=5.0)
+        # _, stps_dbscan = pfs_ori.as_positionfixes.generate_staypoints(method='dbscan')
 
         assert (stps_sliding.index == np.arange(len(stps_sliding))).any()
-        assert (stps_dbscan.index == np.arange(len(stps_dbscan))).any()
+        # assert (stps_dbscan.index == np.arange(len(stps_dbscan))).any()
 
     def test_generate_staypoints_groupby_sliding(self):
         """Test the 'sliding' result obtained using user_id for loop (previous) with groupby.apply (current)."""
@@ -119,28 +119,28 @@ class TestGenerate_staypoints():
         # stps detection using groupby
         pfs_groupby, stps_groupby = pfs_ori.as_positionfixes.generate_staypoints(method='sliding',
                                                                                  dist_threshold=25,
-                                                                                 time_threshold=300)
+                                                                                 time_threshold=5.0)
         # stps detection using for loop
         pfs_for, stps_for = _generate_staypoints_original(pfs_ori,
                                                           method='sliding',
                                                           dist_threshold=25,
-                                                          time_threshold=300)
+                                                          time_threshold=5.0)
 
         pd.testing.assert_frame_equal(stps_groupby, stps_for, check_dtype=False)
         pd.testing.assert_frame_equal(pfs_groupby, pfs_for, check_dtype=False)
 
-    def test_generate_staypoints_groupby_dbscan(self):
-        """Test the 'dbscan' result obtained using user_id for loop (previous) with groupby.apply (current)."""
-        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
-        pfs_ori = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
+    # def test_generate_staypoints_groupby_dbscan(self):
+    #     """Test the 'dbscan' result obtained using user_id for loop (previous) with groupby.apply (current)."""
+    #     pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
+    #     pfs_ori = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
 
-        # stps detection using groupby
-        pfs_groupby, stps_groupby = pfs_ori.as_positionfixes.generate_staypoints(method='dbscan')
-        # stps detection using for loop
-        pfs_for, stps_for = _generate_staypoints_original(pfs_ori, method='dbscan')
+    #     # stps detection using groupby
+    #     pfs_groupby, stps_groupby = pfs_ori.as_positionfixes.generate_staypoints(method='dbscan')
+    #     # stps detection using for loop
+    #     pfs_for, stps_for = _generate_staypoints_original(pfs_ori, method='dbscan')
 
-        pd.testing.assert_frame_equal(stps_groupby, stps_for, check_dtype=False)
-        pd.testing.assert_frame_equal(pfs_groupby, pfs_for, check_dtype=False)
+    #     pd.testing.assert_frame_equal(stps_groupby, stps_for, check_dtype=False)
+    #     pd.testing.assert_frame_equal(pfs_groupby, pfs_for, check_dtype=False)
 
 
 class TestGenerate_triplegs():
