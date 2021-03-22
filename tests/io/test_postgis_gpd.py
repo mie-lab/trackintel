@@ -9,7 +9,7 @@ from geopandas import GeoDataFrame, read_file, read_postgis
 from geopandas.tests.util import create_postgis, validate_boro_df
 from shapely.geometry import LineString
 from sqlalchemy import create_engine
-
+import trackintel as ti
 
 @pytest.fixture()
 def engine_postgis():
