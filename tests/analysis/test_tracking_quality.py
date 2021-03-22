@@ -33,7 +33,7 @@ class TestTemporal_tracking_quality:
         # test if the result of the user agrees
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="all")
 
-        assert quality_manual != quality.loc[quality["user_id"] == 0, "quality"].values[0]
+        assert quality_manual == quality.loc[quality["user_id"] == 0, "quality"].values[0]
 
     def test_tracking_quality_day(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated tracking quality per day is correct."""
