@@ -167,19 +167,19 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), crs=None
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
+    
+    # construct geom column
     df['geom'] = df['geom'].apply(wkt.loads)
-    df['started_at'] = df['started_at'].apply(dateutil.parser.parse)
-    df['finished_at'] = df['finished_at'].apply(dateutil.parser.parse)
+    
+    # transform to datatime
+    df["started_at"] = pd.to_datetime(df['started_at'])
+    df["finished_at"] = pd.to_datetime(df['finished_at'])
 
-    # check and/or set timezone
+    # set timezone if none is recognized
     for col in ['started_at', 'finished_at']:
         if not pd.api.types.is_datetime64tz_dtype(df[col]):
             df[col] = localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
-        else:
-            # dateutil parser timezones are sometimes not compatible with pandas (e.g., in asserts)
-            tz = df[col].iloc[0].tzinfo.tzname(df[col].iloc[0])
-            df[col] = df[col].dt.tz_convert(tz)
-
+            
     gdf = gpd.GeoDataFrame(df, geometry='geom')
     if crs:
         gdf.set_crs(crs, inplace=True)
@@ -200,9 +200,9 @@ def write_triplegs_csv(triplegs, filename, *args, **kwargs):
         The file to write to.
     """
     geo_col_name = triplegs.geometry.name
-    gdf = pd.DataFrame(triplegs, copy=True)
-    gdf[geo_col_name] = triplegs.geometry.apply(wkt.dumps)
-    gdf.to_csv(filename, index=True, *args, **kwargs)
+    df = pd.DataFrame(triplegs, copy=True)
+    df[geo_col_name] = triplegs.geometry.apply(wkt.dumps)
+    df.to_csv(filename, index=True, *args, **kwargs)
 
 
 def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), crs=None, **kwargs):
@@ -246,18 +246,18 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), crs=No
 
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
+    
+    # construct geom column
     df['geom'] = df['geom'].apply(wkt.loads)
-    df['started_at'] = df['started_at'].apply(dateutil.parser.parse)
-    df['finished_at'] = df['finished_at'].apply(dateutil.parser.parse)
+    
+    # transform to datatime
+    df["started_at"] = pd.to_datetime(df['started_at'])
+    df["finished_at"] = pd.to_datetime(df['finished_at'])
 
-    # check and/or set timezone
+    # set timezone if none is recognized
     for col in ['started_at', 'finished_at']:
         if not pd.api.types.is_datetime64tz_dtype(df[col]):
             df[col] = localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
-        else:
-            # dateutil parser timezones are sometimes not compatible with pandas (e.g., in asserts)
-            tz = df[col].iloc[0].tzinfo.tzname(df[col].iloc[0])
-            df[col] = df[col].dt.tz_convert(tz)
         
     gdf = gpd.GeoDataFrame(df, geometry='geom')
     if crs:
@@ -279,9 +279,9 @@ def write_staypoints_csv(staypoints, filename, *args, **kwargs):
         The file to write to.
     """
     geo_col_name = staypoints.geometry.name
-    gdf = pd.DataFrame(staypoints, copy=True)
-    gdf[geo_col_name] = staypoints.geometry.apply(wkt.dumps)
-    gdf.to_csv(filename, index=True, *args, **kwargs)
+    df = pd.DataFrame(staypoints, copy=True)
+    df[geo_col_name] = staypoints.geometry.apply(wkt.dumps)
+    df.to_csv(filename, index=True, *args, **kwargs)
 
 
 def read_locations_csv(*args, columns=None, index_col=object(), crs=None, **kwargs):
@@ -323,9 +323,12 @@ def read_locations_csv(*args, columns=None, index_col=object(), crs=None, **kwar
     
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
+    
+    # construct center and extent columns
     df['center'] = df['center'].apply(wkt.loads)
     if 'extent' in df.columns:
         df['extent'] = df['extent'].apply(wkt.loads)
+        
     gdf = gpd.GeoDataFrame(df, geometry='center')
     if crs:
         gdf.set_crs(crs, inplace=True)
@@ -345,11 +348,11 @@ def write_locations_csv(locations, filename, *args, **kwargs):
     filename : str
         The file to write to.
     """
-    gdf = pd.DataFrame(locations, copy=True)
-    gdf['center'] = locations['center'].apply(wkt.dumps)
-    if 'extent' in gdf.columns:
-        gdf['extent'] = locations['extent'].apply(wkt.dumps)
-    gdf.to_csv(filename, index=True, *args, **kwargs)
+    df = pd.DataFrame(locations, copy=True)
+    df['center'] = locations['center'].apply(wkt.dumps)
+    if 'extent' in df.columns:
+        df['extent'] = locations['extent'].apply(wkt.dumps)
+    df.to_csv(filename, index=True, *args, **kwargs)
 
 
 def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
@@ -388,17 +391,15 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
     
     df = pd.read_csv(*args, **kwargs)
     df = df.rename(columns=columns)
-    df['started_at'] = df['started_at'].apply(dateutil.parser.parse)
-    df['finished_at'] = df['finished_at'].apply(dateutil.parser.parse)
+    
+    # transform to datatime
+    df["started_at"] = pd.to_datetime(df['started_at'])
+    df["finished_at"] = pd.to_datetime(df['finished_at'])
 
     # check and/or set timezone
     for col in ['started_at', 'finished_at']:
         if not pd.api.types.is_datetime64tz_dtype(df[col]):
             df[col] = localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
-        else:
-            # dateutil parser timezones are sometimes not compatible with pandas (e.g., in asserts)
-            tz = df[col].iloc[0].tzinfo.tzname(df[col].iloc[0])
-            df[col] = df[col].dt.tz_convert(tz)
 
     assert df.as_trips
     return df
