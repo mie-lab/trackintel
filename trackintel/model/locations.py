@@ -43,7 +43,7 @@ class LocationsAccessor(object):
 
     def plot(self, *args, **kwargs):
         """Plots this collection of locations. 
-        See func:`trackintel.visualization.locations.plot_locations`."""
+        See :func:`trackintel.visualization.locations.plot_locations`."""
         ti.visualization.locations.plot_center_of_locations(self._obj, *args, **kwargs)
 
     def to_csv(self, filename, *args, **kwargs):
