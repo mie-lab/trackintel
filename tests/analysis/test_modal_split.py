@@ -17,7 +17,7 @@ def read_geolife_with_modes():
 
     pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                          dist_threshold=25,
-                                                         time_threshold=5 * 60)
+                                                         time_threshold=5.0)
     _, tpls = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
 
     tpls_with_modes = geolife_add_modes_to_triplegs(tpls, labels)
