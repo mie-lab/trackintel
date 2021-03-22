@@ -32,6 +32,7 @@ def read_geolife(geolife_path):
     -------
     gdf: GeoDataFrame (as trackintel positionfixes)
         Contains all loaded geolife positionfixes
+        
     labels: dict
         Dictionary with the available (optional) mode labels.
 
@@ -169,13 +170,13 @@ def geolife_add_modes_to_triplegs(tpls_in, labels, ratio_threshold=0.5, max_trip
     labels : dictionary
         Geolife labels as provided by the trackintel `read_geolife` function.
         
-    ratio_threshold : float, default = 0.5
+    ratio_threshold : float, default 0.5
         How much a label needs to overlap a tripleg to assign a the to this tripleg.
         
-    max_triplegs : int, default = 20
+    max_triplegs : int, default 20
         Number of neighbors that are considered in the search for matching triplegs.
         
-    max_duration_tripleg : float, default = 7 * 24 * 60 * 60 (seconds)
+    max_duration_tripleg : float, default 7 * 24 * 60 * 60 (seconds)
         Used for a primary filter. All triplegs that are further away in time than 'max_duration_tripleg' from a
         label won't be considered for matching.
 
