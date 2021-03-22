@@ -11,34 +11,6 @@ from shapely import wkt
 from shapely.geometry import Point
 
 
-def localize_timestamp(dt_series, pytz_tzinfo, col_name):
-    """
-    Add timezone info to timestamp.
-
-    Parameters
-    ----------
-    dt_series : pandas.Series
-        a pandas datetime series
-        
-    pytz_tzinfo : str
-        pytz compatible timezone string. If none UTC will be assumed
-        
-    col_name : str
-        Column name for informative warning message
-
-    Returns
-    -------
-    pd.Series
-        a timezone aware pandas datetime series
-    """
-    if pytz_tzinfo is None:
-        warnings.warn("Assuming UTC timezone for column {}".format(col_name))
-        pytz_tzinfo = 'utc'
-
-    timezone = pytz.timezone(pytz_tzinfo)
-    return dt_series.apply(pd.Timestamp, tz=timezone)
-
-
 def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs=None, **kwargs):
     """
     Read positionfixes from csv file.
@@ -104,7 +76,7 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs
     # set timezone if none is recognized
     for col in ['tracked_at']:
         if not pd.api.types.is_datetime64tz_dtype(df[col]):
-            df[col] = localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
+            df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
 
     df = df.drop(['longitude', 'latitude'], axis=1)
     gdf = gpd.GeoDataFrame(df, geometry='geom')
@@ -194,7 +166,7 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), crs=None
     # set timezone if none is recognized
     for col in ['started_at', 'finished_at']:
         if not pd.api.types.is_datetime64tz_dtype(df[col]):
-            df[col] = localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
+            df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
             
     gdf = gpd.GeoDataFrame(df, geometry='geom')
     if crs:
@@ -282,7 +254,7 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), crs=No
     # set timezone if none is recognized
     for col in ['started_at', 'finished_at']:
         if not pd.api.types.is_datetime64tz_dtype(df[col]):
-            df[col] = localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
+            df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
         
     gdf = gpd.GeoDataFrame(df, geometry='geom')
     if crs:
@@ -439,7 +411,7 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
     # check and/or set timezone
     for col in ['started_at', 'finished_at']:
         if not pd.api.types.is_datetime64tz_dtype(df[col]):
-            df[col] = localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
+            df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
 
     assert df.as_trips
     return df
@@ -489,7 +461,7 @@ def read_tours_csv(*args, columns=None, tz=None, **kwargs):
     # # check and/or set timezone
     # for col in ['started_at', 'finished_at']:
     #     if not pd.api.types.is_datetime64tz_dtype(df[col]):
-    #         df[col] = localize_timestamp(dt_series=df[col], pytz_tzinfo=kwargs.pop('tz', None), col_name=col)
+    #         df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=kwargs.pop('tz', None), col_name=col)
     #         else:
     #             # dateutil parser timezones are sometimes not compatible with pandas (e.g., in asserts)
     #             tz = df[col].iloc[0].tzinfo.tzname(df[col].iloc[0])
@@ -513,3 +485,31 @@ def write_tours_csv(tours, filename, *args, **kwargs):
     """
     # TODO: implement the writing function for tours
     pass
+
+
+def _localize_timestamp(dt_series, pytz_tzinfo, col_name):
+    """
+    Add timezone info to timestamp.
+
+    Parameters
+    ----------
+    dt_series : pandas.Series
+        a pandas datetime series
+        
+    pytz_tzinfo : str
+        pytz compatible timezone string. If none UTC will be assumed
+        
+    col_name : str
+        Column name for informative warning message
+
+    Returns
+    -------
+    pd.Series
+        a timezone aware pandas datetime series
+    """
+    if pytz_tzinfo is None:
+        warnings.warn("Assuming UTC timezone for column {}".format(col_name))
+        pytz_tzinfo = 'utc'
+
+    timezone = pytz.timezone(pytz_tzinfo)
+    return dt_series.apply(pd.Timestamp, tz=timezone)
