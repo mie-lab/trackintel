@@ -33,7 +33,7 @@ CSV File Import
 GeoDataFrame Import
 =============================
 
-.. autofunction:: trackintel.io.from_geopandas.positionfixes_from_gpd
+.. autofunction:: trackintel.io.from_geopandas.read_positionfixes_gpd
 
 .. autofunction:: trackintel.io.from_geopandas.triplegs_from_gpd
 
