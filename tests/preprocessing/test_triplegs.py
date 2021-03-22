@@ -122,7 +122,7 @@ class TestGenerate_trips():
                               infer_datetime_format=True, dayfirst=True)
         stps_in['geom'] = Point(1, 1)
         stps_in = gpd.GeoDataFrame(stps_in, geometry='geom')
-        stps_in = ti.io.staypoints_from_gpd(stps_in, tz='utc')
+        stps_in = ti.io.read_staypoints_gpd(stps_in, tz='utc')
 
         assert stps_in.as_staypoints
 
@@ -131,7 +131,7 @@ class TestGenerate_trips():
                               infer_datetime_format=True, dayfirst=True)
         tpls_in['geom'] = LineString([[1, 1], [2, 2]])
         tpls_in = gpd.GeoDataFrame(tpls_in, geometry='geom')
-        tpls_in = ti.io.triplegs_from_gpd(tpls_in, tz='utc')
+        tpls_in = ti.io.read_triplegs_gpd(tpls_in, tz='utc')
 
         assert tpls_in.as_triplegs
 

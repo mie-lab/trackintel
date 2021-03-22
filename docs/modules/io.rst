@@ -35,13 +35,13 @@ GeoDataFrame Import
 
 .. autofunction:: trackintel.io.from_geopandas.read_positionfixes_gpd
 
-.. autofunction:: trackintel.io.from_geopandas.triplegs_from_gpd
+.. autofunction:: trackintel.io.from_geopandas.read_triplegs_gpd
 
-.. autofunction:: trackintel.io.from_geopandas.staypoints_from_gpd
+.. autofunction:: trackintel.io.from_geopandas.read_staypoints_gpd
 
-.. autofunction:: trackintel.io.from_geopandas.locations_from_gpd
+.. autofunction:: trackintel.io.from_geopandas.read_locations_gpd
 
-.. autofunction:: trackintel.io.from_geopandas.trips_from_gpd
+.. autofunction:: trackintel.io.from_geopandas.read_trips_gpd
 
 
 PostGIS Import
