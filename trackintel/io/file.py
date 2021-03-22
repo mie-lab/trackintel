@@ -39,7 +39,7 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs
 
     Returns
     -------
-    gdf : GeoDataFrame (as trackintel positionfixes)
+    pfs : GeoDataFrame (as trackintel positionfixes)
         A GeoDataFrame containing the positionfixes.
 
     Notes
@@ -79,11 +79,11 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs
             df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
 
     df = df.drop(['longitude', 'latitude'], axis=1)
-    gdf = gpd.GeoDataFrame(df, geometry='geom')
+    pfs = gpd.GeoDataFrame(df, geometry='geom')
     if crs:
-        gdf.set_crs(crs, inplace=True)
-    assert gdf.as_positionfixes
-    return gdf
+        pfs.set_crs(crs, inplace=True)
+    assert pfs.as_positionfixes
+    return pfs
 
 
 def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
@@ -136,7 +136,7 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), crs=None
 
     Returns
     -------
-    gdf : GeoDataFrame (as trackintel triplegs)
+    tpls : GeoDataFrame (as trackintel triplegs)
         A GeoDataFrame containing the triplegs.
         
     Examples
@@ -168,11 +168,11 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), crs=None
         if not pd.api.types.is_datetime64tz_dtype(df[col]):
             df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
             
-    gdf = gpd.GeoDataFrame(df, geometry='geom')
+    tpls = gpd.GeoDataFrame(df, geometry='geom')
     if crs:
-        gdf.set_crs(crs, inplace=True)
-    assert gdf.as_triplegs
-    return gdf
+        tpls.set_crs(crs, inplace=True)
+    assert tpls.as_triplegs
+    return tpls
 
 
 def write_triplegs_csv(triplegs, filename, *args, **kwargs):
@@ -224,7 +224,7 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), crs=No
 
     Returns
     -------
-    gdf : GeoDataFrame (as trackintel staypoints)
+    stps : GeoDataFrame (as trackintel staypoints)
         A GeoDataFrame containing the staypoints.
             
     Examples
@@ -256,11 +256,11 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), crs=No
         if not pd.api.types.is_datetime64tz_dtype(df[col]):
             df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
         
-    gdf = gpd.GeoDataFrame(df, geometry='geom')
+    stps = gpd.GeoDataFrame(df, geometry='geom')
     if crs:
-        gdf.set_crs(crs, inplace=True)
-    assert gdf.as_staypoints
-    return gdf
+        stps.set_crs(crs, inplace=True)
+    assert stps.as_staypoints
+    return stps
 
 
 def write_staypoints_csv(staypoints, filename, *args, **kwargs):
@@ -309,7 +309,7 @@ def read_locations_csv(*args, columns=None, index_col=object(), crs=None, **kwar
 
     Returns
     -------
-    GeoDataFrame (as trackintel locations)
+    locs : GeoDataFrame (as trackintel locations)
         A GeoDataFrame containing the locations.
 
     Examples
@@ -334,11 +334,11 @@ def read_locations_csv(*args, columns=None, index_col=object(), crs=None, **kwar
     if 'extent' in df.columns:
         df['extent'] = df['extent'].apply(wkt.loads)
         
-    gdf = gpd.GeoDataFrame(df, geometry='center')
+    locs = gpd.GeoDataFrame(df, geometry='center')
     if crs:
-        gdf.set_crs(crs, inplace=True)
-    assert gdf.as_locations
-    return gdf
+        locs.set_crs(crs, inplace=True)
+    assert locs.as_locations
+    return locs
 
 
 def write_locations_csv(locations, filename, *args, **kwargs):
@@ -385,7 +385,7 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
         
     Returns
     -------
-    df : DataFrame (as trackintel trips)
+    trips : DataFrame (as trackintel trips)
         A DataFrame containing the trips.
             
     Examples
@@ -401,20 +401,20 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
     elif index_col is not None:
         kwargs['index_col'] = index_col
     
-    df = pd.read_csv(*args, **kwargs)
-    df = df.rename(columns=columns)
+    trips = pd.read_csv(*args, **kwargs)
+    trips = trips.rename(columns=columns)
     
     # transform to datatime
-    df["started_at"] = pd.to_datetime(df['started_at'])
-    df["finished_at"] = pd.to_datetime(df['finished_at'])
+    trips["started_at"] = pd.to_datetime(trips['started_at'])
+    trips["finished_at"] = pd.to_datetime(trips['finished_at'])
 
     # check and/or set timezone
     for col in ['started_at', 'finished_at']:
-        if not pd.api.types.is_datetime64tz_dtype(df[col]):
-            df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
+        if not pd.api.types.is_datetime64tz_dtype(trips[col]):
+            trips[col] = _localize_timestamp(dt_series=trips[col], pytz_tzinfo=tz, col_name=col)
 
-    assert df.as_trips
-    return df
+    assert trips.as_trips
+    return trips
 
 
 def write_trips_csv(trips, filename, *args, **kwargs):
@@ -453,7 +453,7 @@ def read_tours_csv(*args, columns=None, tz=None, **kwargs):
 
     Returns
     -------
-    df : DataFrame (as trackintel tours)
+    tours : DataFrame (as trackintel tours)
         A DataFrame containing the tours.
     """
     # TODO: implement the reading function for tours

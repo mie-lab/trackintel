@@ -18,7 +18,8 @@ from trackintel.preprocessing.util import calc_temp_overlap
 
 
 def read_geolife(geolife_path):
-    """ Read raw geolife data and return trackintel positionfixes
+    """
+    Read raw geolife data and return trackintel positionfixes.
 
     This functions parses all geolife data available in the directory ``geolife_path``
 
@@ -29,13 +30,13 @@ def read_geolife(geolife_path):
 
     Returns
     -------
-    gdf: GeoPandas DataFrame
+    gdf: GeoDataFrame (as trackintel positionfixes)
         Contains all loaded geolife positionfixes
     labels: dict
         Dictionary with the available (optional) mode labels.
 
     Notes
-    ------
+    -----
     The geopandas dataframe has the following columns and datatype: 'lat': float64, Latitude WGS84; 'lon': float64, Latitude WGS84; 'elevation': float64, in meters;
     'tracked_at': datetime64[ns]; 'user_id': int64; 'geom': geopandas/shapely geometry; 'accuracy': None;
 
@@ -77,7 +78,6 @@ def read_geolife(geolife_path):
     ----------
     >>> geolife_pfs, labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'))
     """
-
     geolife_path = os.path.join(geolife_path, '*')
     user_folder = sorted(glob.glob(geolife_path))
 
@@ -164,24 +164,26 @@ def geolife_add_modes_to_triplegs(tpls_in, labels, ratio_threshold=0.5, max_trip
     Parameters
     ----------
     tpls_in : GeoDataFrame (as trackintel triplegs)
-        Geolife triplegs
+        Geolife triplegs.
+        
     labels : dictionary
-        Geolife labels as provided by the trackintel `read_geolife` function
-    ratio_threshold : float, optional
+        Geolife labels as provided by the trackintel `read_geolife` function.
+        
+    ratio_threshold : float, default = 0.5
         How much a label needs to overlap a tripleg to assign a the to this tripleg.
-    max_triplegs : int, optional
+        
+    max_triplegs : int, default = 20
         Number of neighbors that are considered in the search for matching triplegs.
-    max_duration_tripleg : float, optional, (seconds)
-        Used for a primary filter. All triplegs that are further away in time than max_duration_tripleg from a
+        
+    max_duration_tripleg : float, default = 7 * 24 * 60 * 60 (seconds)
+        Used for a primary filter. All triplegs that are further away in time than 'max_duration_tripleg' from a
         label won't be considered for matching.
 
     Returns
     -------
     tpls : GeoDataFrame (as trackintel triplegs)
         triplegs with mode labels.
-
     """
-
     tpls = tpls_in.copy()
     # temp time fields for nn query
     tpls['started_at_s'] = (tpls['started_at'] - pd.Timestamp("1970-01-01", tz='utc')) // pd.Timedelta('1s')
@@ -238,7 +240,7 @@ def geolife_add_modes_to_triplegs(tpls_in, labels, ratio_threshold=0.5, max_trip
 
 def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_threshold):
     """
-    Iterate all candidate triplegs and labels for a single user
+    Iterate all candidate triplegs and labels for a single user.
 
     Parameters
     ----------
@@ -250,8 +252,10 @@ def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_thres
 
     tpls_this : GeoDataFrame (as trackintel triplegs)
         triplegs of a single user
+        
     labels_this : DataFrame
         labels of a single user
+        
     ratio_threshold : float, optional
         How much a label needs to overlap a tripleg to assign a the to this tripleg.
 
@@ -262,7 +266,7 @@ def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_thres
         following keys: [id', 'label_id', 'mode']
 
     Notes
-    ------
+    -----
     Candidates is a matrix with one row per label and where each column corresponds to a potential tripleg match. All
     potential tripleg matches that are overlapped (in time) by more than ratio_threshold by a label are
     assigned this label.

@@ -14,13 +14,13 @@ def read_positionfixes_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom
     gdf : GeoDataFrame
         GeoDataFrame with valid point geometry, containing the positionfixes to import
     
-    tracked_at : str, default = 'tracked_at'
+    tracked_at : str, default 'tracked_at'
         name of the column storing the timestamps.
     
-    user_id : str, default = 'user_id'
+    user_id : str, default 'user_id'
         name of the column storing the user_id.
     
-    geom : str, default = 'geom'
+    geom : str, default 'geom'
         name of the column storing the geometry.
     
     tz : str, optional
@@ -33,7 +33,10 @@ def read_positionfixes_gpd(gdf, tracked_at='tracked_at', user_id='user_id', geom
     -------
     pfs : GeoDataFrame (as trackintel positionfixes)
         A GeoDataFrame containing the positionfixes.
-
+    
+    Examples
+    --------
+    >>> trackintel.read_positionfixes_gpd(gdf, user_id='User', geom='geometry', tz='utc')
     """
     columns = {tracked_at: 'tracked_at',
                user_id: 'user_id',
@@ -65,16 +68,16 @@ def read_staypoints_gpd(gdf, started_at='started_at', finished_at='finished_at',
     gdf : GeoDataFrame
         GeoDataFrame with valid point geometry, containing the staypoints to import
     
-    started_at : str, default = 'started_at'
+    started_at : str, default 'started_at'
         name of the column storing the starttime of the staypoints.
     
-    finished_at : str, default = 'finished_at'
+    finished_at : str, default 'finished_at'
         name of the column storing the endtime of the staypoints.
     
-    user_id : str, default = 'user_id'
+    user_id : str, default 'user_id'
         name of the column storing the user_id.
     
-    geom : str, default = 'geom'
+    geom : str, default 'geom'
         name of the column storing the geometry.
     
     tz : str, optional
@@ -85,9 +88,12 @@ def read_staypoints_gpd(gdf, started_at='started_at', finished_at='finished_at',
 
     Returns
     -------
-    stp : GeoDataFrame (as trackintel staypoints)
+    stps : GeoDataFrame (as trackintel staypoints)
         A GeoDataFrame containing the staypoints
-
+        
+    Examples
+    --------
+    >>> trackintel.read_staypoints_gpd(gdf, started_at='start_time', finished_at='end_time', tz='utc')
     """
     columns = {started_at: 'started_at',
                finished_at: 'finished_at',
@@ -95,16 +101,16 @@ def read_staypoints_gpd(gdf, started_at='started_at', finished_at='finished_at',
                geom: 'geom'}
     columns.update(mapper)
 
-    stp = gdf.rename(columns=columns)
-    stp = stp.set_geometry('geom')
+    stps = gdf.rename(columns=columns)
+    stps = stps.set_geometry('geom')
 
     # check and/or set timezone
     for col in ['started_at', 'finished_at']:
-        if not pd.api.types.is_datetime64tz_dtype(stp[col]):
-            stp[col] = _localize_timestamp(dt_series=stp[col], pytz_tzinfo=tz, col_name=col)
+        if not pd.api.types.is_datetime64tz_dtype(stps[col]):
+            stps[col] = _localize_timestamp(dt_series=stps[col], pytz_tzinfo=tz, col_name=col)
         
-    assert stp.as_staypoints
-    return stp
+    assert stps.as_staypoints
+    return stps
 
 
 def read_triplegs_gpd(gdf, started_at='started_at', finished_at='finished_at', user_id='user_id', geom='geometry',
@@ -119,16 +125,16 @@ def read_triplegs_gpd(gdf, started_at='started_at', finished_at='finished_at', u
     gdf : GeoDataFrame
         GeoDataFrame with valid line geometry, containing the triplegs to import.
     
-    started_at : str, default = 'started_at'
+    started_at : str, default 'started_at'
         name of the column storing the starttime of the triplegs.
     
-    finished_at : str, default = 'started_at'
+    finished_at : str, default 'finished_at'
         name of the column storing the endtime of the triplegs.
     
-    user_id : str, default = 'user_id'
+    user_id : str, default 'user_id'
         name of the column storing the user_id.
         
-    geom : str, default = 'geom'
+    geom : str, default 'geom'
         name of the column storing the geometry.
     
     tz : str, optional
@@ -141,7 +147,10 @@ def read_triplegs_gpd(gdf, started_at='started_at', finished_at='finished_at', u
     -------
     tpls : GeoDataFrame (as trackintel triplegs)
         A GeoDataFrame containing the triplegs
-
+        
+    Examples
+    --------
+    >>> trackintel.read_triplegs_gpd(gdf, user_id='User', geom='geometry', tz='utc')
     """
     columns = {started_at: 'started_at',
                finished_at: 'finished_at',
@@ -165,28 +174,28 @@ def read_trips_gpd(gdf, started_at='started_at', finished_at='finished_at', user
                    origin_staypoint_id='origin_staypoint_id', destination_staypoint_id='destination_staypoint_id',
                    tz=None, mapper={}):
     """
-    Read trips from GeoDataFrames.
+    Read trips from GeoDataFrames/DataFrames.
     
-    Warps the pd.rename function to simplify the import of GeoDataFrames.
+    Warps the pd.rename function to simplify the import of GeoDataFrames (DataFrames).
 
     Parameters
     ----------
-    gdf : GeoDataFrame
-        GeoDataFrame with valid geometry, containing the trips to import.
+    gdf : GeoDataFrame or DataFrame
+        GeoDataFrame/DataFrame containing the trips to import.
         
-    started_at : str, default = 'started_at'
+    started_at : str, default 'started_at'
         name of the column storing the starttime of the staypoints.
     
-    finished_at : str, default = 'finished_at'
+    finished_at : str, default 'finished_at'
         name of the column storing the endtime of the staypoints.
     
-    user_id : str, default = 'user_id'
+    user_id : str, default 'user_id'
         name of the column storing the user_id.
     
-    origin_staypoint_id : str, default = 'origin_staypoint_id'
+    origin_staypoint_id : str, default 'origin_staypoint_id'
         name of the column storing the staypoint_id of the start of the tripleg
     
-    destination_staypoint_id : str, default = 'destination_staypoint_id'
+    destination_staypoint_id : str, default 'destination_staypoint_id'
         name of the column storing the staypoint_id of the end of the tripleg
     
     tz : str, optional
@@ -197,9 +206,12 @@ def read_trips_gpd(gdf, started_at='started_at', finished_at='finished_at', user
 
     Returns
     -------
-    trips : GeoDataFrame (as trackintel trips)
-        A GeoDataFrame containing the trips.
-
+    trips : GeoDataFrame/DataFrame (as trackintel trips)
+        A GeoDataFrame/DataFrame containing the trips.
+        
+    Examples
+    --------
+    >>> trackintel.read_trips_gpd(df, tz='utc')
     """
     columns = {started_at: 'started_at',
                finished_at: 'finished_at',
@@ -231,10 +243,10 @@ def read_locations_gpd(gdf, user_id='user_id', center='center', mapper={}):
     gdf : GeoDataFrame
         GeoDataFrame with valid point geometry, containing the locations to import.
     
-    user_id : str, default = 'user_id'
+    user_id : str, default 'user_id'
         name of the column storing the user_id.
     
-    center : str, default = 'center'
+    center : str, default 'center'
         name of the column storing the geometry (Center of the location).
     
     tz : str, optional
@@ -247,6 +259,10 @@ def read_locations_gpd(gdf, user_id='user_id', center='center', mapper={}):
     -------
     locs : GeoDataFrame (as trackintel locations)
         A GeoDataFrame containing the locations.
+        
+    Examples
+    --------
+    >>> trackintel.read_locations_gpd(df, user_id='User', center='geometry')
     """
     columns = {user_id: 'user_id',
                center: 'center'}
@@ -272,19 +288,19 @@ def read_tours_gpd(gdf, user_id='user_id', started_at='started_at', finished_at=
     gdf : GeoDataFrame
         GeoDataFrame with valid point geometry, containing the locations to import.
     
-    user_id : str, default = 'user_id'
+    user_id : str, default 'user_id'
         name of the column storing the user_id.
     
-    started_at : str, default = 'started_at'
+    started_at : str, default 'started_at'
         name of the column storing the starttime of the staypoints.
     
-    finished_at : str, default = 'finished_at'
+    finished_at : str, default 'finished_at'
         name of the column storing the endtime of the staypoints.
     
-    origin_destination_location_id : str, default = 'origin_destination_location_id'
+    origin_destination_location_id : str, default 'origin_destination_location_id'
         the name of the column storing the id of the location where the tour starts and ends.
     
-    journey : str, default = 'journey'
+    journey : str, default 'journey'
         name of the column storing the information (bool) if the tour is a journey.
     
     mapper : dict, optional
