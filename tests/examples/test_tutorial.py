@@ -8,4 +8,14 @@ import pytest
 
 class Test_tutorial():
     def test_basic_tutorial(self):
-        os.popen("jupyter nbconvert --to script --execute --stdout .../examples/trackintel_basic_tutorial.ipynb | python3").read()
+        """
+        Tests if the tutorial jupyter notebook runs without errors
+
+        Returns
+        -------
+        None.
+
+        """
+        
+        os.popen("jupyter nbconvert --to script --execute --stdout ./examples/trackintel_basic_tutorial.ipynb | python3").read()
+        os.remove('./examples/trackintel_basic_tutorial.py')
