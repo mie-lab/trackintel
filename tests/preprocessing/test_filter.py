@@ -1,13 +1,33 @@
 import os
-
+import pytest
 import geopandas as gpd
+from geopandas.testing import assert_geodataframe_equal
 
 import trackintel as ti
 
 
+@pytest.fixture
+def locs_from_geolife():
+    """Create locations from geolife staypoints."""
+    # read staypoints
+    spts_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+    spts = ti.read_staypoints_csv(spts_file, tz='utc', index_col='id')
+    
+    
+    # cluster staypoints to locations
+    _, locs = spts.as_staypoints.generate_locations(method='dbscan', epsilon=10, 
+                                                    num_samples=0, distance_matrix_metric='haversine',
+                                                    agg_level='dataset')
+    
+    # the projection needs to be defined: WGS84
+    locs.crs = 'epsg:4326'
+    return locs
+
 class TestSpatial_filter():
+    """Tests for the spatial_filter function."""
     
     def test_filter_staypoints(self):
+        """Test if spatial_filter works for staypoints."""
         # read staypoints and area file
         spts_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
         spts = ti.read_staypoints_csv(spts_file, tz='utc', index_col='id')
@@ -24,11 +44,13 @@ class TestSpatial_filter():
         
         assert len(within_spts) == gis_within_num, "The spatial filtered sp number should be the same as" + \
             "the one from the result with ArcGIS"
-        assert all(within_spts.geometry == intersects_spts.geometry), "For sp the result of within and" + \
-            "intersects should be the same"
         assert len(crosses_spts) == 0, "There will be no point crossing area"
         
+        # For staypoints the result of within and intersects should be the same
+        assert_geodataframe_equal(within_spts, intersects_spts, check_less_precise=True)
+        
     def test_filter_triplegs(self):
+        """Test if spatial_filter works for triplegs."""
         # read triplegs and area file
         tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv')
         tpls = ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
@@ -51,19 +73,10 @@ class TestSpatial_filter():
         assert len(crosses_tl) == len(intersects_tl) - len(within_tl), "The crosses tripleg number" + \
             "should equal the number of intersect triplegs minus the number of within triplegs"
     
-    def test_filter_locations(self):
-        # read staypoints and area file
-        spts_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
-        spts = ti.read_staypoints_csv(spts_file, tz='utc', index_col='id')
+    def test_filter_locations(self, locs_from_geolife):
+        """Test if spatial_filter works for locations."""
+        locs = locs_from_geolife
         extent = gpd.read_file(os.path.join('tests', 'data', 'area', 'tsinghua.geojson'))
-        
-        # cluster staypoints to locations
-        _, locs = spts.as_staypoints.generate_locations(method='dbscan', epsilon=10, 
-                                                       num_samples=0, distance_matrix_metric='haversine',
-                                                       agg_level='dataset')
-        
-        # the projection needs to be defined: WGS84
-        locs.crs = 'epsg:4326'
         
         # filter locations with the area
         within_loc = locs.as_locations.spatial_filter(areas=extent, method="within", re_project=True)
@@ -75,6 +88,31 @@ class TestSpatial_filter():
         
         assert len(within_loc) == gis_within_num, "The spatial filtered location number should be the same as" + \
             "the one from the result with ArcGIS"
-        assert all(within_loc.geometry == intersects_loc.geometry), "For location the result of within and" + \
-            "intersects should be the same"
         assert len(crosses_loc) == 0, "There will be no point crossing area"
+        
+        # For location the result of within and intersects should be the same
+        assert_geodataframe_equal(within_loc, intersects_loc, check_less_precise=True)
+        
+        
+    def test_re_project(self, locs_from_geolife):
+        """Test if passing the re_project parameter will reproject the input gdf."""
+        locs = locs_from_geolife 
+        extent = gpd.read_file(os.path.join('tests', 'data', 'area', 'tsinghua.geojson'))
+        
+        # filter locations with the area, reproject
+        within_loc_reProj = locs.as_locations.spatial_filter(areas=extent, method="within", re_project=True)
+        
+        # manual reproject
+        init_crs = locs.crs
+        locs = locs.to_crs(extent.crs)
+        within_loc = locs.as_locations.spatial_filter(areas=extent, method="within", re_project=False)
+        within_loc = within_loc.to_crs(init_crs)
+        
+        assert_geodataframe_equal(within_loc_reProj, within_loc, check_less_precise=True)
+        
+    def test_method_error(self, locs_from_geolife):
+        """Test if the an error is raised when passing unknown 'method' to spatial_filter()."""
+        locs = locs_from_geolife
+        extent = gpd.read_file(os.path.join('tests', 'data', 'area', 'tsinghua.geojson'))
+        with pytest.raises(AttributeError):
+            locs.as_locations.spatial_filter(areas=extent, method=12345)
