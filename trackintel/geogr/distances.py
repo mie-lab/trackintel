@@ -27,10 +27,12 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
     Y : GeoDataFrame (as trackintel staypoints or triplegs), optional
         
     dist_metric: {'haversine', 'euclidean', 'dtw', 'frechet'}
-        The distance metric to be used for calculating the matrix. This function wraps around the
-        ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
-        ``scipy.spatial.distance.cdist`` function if X and Y are given. Therefore the following metrics 
-        are also accepted:
+        The distance metric to be used for calculating the matrix. 
+        
+        For staypoints, common choice is 'haversine' or 'euclidean'. This function wraps around 
+        the ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the 
+        ``scipy.spatial.distance.cdist`` function if X and Y are given. 
+        Therefore the following metrics are also accepted:
         
         via ``scikit-learn``: `[‘cityblock’, ‘cosine’, ‘euclidean’, ‘l1’, ‘l2’, ‘manhattan’]`
         
@@ -38,7 +40,8 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
         ‘kulsinski’, ‘mahalanobis’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’,
         ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]`
         
-        triplegs can only be used in combination with `['dtw', 'frechet']`.
+        For triplegs, common choice is 'dtw' or 'frechet'. This function uses the implementation 
+        from similaritymeasures.
         
     n_jobs: int
         Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available 
