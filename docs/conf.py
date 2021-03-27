@@ -49,6 +49,7 @@ autodoc_mock_imports = [
     "sqlalchemy",
     "geoalchemy2",
     "tqdm",
+    "similaritymeasures",
 ]
 
 

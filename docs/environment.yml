@@ -19,3 +19,4 @@ dependencies:
 - sphinx
 - sphinx_rtd_theme
 - tqdm
+- similaritymeasures
