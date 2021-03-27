@@ -5,7 +5,7 @@ import geopandas as gpd
 import numpy as np
 import pytest
 from shapely import wkt
-from shapely.geometry import LineString
+from shapely.geometry import LineString, MultiLineString
 from sklearn.metrics import pairwise_distances
 
 import trackintel as ti
@@ -14,7 +14,7 @@ from trackintel.geogr.distances import meters_to_decimal_degrees, calculate_dist
 
 
 @pytest.fixture
-def gdf_ls():
+def gdf_lineStrings():
     """Construct a gdf that contains two LineStrings."""
     ls_short = LineString([(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)])
     ls_long = LineString([(13.476808430, 48.573711823), (11.5675446, 48.1485459), (8.5067847, 47.4084269)])
@@ -48,7 +48,8 @@ def geolife_tpls():
     return tpls
 
 class TestCalculate_distance_matrix:
-
+    """Tests for the calculate_distance_matrix() function."""
+    
     def test_shape_for_different_array_length(self):
         spts_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
         spts = ti.read_staypoints_csv(spts_file, tz='utc', index_col='id')
@@ -101,10 +102,15 @@ class TestCalculate_distance_matrix:
         """Calculate Linestring length using dtw, single and multi core."""
         tpls = geolife_tpls
         
+        D_all = calculate_distance_matrix(X=tpls.iloc[0:4], dist_metric='dtw', n_jobs=-1)
+        D_zero = calculate_distance_matrix(X=tpls.iloc[0:4], dist_metric='dtw', n_jobs=0)
+        
         D_single = calculate_distance_matrix(X=tpls.iloc[0:4], dist_metric='dtw', n_jobs=1)
         D_multi = calculate_distance_matrix(X=tpls.iloc[0:4], dist_metric='dtw', n_jobs=4)
 
         assert np.isclose(np.sum(np.abs(D_single - D_multi)), 0)
+        assert np.isclose(np.sum(np.abs(D_all - D_multi)), 0)
+        assert np.isclose(np.sum(np.abs(D_zero - D_multi)), 0)
         
     def test_trajectory_distance_frechet(self, geolife_tpls):
         """Calculate Linestring length using frechet, single and multi core."""
@@ -135,9 +141,30 @@ class TestCalculate_distance_matrix:
         D_multi = x.as_triplegs.similarity(Y=y, dist_metric='dtw', n_jobs=4)
 
         assert np.isclose(np.sum(np.abs(D_single - D_multi)), 0)
-
+        
+    def test_trajectory_distance_error(self, geolife_tpls):
+        """Test if the an error is raised when passing unknown 'dist_metric'."""
+        tpls = geolife_tpls
+        
+        with pytest.raises(AttributeError):
+            tpls.iloc[0:4].as_triplegs.similarity(dist_metric=12345, n_jobs=1)
+        with pytest.raises(AttributeError):
+            tpls.iloc[0:4].as_triplegs.similarity(dist_metric="random", n_jobs=1)
+    
+    def test_distance_error(self, single_linestring):
+        """Test if the an error is raised when wrong geometry is passed."""
+        # construct a gdf with two MultiLineStrings
+        multi = MultiLineString([single_linestring, single_linestring])
+        a_list = [(0, multi), (1, multi)]
+        gdf = gpd.GeoDataFrame(a_list, columns=['id', 'geometry']).set_geometry('geometry')
+        gdf = gdf.set_crs('wgs84')
+        
+        with pytest.raises(AttributeError):
+            calculate_distance_matrix(X=gdf, dist_metric='dtw', n_jobs=1)
 
 class TestMetersToDecimalDegrees:
+    """Tests for the meters_to_decimal_degrees() function."""
+    
     def test_meters_to_decimal_degrees(self):
         input_result_dict = {1.0: {0: 111320, 23: 102470, 45: 78710, 67: 43496},
                              0.1: {0: 11132, 23: 10247, 45: 7871, 67: 4349.6},
@@ -150,17 +177,21 @@ class TestMetersToDecimalDegrees:
                 assert np.isclose(decimal_degree_output, degree, atol=0.1)
 
 
-class Testcalc_haversine_length_of_linestring:
-    def test_length(self, gdf_ls):
-        """check if `calculate_haversine_length` runs without errors"""
-        length = calculate_haversine_length(gdf_ls)
+class Testcalc_haversine_length:
+    """Tests for the calculate_haversine_length() function."""
+    
+    def test_length(self, gdf_lineStrings):
+        """Check if `calculate_haversine_length` runs without errors."""
+        length = calculate_haversine_length(gdf_lineStrings)
 
         assert length[0] < length[1]
 
 
 class Test_calculate_haversine_length_single:
+    """Tests for the _calculate_haversine_length_single() function."""
+    
     def Test_length(self, single_linestring):
-        """check if the length of a longer linestring is calculated correctly up to some meters"""
+        """Check if the length of a longer linestring is calculated correctly up to some meters."""
         length = _calculate_haversine_length_single(single_linestring)
 
         assert 1020 < length < 1030
