@@ -7,9 +7,9 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
 from sklearn.metrics import pairwise_distances
+import similaritymeasures
 
 from trackintel.geogr.point_distances import haversine_dist
-from trackintel.geogr.trajectory_distances import dtw, frechet_dist
 
 
 def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kwds):
@@ -49,8 +49,8 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
 
     Returns
     -------
-    np.array
-        matrix of shape (len(X), len(X)) or of shape (len(X), len(Y))
+    D: np.array
+        matrix of shape (len(X), len(X)) or of shape (len(X), len(Y)) if Y is provided.
         
     """
     geom_type = X.geometry.iat[0].geom_type
@@ -109,10 +109,9 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
             # these are the preparation steps for all distance functions based only on coordinates
 
             if dist_metric == 'dtw':
-                d_fun = partial(dtw, **kwds)
-
-            elif dist_metric == 'frechet':
-                d_fun = partial(frechet_dist, **kwds)
+                d_fun = partial(similaritymeasures.dtw, **kwds)
+            else:
+                d_fun = partial(similaritymeasures.frechet_dist, **kwds)
 
             # get combinations of distances that have to be calculated
             nx = len(X)
@@ -124,9 +123,10 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
             else:
                 ix_1, ix_2 = np.tril_indices(nx, k=-1, m=ny)
                 trilix = np.triu_indices(nx, k=1, m=ny)
-
-            left = list(X.iloc[ix_1].geometry)
-            right = list(Y.iloc[ix_2].geometry)
+                
+            # get the coordinates as list of each LineString
+            left = list(X.iloc[ix_1].geometry.apply(lambda x: x.coords))
+            right = list(Y.iloc[ix_2].geometry.apply(lambda x: x.coords))
 
             # map the combinations to the distance function
             if n_jobs == -1 or n_jobs > 1:
@@ -134,9 +134,15 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
                     n_jobs = multiprocessing.cpu_count()
                 with multiprocessing.Pool(processes=n_jobs) as pool:
                     left_right = list(zip(left, right))
-                    d = np.array(list(pool.starmap(d_fun, left_right)))
+                    res = list(pool.starmap(d_fun, left_right))
             else:
-                d = np.array(list(map(d_fun, left, right)))
+                res = list(map(d_fun, left, right))
+                
+            if dist_metric == 'dtw':
+                # the first return is the dtw distance, see docs of similaritymeasures.dtw 
+                d = [dist[0] for dist in res]
+            else:
+                d = res
 
             # write results to (symmetric) distance matrix
             D = np.zeros((nx, ny))

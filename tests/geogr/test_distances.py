@@ -14,17 +14,11 @@ from trackintel.geogr.distances import meters_to_decimal_degrees, calculate_dist
 
 
 @pytest.fixture
-def ls_short():
-    return LineString([(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)])
-
-
-@pytest.fixture
-def ls_long():
-    return LineString([(13.476808430, 48.573711823), (11.5675446, 48.1485459), (8.5067847, 47.4084269)])
-
-
-@pytest.fixture
-def gdf_ls(ls_short, ls_long):
+def gdf_ls():
+    """Construct a gdf that contains two LineStrings."""
+    ls_short = LineString([(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)])
+    ls_long = LineString([(13.476808430, 48.573711823), (11.5675446, 48.1485459), (8.5067847, 47.4084269)])
+    
     a_list = [(0, ls_short), (1, ls_long)]
     gdf = gpd.GeoDataFrame(a_list, columns=['id', 'geometry']).set_geometry('geometry')
     gdf = gdf.set_crs('wgs84')
@@ -33,8 +27,7 @@ def gdf_ls(ls_short, ls_long):
 
 @pytest.fixture
 def single_linestring():
-    # measured length in qgis: ~1024 m
-
+    """Construct LineString that has ~1024 m in QGIS."""
     return wkt.loads("""LineString(13.47671401745228259 
     48.57364142178052901, 13.47510901146785933
     48.5734004715611789, 13.47343656825720082
@@ -47,6 +40,12 @@ def single_linestring():
     48.57253482611510975, 13.46319959731452798
     48.57253482611510975)""")
 
+@pytest.fixture
+def geolife_tpls():
+    """Read geolife triplegs for testing."""
+    tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv')
+    tpls = ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
+    return tpls
 
 class TestCalculate_distance_matrix:
 
@@ -98,26 +97,36 @@ class TestCalculate_distance_matrix:
         their_d_matrix = pairwise_distances(yx, metric='haversine') * 6371000
         assert np.allclose(np.abs(our_d_matrix - their_d_matrix), 0, atol=0.001)  # atol = 1mm
 
-    def test_trajectory_distance(self):
-        tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv')
-        tpls = ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
+    def test_trajectory_distance_dtw(self, geolife_tpls):
+        """Calculate Linestring length using dtw, single and multi core."""
+        tpls = geolife_tpls
+        
         D_single = calculate_distance_matrix(X=tpls.iloc[0:4], dist_metric='dtw', n_jobs=1)
         D_multi = calculate_distance_matrix(X=tpls.iloc[0:4], dist_metric='dtw', n_jobs=4)
 
         assert np.isclose(np.sum(np.abs(D_single - D_multi)), 0)
+        
+    def test_trajectory_distance_frechet(self, geolife_tpls):
+        """Calculate Linestring length using frechet, single and multi core."""
+        tpls = geolife_tpls
+        
+        D_single = calculate_distance_matrix(X=tpls.iloc[0:4], dist_metric='frechet', n_jobs=1)
+        D_multi = calculate_distance_matrix(X=tpls.iloc[0:4], dist_metric='frechet', n_jobs=4)
 
-    def test_trajectory_distance_via_accessor_x(self):
-        tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv')
-        tpls = ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
+        assert np.isclose(np.sum(np.abs(D_single - D_multi)), 0)
+
+    def test_trajectory_distance_via_accessor_x(self, geolife_tpls):
+        """Calculate Linestring length using dtw via accessor."""
+        tpls = geolife_tpls 
 
         D_single = tpls.iloc[0:4].as_triplegs.similarity(dist_metric='dtw', n_jobs=1)
         D_multi = tpls.iloc[0:4].as_triplegs.similarity(dist_metric='dtw', n_jobs=4)
 
         assert np.isclose(np.sum(np.abs(D_single - D_multi)), 0)
 
-    def test_trajectory_distance_via_accessor_xy(self):
-        tpls_file = os.path.join('tests', 'data', 'geolife', 'geolife_triplegs.csv')
-        tpls = ti.read_triplegs_csv(tpls_file, tz='utc', index_col='id')
+    def test_trajectory_distance_via_accessor_xy(self, geolife_tpls):
+        """Calculate Linestring length using dtw via accessor."""
+        tpls = geolife_tpls
 
         x = tpls.iloc[0:2]
         y = tpls.iloc[4:8]
