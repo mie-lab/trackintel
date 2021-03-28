@@ -204,20 +204,18 @@ def generate_triplegs(positionfixes_in, spts=None, method='between_staypoints', 
     if method == 'between_staypoints':
 
         # get case: # todo: @SVen I think only case 2 is now relevant
-        # Case 1: Staypoints are provided and are connected to positionfixes which have a column 'staypoint_id'
+        # Case 1: Positionfixes have a column 'staypoint_id'
         # Case 2: Staypoints are provided but positionfixes do not have a column 'staypoint_id'
-        # case 3: Staypoints are not provided but positionfixes have a column 'staypoint_id'
 
-        if spts is not None and "staypoint_id" in pfs:
-            case = 1
-        elif spts is not None:
+        if 'staypoint_id'not in pfs.columns:
             case = 2
-        elif "staypoint_id" in pfs:
-            case = 3
         else:
-            raise Exception('unknown case')
+            case = 1
 
-        # Preprocessing for case 2: Assign staypoint ids to positionfixes by matching timestamps
+        # Preprocessing for case 2:
+        # - step 1: Assign staypoint ids to positionfixes by matching timestamps (per user)
+        # - step 2: Find first positionfix after a staypoint (relevant if the positionfixes of staypoints are not
+        # provided)
         if case == 2:
             insert_index_psf_list = []
             pfs['staypoint_id'] = np.nan
@@ -225,31 +223,32 @@ def generate_triplegs(positionfixes_in, spts=None, method='between_staypoints', 
                 spts_u = spts[spts['user_id'] == user_id_this]
                 pfs_u = pfs[pfs['user_id'] == user_id_this]
 
-                # all positionfixes with timestamp between staypoints are assigned the value 0
-                # Here we intersect all positionfixes of a user with all staypoins of the same user
+                # step 1
+                # All positionfixes with timestamp between staypoints are assigned the value 0
+                # Intersect all positionfixes of a user with all staypoints of the same user
                 intervals = pd.IntervalIndex.from_arrays(spts_u['started_at'], spts_u['finished_at'], closed='both')
                 is_in_interval = pfs_u['tracked_at'].apply(lambda x: intervals.contains(x).any()).astype('bool')
                 pfs.loc[is_in_interval[is_in_interval].index, 'staypoint_id'] = 0
 
-                #
-                # find closest positionfix (gleich oder später)
+                # step 2
+                # Identify first positionfix after a staypoint
+                # find index of closest positionfix with equal or greater timestamp.
                 tracked_at_sorted = pfs_u['tracked_at'].sort_values()
                 insert_position_psf_u = tracked_at_sorted.searchsorted(spts_u['finished_at'])
                 insert_index_psf = tracked_at_sorted.iloc[insert_position_psf_u].index
 
                 # store the insert insert_position_spts_u in an array
-                insert_index_psf_list.extend(list(tracked_at_sorted.iloc[insert_position_psf_u].index))
+                insert_index_psf_list.extend(list(tracked_at_sorted.iloc[insert_index_psf].index))
 
             cond_staypoints_case2 = pd.Series(False, index=pfs.index)
             cond_staypoints_case2.loc[insert_index_psf_list] = True
 
-        # initialize tripleg_id with np.nan and fill all psfs that belong to staypoins with -1 (nans will be
+        # initialize tripleg_id with np.nan and fill all pfs that belong to staypoints with -1 (nans will be
         # replaced later with tripleg ids)
         pfs['tripleg_id'] = np.nan
         pfs.loc[~pd.isna(pfs['staypoint_id']), 'tripleg_id'] = -1
 
         # get all conditions that trigger a new tripleg.
-
         # condition 1: a positionfix belongs to a new tripleg if the user changes.
         # The first positionfix of the new user is the start of a new tripleg (if it is no staypoint)
         cond_new_user = ((pfs['user_id'] - pfs['user_id'].shift(1)) != 0) & pd.isna(pfs['staypoint_id'])
@@ -261,26 +260,30 @@ def generate_triplegs(positionfixes_in, spts=None, method='between_staypoints', 
 
         # condition 3: staypoints
         # By our definition the first positionfix after a staypoint is the first positionfix of a tripleg.
-        stp_id = (pfs['staypoint_id'] + 1).fillna(0)
-        cond_stp = (stp_id - stp_id.shift(1)) != 0
-
-        # todo: add a "True" to cond_stp at the position that is given in the values of insert_position_spts
-
-        # combine conditions and assign an incrementing id to all positionfixes that start a tripleg
-        cond_all = cond_new_user | cond_gap | cond_stp
+        _stp_id = (pfs['staypoint_id'] + 1).fillna(0)  # this works only for numeric staypoint ids
+        cond_stp = (_stp_id - _stp_id.shift(1)) != 0
+        pfs['cond_stp'] = cond_stp
 
         # special check for case 2: positionfixes that belong to staypoints might not be present in the data.
         if case == 2:
-            cond_all = cond_all | cond_staypoints_case2
-            
-        cond_all[~pd.isna(pfs['staypoint_id'])]=False
-            
+            cond_stp = cond_stp | cond_staypoints_case2
+
+        # combine conditions
+        cond_all = cond_new_user | cond_gap | cond_stp
+        # make sure not to create triplegs within staypoints:
+        cond_all = cond_all & pd.isna(pfs['staypoint_id'])
+
+        pfs['cond_new_user'] = cond_new_user
+        pfs['cond_gap'] = cond_gap
+        pfs['cond_stp'] = cond_stp
+
+        # todo: A test where you have triplegs with length 1. But most of the cases are solved by
+        #  `cond_all = cond_all & pd.isna(pfs['staypoint_id'])`
         tpls_starts = np.where(cond_all)[0]
         tpls_lengths = np.diff(tpls_starts)
-        cond_to_remove = np.take(tpls_starts,np.where(tpls_lengths<3)[0])
-        for i in cond_to_remove:
-            cond_all[i] = False
-            pfs.loc[i,'tripleg_id'] = -1
+        cond_to_remove = np.take(tpls_starts, np.where(tpls_lengths < 2)[0])  # a valid linestring needs 2 points
+        cond_all.iloc[cond_to_remove] = False
+        pfs.iloc[cond_to_remove].loc['tripleg_id'] = -1
 
         # assign an incrementing id to all positionfixes that start a tripleg
         # create triplegs
@@ -292,61 +295,31 @@ def generate_triplegs(positionfixes_in, spts=None, method='between_staypoints', 
 
         posfix_grouper = pfs.groupby('tripleg_id')
 
-        ret_tpls = posfix_grouper.agg({'user_id': 'mean', 'tracked_at': [min, max],
-                                       'geom': list, 'user_id': 'count'}) # count can be any column
+        ret_tpls = posfix_grouper.agg({'user_id': ['mean', 'count'], 'tracked_at': [min, max],
+                                       'geom': list})  # count can be any column
 
-        ret_tpls['geom'] = ret_tpls['geom'].list.apply(LineString)
-        ret_tpls.columns = ['user_id','started_at','finished_at','geom']
-        #ret_tpls.index = ret_tpls.index.astype('int64')
+        # prepare dataframe: Rename columns; read/set geometry/crs;
+        # Order of column has to correspond to the order of the groupby statement
+        ret_tpls.columns = ['user_id', 'nb_posfixes', 'started_at', 'finished_at', 'geom']
+        ret_tpls['geom'] = ret_tpls['geom'].apply(LineString)
         ret_tpls = ret_tpls.set_geometry('geom')
         ret_tpls.crs = pfs.crs
-        
-        pfs.drop(columns='staypoint_id', inplace=True)
 
-        # todo: check if all relevant columns are present
-        # todo: tripleg list of geometries to linestring
-        # todo: renaming of columns
-        # todo: renaming and datatype of index
+        ret_tpls.as_triplegs
+
+        if case == 2:
+            pfs.drop(columns='staypoint_id', inplace=True)
+
+
         # todo: drop too short triplegs
-        # todo: what do we still need from the code below (e.g., dtype consistency)
-
-        # # case 3: Only positionfixes with staypoint id for tripleg generation
-        # elif case == 3:
-        #     generated_triplegs.extend(_triplegs_between_staypoints_case3(positionfixes_user_this, user_id_this))
-
-    #     # create tripleg dataframe
-    #     columns_triplegs = ['user_id', 'started_at', 'finished_at', 'geom', 'pfs_ids']
-    #     if len(generated_triplegs) == 0:
-    #         ret_tpls = gpd.GeoDataFrame(columns=columns_triplegs,
-    #                                     geometry='geom', crs=pfs.crs)
-    #     else:
-    #         ret_tpls = gpd.GeoDataFrame(generated_triplegs, geometry='geom', crs=pfs.crs)
-    #         # sanity check for tripleg generation
-    #         assert len(columns_triplegs) == len(ret_tpls.columns), "Unexpected or missing column in tripleg generation"
-    #         for col in columns_triplegs:
-    #             assert col in ret_tpls.columns, "Unexpected columns in tripleg generation."
-    #
-    #     # index management
-    #     ret_tpls['id'] = np.arange(len(ret_tpls))
-    #     ret_tpls.set_index('id', inplace=True)
-    #
-    #     # assign tripleg_id to positionfixes
-    #     if not ret_tpls.empty:
-    #         tripleg_ids = ret_tpls['pfs_ids'].explode()
-    #         # swap index and values
-    #         tripleg_ids = pd.Series(tripleg_ids.index, index=tripleg_ids.values, name='tripleg_id')
-    #         pfs = pfs.join(tripleg_ids, how='left')
-    #     else:
-    #         pfs['tripleg_id'] = np.nan
-    # ret_tpls = ret_tpls.drop('pfs_ids', axis=1)
 
         ## dtype consistency
-        # # tpls id (generated by this function) should be int
-        # ret_tpls.index = ret_tpls.index.astype('int64')
-        # # pfs['tripleg_id'] should be Int64 (missing values)
-        # pfs['tripleg_id'] = pfs['tripleg_id'].astype('Int64')
+        pfs['tripleg_id'] = pfs['tripleg_id'].astype('Int64')
+        ret_tpls.index = ret_tpls.index.astype('Int64')
+        ret_tpls.index.name = 'id'
+
         # # user_id of tpls should be the same as pfs
-        # ret_tpls['user_id'] = ret_tpls['user_id'].astype(pfs['user_id'].dtype)
+        ret_tpls['user_id'] = ret_tpls['user_id'].astype(pfs['user_id'].dtype)
 
         return pfs, ret_tpls
 
