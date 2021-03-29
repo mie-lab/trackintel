@@ -57,7 +57,15 @@ def generate_staypoints(positionfixes,
         
     ret_spts: GeoDataFrame (as trackintel staypoints)
         The generated staypoints.
-
+        
+    Notes
+    -----
+    The 'sliding' method is adapted from Li et al. (2008). In the original algorithm, the 'finished_at'
+    time for the current staypoint lasts until the 'tracked_at' time of the first positionfix outside 
+    this staypoint. This implies potential tracking gaps may be included in staypoints, and users 
+    are assumed to be stationary during this missing period. To avoid including too large gaps, set
+    'gap_threshold' parameter to a small value, e.g., 15 min.
+    
     Examples
     --------
     >>> pfs.as_positionfixes.generate_staypoints('sliding', dist_threshold=100)
@@ -286,8 +294,9 @@ def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints
 
 
 def _generate_staypoints_sliding_user(
-    df, geo_col, elevation_flag, dist_threshold, time_threshold, gap_threshold, distance_metric, include_last = False
+    df, geo_col, elevation_flag, dist_threshold, time_threshold, gap_threshold, distance_metric, include_last=False
 ):
+    """User level staypoint geenration using sliding method, see generate_staypoints() function for parameter meaning."""
     if distance_metric == "haversine":
         dist_func = haversine_dist
     else:
@@ -338,9 +347,12 @@ def _generate_staypoints_sliding_user(
     ret_spts["user_id"] = df["user_id"].unique()[0]
     return ret_spts
 
-def __create_new_staypoints(start, end, pfs, idx, elevation_flag, geo_col, last_flag = False):
+def __create_new_staypoints(start, end, pfs, idx, elevation_flag, geo_col, last_flag=False):
+    """Create a staypoint with relevant infomation from start to end pfs."""
     new_stps = {}
     
+    # Here we consider pfs[end] time for stp 'finished_at', but only include
+    # pfs[end - 1] for stp geometry and pfs linkage.
     new_stps["started_at"] = pfs[start]["tracked_at"]
     new_stps["finished_at"] = pfs[end]["tracked_at"]
     
