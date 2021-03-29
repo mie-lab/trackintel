@@ -7,9 +7,9 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
 from sklearn.metrics import pairwise_distances
+import similaritymeasures
 
 from trackintel.geogr.point_distances import haversine_dist
-from trackintel.geogr.trajectory_distances import dtw, frechet_dist
 
 
 def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kwds):
@@ -27,10 +27,12 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
     Y : GeoDataFrame (as trackintel staypoints or triplegs), optional
         
     dist_metric: {'haversine', 'euclidean', 'dtw', 'frechet'}
-        The distance metric to be used for calculating the matrix. This function wraps around the
-        ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
-        ``scipy.spatial.distance.cdist`` function if X and Y are given. Therefore the following metrics 
-        are also accepted:
+        The distance metric to be used for calculating the matrix. 
+        
+        For staypoints, common choice is 'haversine' or 'euclidean'. This function wraps around 
+        the ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the 
+        ``scipy.spatial.distance.cdist`` function if X and Y are given. 
+        Therefore the following metrics are also accepted:
         
         via ``scikit-learn``: `[‘cityblock’, ‘cosine’, ‘euclidean’, ‘l1’, ‘l2’, ‘manhattan’]`
         
@@ -38,7 +40,8 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
         ‘kulsinski’, ‘mahalanobis’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’,
         ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]`
         
-        triplegs can only be used in combination with `['dtw', 'frechet']`.
+        For triplegs, common choice is 'dtw' or 'frechet'. This function uses the implementation 
+        from similaritymeasures.
         
     n_jobs: int
         Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available 
@@ -49,8 +52,8 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
 
     Returns
     -------
-    np.array
-        matrix of shape (len(X), len(X)) or of shape (len(X), len(Y))
+    D: np.array
+        matrix of shape (len(X), len(X)) or of shape (len(X), len(Y)) if Y is provided.
         
     """
     geom_type = X.geometry.iat[0].geom_type
@@ -109,10 +112,9 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
             # these are the preparation steps for all distance functions based only on coordinates
 
             if dist_metric == 'dtw':
-                d_fun = partial(dtw, **kwds)
-
-            elif dist_metric == 'frechet':
-                d_fun = partial(frechet_dist, **kwds)
+                d_fun = partial(similaritymeasures.dtw, **kwds)
+            else:
+                d_fun = partial(similaritymeasures.frechet_dist, **kwds)
 
             # get combinations of distances that have to be calculated
             nx = len(X)
@@ -124,9 +126,10 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
             else:
                 ix_1, ix_2 = np.tril_indices(nx, k=-1, m=ny)
                 trilix = np.triu_indices(nx, k=1, m=ny)
-
-            left = list(X.iloc[ix_1].geometry)
-            right = list(Y.iloc[ix_2].geometry)
+                
+            # get the coordinates as list of each LineString
+            left = list(X.iloc[ix_1].geometry.apply(lambda x: x.coords))
+            right = list(Y.iloc[ix_2].geometry.apply(lambda x: x.coords))
 
             # map the combinations to the distance function
             if n_jobs == -1 or n_jobs > 1:
@@ -134,9 +137,15 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
                     n_jobs = multiprocessing.cpu_count()
                 with multiprocessing.Pool(processes=n_jobs) as pool:
                     left_right = list(zip(left, right))
-                    d = np.array(list(pool.starmap(d_fun, left_right)))
+                    res = list(pool.starmap(d_fun, left_right))
             else:
-                d = np.array(list(map(d_fun, left, right)))
+                res = list(map(d_fun, left, right))
+                
+            if dist_metric == 'dtw':
+                # the first return is the dtw distance, see docs of similaritymeasures.dtw 
+                d = [dist[0] for dist in res]
+            else:
+                d = res
 
             # write results to (symmetric) distance matrix
             D = np.zeros((nx, ny))

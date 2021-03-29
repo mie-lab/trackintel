@@ -31,7 +31,8 @@ REQUIRED = [
     'geoalchemy2',
     'osmnx',
     'scikit-learn',
-    'tqdm'
+    'tqdm',
+    'similaritymeasures',
 ]
 
 install_requires = [
@@ -45,7 +46,8 @@ install_requires = [
     'osmnx',
     'scikit-learn',
     'tqdm',
-    'geopandas'
+    'geopandas',
+    'similaritymeasures',
 ]
 
 # What packages are optional?
