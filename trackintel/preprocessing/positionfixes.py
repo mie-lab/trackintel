@@ -13,6 +13,7 @@ def generate_staypoints(positionfixes,
                         dist_threshold=100,
                         time_threshold=5.0,
                         gap_threshold=1e6,
+                        include_last=False,
                         print_progress=False):
     """
     Generate staypoints from positionfixes.
@@ -91,6 +92,7 @@ def generate_staypoints(positionfixes,
                     time_threshold=time_threshold,
                     gap_threshold=gap_threshold,
                     distance_metric=distance_metric,
+                    include_last=include_last,
                 )
                 .reset_index(drop=True)
             )
@@ -105,6 +107,7 @@ def generate_staypoints(positionfixes,
                     time_threshold=time_threshold,
                     gap_threshold=gap_threshold,
                     distance_metric=distance_metric,
+                    include_last=include_last,
                 )
                 .reset_index(drop=True)
             )
@@ -278,7 +281,7 @@ def generate_triplegs(positionfixes, staypoints=None, method='between_staypoints
 
 
 def _generate_staypoints_sliding_user(
-    df, geo_col, elevation_flag, dist_threshold, time_threshold, gap_threshold, distance_metric
+    df, geo_col, elevation_flag, dist_threshold, time_threshold, gap_threshold, distance_metric, include_last = False
 ):
     if distance_metric == "haversine":
         dist_func = haversine_dist
@@ -308,31 +311,42 @@ def _generate_staypoints_sliding_user(
         if delta_dist > dist_threshold:
             delta_t = (pfs[curr]["tracked_at"] - pfs[start]["tracked_at"]).total_seconds()
             if delta_t > (time_threshold * 60):
-                # if both dist and time satisfy, create a new staypoint
-                new_stps = {}
-                new_stps[geo_col] = Point(
-                    np.median([pfs[k][geo_col].x for k in range(start, curr)]),
-                    np.median([pfs[k][geo_col].y for k in range(start, curr)]),
-                )
-                if elevation_flag:
-                    new_stps["elevation"] = np.median([pfs[k]["elevation"] for k in range(start, curr)])
-                new_stps["started_at"] = pfs[start]["tracked_at"]
-                new_stps["finished_at"] = pfs[curr]["tracked_at"]
-
-                # store matching, index should be the id of pfs
-                new_stps["pfs_id"] = [idx[k] for k in range(start, curr)]
-
+                new_stps = __create_new_staypoints(start, curr, pfs, idx, elevation_flag, geo_col)
                 # add staypoint
                 ret_spts.append(new_stps)
 
             # distance larger but time too short -> not a stay point
             # also initializer when new stay point is added
             start = curr
+            
+        # if we arrive at the last positionfix, and want to include the last staypoint
+        # additional control: curr!=start, we don't want to create stps with 0 duration
+        if (curr == len(pfs) - 1) and include_last and (curr != start):
+            new_stps = __create_new_staypoints(start, curr, pfs, idx, elevation_flag, geo_col)
 
+            # add staypoint
+            ret_spts.append(new_stps)
+            
     ret_spts = pd.DataFrame(ret_spts)
     ret_spts["user_id"] = df["user_id"].unique()[0]
     return ret_spts
 
+def __create_new_staypoints(start, end, pfs, idx, elevation_flag, geo_col):
+    new_stps = {}
+    new_stps[geo_col] = Point(
+        np.median([pfs[k][geo_col].x for k in range(start, end)]),
+        np.median([pfs[k][geo_col].y for k in range(start, end)]),
+    )
+    if elevation_flag:
+        new_stps["elevation"] = np.median([pfs[k]["elevation"] for k in range(start, end)])
+    new_stps["started_at"] = pfs[start]["tracked_at"]
+    new_stps["finished_at"] = pfs[end]["tracked_at"]
+
+    # store matching, index should be the id of pfs
+    new_stps["pfs_id"] = [idx[k] for k in range(start, end)]
+    
+    return new_stps
+    
 
 def _triplegs_between_staypoints_case1(positionfixes, staypoints, user_id_this):
     """
