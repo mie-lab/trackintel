@@ -42,6 +42,11 @@ def generate_staypoints(positionfixes,
         The time threshold of determine whether a gap exists between consecutive pfs. Staypoints 
         will not be generated between gaps. Only valid in 'sliding' method.
         
+    include_last: boolen, default False
+        The original algorithm (see Li et al. (2008)) only detects stp if the user steps out
+        of that stp. This will omit the last stp from the pfs series (if any). Set 'include_last'
+        to True to include this last stp.
+        
     print_progress: boolen, default False
         Show per-user progress if set to True.
     
@@ -308,9 +313,9 @@ def _generate_staypoints_sliding_user(
 
         delta_dist = dist_func(pfs[start][geo_col].x, pfs[start][geo_col].y, pfs[curr][geo_col].x, pfs[curr][geo_col].y)
 
-        if delta_dist > dist_threshold:
+        if delta_dist >= dist_threshold:
             delta_t = (pfs[curr]["tracked_at"] - pfs[start]["tracked_at"]).total_seconds()
-            if delta_t > (time_threshold * 60):
+            if delta_t >= (time_threshold * 60):
                 new_stps = __create_new_staypoints(start, curr, pfs, idx, elevation_flag, geo_col)
                 # add staypoint
                 ret_spts.append(new_stps)
@@ -320,28 +325,35 @@ def _generate_staypoints_sliding_user(
             start = curr
             
         # if we arrive at the last positionfix, and want to include the last staypoint
-        # additional control: curr!=start, we don't want to create stps with 0 duration
-        if (curr == len(pfs) - 1) and include_last and (curr != start):
-            new_stps = __create_new_staypoints(start, curr, pfs, idx, elevation_flag, geo_col)
+        if (curr == len(pfs) - 1) and include_last:
+            # additional control: we want to create stps with duration larger than time_threshold
+            delta_t = (pfs[curr]["tracked_at"] - pfs[start]["tracked_at"]).total_seconds()
+            if delta_t >= (time_threshold * 60):
+                new_stps = __create_new_staypoints(start, curr, pfs, idx, elevation_flag, geo_col, last_flag=True)
 
-            # add staypoint
-            ret_spts.append(new_stps)
+                # add staypoint
+                ret_spts.append(new_stps)
             
     ret_spts = pd.DataFrame(ret_spts)
     ret_spts["user_id"] = df["user_id"].unique()[0]
     return ret_spts
 
-def __create_new_staypoints(start, end, pfs, idx, elevation_flag, geo_col):
+def __create_new_staypoints(start, end, pfs, idx, elevation_flag, geo_col, last_flag = False):
     new_stps = {}
+    
+    new_stps["started_at"] = pfs[start]["tracked_at"]
+    new_stps["finished_at"] = pfs[end]["tracked_at"]
+    
+    # if end is the last pfs, we want to include the info from it as well
+    if last_flag:
+        end = len(pfs) 
+    
     new_stps[geo_col] = Point(
         np.median([pfs[k][geo_col].x for k in range(start, end)]),
         np.median([pfs[k][geo_col].y for k in range(start, end)]),
     )
     if elevation_flag:
         new_stps["elevation"] = np.median([pfs[k]["elevation"] for k in range(start, end)])
-    new_stps["started_at"] = pfs[start]["tracked_at"]
-    new_stps["finished_at"] = pfs[end]["tracked_at"]
-
     # store matching, index should be the id of pfs
     new_stps["pfs_id"] = [idx[k] for k in range(start, end)]
     

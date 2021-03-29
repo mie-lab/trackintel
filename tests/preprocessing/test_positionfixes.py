@@ -63,34 +63,35 @@ def testdata_pfs_ids_geolife():
 
 
 class TestGenerate_staypoints():
-    def test_generate_staypoints_sliding_min(self):
-        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
-        pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
-        pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=0, time_threshold=0, include_last=True)
-        assert len(stps) == len(pfs) - 1, "With small thresholds, staypoint extraction should yield each positionfix"
+    def test_sliding_min(self, pfs_geolife_long):
+        """Test if using small thresholds, stp extraction yields each pfs."""
+        pfs = pfs_geolife_long
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', 
+                                                             dist_threshold=0, 
+                                                             time_threshold=0, 
+                                                             include_last=True)
+        assert len(stps) == len(pfs)
 
-    def test_generate_staypoints_sliding_max(self):
-        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
-        pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
+    def test_sliding_max(self, pfs_geolife_long):
+        """Test if using large thresholds, stp extraction yield no pfs."""
+        pfs = pfs_geolife_long
         _, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                            dist_threshold=sys.maxsize,
                                                            time_threshold=sys.maxsize)
-        assert len(stps) == 0, "With large thresholds, staypoint extraction should not yield positionfixes"
+        assert len(stps) == 0
 
-    def test_generate_staypoints_missing_link(self):
+    def test_missing_link(self, pfs_geolife_long):
         """Test nan is assigned for missing link between pfs and stps."""
-        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
-        pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
+        pfs = pfs_geolife_long
         pfs, _ = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                           dist_threshold=sys.maxsize,
                                                           time_threshold=sys.maxsize)
 
         assert pd.isna(pfs['staypoint_id']).any()
 
-    def test_generate_staypoints_dtype_consistent(self):
+    def test_dtype_consistent(self, pfs_geolife_long):
         """Test the dtypes for the generated columns."""
-        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
-        pfs = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
+        pfs = pfs_geolife_long
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                              dist_threshold=25,
                                                              time_threshold=5)
@@ -98,19 +99,34 @@ class TestGenerate_staypoints():
         assert pfs['staypoint_id'].dtype == "Int64"
         assert stps.index.dtype == "int64"
 
-    def test_generate_staypoints_index_start(self):
+    def test_index_start(self, pfs_geolife_long):
         """Test the generated index start from 0 for different methods."""
-        pfs_file = os.path.join('tests', 'data', 'positionfixes.csv')
-        pfs_ori = ti.read_positionfixes_csv(pfs_file, sep=';', tz='utc', index_col='id')
+        pfs = pfs_geolife_long
 
-        _, stps_sliding = pfs_ori.as_positionfixes.generate_staypoints(method='sliding',
-                                                                       dist_threshold=25,
-                                                                       time_threshold=5.0)
-        # _, stps_dbscan = pfs_ori.as_positionfixes.generate_staypoints(method='dbscan')
+        _, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
+                                                           dist_threshold=25,
+                                                           time_threshold=5.0)
 
-        assert (stps_sliding.index == np.arange(len(stps_sliding))).any()
-        # assert (stps_dbscan.index == np.arange(len(stps_dbscan))).any()
+        assert (stps.index == np.arange(len(stps))).any()
 
+    def test_include_last(self, pfs_geolife):
+        """Test if the include_last arguement will include the last pfs as stp."""
+        pfs_ori = pfs_geolife
+
+        pfs_wo, stps_wo = pfs_ori.as_positionfixes.generate_staypoints(method='sliding',
+                                                           dist_threshold=100,
+                                                           time_threshold=5.0,
+                                                           include_last=False)
+        pfs_include, stps_include = pfs_ori.as_positionfixes.generate_staypoints(method='sliding',
+                                                           dist_threshold=100,
+                                                           time_threshold=5.0,
+                                                           include_last=True)
+        # stps_wo does not include the last staypoint
+        assert len(stps_wo) == len(stps_include) - 1
+        # the last pfs of pfs_include has stp connection
+        assert not pfs_include.tail(1)['staypoint_id'].isna().all()
+        assert pfs_wo.tail(1)['staypoint_id'].isna().all()
+        
 
 class TestGenerate_triplegs():
     def test_generate_triplegs_case1(self, geolife_pfs_stps_short, testdata_tpls_geolife):
