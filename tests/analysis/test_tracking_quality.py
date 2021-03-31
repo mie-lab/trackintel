@@ -130,6 +130,24 @@ class TestTemporal_tracking_quality:
         with pytest.raises(AttributeError):
             ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="random")
             
+    def test_tracking_quality_wrong_datamodel(self, testdata_stps_tpls_geolife_long):
+        """Test if the a keyerror is raised when passing incorrect datamodels."""
+        # read positionfixes and feed to temporal_tracking_quality()
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        with pytest.raises(KeyError):
+            ti.analysis.tracking_quality.temporal_tracking_quality(pfs)
+        
+        # generate locations and feed to temporal_tracking_quality()
+        stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+        stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
+        _, locs = stps.as_staypoints.generate_locations(method='dbscan',
+                                                        epsilon=10,
+                                                        num_samples=0,
+                                                        distance_matrix_metric='haversine',
+                                                        agg_level='dataset')
+        with pytest.raises(KeyError):
+            ti.analysis.tracking_quality.temporal_tracking_quality(locs)
+            
     def test_tracking_quality_user_error(self, testdata_stps_tpls_geolife_long):
         """Test if the an error is raised when passing unknown 'granularity' to _get_tracking_quality_user()."""
         stps_tpls = testdata_stps_tpls_geolife_long

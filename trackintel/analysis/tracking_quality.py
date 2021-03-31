@@ -24,8 +24,13 @@ def temporal_tracking_quality(source, granularity="all"):
     quality: DataFrame
         A per-user per-granularity temporal tracking quality dataframe.
 
-    Note
-    ----
+    Notes
+    -----
+    Requires at least the following columns:
+    ``['user_id', 'started_at', 'finished_at']``
+    which means the function supports trackintel ``staypoints``, ``triplegs``, ``trips`` and ``tours`` 
+    datamodels and their combinations (e.g., staypoints and triplegs sequence).
+    
     The temporal tracking quality is the ratio of tracking time and the total time extent. It is
     calculated and returned per-user in the defined ``granularity``. The possible time extents of 
     the different granularities are different:
@@ -46,6 +51,12 @@ def temporal_tracking_quality(source, granularity="all"):
     >>> # calculate per-day tracking quality of stps and tpls sequence
     >>> temporal_tracking_quality(spts_tpls, granularity="day")
     """
+    required_columns = ["user_id", "started_at", "finished_at"]
+    if any([c not in source.columns for c in required_columns]):
+        raise KeyError("To successfully calculate the user-level tracking quality, " \
+            + "the source dataframe must have the columns [%s], but it has [%s]." \
+            % (', '.join(required_columns), ', '.join(source.columns)))
+            
     df = source.copy()
     df.reset_index(inplace=True)
     if granularity == "all":
