@@ -2,6 +2,10 @@
 # -*- coding: utf-8 -*-
 import os
 
+
 class Test_examples():
+
     def test_example_preprocess_trajectories(self):
-        exec(open(os.path.join('examples','preprocess_trajectories.py')).read())
+        """checks if the example 'preprocess_trajectories' runs without errors """
+
+        exec(open(os.path.join('examples', 'preprocess_trajectories.py')).read())
