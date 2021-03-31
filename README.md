@@ -11,7 +11,7 @@ Trackintel is based on [Pandas](https://pandas.pydata.org/) and [GeoPandas](http
 
 You can find the documentation on the [trackintel documentation page](https://trackintel.readthedocs.io/en/latest).
 
-Try *trackintel* online in a MyBinder notebook: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/mie-lab/trackintel/master?filepath=%2Fexamples%2Fexample_geolife%2FTrackintel_introduction.ipynb)
+Try *trackintel* online in a MyBinder notebook: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/mie-lab/trackintel/HEAD?filepath=%2Fexamples%2Ftrackintel_basic_tutorial.ipynb)
 
 ## Data model
 
