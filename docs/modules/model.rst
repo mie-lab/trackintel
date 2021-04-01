@@ -12,8 +12,8 @@ provides functionality to generate everything starting from the raw GPS position
 * **triplegs**: Segments covered with one mode of transport.
 * **locations**: Clustered staypoints.
 * **trips**: Segments between consecutive activity staypoints (special staypoints that are not just waiting points).
-* **tours**: Sequences of trips which start and end at the same location (if ``journey`` 
-  is set to ``True``, this location is *home*).
+* **tours**: Sequences of trips which start and end at the same location (if the column 'journey' 
+  is True, this location is *home*).
 
 An example plot showing the hierarchy of the trackintel data model can be found below:
 
@@ -35,10 +35,6 @@ The image below explicitly shows the definition of locations as clustered staypo
 A detailed (and SQL-specific) explanation of the different classes can be found under 
 :doc:`/content/data_model_sql`.
 
-Some of the more time-consuming functions of trackintel generate logging data, as well as extracted 
-features data, and they assume more data about geographic features or characteristics of transport 
-modes are available. These are not explained here yet.
-
 GeoPandas Implementation
 ========================
 
@@ -49,11 +45,11 @@ do not extend the given DataFrame constructs, we provide accessors that validate
 corresponds to a set of constraints, and make functions available on the DataFrames. For example::
 
     df = trackintel.read_positionfixes_csv('data.csv')
-    df.as_positionfixes.extract_staypoints()
+    df.as_positionfixes.generate_staypoints()
 
 This will read a CSV into a format compatible with the trackintel understanding of a collection of 
 positionfixes, and the second line will wrap the DataFrame with an accessor providing functions such 
-as ``extract_staypoints()``. You can read up more on Pandas accessors in `the Pandas documentation 
+as ``generate_staypoints()``. You can read up more on Pandas accessors in `the Pandas documentation 
 <https://pandas.pydata.org/pandas-docs/stable/development/extending.html>`_.
 
 Available Accessors

@@ -4,15 +4,16 @@ import trackintel as ti
 
 @pd.api.extensions.register_dataframe_accessor("as_users")
 class UsersAccessor(object):
-    """A pandas accessor to treat DataFrames as collections of users. This
-    will define certain methods and accessors, as well as make sure that the DataFrame
+    """A pandas accessor to treat DataFrames as collections of users.
+    
+    This will define certain methods and accessors, as well as make sure that the DataFrame
     adheres to some requirements.
 
     Requires at least the following columns: 
-    ``['id']``
+    ['id']
 
     For several usecases, the following additional columns are required:
-    ``['attributes', 'geom_home', 'geom_work']``
+    ['attributes', 'geom_home', 'geom_work']
 
     Examples
     --------
@@ -33,6 +34,9 @@ class UsersAccessor(object):
                 % (', '.join(UsersAccessor.required_columns), ', '.join(obj.columns)))
 
     def plot_home_and_work(self):
-        """Plots home and work locations of users. 
-        See :func:`trackintel.visualization.users.plot_home_and_work`."""
+        """
+        Plot home and work locations of users.
+        
+        See :func:`trackintel.visualization.users.plot_home_and_work`.
+        """
         raise NotImplementedError
