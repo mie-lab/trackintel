@@ -60,7 +60,6 @@ class TestPositionfixes:
         
         os.remove(tmp_file)
         
-
     def test_set_index_warning(self):
         """Test if a warning is raised when not parsing the index_col argument."""
         file = os.path.join('tests', 'data', 'positionfixes.csv')
@@ -80,9 +79,11 @@ class TestPositionfixes:
         # TODO Implement some tests for PostGIS.
         pass
 
-class TestFile:
-
-    def test_triplegs_from_to_csv(self):
+class TestTriplegs:
+    """Test for 'read_triplegs_csv' and 'write_triplegs_csv' functions."""
+    
+    def test_from_to_csv(self):
+        """Test basic reading and writing functions."""
         orig_file = os.path.join('tests', 'data', 'triplegs.csv')
         mod_file = os.path.join('tests', 'data', 'triplegs_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'triplegs_test.csv')
@@ -100,21 +101,45 @@ class TestFile:
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
-    def test_triplegs_read_csv_crs_parameter(self):
+    def test_set_crs(self):
+        """Test setting the crs when reading."""
         file = os.path.join('tests', 'data', 'triplegs.csv')
         crs = "EPSG:2056"
         tpls = ti.read_triplegs_csv(file, sep=';', tz='utc', index_col="id")
         assert tpls.crs is None
+        
         tpls = ti.read_triplegs_csv(file, sep=';', tz='utc', index_col="id", crs=crs)
         assert tpls.crs == crs
         
-    def test_triplegs_csv_index_warning(self):
+    def test_set_datatime_tz(self):
+        """Test setting the timezone infomation when reading."""
+        # check if tz is added to the datatime column
+        file = os.path.join('tests', 'data', 'triplegs.csv')
+        tpls = ti.read_triplegs_csv(file, sep=';', index_col="id")
+        assert pd.api.types.is_datetime64tz_dtype(tpls["started_at"])
+        
+        # check if a timezone will be set after manually deleting the timezone
+        tpls['started_at'] = tpls['started_at'].dt.tz_localize(None)
+        assert not pd.api.types.is_datetime64tz_dtype(tpls["started_at"])
+        tmp_file = os.path.join('tests', 'data', 'triplegs_test.csv')
+        tpls.as_triplegs.to_csv(tmp_file, sep=';')
+        tpls = ti.read_triplegs_csv(tmp_file, sep=';', index_col="id", tz = 'utc')
+        
+        assert pd.api.types.is_datetime64tz_dtype(tpls["started_at"])
+        
+        # check if a warning is raised if 'tz' is not provided
+        with pytest.warns(UserWarning):
+            ti.read_triplegs_csv(tmp_file, sep=';', index_col="id")
+        
+        os.remove(tmp_file)
+        
+    def test_set_index_warning(self):
         """Test if a warning is raised when not parsing the index_col argument."""
         file = os.path.join('tests', 'data', 'triplegs.csv')
         with pytest.warns(UserWarning):
             ti.read_triplegs_csv(file, sep=';')
 
-    def test_triplegs_csv_index_col(self):
+    def test_set_index(self):
         """Test if `index_col` can be set."""
         file = os.path.join('tests', 'data', 'triplegs.csv')
         ind_name = 'id'
@@ -123,11 +148,16 @@ class TestFile:
         pfs = ti.read_triplegs_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
-    def test_triplegs_from_to_postgis(self):
+    def test_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
-
-    def test_staypoints_from_to_csv(self):
+    
+    
+class TestStaypoints:
+    """Test for 'read_staypoints_csv' and 'write_staypoints_csv' functions."""
+    
+    def test_from_to_csv(self):
+        """Test basic reading and writing functions."""
         orig_file = os.path.join('tests', 'data', 'staypoints.csv')
         mod_file = os.path.join('tests', 'data', 'staypoints_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'staypoints_test.csv')
@@ -142,21 +172,45 @@ class TestFile:
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
-    def test_read_staypoints_csv_crs_parameter(self):
+    def test_set_crs(self):
+        """Test setting the crs when reading."""
         file = os.path.join('tests', 'data', 'staypoints.csv')
         crs = "EPSG:2056"
         stps = ti.read_staypoints_csv(file, sep=';', tz='utc', index_col="id")
         assert stps.crs is None
+        
         stps = ti.read_staypoints_csv(file, sep=';', tz='utc', index_col="id", crs=crs)
         assert stps.crs == crs
-    
-    def test_staypoints_csv_index_warning(self):
+        
+    def test_set_datatime_tz(self):
+        """Test setting the timezone infomation when reading."""
+        # check if tz is added to the datatime column
+        file = os.path.join('tests', 'data', 'staypoints.csv')
+        stps = ti.read_staypoints_csv(file, sep=';', index_col="id")
+        assert pd.api.types.is_datetime64tz_dtype(stps["started_at"])
+        
+        # check if a timezone will be set after manually deleting the timezone
+        stps['started_at'] = stps['started_at'].dt.tz_localize(None)
+        assert not pd.api.types.is_datetime64tz_dtype(stps["started_at"])
+        tmp_file = os.path.join('tests', 'data', 'staypoints_test.csv')
+        stps.as_staypoints.to_csv(tmp_file, sep=';')
+        stps = ti.read_staypoints_csv(tmp_file, sep=';', index_col="id", tz = 'utc')
+        
+        assert pd.api.types.is_datetime64tz_dtype(stps["started_at"])
+        
+        # check if a warning is raised if 'tz' is not provided
+        with pytest.warns(UserWarning):
+            ti.read_staypoints_csv(tmp_file, sep=';', index_col="id")
+        
+        os.remove(tmp_file)
+        
+    def test_set_index_warning(self):
         """Test if a warning is raised when not parsing the index_col argument."""
         file = os.path.join('tests', 'data', 'staypoints.csv')
         with pytest.warns(UserWarning):
             ti.read_staypoints_csv(file, sep=';')
 
-    def test_staypoints_csv_index_col(self):
+    def test_set_index(self):
         """Test if `index_col` can be set."""
         file = os.path.join('tests', 'data', 'staypoints.csv')
         ind_name = 'id'
@@ -165,11 +219,16 @@ class TestFile:
         pfs = ti.read_staypoints_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
-    def test_staypoints_from_to_postgis(self):
+    def test_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
 
-    def test_locations_from_to_csv(self):
+
+class TestLocations:
+    """Test for 'read_locations_csv' and 'write_locations_csv' functions."""
+    
+    def test_from_to_csv(self):
+        """Test basic reading and writing functions."""
         orig_file = os.path.join('tests', 'data', 'locations.csv')
         mod_file = os.path.join('tests', 'data', 'locations_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'locations_test.csv')
@@ -180,21 +239,24 @@ class TestFile:
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
-    def test_read_locations_csv_crs_parameter(self):
+    def test_set_crs(self):
+        """Test setting the crs when reading."""
         file = os.path.join('tests', 'data', 'locations.csv')
         crs = "EPSG:2056"
         locs = ti.read_locations_csv(file, sep=';', index_col="id")
         assert locs.crs is None
+        
         locs = ti.read_locations_csv(file, sep=';', index_col="id", crs=crs)
         assert locs.crs == crs
-
-    def test_locations_csv_index_warning(self):
+        
+    def test_set_index_warning(self):
         """Test if a warning is raised when not parsing the index_col argument."""
         file = os.path.join('tests', 'data', 'locations.csv')
         with pytest.warns(UserWarning):
             ti.read_locations_csv(file, sep=';')
 
-    def test_locations_csv_index_col(self):
+    def test_set_index(self):
+        """Test if `index_col` can be set."""
         file = os.path.join('tests', 'data', 'locations.csv')
         ind_name = 'id'
         pfs = ti.read_locations_csv(file, sep=";", index_col=ind_name)
@@ -202,11 +264,15 @@ class TestFile:
         pfs = ti.read_locations_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
-    def test_locations_from_to_postgis(self):
+    def test_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
-
-    def test_trips_from_to_csv(self):
+    
+class TestTrips:
+    """Test for 'read_trips_csv' and 'write_trips_csv' functions."""
+    
+    def test_from_to_csv(self):
+        """Test basic reading and writing functions."""
         orig_file = os.path.join('tests', 'data', 'trips.csv')
         mod_file = os.path.join('tests', 'data', 'trips_mod_columns.csv')
         tmp_file = os.path.join('tests', 'data', 'trips_test.csv')
@@ -221,14 +287,35 @@ class TestFile:
         trips.as_trips.to_csv(tmp_file, sep=';', columns=columns)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
-    
-    def test_trips_csv_index_warning(self):
+        
+    def test_set_datatime_tz(self):
+        """Test setting the timezone infomation when reading."""
+        # check if tz is added to the datatime column
+        file = os.path.join('tests', 'data', 'trips.csv')
+        trips = ti.read_trips_csv(file, sep=';', index_col="id")
+        assert pd.api.types.is_datetime64tz_dtype(trips["started_at"])
+        
+        # check if a timezone will be set after manually deleting the timezone
+        trips['started_at'] = trips['started_at'].dt.tz_localize(None)
+        assert not pd.api.types.is_datetime64tz_dtype(trips["started_at"])
+        tmp_file = os.path.join('tests', 'data', 'trips_test.csv')
+        trips.as_trips.to_csv(tmp_file, sep=';')
+        trips = ti.read_trips_csv(tmp_file, sep=';', index_col="id", tz = 'utc')
+        
+        assert pd.api.types.is_datetime64tz_dtype(trips["started_at"])
+        
+        # check if a warning is raised if 'tz' is not provided
+        with pytest.warns(UserWarning):
+            ti.read_trips_csv(tmp_file, sep=';', index_col="id")
+        
+        os.remove(tmp_file)
+    def test_set_index_warning(self):
         """Test if a warning is raised when not parsing the index_col argument."""
         file = os.path.join('tests', 'data', 'trips.csv')
         with pytest.warns(UserWarning):
             ti.read_trips_csv(file, sep=';')
 
-    def test_trips_csv_index_col(self):
+    def test_set_index(self):
         """Test if `index_col` can be set."""
         file = os.path.join('tests', 'data', 'trips.csv')
         ind_name = 'id'
@@ -237,10 +324,13 @@ class TestFile:
         gdf = ti.read_trips_csv(file, sep=";", index_col=None)
         assert gdf.index.name is None
 
-    def test_trips_from_to_postgis(self):
+    def test_from_to_postgis(self):
         # TODO Implement some tests for PostGIS.
         pass
 
-    def test_tours_from_to_csv(self):
+class TestTours:
+    """Test for 'read_tours_csv' and 'write_tours_csv' functions."""
+    
+    def test_from_to_postgis(self):
         # TODO Implement some tests for reading and writing tours.
         pass
