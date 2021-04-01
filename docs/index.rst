@@ -23,7 +23,7 @@ and assumes that data is available adhering to the trackintel data model format:
 
 For information about the trackintel data models that are used throughout the framework, 
 please refer to the :doc:`/modules/model` page. For a quick deployment to a PostGIS database, you can 
-use the SQL commands given at :doc:`/content/data_model_sql` or run the file found 
+use the SQL commands given at :ref:`data_model` or run the file found 
 `on Github <https://github.com/mie-lab/trackintel/blob/master/sql/create_tables_pg.sql>`_.
 
 .. toctree::

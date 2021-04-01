@@ -3,22 +3,22 @@ import pandas as pd
 
 @pd.api.extensions.register_dataframe_accessor("as_tours")
 class ToursAccessor(object):
-    """A pandas accessor to treat DataFrames as collections of tours. 
+    """A pandas accessor to treat DataFrames as collections of `Tours`.
 
     Requires at least the following columns: 
-    ``['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'journey']``
+    ['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'journey']
 
-    The ``index`` of the GeoDataFrame will be treated as unique identifier of the `trips`
+    The 'index' of the GeoDataFrame will be treated as unique identifier of the `Tours`
 
     For several usecases, the following additional columns are required:
-    ``['context']``
+    ['context']
 
     Notes
-    --------
+    -----
     Tours are an aggregation level in transport planning that summarize all trips until a person returns to the
     same location. Tours starting and ending at home (=journey) are especially important.
 
-    ``started_at`` and ``finished_at`` are timezone aware pandas datetime objects.
+    'started_at' and 'finished_at' are timezone aware pandas datetime objects.
 
     Examples
     --------
@@ -45,11 +45,17 @@ class ToursAccessor(object):
             "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj['finished_at'].dtype)
 
     def to_csv(self, filename, *args, **kwargs):
-        """Stores this collection of tours as a CSV file.
-        See :func:`trackintel.io.file.write_tours_csv`."""
+        """
+        Store this collection of tours as a CSV file.
+        
+        See :func:`trackintel.io.file.write_tours_csv`.
+        """
         raise NotImplementedError
 
     def plot(self, *args, **kwargs):
-        """Plots this collection of tours. 
-        See :func:`trackintel.visualization.tours.plot_tours`."""
+        """
+        Plot this collection of tours.
+        
+        See :func:`trackintel.visualization.tours.plot_tours`.
+        """
         raise NotImplementedError
