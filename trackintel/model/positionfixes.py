@@ -110,6 +110,6 @@ class PositionfixesAccessor(object):
         """
         Calculate pair-wise distance among positionfixes or to other positionfixes.
         
-        See: func:'trackintel.geogr.distances.calculate_distance_matrix'.
+        See :func:'trackintel.geogr.distances.calculate_distance_matrix'.
         """
         return ti.geogr.distances.calculate_distance_matrix(self._obj, *args, **kwargs)
