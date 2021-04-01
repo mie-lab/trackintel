@@ -2,31 +2,37 @@
 import os
 import pytest
 
+from shapely.geometry import LineString
+
 import trackintel as ti
+
+
+@pytest.fixture
+def testdata_locs():
+    """Read location test data from files."""
+    stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
+    stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
+    stps, locs = stps.as_staypoints.generate_locations(method='dbscan', 
+                                                        epsilon=10, 
+                                                        num_samples=0, 
+                                                        distance_matrix_metric='haversine',
+                                                        agg_level='dataset')
+    return locs
 
 
 class TestLocations:
     """Tests for the LocationsAccessor."""
     
-    def test_accessor(self):
+    def test_accessor_column(self, testdata_locs):
         """Test if the as_locations accessor checks the required column for locations."""
-        stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
-        stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
-        # 
-        stps, locs = stps.as_staypoints.generate_locations(method='dbscan', 
-                                                           epsilon=10, 
-                                                           num_samples=0, 
-                                                           distance_matrix_metric='haversine',
-                                                           agg_level='dataset')
-        assert locs.as_locations
-        
-        # user_id
-        with pytest.raises(AttributeError):
+        locs = testdata_locs.copy()
+
+        with pytest.raises(AttributeError, match="To process a DataFrame as a collection of locations"):
             locs.drop(['user_id'], axis=1).as_locations
-        
-        # check geometry type
-        with pytest.raises(AttributeError):
-            pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
-            pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5 * 60)
-            _, tpls = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
-            tpls.as_locations
+    
+    def test_accessor_geometry_type(self, testdata_locs):
+        """Test if the as_locations accessor requires Point geometry."""
+        locs = testdata_locs.copy()
+        with pytest.raises(AttributeError, match="The center geometry must be a Point"):
+            locs['center'] = LineString([(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)])
+            locs.as_locations

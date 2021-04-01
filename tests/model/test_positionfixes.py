@@ -2,6 +2,8 @@ import os
 import pytest
 import numpy as np
 
+from shapely.geometry import LineString
+
 import trackintel as ti
 
 
@@ -14,24 +16,33 @@ def testdata_geolife():
 class TestPositionfixes:
     """Tests for the PositionfixesAccessor."""
     
-    def test_accessor(self, testdata_geolife):
+    def test_accessor_column(self, testdata_geolife):
         """Test if the as_positionfixes accessor checks the required column for positionfixes."""
-        pfs = testdata_geolife
+        pfs = testdata_geolife.copy()
         assert pfs.as_positionfixes
-        
-        # check geometry
-        with pytest.raises(AttributeError):
-            pfs.drop(['geom'], axis=1).as_positionfixes
             
         # check user_id
-        with pytest.raises(AttributeError):
+        with pytest.raises(AttributeError, match="To process a DataFrame as a collection of positionfixes"):
             pfs.drop(['user_id'], axis=1).as_positionfixes
+
+    
+    def test_accessor_geometry(self, testdata_geolife):
+        """Test if the as_positionfixes accessor requires geometry column."""
+        pfs = testdata_geolife.copy()
+        
+        # check geometry
+        with pytest.raises(AttributeError, match="No geometry data set yet"):
+            pfs.drop(['geom'], axis=1).as_positionfixes
+          
+    def test_accessor_geometry_type(self, testdata_geolife):
+        """Test if the as_positionfixes accessor requires Point geometry."""
+        pfs = testdata_geolife.copy()
             
         # check geometry type
-        with pytest.raises(AttributeError):
-            pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5 * 60)
-            _, tpls = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
-            tpls.as_positionfixes
+        with pytest.raises(AttributeError, match="The geometry must be a Point"):
+            pfs['geom'] = LineString([(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)])
+            pfs.as_positionfixes
+
 
     def test_center(self, testdata_geolife):
         """Check if pfs has center method and returns (lat, lon) pairs as geometry."""

@@ -52,7 +52,9 @@ class StaypointsAccessor(object):
                                             "where x is you GeoDataFrame"
         if obj.geometry.iloc[0].geom_type != 'Point':
             raise AttributeError("The geometry must be a Point (only first checked).")
-
+        
+        print(obj)
+        print(obj.geometry.iloc[0].geom_type)
         # check timestamp dtypes
         assert pd.api.types.is_datetime64tz_dtype(obj['started_at']), \
             "dtype of started_at is {} but has to be tz aware datetime64".format(obj['started_at'].dtype)
