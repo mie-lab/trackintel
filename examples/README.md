@@ -10,11 +10,7 @@ The example data (found under `examples/data`) were generated or tracked using d
 
 * `posmo_trajectory.csv` automatically tracked using [POSMO Segments](https://posmo.datamap.io/), see also [Android App Store](https://play.google.com/store/apps/details?id=io.datamap.posmo_segments) and [Apple App Store](https://itunes.apple.com/us/app/posmo-segments/id1450602777).
 
-* *Not available yet*: `moves_trajectory.csv` automatically tracked using [Moves (discontinued)](https://www.moves-app.com/).
-
-* `geolife_trajectory.csv` is from the widely used [Geolife trajectory dataset](https://www.microsoft.com/en-us/download/details.aspx?id=52367) [1-3].
-
-* *Not available yet*: `myway_trajectory.csv` is tracked by the [MyWay app](https://www.sbb.ch/de/fahrplan/mobile-fahrplaene/mobile-apps/myway.html) from the [Swiss Federal Railways (SBB)](https://www.sbb.ch), basically running the [MotionTag](https://motion-tag.com/en/) software.
+* `geolife_trajectory.csv` and `pfs_tutorial.geojson` is from the widely used [Geolife trajectory dataset](https://www.microsoft.com/en-us/download/details.aspx?id=52367) [1-3].
 
 * `google_trajectory.csv` is a random excerpt from a location track by [Google Maps](https://www.google.ch/maps).
 
@@ -23,12 +19,13 @@ The example data (found under `examples/data`) were generated or tracked using d
 Run any example as:
 
 ```bash
-python preprocessing.py
+python preprocess_trajectories.py
 python import_export_postgis.py
 python setup_example_database.py
 ```
 
-Several examples, such as `preprocessing.py` will generate output plots in the `examples/out` directory. For examples involving a database connection, you can adapt the `config.json` file.
+Several examples, such as `preprocess_trajectories.py` will generate output plots in the `examples/out` directory.
+For examples involving a database connection, you can adapt the `config.json` file.
 
 ## References
 
