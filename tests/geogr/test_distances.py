@@ -125,8 +125,8 @@ class TestCalculate_distance_matrix:
         """Calculate Linestring length using dtw via accessor."""
         tpls = geolife_tpls 
 
-        D_single = tpls.iloc[0:4].as_triplegs.similarity(dist_metric='dtw', n_jobs=1)
-        D_multi = tpls.iloc[0:4].as_triplegs.similarity(dist_metric='dtw', n_jobs=4)
+        D_single = tpls.iloc[0:4].as_triplegs.calculate_distance_matrix(dist_metric='dtw', n_jobs=1)
+        D_multi = tpls.iloc[0:4].as_triplegs.calculate_distance_matrix(dist_metric='dtw', n_jobs=4)
 
         assert np.isclose(np.sum(np.abs(D_single - D_multi)), 0)
 
@@ -137,8 +137,8 @@ class TestCalculate_distance_matrix:
         x = tpls.iloc[0:2]
         y = tpls.iloc[4:8]
 
-        D_single = x.as_triplegs.similarity(Y=y, dist_metric='dtw', n_jobs=1)
-        D_multi = x.as_triplegs.similarity(Y=y, dist_metric='dtw', n_jobs=4)
+        D_single = x.as_triplegs.calculate_distance_matrix(Y=y, dist_metric='dtw', n_jobs=1)
+        D_multi = x.as_triplegs.calculate_distance_matrix(Y=y, dist_metric='dtw', n_jobs=4)
 
         assert np.isclose(np.sum(np.abs(D_single - D_multi)), 0)
         
@@ -147,9 +147,9 @@ class TestCalculate_distance_matrix:
         tpls = geolife_tpls
         
         with pytest.raises(AttributeError):
-            tpls.iloc[0:4].as_triplegs.similarity(dist_metric=12345, n_jobs=1)
+            tpls.iloc[0:4].as_triplegs.calculate_distance_matrix(dist_metric=12345, n_jobs=1)
         with pytest.raises(AttributeError):
-            tpls.iloc[0:4].as_triplegs.similarity(dist_metric="random", n_jobs=1)
+            tpls.iloc[0:4].as_triplegs.calculate_distance_matrix(dist_metric="random", n_jobs=1)
     
     def test_distance_error(self, single_linestring):
         """Test if the an error is raised when wrong geometry is passed."""
