@@ -239,7 +239,7 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
                 # step 1
                 # All positionfixes with timestamp between staypoints are assigned the value 0
                 # Intersect all positionfixes of a user with all staypoints of the same user
-                intervals = pd.IntervalIndex.from_arrays(spts_user["started_at"], spts_user["finished_at"], closed="both")
+                intervals = pd.IntervalIndex.from_arrays(spts_user["started_at"], spts_user["finished_at"], closed="left")
                 is_in_interval = pfs_user["tracked_at"].apply(lambda x: intervals.contains(x).any()).astype("bool")
                 pfs.loc[is_in_interval[is_in_interval].index, "staypoint_id"] = 0
 
