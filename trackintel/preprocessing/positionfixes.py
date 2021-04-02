@@ -1,10 +1,11 @@
-from math import radians
-
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 from shapely.geometry import LineString, Point
 from sklearn.cluster import DBSCAN
+
+import datetime
+from math import radians
 
 from trackintel.geogr.distances import haversine_dist
 
