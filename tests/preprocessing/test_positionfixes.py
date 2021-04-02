@@ -143,150 +143,142 @@ class TestGenerate_staypoints():
         pd.testing.assert_frame_equal(pfs_groupby, pfs_for, check_dtype=False)
 
 
-class TestGenerate_triplegs():
-    def test_generate_triplegs_case1(self, geolife_pfs_stps_short, testdata_tpls_geolife):
-        """Test tripleg generation using the 'between_staypoints' method for case 1.
-        case 1: triplegs from positionfixes with column 'staypoint_id' and staypoints."""
+class TestGenerate_triplegs:
+    """Tests for generate_triplegs() method."""
+    
+    # TODO: add test for temporal gap
 
-        pfs, stps = geolife_pfs_stps_short
-        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
-        
-        assert_geodataframe_equal(tpls, testdata_tpls_geolife, check_less_precise=True)
+    def test_user_without_stps(self, geolife_pfs_stps_long):
+        """Check if it is safe to have users that have pfs but no stps."""
+        pfs, stps = geolife_pfs_stps_long
+        # test for case 1
+        # manually change the first pfs' user_id, which has no stp correspondence
+        pfs.loc[0, "user_id"] = 5000
+        _, tpls_1 = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+        # result should be the same ommiting the first row
+        _, tpls_2 = pfs.iloc[1:].as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+        assert_geodataframe_equal(tpls_1, tpls_2)
 
-    def test_generate_triplegs_case2(self, geolife_pfs_stps_short, testdata_tpls_geolife):
-        """Test tripleg generation using the 'between_staypoints' method for case 2.
-        case 2: triplegs from positionfixes (without column 'staypoint_id') and staypoints."""
+        # test for case 2
+        pfs.drop(columns="staypoint_id", inplace=True)
+        # manually change the first pfs' user_id, which has no stp correspondence
+        _, tpls_1 = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+        # result should be the same ommiting the first row
+        _, tpls_2 = pfs.iloc[1:].as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+        assert_geodataframe_equal(tpls_1, tpls_2)
 
-        pfs, stps = geolife_pfs_stps_short
-        pfs.drop('staypoint_id', axis=1, inplace=True)
-        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
-        
-        assert_geodataframe_equal(tpls, testdata_tpls_geolife, check_less_precise=True)
-
-    def test_generate_triplegs_case3(self, geolife_pfs_stps_short, testdata_tpls_geolife):
-        """Test tripleg generation using the 'between_staypoints' method for case 3.
-        case 3: triplegs from positionfixes with column 'staypoint_id' but without staypoints."""
-
-        pfs, _ = geolife_pfs_stps_short
-        pfs, tpls = pfs.as_positionfixes.generate_triplegs(method='between_staypoints')
-        
-        assert_geodataframe_equal(tpls, testdata_tpls_geolife, check_less_precise=True)
-
-    def test_tripleg_ids_in_positionfixes_case1(self, geolife_pfs_stps_short, testdata_pfs_ids_geolife):
-        """
-        checks if positionfixes are not altered and if staypoint/tripleg ids where set correctly during tripleg
-        generation using the 'between_staypoints' method with positionfixes with 'staypoint_id' and staypoints as
-        input (case 2).
-        """
-        pfs, stps = geolife_pfs_stps_short
-        pfs, _ = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
-        
-        assert_geodataframe_equal(pfs, testdata_pfs_ids_geolife, check_less_precise=True, check_like=True)
-
-    def test_tripleg_ids_in_positionfixes_case2(self, geolife_pfs_stps_short, testdata_pfs_ids_geolife):
-        """
-        checks if positionfixes are not altered and if staypoint/tripleg ids where set correctly during tripleg
-        generation using the 'between_staypoints' method with positionfixes without 'staypoint_id' and staypoints as
-        input (case 2).
-        """
-        pfs, stps = geolife_pfs_stps_short
-        pfs.drop('staypoint_id', axis=1, inplace=True)
-        pfs, _ = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
-
-        testdata_pfs_ids_geolife.drop('staypoint_id', axis=1, inplace=True)
-        assert_geodataframe_equal(pfs, testdata_pfs_ids_geolife, check_less_precise=True, check_like=True)
-
-    def test_tripleg_ids_in_positionfixes_case3(self, geolife_pfs_stps_short, testdata_pfs_ids_geolife):
-        """
-        checks if positionfixes are not altered and if staypoint/tripleg ids where set correctly during tripleg
-        generation using the 'between_staypoints' method with only positionfixes as input (case 3).
-        """
-        pfs, _ = geolife_pfs_stps_short
-        pfs, _ = pfs.as_positionfixes.generate_triplegs(method='between_staypoints')
-        
-        assert_geodataframe_equal(pfs, testdata_pfs_ids_geolife, check_less_precise=True, check_like=True)
-
-    def test_tripleg_generation_case2_empty_staypoints(self, geolife_pfs_stps_short, testdata_pfs_ids_geolife):
-        """
-        checks if it is safe to have users that have positionfixes but no staypoints
-        """
-        pfs, stps = geolife_pfs_stps_short
-        pfs.drop('staypoint_id', axis=1, inplace=True)
-        pfs.loc[0, 'user_id'] = 5000
-        pfs, _ = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
-
-        # only test that it can run without error
-        assert True
-
-    def test_tripleg_generation_stability(self, geolife_pfs_stps_long):
-        """
-        checks if the results are same if different variants of the tripleg_generation method 'between_staypoints'
-        are used
-        """
-
+    def test_pfs_without_stps(self, geolife_pfs_stps_long):
+        """Delete pfs that belong to staypoints and see if they are detected."""
         pfs, stps = geolife_pfs_stps_long
 
-        pfs_case1, tpls_case1 = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
-        pfs_case2, tpls_case2 = pfs.drop('staypoint_id',
-                                         axis=1).as_positionfixes.generate_triplegs(stps, method='between_staypoints')
-        pfs_case3, tpls_case3 = pfs.as_positionfixes.generate_triplegs(method='between_staypoints')
-        
-        assert_geodataframe_equal(pfs_case1.drop('staypoint_id', axis=1), pfs_case2, check_less_precise=True, check_like=True)
-        assert_geodataframe_equal(pfs_case1, pfs_case3, check_less_precise=True, check_like=True)
-        
-        assert_geodataframe_equal(tpls_case1, tpls_case2, check_less_precise=True, check_like=True)
-        assert_geodataframe_equal(tpls_case1, tpls_case3, check_less_precise=True, check_like=True)
+        _, tpls_case1 = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+        # only keep pfs where staypoint id is nan
+        pfs_nostps = pfs[pd.isna(pfs["staypoint_id"])].drop(columns="staypoint_id")
+        _, tpls_case2 = pfs_nostps.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
 
-    def test_generate_triplegs_dtype_consistent(self, pfs_geolife):
+        assert_geodataframe_equal(tpls_case1, tpls_case2)
+
+    def test_stability(self, geolife_pfs_stps_long):
+        """Checks if the results are same for different cases in tripleg_generation method."""
+        pfs, stps = geolife_pfs_stps_long
+        # case 1
+        pfs_case1, tpls_case1 = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+        # case 1 without stps
+        pfs_case1_wo, tpls_case1_wo = pfs.as_positionfixes.generate_triplegs(method="between_staypoints")
+
+        # case 2
+        pfs = pfs.drop(columns="staypoint_id")
+        pfs_case2, tpls_case2 = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+
+        assert_geodataframe_equal(pfs_case1.drop(columns="staypoint_id", axis=1), pfs_case2)
+        assert_geodataframe_equal(pfs_case1, pfs_case1_wo)
+        assert_geodataframe_equal(tpls_case1, tpls_case2)
+        assert_geodataframe_equal(tpls_case1, tpls_case1_wo)
+
+    def test_random_order(self, geolife_pfs_stps_long):
+        """Checks if same tpls will be generated after random shuffling pfs."""
+        pfs, stps = geolife_pfs_stps_long
+        # ensure proper order of pfs
+        pfs.sort_values(by=["user_id", "tracked_at"], inplace=True)
+
+        # original order
+        pfs_ori, tpls_ori = pfs.as_positionfixes.generate_triplegs(stps)
+
+        # resample/shuffle pfs
+        pfs_shuffle = pfs.sample(frac=1, random_state=0)
+        pfs_shuffle, tpls_shuffle = pfs_shuffle.as_positionfixes.generate_triplegs(stps)
+
+        # order should be the same -> pfs.sort_values within function
+        # generated tpls index should be the same
+        assert_geodataframe_equal(pfs_ori, pfs_shuffle)
+        assert_geodataframe_equal(tpls_ori, tpls_shuffle)
+
+    def test_pfs_index(self, geolife_pfs_stps_long):
+        """Checks if same tpls will be generated after changing pfs index."""
+        pfs, stps = geolife_pfs_stps_long
+
+        # original index
+        pfs_ori, tpls_ori = pfs.as_positionfixes.generate_triplegs(stps)
+
+        # create discontinues index
+        pfs.index = np.arange(len(pfs)) * 2
+        pfs_index, tpls_index = pfs.as_positionfixes.generate_triplegs(stps)
+
+        # generated tpls index should be the same
+        assert_geodataframe_equal(pfs_ori.reset_index(drop=True), pfs_index.reset_index(drop=True))
+        assert_geodataframe_equal(tpls_ori, tpls_index)
+
+    def test_dtype_consistent(self, pfs_geolife):
         """Test the dtypes for the generated columns."""
-        pfs, stps = pfs_geolife.as_positionfixes.generate_staypoints(method='sliding',
-                                                                     dist_threshold=25,
-                                                                     time_threshold=5 * 60)
+        pfs, stps = pfs_geolife.as_positionfixes.generate_staypoints(
+            method="sliding", dist_threshold=25, time_threshold=5 * 60
+        )
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
-        assert pfs['user_id'].dtype == tpls['user_id'].dtype
-        assert pfs['tripleg_id'].dtype == "Int64"
+        assert pfs["user_id"].dtype == tpls["user_id"].dtype
+        assert pfs["tripleg_id"].dtype == "Int64"
         assert tpls.index.dtype == "int64"
 
-    def test_generate_triplegs_missing_link(self, geolife_pfs_stps_long):
+    def test_missing_link(self, geolife_pfs_stps_long):
         """Test nan is assigned for missing link between pfs and tpls."""
         pfs, stps = geolife_pfs_stps_long
 
-        pfs, _ = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
+        pfs, _ = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
 
-        assert pd.isna(pfs['tripleg_id']).any()
+        assert pd.isna(pfs["tripleg_id"]).any()
 
-    def test_generate_triplegs_index_start(self, geolife_pfs_stps_long):
-        """Test the generated index start from 0 for different methods."""
+    def test_index_start(self, geolife_pfs_stps_long):
+        """Test the generated index start from 0 for different cases."""
         pfs, stps = geolife_pfs_stps_long
 
-        _, tpls_case1 = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
-        _, tpls_case2 = pfs.drop('staypoint_id',
-                                 axis=1).as_positionfixes.generate_triplegs(stps, method='between_staypoints')
-        _, tpls_case3 = pfs.as_positionfixes.generate_triplegs(method='between_staypoints')
+        _, tpls_case1 = pfs.as_positionfixes.generate_triplegs(stps)
+        _, tpls_case2 = pfs.drop("staypoint_id", axis=1).as_positionfixes.generate_triplegs(stps)
 
         assert (tpls_case1.index == np.arange(len(tpls_case1))).any()
         assert (tpls_case2.index == np.arange(len(tpls_case2))).any()
-        assert (tpls_case3.index == np.arange(len(tpls_case3))).any()
 
-    def test_generate_staypoints_triplegs_overlap(self, pfs_geolife_long):
-        """
-        Triplegs and staypoints should not overlap when generated using the default extract triplegs method.
-        This test extracts triplegs and staypoints from positionfixes and stores them in a single dataframe.
-        The dataframe is sorted by date, then we check if the staypoint/tripleg from the row before was finished when
-        the next one started.
-        """
+    def test_invalid_inputs(self, geolife_pfs_stps_long):
+        """Test if AttributeError will be raised after invalid method input."""
+        pfs, stps = geolife_pfs_stps_long
+
+        with pytest.raises(AttributeError, match="Method unknown"):
+            pfs.as_positionfixes.generate_triplegs(stps, method="random")
+        with pytest.raises(AttributeError, match="Method unknown"):
+            pfs.as_positionfixes.generate_triplegs(stps, method=12345)
+
+    def test_stps_tpls_overlap(self, pfs_geolife_long):
+        """Tpls and spts should not overlap when generated using the default extract triplegs method."""
         pfs = pfs_geolife_long
-        pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
-                                                             dist_threshold=25,
-                                                             time_threshold=5 * 60)
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5 * 60)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 
-        stps_tpls = stps[['started_at', 'finished_at', 'user_id']].append(
-            tpls[['started_at', 'finished_at', 'user_id']])
-        stps_tpls.sort_values(by=['user_id', 'started_at'], inplace=True)
-        for user_id_this in stps['user_id'].unique():
-            stps_tpls_this = stps_tpls[stps_tpls['user_id'] == user_id_this]
-            diff = stps_tpls_this['started_at'] - stps_tpls_this['finished_at'].shift(1)
+        stps = stps[["started_at", "finished_at", "user_id"]]
+        tpls = tpls[["started_at", "finished_at", "user_id"]]
+        stps_tpls = stps.append(tpls)
+        stps_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
+
+        for user_id_this in stps["user_id"].unique():
+            stps_tpls_this = stps_tpls[stps_tpls["user_id"] == user_id_this]
+            diff = stps_tpls_this["started_at"] - stps_tpls_this["finished_at"].shift(1)
             # transform to numpy array and drop first values (always nan due to shift operation)
             diff = diff.values[1:]
 
