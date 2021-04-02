@@ -145,6 +145,8 @@ class TestGenerate_staypoints():
 
 class TestGenerate_triplegs:
     """Tests for generate_triplegs() method."""
+    
+    # TODO: add test for temporal gap
 
     def test_user_without_stps(self, geolife_pfs_stps_long):
         """Check if it is safe to have users that have pfs but no stps."""

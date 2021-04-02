@@ -215,23 +215,23 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
         if case == 2:
             # initialize the index list of pfs where a tpl will begin
             insert_index_ls = []
-            pfs["staypoint_id"] = np.nan
+            pfs["staypoint_id"] = pd.NA
             for user_id_this in pfs["user_id"].unique():
-                spts_u = stps_input[stps_input["user_id"] == user_id_this]
-                pfs_u = pfs[pfs["user_id"] == user_id_this]
+                spts_user = stps_input[stps_input["user_id"] == user_id_this]
+                pfs_user = pfs[pfs["user_id"] == user_id_this]
 
                 # step 1
                 # All positionfixes with timestamp between staypoints are assigned the value 0
                 # Intersect all positionfixes of a user with all staypoints of the same user
-                intervals = pd.IntervalIndex.from_arrays(spts_u["started_at"], spts_u["finished_at"], closed="both")
-                is_in_interval = pfs_u["tracked_at"].apply(lambda x: intervals.contains(x).any()).astype("bool")
+                intervals = pd.IntervalIndex.from_arrays(spts_user["started_at"], spts_user["finished_at"], closed="both")
+                is_in_interval = pfs_user["tracked_at"].apply(lambda x: intervals.contains(x).any()).astype("bool")
                 pfs.loc[is_in_interval[is_in_interval].index, "staypoint_id"] = 0
 
                 # step 2
                 # Identify first positionfix after a staypoint
                 # find index of closest positionfix with equal or greater timestamp.
-                tracked_at_sorted = pfs_u["tracked_at"].sort_values()
-                insert_position_user = tracked_at_sorted.searchsorted(spts_u["finished_at"])
+                tracked_at_sorted = pfs_user["tracked_at"].sort_values()
+                insert_position_user = tracked_at_sorted.searchsorted(spts_user["finished_at"])
                 insert_index_user = tracked_at_sorted.iloc[insert_position_user].index
 
                 # store the insert insert_position_user in an array
@@ -258,7 +258,8 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
 
         # condition 3: stps
         # By our definition the pf after a stp is the first pf of a tpl.
-        _stp_id = (pfs["staypoint_id"] + 1).fillna(0)  # this works only for numeric staypoint ids
+        # this works only for numeric staypoint ids, TODO: can we change?
+        _stp_id = (pfs["staypoint_id"] + 1).fillna(0)  
         cond_stp = (_stp_id - _stp_id.shift(1)) != 0
 
         # special check for case 2: pfs that belong to stp might not present in the data.
@@ -295,7 +296,7 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
 
         tpls = posfix_grouper.agg(
             {"user_id": ["mean"], "tracked_at": [min, max], "geom": list}
-        )  # could add a "number of pfs column": can be any column "count"
+        )  # could add a "number of pfs": can be any column "count"
 
         # prepare dataframe: Rename columns; read/set geometry/crs;
         # Order of column has to correspond to the order of the groupby statement
@@ -321,7 +322,7 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
         return pfs, tpls
 
     else:
-        raise AttributeError("Method unknown. We only support 'between_staypoints'. " f"You passed {method}")
+        raise AttributeError(f"Method unknown. We only support 'between_staypoints'. You passed {method}")
 
 
 def _generate_staypoints_sliding_user(df,
