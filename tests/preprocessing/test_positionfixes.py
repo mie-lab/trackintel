@@ -253,6 +253,15 @@ class TestGenerate_triplegs():
         assert (tpls_case1.index == np.arange(len(tpls_case1))).any()
         assert (tpls_case2.index == np.arange(len(tpls_case2))).any()
 
+    def test_invalid_inputs(self, geolife_pfs_stps_long):
+        """Test if AttributeError will be raised after invalid method input."""
+        pfs, stps = geolife_pfs_stps_long
+
+        with pytest.raises(AttributeError, match="Method unknown"):
+            pfs.as_positionfixes.generate_triplegs(stps, method="random")
+        with pytest.raises(AttributeError, match="Method unknown"):
+            pfs.as_positionfixes.generate_triplegs(stps, method=12345)
+            
     def test_stps_tpls_overlap(self, pfs_geolife_long):
         """Tpls and spts should not overlap when generated using the default extract triplegs method."""
         pfs = pfs_geolife_long

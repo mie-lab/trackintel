@@ -322,7 +322,8 @@ def generate_triplegs(pfs_input, stps_input, method='between_staypoints', gap_th
         return pfs, tpls
 
     else:
-        raise NameError('Chosen method is not defined')
+        raise AttributeError("Method unknown. We only support 'between_staypoints'. "
+                                 f"You passed {method}")
 
 
 def _generate_staypoints_sliding_user(df,
