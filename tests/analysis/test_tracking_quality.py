@@ -9,7 +9,7 @@ import trackintel as ti
 def testdata_stps_tpls_geolife_long():
     """Generate stps and tpls sequences of the original pfs for subsequent testing."""
     pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
-    pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5 * 60)
+    pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
     pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
 
     tpls["type"] = "tripleg"

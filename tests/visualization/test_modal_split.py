@@ -12,11 +12,11 @@ from trackintel.visualization.modal_split import plot_modal_split
 
 @pytest.fixture
 def get_geolife_triplegs_with_modes():
-    """Get modal split for a small part of the geolife dataset"""
+    """Get modal split for a small part of the geolife dataset."""
     pfs, labels = read_geolife(os.path.join('tests', 'data', 'geolife_modes'))
     pfs, spts = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                          dist_threshold=25,
-                                                         time_threshold=5 * 60)
+                                                         time_threshold=5)
     _, tpls = pfs.as_positionfixes.generate_triplegs(spts, method='between_staypoints')
 
     tpls_with_modes = geolife_add_modes_to_triplegs(tpls, labels)
@@ -25,7 +25,7 @@ def get_geolife_triplegs_with_modes():
 
 @pytest.fixture
 def get_test_triplegs_with_modes():
-    """get modal split for randomly generated data"""
+    """Get modal split for randomly generated data."""
     n = 200
     day_1_h1 = pd.Timestamp('1970-01-01 00:00:00', tz='utc')
     one_day = datetime.timedelta(days=1)
