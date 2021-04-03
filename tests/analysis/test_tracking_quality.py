@@ -33,8 +33,9 @@ class TestTemporal_tracking_quality:
 
         # test if the result of the user agrees
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="all")
-
+        
         assert quality_manual == quality.loc[quality["user_id"] == 0, "quality"].values[0]
+        assert (quality['quality']<1).all()
 
     def test_tracking_quality_day(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated tracking quality per day is correct."""
@@ -53,6 +54,7 @@ class TestTemporal_tracking_quality:
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="day")
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["day"] == 0), "quality"].values[0]
+        assert (quality['quality']<1).all()
 
     def test_tracking_quality_week(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated tracking quality per week is correct."""
@@ -74,6 +76,7 @@ class TestTemporal_tracking_quality:
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="week")
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0), "quality"].values[0]
+        assert (quality['quality']<1).all()
 
     def test_tracking_quality_weekday(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated tracking quality per weekday is correct."""
@@ -97,6 +100,7 @@ class TestTemporal_tracking_quality:
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="weekday")
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["weekday"] == 3), "quality"].values[0]
+        assert (quality['quality']<1).all()
 
     def test_tracking_quality_hour(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated tracking quality per hour is correct."""
@@ -120,6 +124,7 @@ class TestTemporal_tracking_quality:
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="hour")
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["hour"] == 2), "quality"].values[0]
+        assert (quality['quality']<1).all()
 
     def test_tracking_quality_error(self, testdata_stps_tpls_geolife_long):
         """Test if the an error is raised when passing unknown 'granularity' to temporal_tracking_quality()."""
