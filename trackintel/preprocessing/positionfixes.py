@@ -164,8 +164,6 @@ def generate_staypoints(
 
     return pfs, stps
 
-
-
 def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_threshold=15):
     """Generate triplegs from positionfixes.
 

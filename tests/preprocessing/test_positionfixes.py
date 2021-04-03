@@ -94,37 +94,37 @@ class TestGenerate_staypoints():
         
     def test_temporal(self):
         """Test if the stps generation result follows predefined time_threshold and gap_threshold."""
-        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        pfs_input, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
         
         # the duration should be not longer than time_threshold
-        time_threshold = 5
-        _, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', 
-                                                             dist_threshold=50, 
-                                                             time_threshold=time_threshold)
+        time_threshold_ls = [3, 5, 10]
+        for time_threshold in time_threshold_ls:
+            _, stps = pfs_input.as_positionfixes.generate_staypoints(method='sliding', 
+                                                                dist_threshold=50, 
+                                                                time_threshold=time_threshold)
 
-        duration_stps_min = (stps['finished_at'] - stps['started_at']).dt.total_seconds() / 60
-        # all durations should be longer than the time_threshold
-        assert (duration_stps_min > time_threshold).all()
+            duration_stps_min = (stps['finished_at'] - stps['started_at']).dt.total_seconds() / 60
+            # all durations should be longer than the time_threshold
+            assert (duration_stps_min > time_threshold).all()
         
         # the missing time should not exceed gap_threshold
-        gap_threshold = 15
-        pfs, _ = pfs.as_positionfixes.generate_staypoints(method='sliding', 
-                                                             dist_threshold=50, 
-                                                             time_threshold=time_threshold,
-                                                             gap_threshold=gap_threshold)
-        # get the difference between pfs tracking time 
-        pfs["diff"] = -(pfs['tracked_at'] - pfs['tracked_at'].shift(-1)).dt.total_seconds() / 60
-        # get the last pf of stps and check the gap size
-        pfs.dropna(subset=["staypoint_id"], inplace=True)
-        pfs.drop_duplicates(subset=["staypoint_id"], keep='last', inplace=True)
-        # all last pfs should be shorter than the gap_threshold
-        assert (pfs["diff"]<gap_threshold).all()
+        gap_threshold_ls = [10, 15, 20]
+        for gap_threshold in gap_threshold_ls:
+            pfs, _ = pfs_input.as_positionfixes.generate_staypoints(method='sliding', 
+                                                                dist_threshold=50, 
+                                                                time_threshold=time_threshold,
+                                                                gap_threshold=gap_threshold)
+            # get the difference between pfs tracking time, and assign back to the previous pfs
+            pfs["diff"] = ((pfs['tracked_at'] - pfs['tracked_at'].shift(1)).dt.total_seconds() / 60).shift(-1)
+            # get the last pf of stps and check the gap size
+            pfs.dropna(subset=["staypoint_id"], inplace=True)
+            pfs.drop_duplicates(subset=["staypoint_id"], keep='last', inplace=True)
+            # all last pfs should be shorter than the gap_threshold
+            assert (pfs["diff"]<gap_threshold).all()
         
 
 class TestGenerate_triplegs:
     """Tests for generate_triplegs() method."""
-    
-    # TODO: add test for temporal gap
 
     def test_user_without_stps(self, geolife_pfs_stps_long):
         """Check if it is safe to have users that have pfs but no stps."""
@@ -241,6 +241,25 @@ class TestGenerate_triplegs:
         with pytest.raises(AttributeError, match="Method unknown"):
             pfs.as_positionfixes.generate_triplegs(stps, method=12345)
 
+    def test_temporal(self, geolife_pfs_stps_long):
+        """Test if the tpls generation result follows predefined gap_threshold."""
+        pfs_input, stps = geolife_pfs_stps_long
+        
+        gap_threshold_ls = [0.1, 0.2, 1, 2]
+        for gap_threshold in gap_threshold_ls:
+            pfs, _ = pfs_input.as_positionfixes.generate_triplegs(stps, gap_threshold=gap_threshold)
+            
+            # conti_tpl checks whether the next pfs is in the same tpl
+            pfs["conti_tpl"] = (pfs['tripleg_id'] - pfs['tripleg_id'].shift(1)).shift(-1)
+            # get the time difference of pfs, and assign to the previous pfs
+            pfs["diff"] = ((pfs['tracked_at'] - pfs['tracked_at'].shift(1)).dt.total_seconds() / 60).shift(-1)
+            # we only take tpls that are splitted in the middle (tpl - tpl) and the second user
+            pfs = pfs.loc[(pfs["conti_tpl"] == 1) & (pfs["user_id"] == 1)]
+            # check if the cuts are appropriate 
+            assert (pfs['diff'] > gap_threshold).all()
+            
+        
+        
     def test_stps_tpls_overlap(self, geolife_pfs_stps_long):
         """Tpls and spts should not overlap when generated using the default extract triplegs method."""
         pfs, stps = geolife_pfs_stps_long
