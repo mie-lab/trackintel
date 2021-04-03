@@ -360,23 +360,22 @@ def _generate_staypoints_sliding_user(
     for i in range(1, len(pfs)):
         curr = i
 
-        # if the recorded gap is too long, we did not consider it as a stop
-        gap_t = (pfs[curr]["tracked_at"] - pfs[curr - 1]["tracked_at"]).total_seconds()
-        if gap_t > gap_threshold * 60:
-            start = curr
-            continue
-
         delta_dist = dist_func(pfs[start][geo_col].x, pfs[start][geo_col].y, pfs[curr][geo_col].x, pfs[curr][geo_col].y)
 
         if delta_dist >= dist_threshold:
+            # the total duration of the staypoints
             delta_t = (pfs[curr]["tracked_at"] - pfs[start]["tracked_at"]).total_seconds()
-            if delta_t >= (time_threshold * 60):
+            # the duration of gap in the last two pfs
+            gap_t = (pfs[curr]["tracked_at"] - pfs[curr - 1]["tracked_at"]).total_seconds()
+
+            # we want the spt to have long duration, but the gap of missing signal should not be too long
+            if (delta_t >= (time_threshold * 60)) and (gap_t < gap_threshold * 60):
                 new_stps = __create_new_staypoints(start, curr, pfs, idx, elevation_flag, geo_col)
                 # add staypoint
                 ret_spts.append(new_stps)
 
             # distance larger but time too short -> not a stay point
-            # also initializer when new stay point is added
+            # also initializer when new stp is added
             start = curr
 
         # if we arrive at the last positionfix, and want to include the last staypoint

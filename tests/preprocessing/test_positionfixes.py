@@ -11,12 +11,6 @@ import pytest
 
 import trackintel as ti
 
-
-@pytest.fixture
-def pfs_geolife():
-    pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
-    return pfs
-
 @pytest.fixture
 def geolife_pfs_stps_long():
     pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
@@ -27,28 +21,26 @@ def geolife_pfs_stps_long():
 class TestGenerate_staypoints():
     """Tests for generate_staypoints() method."""
     
-    # TODO: add test for temporal gap
-    
-    def test_sliding_min(self, pfs_geolife):
+    def test_sliding_min(self):
         """Test if using small thresholds, stp extraction yields each pfs."""
-        pfs = pfs_geolife
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', 
                                                              dist_threshold=0, 
                                                              time_threshold=0, 
                                                              include_last=True)
         assert len(stps) == len(pfs)
 
-    def test_sliding_max(self, pfs_geolife):
+    def test_sliding_max(self):
         """Test if using large thresholds, stp extraction yield no pfs."""
-        pfs = pfs_geolife
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
         _, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                            dist_threshold=sys.maxsize,
                                                            time_threshold=sys.maxsize)
         assert len(stps) == 0
 
-    def test_missing_link(self, pfs_geolife):
+    def test_missing_link(self):
         """Test nan is assigned for missing link between pfs and stps."""
-        pfs = pfs_geolife
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
         pfs, _ = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                           dist_threshold=sys.maxsize,
                                                           time_threshold=sys.maxsize)
@@ -69,15 +61,15 @@ class TestGenerate_staypoints():
 
         assert (stps.index == np.arange(len(stps))).any()
 
-    def test_include_last(self, pfs_geolife):
+    def test_include_last(self):
         """Test if the include_last arguement will include the last pfs as stp."""
-        pfs_ori = pfs_geolife
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
 
-        pfs_wo, stps_wo = pfs_ori.as_positionfixes.generate_staypoints(method='sliding',
+        pfs_wo, stps_wo = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                            dist_threshold=100,
                                                            time_threshold=5.0,
                                                            include_last=False)
-        pfs_include, stps_include = pfs_ori.as_positionfixes.generate_staypoints(method='sliding',
+        pfs_include, stps_include = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                            dist_threshold=100,
                                                            time_threshold=5.0,
                                                            include_last=True)
@@ -86,6 +78,48 @@ class TestGenerate_staypoints():
         # the last pfs of pfs_include has stp connection
         assert not pfs_include.tail(1)['staypoint_id'].isna().all()
         assert pfs_wo.tail(1)['staypoint_id'].isna().all()
+        
+    def test_print_progress(self):
+        """Test if the result from print progress agrees with the original."""
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife'))
+        pfs_ori, stps_ori = pfs.as_positionfixes.generate_staypoints(method='sliding', 
+                                                             dist_threshold=100, 
+                                                             time_threshold=5)
+        pfs_print, stps_print = pfs.as_positionfixes.generate_staypoints(method='sliding', 
+                                                             dist_threshold=100, 
+                                                             time_threshold=5,
+                                                             print_progress=True)
+        assert_geodataframe_equal(pfs_ori, pfs_print)
+        assert_geodataframe_equal(stps_ori, stps_print)
+        
+    def test_temporal(self):
+        """Test if the stps generation result follows predefined time_threshold and gap_threshold."""
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        
+        # the duration should be not longer than time_threshold
+        time_threshold = 5
+        _, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', 
+                                                             dist_threshold=50, 
+                                                             time_threshold=time_threshold)
+
+        duration_stps_min = (stps['finished_at'] - stps['started_at']).dt.total_seconds() / 60
+        # all durations should be longer than the time_threshold
+        assert (duration_stps_min > time_threshold).all()
+        
+        # the missing time should not exceed gap_threshold
+        gap_threshold = 15
+        pfs, _ = pfs.as_positionfixes.generate_staypoints(method='sliding', 
+                                                             dist_threshold=50, 
+                                                             time_threshold=time_threshold,
+                                                             gap_threshold=gap_threshold)
+        # get the difference between pfs tracking time 
+        pfs["diff"] = -(pfs['tracked_at'] - pfs['tracked_at'].shift(-1)).dt.total_seconds() / 60
+        # get the last pf of stps and check the gap size
+        pfs.dropna(subset=["staypoint_id"], inplace=True)
+        pfs.drop_duplicates(subset=["staypoint_id"], keep='last', inplace=True)
+        # all last pfs should be shorter than the gap_threshold
+        assert (pfs["diff"]<gap_threshold).all()
+        
 
 class TestGenerate_triplegs:
     """Tests for generate_triplegs() method."""
