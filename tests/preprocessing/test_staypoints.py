@@ -11,6 +11,8 @@ from trackintel.geogr.distances import calculate_distance_matrix
 
 
 class TestGenerate_locations:
+    """Tests for generate_locations() method."""
+
     def test_generate_locations_dbscan_hav_euc(self):
         stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
@@ -172,4 +174,15 @@ class TestGenerate_locations:
 
 
 class TestCreate_activity_flag:
-    pass
+    """Tests for create_activity_flag() method."""
+
+    def test_create_activity_flag(self):
+        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        stps_test = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
+
+        activity_true = stps_test["activity"].copy()
+        stps_test["activity"] = False
+
+        stps_test = stps_test.as_staypoints.create_activity_flag()
+
+        pd.testing.assert_series_equal(stps_test["activity"], activity_true)

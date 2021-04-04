@@ -49,7 +49,7 @@ def temporal_tracking_quality(source, granularity="all"):
     >>> # calculate overall tracking quality of stps
     >>> temporal_tracking_quality(stps, granularity="all")
     >>> # calculate per-day tracking quality of stps and tpls sequence
-    >>> temporal_tracking_quality(spts_tpls, granularity="day")
+    >>> temporal_tracking_quality(stps_tpls, granularity="day")
     """
     required_columns = ["user_id", "started_at", "finished_at"]
     if any([c not in source.columns for c in required_columns]):

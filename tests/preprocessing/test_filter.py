@@ -10,11 +10,11 @@ import trackintel as ti
 def locs_from_geolife():
     """Create locations from geolife staypoints."""
     # read staypoints
-    spts_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-    spts = ti.read_staypoints_csv(spts_file, tz="utc", index_col="id")
+    stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+    stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
 
     # cluster staypoints to locations
-    _, locs = spts.as_staypoints.generate_locations(
+    _, locs = stps.as_staypoints.generate_locations(
         method="dbscan", epsilon=10, num_samples=0, distance_matrix_metric="haversine", agg_level="dataset"
     )
 
@@ -29,26 +29,26 @@ class TestSpatial_filter:
     def test_filter_staypoints(self):
         """Test if spatial_filter works for staypoints."""
         # read staypoints and area file
-        spts_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        spts = ti.read_staypoints_csv(spts_file, tz="utc", index_col="id")
+        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
         extent = gpd.read_file(os.path.join("tests", "data", "area", "tsinghua.geojson"))
 
         # the projection needs to be defined: WGS84
-        spts.crs = "epsg:4326"
-        within_spts = spts.as_staypoints.spatial_filter(areas=extent, method="within", re_project=True)
-        intersects_spts = spts.as_staypoints.spatial_filter(areas=extent, method="intersects", re_project=True)
-        crosses_spts = spts.as_staypoints.spatial_filter(areas=extent, method="crosses", re_project=True)
+        stps.crs = "epsg:4326"
+        within_stps = stps.as_staypoints.spatial_filter(areas=extent, method="within", re_project=True)
+        intersects_stps = stps.as_staypoints.spatial_filter(areas=extent, method="intersects", re_project=True)
+        crosses_stps = stps.as_staypoints.spatial_filter(areas=extent, method="crosses", re_project=True)
 
         # the result obtained from ArcGIS
         gis_within_num = 13
 
-        assert len(within_spts) == gis_within_num, (
+        assert len(within_stps) == gis_within_num, (
             "The spatial filtered sp number should be the same as" + "the one from the result with ArcGIS"
         )
-        assert len(crosses_spts) == 0, "There will be no point crossing area"
+        assert len(crosses_stps) == 0, "There will be no point crossing area"
 
         # For staypoints the result of within and intersects should be the same
-        assert_geodataframe_equal(within_spts, intersects_spts, check_less_precise=True)
+        assert_geodataframe_equal(within_stps, intersects_stps, check_less_precise=True)
 
     def test_filter_triplegs(self):
         """Test if spatial_filter works for triplegs."""

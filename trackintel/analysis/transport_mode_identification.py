@@ -37,12 +37,12 @@ def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
             "categories", {15 / 3.6: "slow_mobility", 100 / 3.6: "motorized_mobility", np.inf: "fast_mobility"}
         )
 
-        return predict_transport_mode_simple_coarse(triplegs, categories)
+        return _predict_transport_mode_simple_coarse(triplegs, categories)
     else:
         raise NameError(f"Method {method} not known for predicting tripleg transport modes.")
 
 
-def predict_transport_mode_simple_coarse(triplegs_in, categories):
+def _predict_transport_mode_simple_coarse(triplegs_in, categories):
     """
     Predict a transport mode out of three coarse classes.
 

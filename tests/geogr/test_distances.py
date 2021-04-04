@@ -59,11 +59,11 @@ class TestCalculate_distance_matrix:
     """Tests for the calculate_distance_matrix() function."""
 
     def test_shape_for_different_array_length(self):
-        spts_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        spts = ti.read_staypoints_csv(spts_file, tz="utc", index_col="id")
+        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
 
-        x = spts.iloc[0:5]
-        y = spts.iloc[5:15]
+        x = stps.iloc[0:5]
+        y = stps.iloc[5:15]
 
         d_euc1 = calculate_distance_matrix(X=x, Y=y, dist_metric="euclidean")
         d_euc2 = calculate_distance_matrix(X=y, Y=x, dist_metric="euclidean")
@@ -76,11 +76,11 @@ class TestCalculate_distance_matrix:
         assert np.isclose(0, np.sum(np.abs(d_hav1 - d_hav2.T)))
 
     def test_keyword_combinations(self):
-        spts_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        spts = ti.read_staypoints_csv(spts_file, tz="utc", index_col="id")
+        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
 
-        x = spts.iloc[0:5]
-        y = spts.iloc[5:15]
+        x = stps.iloc[0:5]
+        y = stps.iloc[5:15]
 
         _ = calculate_distance_matrix(X=x, Y=y, dist_metric="euclidean", n_jobs=-1)
         _ = calculate_distance_matrix(X=y, Y=x, dist_metric="haversine", n_jobs=-1)
@@ -92,12 +92,12 @@ class TestCalculate_distance_matrix:
         assert np.array_equal(d_euc, d_mink2)
 
     def test_compare_haversine_to_scikit_xy(self):
-        spts_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        spts = ti.read_staypoints_csv(spts_file, tz="utc", index_col="id")
-        our_d_matrix = calculate_distance_matrix(X=spts, Y=spts, dist_metric="haversine")
+        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
+        our_d_matrix = calculate_distance_matrix(X=stps, Y=stps, dist_metric="haversine")
 
-        x = spts.geometry.x.values
-        y = spts.geometry.y.values
+        x = stps.geometry.x.values
+        y = stps.geometry.y.values
 
         x_rad = np.asarray([radians(_) for _ in x])
         y_rad = np.asarray([radians(_) for _ in y])

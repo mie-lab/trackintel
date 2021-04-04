@@ -257,7 +257,7 @@ class TestGenerate_triplegs:
             assert (pfs["diff"] > gap_threshold).all()
 
     def test_stps_tpls_overlap(self, geolife_pfs_stps_long):
-        """Tpls and spts should not overlap when generated using the default extract triplegs method."""
+        """Tpls and stps should not overlap when generated using the default extract triplegs method."""
         pfs, stps = geolife_pfs_stps_long
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 

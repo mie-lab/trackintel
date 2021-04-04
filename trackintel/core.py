@@ -2,7 +2,7 @@ from trackintel import __version__
 
 
 def print_version():
-    """Prints the framework version."""
+    """Print the framework version."""
 
     print(
         "This is trackintel v"
