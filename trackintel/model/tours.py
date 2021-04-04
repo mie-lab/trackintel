@@ -5,7 +5,7 @@ import pandas as pd
 class ToursAccessor(object):
     """A pandas accessor to treat DataFrames as collections of `Tours`.
 
-    Requires at least the following columns: 
+    Requires at least the following columns:
     ['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'journey']
 
     The 'index' of the GeoDataFrame will be treated as unique identifier of the `Tours`
@@ -51,7 +51,7 @@ class ToursAccessor(object):
     def to_csv(self, filename, *args, **kwargs):
         """
         Store this collection of tours as a CSV file.
-        
+
         See :func:`trackintel.io.file.write_tours_csv`.
         """
         raise NotImplementedError
@@ -59,7 +59,7 @@ class ToursAccessor(object):
     def plot(self, *args, **kwargs):
         """
         Plot this collection of tours.
-        
+
         See :func:`trackintel.visualization.tours.plot_tours`.
         """
         raise NotImplementedError
