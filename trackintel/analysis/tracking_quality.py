@@ -16,7 +16,7 @@ def temporal_tracking_quality(source, granularity="all"):
     granularity : {"all", "day", "week", "weekday", "hour"}
         The level of which the tracking quality is calculated. The default "all" returns
         the overall tracking quality; "day" the tracking quality by days; "week" the quality
-        by weeks; "weekday" the quality by day of the week (e.g, Mondays, Tuesdays, etc.) and 
+        by weeks; "weekday" the quality by day of the week (e.g, Mondays, Tuesdays, etc.) and
         "hour" the quality by hours.
 
     Returns
@@ -28,11 +28,11 @@ def temporal_tracking_quality(source, granularity="all"):
     -----
     Requires at least the following columns:
     ``['user_id', 'started_at', 'finished_at']``
-    which means the function supports trackintel ``staypoints``, ``triplegs``, ``trips`` and ``tours`` 
+    which means the function supports trackintel ``staypoints``, ``triplegs``, ``trips`` and ``tours``
     datamodels and their combinations (e.g., staypoints and triplegs sequence).
-    
+
     The temporal tracking quality is the ratio of tracking time and the total time extent. It is
-    calculated and returned per-user in the defined ``granularity``. The possible time extents of 
+    calculated and returned per-user in the defined ``granularity``. The possible time extents of
     the different granularities are different:
 
     - ``all`` considers the time between the latest "finished_at" and the earliest "started_at";

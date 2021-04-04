@@ -8,11 +8,11 @@ import trackintel.visualization.triplegs
 @pd.api.extensions.register_dataframe_accessor("as_triplegs")
 class TriplegsAccessor(object):
     """A pandas accessor to treat (Geo)DataFrames as collections of `Tripleg`.
-    
+
     This will define certain methods and accessors, as well as make sure that the DataFrame
     adheres to some requirements.
 
-    Requires at least the following columns: 
+    Requires at least the following columns:
     ['user_id', 'started_at', 'finished_at']
 
     Requires valid line geometries; the 'index' of the GeoDataFrame will be treated as unique identifier
@@ -66,7 +66,7 @@ class TriplegsAccessor(object):
     def plot(self, *args, **kwargs):
         """
         Plot this collection of triplegs.
-         
+
         See :func:`trackintel.visualization.triplegs.plot_triplegs`.
         """
         ti.visualization.triplegs.plot_triplegs(self._obj, *args, **kwargs)
@@ -74,7 +74,7 @@ class TriplegsAccessor(object):
     def to_csv(self, filename, *args, **kwargs):
         """
         Store this collection of triplegs as a CSV file.
-        
+
         See :func:`trackintel.io.file.write_triplegs_csv`.
         """
         ti.io.file.write_triplegs_csv(self._obj, filename, *args, **kwargs)
@@ -82,7 +82,7 @@ class TriplegsAccessor(object):
     def to_postgis(self, conn_string, table_name):
         """
         Store this collection of triplegs to PostGIS.
-        
+
         See :func:`trackintel.io.postgis.store_positionfixes_postgis`.
         """
         ti.io.postgis.write_triplegs_postgis(self._obj, conn_string, table_name)
@@ -90,7 +90,7 @@ class TriplegsAccessor(object):
     def calculate_distance_matrix(self, *args, **kwargs):
         """
         Calculate pair-wise distance among triplegs or to other triplegs.
-        
+
         See :func:`trackintel.geogr.distances.calculate_distance_matrix`.
         """
         return ti.geogr.distances.calculate_distance_matrix(self._obj, *args, **kwargs)
@@ -98,7 +98,7 @@ class TriplegsAccessor(object):
     def spatial_filter(self, *args, **kwargs):
         """
         Filter triplegs with a geo extent.
-        
+
         See :func:`trackintel.preprocessing.filter.spatial_filter`.
         """
         return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
@@ -106,7 +106,7 @@ class TriplegsAccessor(object):
     def predict_transport_mode(self, *args, **kwargs):
         """
         Predict/impute the transport mode with which each tripleg was likely covered.
-        
+
         See :func:`trackintel.analysis.transport_mode_identification.predict_transport_mode`.
         """
         return ti.analysis.transport_mode_identification.predict_transport_mode(self._obj, *args, **kwargs)
@@ -114,7 +114,7 @@ class TriplegsAccessor(object):
     def calculate_modal_split(self, *args, **kwargs):
         """
         Calculate the modal split of the triplegs.
-        
+
         See :func:`trackintel.analysis.modal_split.calculate_modal_split`.
         """
         return ti.analysis.modal_split.calculate_modal_split(self._obj, *args, **kwargs)

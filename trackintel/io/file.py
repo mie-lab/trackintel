@@ -14,7 +14,7 @@ from shapely.geometry import Point
 def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs=None, **kwargs):
     """
     Read positionfixes from csv file.
-    
+
     Wraps the pandas read_csv function, extracts longitude and latitude and
     builds a geopandas GeoDataFrame. This also validates that the ingested data
     conforms to the trackintel understanding of positionfixes (see
@@ -24,14 +24,14 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs
     ----------
     columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
-        
+
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
-        
+
     index_col : str, optional
         column name to be used as index. If None the default index is assumed
         as unique identifier.
-        
+
     crs : pyproj.crs or str, optional
         Set coordinate reference system. The value can be anything accepted
         by pyproj.CRS.from_user_input(), such as an authority string
@@ -46,7 +46,7 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs
     -----
     Note that this function is primarily useful if data is available in a
     longitude/latitude format. If your data already contains a WKT column,
-    might be easier to just use the GeoPandas import functions 
+    might be easier to just use the GeoPandas import functions
     :func:`trackintel.io.from_geopandas.read_positionfixes_gpd`.
 
     Examples
@@ -91,15 +91,15 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs
 def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
     """
     Write positionfixes to csv file.
-    
-    Wraps the pandas to_csv function, but strips the geometry column ('geom') and 
+
+    Wraps the pandas to_csv function, but strips the geometry column ('geom') and
     stores the longitude and latitude in respective columns.
 
     Parameters
     ----------
     positionfixes : GeoDataFrame (as trackintel positionfixes)
         The positionfixes to store to the CSV file.
-    
+
     filename : str
         The file to write to.
     """
@@ -114,7 +114,7 @@ def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
 def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), crs=None, **kwargs):
     """
     Read triplegs from csv file.
-    
+
     Wraps the pandas read_csv function, extracts a WKT for the leg geometry and
     builds a geopandas GeoDataFrame. This also validates that the ingested data
     conforms to the trackintel understanding of triplegs (see :doc:`/modules/model`).
@@ -123,14 +123,14 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), crs=None
     ----------
     columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
-        
+
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
-        
+
     index_col : str, optional
-        column name to be used as index. If None the default index is assumed 
+        column name to be used as index. If None the default index is assumed
         as unique identifier.
-        
+
     crs : pyproj.crs or str, optional
         Set coordinate reference system. The value can be anything accepted
         by pyproj.CRS.from_user_input(), such as an authority string
@@ -140,7 +140,7 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), crs=None
     -------
     tpls : GeoDataFrame (as trackintel triplegs)
         A GeoDataFrame containing the triplegs.
-        
+
     Examples
     --------
     >>> trackintel.read_triplegs_csv('data.csv')
@@ -182,15 +182,15 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), crs=None
 def write_triplegs_csv(triplegs, filename, *args, **kwargs):
     """
     Write triplegs to csv file.
-    
-    Wraps the pandas to_csv function, but transforms the geom into WKT 
+
+    Wraps the pandas to_csv function, but transforms the geom into WKT
     before writing.
 
     Parameters
     ----------
     triplegs : GeoDataFrame (as trackintel triplegs)
         The triplegs to store to the CSV file.
-    
+
     filename : str
         The file to write to.
     """
@@ -203,24 +203,24 @@ def write_triplegs_csv(triplegs, filename, *args, **kwargs):
 def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), crs=None, **kwargs):
     """
     Read staypoints from csv file.
-    
-    Wraps the pandas read_csv function, extracts a WKT for the staypoint 
-    geometry and builds a geopandas GeoDataFrame. This also validates that 
-    the ingested data conforms to the trackintel understanding of staypoints 
+
+    Wraps the pandas read_csv function, extracts a WKT for the staypoint
+    geometry and builds a geopandas GeoDataFrame. This also validates that
+    the ingested data conforms to the trackintel understanding of staypoints
     (see :doc:`/modules/model`).
-    
+
     Parameters
     ----------
     columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
-        
+
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
-        
+
     index_col : str, optional
-        column name to be used as index. If None the default index is assumed 
+        column name to be used as index. If None the default index is assumed
         as unique identifier.
-        
+
     crs : pyproj.crs or str, optional
         Set coordinate reference system. The value can be anything accepted
         by pyproj.CRS.from_user_input(), such as an authority string
@@ -230,7 +230,7 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), crs=No
     -------
     stps : GeoDataFrame (as trackintel staypoints)
         A GeoDataFrame containing the staypoints.
-            
+
     Examples
     --------
     >>> trackintel.read_staypoints_csv('data.csv')
@@ -272,15 +272,15 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), crs=No
 def write_staypoints_csv(staypoints, filename, *args, **kwargs):
     """
     Write staypoints to csv file.
-    
-    Wraps the pandas to_csv function, but transforms the geom into WKT 
+
+    Wraps the pandas to_csv function, but transforms the geom into WKT
     before writing.
 
     Parameters
     ----------
     staypoints : GeoDataFrame (as trackintel staypoints)
         The staypoints to store to the CSV file.
-    
+
     filename : str
         The file to write to.
     """
@@ -293,21 +293,21 @@ def write_staypoints_csv(staypoints, filename, *args, **kwargs):
 def read_locations_csv(*args, columns=None, index_col=object(), crs=None, **kwargs):
     """
     Read locations from csv file.
-    
-    Wraps the pandas read_csv function, extracts a WKT for the location 
-    center (and extent) and builds a geopandas GeoDataFrame. This also 
-    validates that the ingested data conforms to the trackintel understanding 
+
+    Wraps the pandas read_csv function, extracts a WKT for the location
+    center (and extent) and builds a geopandas GeoDataFrame. This also
+    validates that the ingested data conforms to the trackintel understanding
     of locations (see :doc:`/modules/model`).
 
     Parameters
     ----------
     columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
-    
+
     index_col : str, optional
         column name to be used as index. If None the default index is assumed
         as unique identifier.
-    
+
     crs : pyproj.crs or str, optional
         Set coordinate reference system. The value can be anything accepted
         by pyproj.CRS.from_user_input(), such as an authority string
@@ -352,15 +352,15 @@ def read_locations_csv(*args, columns=None, index_col=object(), crs=None, **kwar
 def write_locations_csv(locations, filename, *args, **kwargs):
     """
     Write locations to csv file.
-    
-    Wraps the pandas to_csv function, but transforms the center (and 
+
+    Wraps the pandas to_csv function, but transforms the center (and
     extent) into WKT before writing.
 
     Parameters
     ----------
     locations : GeoDataFrame (as trackintel locations)
         The locations to store to the CSV file.
-    
+
     filename : str
         The file to write to.
     """
@@ -374,28 +374,28 @@ def write_locations_csv(locations, filename, *args, **kwargs):
 def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
     """
     Read trips from csv file.
-    
+
     Wraps the pandas read_csv function and extracts proper datetimes. This also
-    validates that the ingested data conforms to the trackintel understanding 
+    validates that the ingested data conforms to the trackintel understanding
     of trips (see :doc:`/modules/model`).
-    
+
     Parameters
     ----------
     columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
-    
+
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
-    
+
     index_col : str, optional
-        column name to be used as index. If None the default index is assumed 
+        column name to be used as index. If None the default index is assumed
         as unique identifier.
-        
+
     Returns
     -------
     trips : DataFrame (as trackintel trips)
         A DataFrame containing the trips.
-            
+
     Examples
     --------
     >>> trackintel.read_trips_csv('data.csv')
@@ -430,14 +430,14 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
 def write_trips_csv(trips, filename, *args, **kwargs):
     """
     Write trips to csv file.
-    
+
     Wraps the pandas to_csv function.
 
     Parameters
     ----------
     trips : DataFrame (as trackintel trips)
         The trips to store to the CSV file.
-    
+
     filename : str
         The file to write to.
     """
@@ -448,16 +448,16 @@ def write_trips_csv(trips, filename, *args, **kwargs):
 def read_tours_csv(*args, columns=None, tz=None, **kwargs):
     """
     Read tours from csv file.
-    
+
     Wraps the pandas read_csv function and extracts proper datetimes. This also
-    validates that the ingested data conforms to the trackintel understanding 
+    validates that the ingested data conforms to the trackintel understanding
     of tours (see :doc:`/modules/model`).
-    
+
     Parameters
     ----------
     columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
-    
+
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
 
@@ -482,14 +482,14 @@ def read_tours_csv(*args, columns=None, tz=None, **kwargs):
 def write_tours_csv(tours, filename, *args, **kwargs):
     """
     Write tours to csv file.
-    
+
     Wraps the pandas to_csv function.
 
     Parameters
     ----------
     tours : DataFrame (as trackintel tours)
         The tours to store to the CSV file.
-    
+
     filename : str
         The file to write to.
     """
@@ -505,10 +505,10 @@ def _localize_timestamp(dt_series, pytz_tzinfo, col_name):
     ----------
     dt_series : pandas.Series
         a pandas datetime series
-        
+
     pytz_tzinfo : str
         pytz compatible timezone string. If none UTC will be assumed
-        
+
     col_name : str
         Column name for informative warning message
 

@@ -10,9 +10,9 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col="geom", *args, 
     Parameters
     ----------
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The table to read the positionfixes from.
 
@@ -21,7 +21,7 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col="geom", *args, 
 
     *args
         Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
-    
+
     **kwargs
         Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
 
@@ -43,7 +43,7 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col="geom", *args, 
 def write_positionfixes_postgis(
     positionfixes, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"
 ):
-    """Stores positionfixes to PostGIS. Usually, this is directly called on a positionfixes 
+    """Stores positionfixes to PostGIS. Usually, this is directly called on a positionfixes
     DataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
@@ -54,9 +54,9 @@ def write_positionfixes_postgis(
         The positionfixes to store to the database.
 
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The name of the table to write to.
 
@@ -108,14 +108,14 @@ def read_triplegs_postgis(conn_string, table_name, geom_col="geom", *args, **kwa
     Parameters
     ----------
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The table to read the triplegs from.
 
     geom_col : str, default 'geom'
-        The geometry column of the table. 
+        The geometry column of the table.
 
     Returns
     -------
@@ -135,7 +135,7 @@ def read_triplegs_postgis(conn_string, table_name, geom_col="geom", *args, **kwa
 
 
 def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
-    """Stores triplegs to PostGIS. Usually, this is directly called on a triplegs 
+    """Stores triplegs to PostGIS. Usually, this is directly called on a triplegs
     DataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
@@ -146,9 +146,9 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None, sql_c
         The triplegs to store to the database.
 
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The name of the table to write to.
 
@@ -196,14 +196,14 @@ def read_staypoints_postgis(conn_string, table_name, geom_col="geom", *args, **k
     Parameters
     ----------
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The table to read the staypoints from.
 
     geom_col : str, default 'geom'
-        The geometry column of the table. 
+        The geometry column of the table.
 
     Returns
     -------
@@ -223,7 +223,7 @@ def read_staypoints_postgis(conn_string, table_name, geom_col="geom", *args, **k
 
 
 def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
-    """Stores staypoints to PostGIS. Usually, this is directly called on a staypoints 
+    """Stores staypoints to PostGIS. Usually, this is directly called on a staypoints
     DataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
@@ -234,9 +234,9 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, s
         The staypoints to store to the database.
 
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The name of the table to write to.
 
@@ -289,14 +289,14 @@ def read_locations_postgis(conn_string, table_name, geom_col="geom", *args, **kw
     Parameters
     ----------
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The table to read the locations from.
 
     geom_col : str, default 'geom'
-        The geometry column of the table. 
+        The geometry column of the table.
 
     Returns
     -------
@@ -316,7 +316,7 @@ def read_locations_postgis(conn_string, table_name, geom_col="geom", *args, **kw
 
 
 def write_locations_postgis(locations, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
-    """Stores locations to PostGIS. Usually, this is directly called on a locations 
+    """Stores locations to PostGIS. Usually, this is directly called on a locations
     GeoDataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
@@ -327,9 +327,9 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None, sql
         The locations to store to the database.
 
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The name of the table to write to.
 
@@ -378,9 +378,9 @@ def read_trips_postgis(conn_string, table_name, *args, **kwargs):
     Parameters
     ----------
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The table to read the trips from.
 
@@ -400,7 +400,7 @@ def read_trips_postgis(conn_string, table_name, *args, **kwargs):
 
 
 def write_trips_postgis(trips, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
-    """Stores trips to PostGIS. Usually, this is directly called on a trips 
+    """Stores trips to PostGIS. Usually, this is directly called on a trips
     DataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
@@ -411,9 +411,9 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None, sql_chunksi
         The trips to store to the database.
 
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The name of the table to write to.
 
