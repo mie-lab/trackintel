@@ -15,7 +15,7 @@ ureg = UnitRegistry()
 
 
 def a4_figsize(fig_height_mm=None, columns=2):
-    """Generates sizes for a figure that fits on an A4 page.
+    """Generate sizes for a figure that fits on an A4 page.
 
     The sizes are taken from:
     http://www.springer.com/computer/journal/450 > Artwork and Illustrations Guidelines > Figure Placement and Size
@@ -33,7 +33,6 @@ def a4_figsize(fig_height_mm=None, columns=2):
     (float, float)
         The width and height in which to plot a figure to fit on an A4 sheet.
     """
-
     if columns == 1:
         fig_width_mm = 84.0
     elif columns == 1.5:
@@ -122,7 +121,7 @@ def save_fig(out_filename, tight="tight", formats=["png", "pdf"]):
 
 
 def transform_gdf_to_wgs84(gdf):
-    """Transforms a GeoDataFrame into WGS84.
+    """Transform a GeoDataFrame into WGS84.
 
     Additionally checks if data has CRS or is already in WGS84.
 

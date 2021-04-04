@@ -21,34 +21,34 @@ def generate_locations(
 
     method : {'dbscan'}
         Method to create locations.
-        
+
         - 'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
 
     epsilon : float, default 100
-        The epsilon for the 'dbscan' method. if 'distance_matrix_metric' is 'haversine' 
+        The epsilon for the 'dbscan' method. if 'distance_matrix_metric' is 'haversine'
         or 'euclidean', the unit is in meters.
 
     num_samples : int, default 1
-        The minimal number of samples in a cluster. 
+        The minimal number of samples in a cluster.
 
     distance_matrix_metric: {'haversine', 'euclidean'}
-        The distance matrix used by the applied method. Any mentioned below are possible: 
+        The distance matrix used by the applied method. Any mentioned below are possible:
         https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html
-        
+
     agg_level: {'user','dataset'}
         The level of aggregation when generating locations:
-        
+
         - 'user'      : locations are generated independently per-user.
         - 'dataset'   : shared locations are generated for all users.
-    
+
     Returns
     -------
     ret_sp: GeoDataFrame (as trackintel staypoints)
         The original staypoints with a new column ``[`location_id`]``.
-        
+
     ret_loc: GeoDataFrame (as trackintel locations)
-        The generated locations. 
-        
+        The generated locations.
+
     Examples
     --------
     >>> spts.as_staypoints.generate_locations(method='dbscan', epsilon=100, num_samples=1)
@@ -189,7 +189,7 @@ def create_activity_flag(staypoints, method="time_threshold", time_threshold=5.0
 
     time_threshold : float, default = 5 (minutes)
         The time threshold for which a staypoint is considered an activity in minutes. Used by method 'time_threshold'
-    
+
     activity_column_name : str , default = 'activity'
         The name of the newly created column that holds the activity flag.
 
