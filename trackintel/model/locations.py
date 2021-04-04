@@ -28,7 +28,7 @@ class LocationsAccessor(object):
     >>> df.as_locations.plot()
     """
 
-    required_columns = ['user_id', 'center']
+    required_columns = ["user_id", "center"]
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -37,11 +37,13 @@ class LocationsAccessor(object):
     @staticmethod
     def _validate(obj):
         if any([c not in obj.columns for c in LocationsAccessor.required_columns]):
-            raise AttributeError("To process a DataFrame as a collection of locations, " \
-                + "it must have the properties [%s], but it has [%s]." \
-                % (', '.join(LocationsAccessor.required_columns), ', '.join(obj.columns)))
+            raise AttributeError(
+                "To process a DataFrame as a collection of locations, "
+                + "it must have the properties [%s], but it has [%s]."
+                % (", ".join(LocationsAccessor.required_columns), ", ".join(obj.columns))
+            )
 
-        if not (obj.shape[0] > 0 and obj['center'].iloc[0].geom_type == 'Point'):
+        if not (obj.shape[0] > 0 and obj["center"].iloc[0].geom_type == "Point"):
             # todo: We could think about allowing both geometry types for locations (point and polygon)
             # One for extend and one for the center
             raise AttributeError("The center geometry must be a Point (only first checked).")
@@ -62,16 +64,14 @@ class LocationsAccessor(object):
         """
         ti.io.file.write_locations_csv(self._obj, filename, *args, **kwargs)
 
-    def to_postgis(self, conn_string, table_name, schema=None,
-            sql_chunksize=None, if_exists='replace'):
+    def to_postgis(self, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
         """
         Store this collection of locations to PostGIS.
         
         See :func:`trackintel.io.postgis.write_locations_postgis`.
         """
-        ti.io.postgis.write_locations_postgis(self._obj, conn_string, table_name, 
-            schema, sql_chunksize, if_exists)
-        
+        ti.io.postgis.write_locations_postgis(self._obj, conn_string, table_name, schema, sql_chunksize, if_exists)
+
     def spatial_filter(self, *args, **kwargs):
         """
         Filter locations with a geo extent.

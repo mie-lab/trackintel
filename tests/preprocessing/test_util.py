@@ -15,7 +15,7 @@ def one_hour():
     return datetime.timedelta(hours=1)
 
 
-class TestCalc_temp_overlap():
+class TestCalc_temp_overlap:
     def test_same_interval(self, time_1, one_hour):
         """Two equal intervals should have 100 % overlap"""
         ratio = calc_temp_overlap(time_1, time_1 + one_hour, time_1, time_1 + one_hour)

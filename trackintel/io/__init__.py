@@ -29,4 +29,3 @@ from .postgis import write_trips_postgis
 from .from_geopandas import read_trips_gpd
 
 from .dataset_reader import read_geolife
-

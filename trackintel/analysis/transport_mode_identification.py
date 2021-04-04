@@ -3,7 +3,7 @@ import numpy as np
 from trackintel.geogr.distances import check_wgs_for_distance_calculation, calculate_haversine_length
 
 
-def predict_transport_mode(triplegs, method='simple-coarse', **kwargs):
+def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
     """
     Predict the transport mode of triplegs.
     
@@ -31,14 +31,15 @@ def predict_transport_mode(triplegs, method='simple-coarse', **kwargs):
     These categories are default values and can be overwritten using the keyword argument categories.
         
     """
-    if method == 'simple-coarse':
+    if method == "simple-coarse":
         # implemented as keyword argument if later other methods that don't use categories are added
-        categories = kwargs.pop('categories', {15 / 3.6: 'slow_mobility', 100 / 3.6: 'motorized_mobility',
-                                               np.inf: 'fast_mobility'})
+        categories = kwargs.pop(
+            "categories", {15 / 3.6: "slow_mobility", 100 / 3.6: "motorized_mobility", np.inf: "fast_mobility"}
+        )
 
         return predict_transport_mode_simple_coarse(triplegs, categories)
     else:
-        raise NameError(f'Method {method} not known for predicting tripleg transport modes.')
+        raise NameError(f"Method {method} not known for predicting tripleg transport modes.")
 
 
 def predict_transport_mode_simple_coarse(triplegs_in, categories):
@@ -73,15 +74,15 @@ def predict_transport_mode_simple_coarse(triplegs_in, categories):
 
     """
     if not (check_categories(categories)):
-        raise ValueError('the categories must be in increasing order')
+        raise ValueError("the categories must be in increasing order")
 
     triplegs = triplegs_in.copy()
     wgs = check_wgs_for_distance_calculation(triplegs.crs)
     #
     if wgs:
-        triplegs['distance'] = calculate_haversine_length(triplegs)
+        triplegs["distance"] = calculate_haversine_length(triplegs)
     else:
-        triplegs['distance'] = triplegs.length
+        triplegs["distance"] = triplegs.length
 
     def identify_mode(tripleg, categories):
         """
@@ -102,14 +103,14 @@ def predict_transport_mode_simple_coarse(triplegs_in, categories):
             the identified mode.
         """
 
-        duration = (tripleg['finished_at'] - tripleg['started_at']).total_seconds()
-        speed = tripleg['distance'] / duration  # The unit of the speed is m/s
+        duration = (tripleg["finished_at"] - tripleg["started_at"]).total_seconds()
+        speed = tripleg["distance"] / duration  # The unit of the speed is m/s
 
         for bound in categories:
             if speed < bound:
                 return categories[bound]
 
-    triplegs['mode'] = triplegs.apply(identify_mode, args=((categories,)), axis=1)
+    triplegs["mode"] = triplegs.apply(identify_mode, args=((categories,)), axis=1)
     return triplegs
 
 

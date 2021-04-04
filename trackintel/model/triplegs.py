@@ -32,7 +32,7 @@ class TriplegsAccessor(object):
     >>> df.as_triplegs.plot()
     """
 
-    required_columns = ['user_id', 'started_at', 'finished_at']
+    required_columns = ["user_id", "started_at", "finished_at"]
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -43,20 +43,25 @@ class TriplegsAccessor(object):
         assert obj.shape[0] > 0, "Geodataframe is empty with shape: {}".format(obj.shape)
         # check columns
         if any([c not in obj.columns for c in TriplegsAccessor.required_columns]):
-            raise AttributeError("To process a DataFrame as a collection of triplegs, " \
-                                 + "it must have the properties [%s], but it has [%s]." \
-                                 % (', '.join(TriplegsAccessor.required_columns), ', '.join(obj.columns)))
+            raise AttributeError(
+                "To process a DataFrame as a collection of triplegs, "
+                + "it must have the properties [%s], but it has [%s]."
+                % (", ".join(TriplegsAccessor.required_columns), ", ".join(obj.columns))
+            )
         # check geometry
-        assert obj.geometry.is_valid.all(), "Not all geometries are valid. Try x[~ x.geometry.is_valid] " \
-                                            "where x is you GeoDataFrame"
-        if obj.geometry.iloc[0].geom_type != 'LineString':
+        assert obj.geometry.is_valid.all(), (
+            "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
+        )
+        if obj.geometry.iloc[0].geom_type != "LineString":
             raise AttributeError("The geometry must be a LineString (only first checked).")
 
         # check timestamp dtypes
-        assert pd.api.types.is_datetime64tz_dtype(obj['started_at']), \
-            "dtype of started_at is {} but has to be datetime64 and timezone aware".format(obj['started_at'].dtype)
-        assert pd.api.types.is_datetime64tz_dtype(obj['finished_at']), \
-            "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj['finished_at'].dtype)
+        assert pd.api.types.is_datetime64tz_dtype(
+            obj["started_at"]
+        ), "dtype of started_at is {} but has to be datetime64 and timezone aware".format(obj["started_at"].dtype)
+        assert pd.api.types.is_datetime64tz_dtype(
+            obj["finished_at"]
+        ), "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj["finished_at"].dtype)
 
     def plot(self, *args, **kwargs):
         """

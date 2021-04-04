@@ -20,7 +20,7 @@ class UsersAccessor(object):
     >>> df.as_users.plot_home_and_work()
     """
 
-    required_columns = ['id']
+    required_columns = ["id"]
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -29,9 +29,11 @@ class UsersAccessor(object):
     @staticmethod
     def _validate(obj):
         if any([c not in obj.columns for c in UsersAccessor.required_columns]):
-            raise AttributeError("To process a DataFrame as a collection of users, " \
-                + "it must have the properties [%s], but it has [%s]." \
-                % (', '.join(UsersAccessor.required_columns), ', '.join(obj.columns)))
+            raise AttributeError(
+                "To process a DataFrame as a collection of users, "
+                + "it must have the properties [%s], but it has [%s]."
+                % (", ".join(UsersAccessor.required_columns), ", ".join(obj.columns))
+            )
 
     def plot_home_and_work(self):
         """

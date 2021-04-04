@@ -29,6 +29,9 @@ There are travis and appveyor CIs set up for Unix/Windows builds.
 You can find the corresponding scripts in `.travis.yml` and `appveyor.yml`.
 Adding [Coveralls](https://coveralls.io) is an open todo.
 
+### Formatting
+We use [black](https://github.com/psf/black) as our code formatter, run `python -m black . -l 120` in the *trackintel* folder to format your code automatically into black style. Please be sure to format your code before making a pull request.
+
 ## Coding conventions
 This is a place to collect conventions we agreed upon until we find the right place in the doc for them
 

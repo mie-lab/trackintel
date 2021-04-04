@@ -53,10 +53,12 @@ def temporal_tracking_quality(source, granularity="all"):
     """
     required_columns = ["user_id", "started_at", "finished_at"]
     if any([c not in source.columns for c in required_columns]):
-        raise KeyError("To successfully calculate the user-level tracking quality, " \
-            + "the source dataframe must have the columns [%s], but it has [%s]." \
-            % (', '.join(required_columns), ', '.join(source.columns)))
-            
+        raise KeyError(
+            "To successfully calculate the user-level tracking quality, "
+            + "the source dataframe must have the columns [%s], but it has [%s]."
+            % (", ".join(required_columns), ", ".join(source.columns))
+        )
+
     df = source.copy()
     df.reset_index(inplace=True)
     if granularity == "all":

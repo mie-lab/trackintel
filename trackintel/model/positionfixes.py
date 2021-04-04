@@ -30,8 +30,8 @@ class PositionfixesAccessor(object):
     --------
     >>> df.as_positionfixes.generate_staypoints()
     """
-    
-    required_columns = ['user_id', 'tracked_at']
+
+    required_columns = ["user_id", "tracked_at"]
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -42,20 +42,24 @@ class PositionfixesAccessor(object):
         assert obj.shape[0] > 0, "Geodataframe is empty with shape: {}".format(obj.shape)
         # check columns
         if any([c not in obj.columns for c in PositionfixesAccessor.required_columns]):
-            raise AttributeError("To process a DataFrame as a collection of positionfixes, " \
-                                 + "it must have the properties [%s], but it has [%s]." \
-                                 % (', '.join(PositionfixesAccessor.required_columns), ', '.join(obj.columns)))
+            raise AttributeError(
+                "To process a DataFrame as a collection of positionfixes, "
+                + "it must have the properties [%s], but it has [%s]."
+                % (", ".join(PositionfixesAccessor.required_columns), ", ".join(obj.columns))
+            )
 
         # check geometry
-        assert obj.geometry.is_valid.all(), "Not all geometries are valid. Try x[~ x.geometry.is_valid] " \
-                                            "where x is you GeoDataFrame"
+        assert obj.geometry.is_valid.all(), (
+            "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
+        )
 
-        if obj.geometry.iloc[0].geom_type != 'Point':
+        if obj.geometry.iloc[0].geom_type != "Point":
             raise AttributeError("The geometry must be a Point (only first checked).")
 
         # check timestamp dtypes
-        assert pd.api.types.is_datetime64tz_dtype(obj['tracked_at']), \
-            "dtype of tracked_at is {} but has to be datetime64 and timezone aware".format(obj['tracked_at'].dtype)
+        assert pd.api.types.is_datetime64tz_dtype(
+            obj["tracked_at"]
+        ), "dtype of tracked_at is {} but has to be datetime64 and timezone aware".format(obj["tracked_at"].dtype)
 
     @property
     def center(self):
@@ -79,7 +83,7 @@ class PositionfixesAccessor(object):
         See :func:`trackintel.preprocessing.positionfixes.generate_triplegs`.
         """
         return ti.preprocessing.positionfixes.generate_triplegs(self._obj, stps_input, *args, **kwargs)
-    
+
     def plot(self, *args, **kwargs):
         """
         Plot this collection of positionfixes.
@@ -96,15 +100,13 @@ class PositionfixesAccessor(object):
         """
         ti.io.file.write_positionfixes_csv(self._obj, filename, *args, **kwargs)
 
-    def to_postgis(self, conn_string, table_name, schema=None,
-                   sql_chunksize=None, if_exists='replace'):
+    def to_postgis(self, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
         """
         Store this collection of positionfixes to PostGIS.
         
         See :func:`trackintel.io.postgis.write_positionfixes_postgis`.
         """
-        ti.io.postgis.write_positionfixes_postgis(self._obj, conn_string, table_name,
-                                                  schema, sql_chunksize, if_exists)
+        ti.io.postgis.write_positionfixes_postgis(self._obj, conn_string, table_name, schema, sql_chunksize, if_exists)
 
     def calculate_distance_matrix(self, *args, **kwargs):
         """
