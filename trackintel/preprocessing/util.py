@@ -21,11 +21,11 @@ def calc_temp_overlap(start_1, end_1, start_2, end_2):
     """
 
     # case 1: no overlap - 1 was before 2
-    if (end_1 < start_2):
+    if end_1 < start_2:
         return 0
 
     # case 2: no overlap - 1 comes after 2
-    elif (end_2 < start_1):
+    elif end_2 < start_1:
         return 0
 
     # case 3: 2 fully in 1

@@ -4,9 +4,21 @@ from pandas.api.types import is_datetime64_any_dtype
 from trackintel.visualization.util import regular_figure, save_fig
 
 
-def plot_modal_split(df_modal_split_in, out_path=None, date_fmt_x_axis='%W', axis=None,
-                     title=None, x_label=None, y_label=None, x_pad=10, y_pad=10, title_pad=1.02, skip_xticks=0,
-                     n_col_legend=5, borderaxespad=0.5):
+def plot_modal_split(
+    df_modal_split_in,
+    out_path=None,
+    date_fmt_x_axis="%W",
+    axis=None,
+    title=None,
+    x_label=None,
+    y_label=None,
+    x_pad=10,
+    y_pad=10,
+    title_pad=1.02,
+    skip_xticks=0,
+    n_col_legend=5,
+    borderaxespad=0.5,
+):
     """
     Plot modal split as returned by `trackintel.analysis.modal_split.calculate_modal_split`
 
@@ -55,12 +67,16 @@ def plot_modal_split(df_modal_split_in, out_path=None, date_fmt_x_axis='%W', axi
 
     # make sure that modal split is only of a single user
     if isinstance(df_modal_split.index[0], tuple):
-        raise ValueError("This function can not support multiindex types. Use 'pandas.MultiIndex.droplevel' or pass "
-                         "the `per_user=False` flag in 'calculate_modal_split' function.")
+        raise ValueError(
+            "This function can not support multiindex types. Use 'pandas.MultiIndex.droplevel' or pass "
+            "the `per_user=False` flag in 'calculate_modal_split' function."
+        )
 
     if not is_datetime64_any_dtype(df_modal_split.index.dtype):
-        raise ValueError("Index of modal split has to be a datetime type. This problem can be solved if the 'freq' "
-                         "keyword of 'calculate_modal_split is not None'")
+        raise ValueError(
+            "Index of modal split has to be a datetime type. This problem can be solved if the 'freq' "
+            "keyword of 'calculate_modal_split is not None'"
+        )
     # set date formatter
     df_modal_split.index = df_modal_split.index.map(lambda s: s.strftime(date_fmt_x_axis))
 
@@ -70,18 +86,23 @@ def plot_modal_split(df_modal_split_in, out_path=None, date_fmt_x_axis='%W', axi
     # skip ticks for X axis
     if skip_xticks > 0:
         for i, tick in enumerate(ax.xaxis.get_major_ticks()):
-            if (i % skip_xticks == 0):
+            if i % skip_xticks == 0:
                 tick.set_visible(False)
 
     # We use a nice trick to put the legend out of the plot and to scale it automatically
     # https://stackoverflow.com/questions/4700614/how-to-put-the-legend-out-of-the-plot
     box = ax.get_position()
-    ax.set_position([box.x0, box.y0 + box.height * 0.1,
-                     box.width, box.height * 0.9])
+    ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height * 0.9])
 
     # Put a legend below current axis
-    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
-              fancybox=True, frameon=False, ncol=n_col_legend, borderaxespad=borderaxespad)
+    ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.05),
+        fancybox=True,
+        frameon=False,
+        ncol=n_col_legend,
+        borderaxespad=borderaxespad,
+    )
 
     if title is not None:
         plt.title(title, y=title_pad)

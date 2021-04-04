@@ -12,7 +12,7 @@ import similaritymeasures
 from trackintel.geogr.point_distances import haversine_dist
 
 
-def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kwds):
+def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
     """
     Calculate a distance matrix based on a specific distance metric.
     
@@ -59,16 +59,17 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
     geom_type = X.geometry.iat[0].geom_type
     if Y is None:
         Y = X
-    assert Y.geometry.iat[0].geom_type == Y.geometry.iat[0].geom_type, "x and y need same geometry type " \
-                                                                       "(only first column checked)"
+    assert Y.geometry.iat[0].geom_type == Y.geometry.iat[0].geom_type, (
+        "x and y need same geometry type " "(only first column checked)"
+    )
 
-    if geom_type == 'Point':
+    if geom_type == "Point":
         x1 = X.geometry.x.values
         y1 = X.geometry.y.values
         x2 = Y.geometry.x.values
         y2 = Y.geometry.y.values
 
-        if dist_metric == 'haversine':
+        if dist_metric == "haversine":
             # create point pairs for distance calculation
             nx = len(X)
             ny = len(Y)
@@ -106,12 +107,12 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
 
         return D
 
-    elif geom_type == 'LineString':
+    elif geom_type == "LineString":
 
-        if dist_metric in ['dtw', 'frechet']:
+        if dist_metric in ["dtw", "frechet"]:
             # these are the preparation steps for all distance functions based only on coordinates
 
-            if dist_metric == 'dtw':
+            if dist_metric == "dtw":
                 d_fun = partial(similaritymeasures.dtw, **kwds)
             else:
                 d_fun = partial(similaritymeasures.frechet_dist, **kwds)
@@ -126,7 +127,7 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
             else:
                 ix_1, ix_2 = np.tril_indices(nx, k=-1, m=ny)
                 trilix = np.triu_indices(nx, k=1, m=ny)
-                
+
             # get the coordinates as list of each LineString
             left = list(X.iloc[ix_1].geometry.apply(lambda x: x.coords))
             right = list(Y.iloc[ix_2].geometry.apply(lambda x: x.coords))
@@ -140,9 +141,9 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
                     res = list(pool.starmap(d_fun, left_right))
             else:
                 res = list(map(d_fun, left, right))
-                
-            if dist_metric == 'dtw':
-                # the first return is the dtw distance, see docs of similaritymeasures.dtw 
+
+            if dist_metric == "dtw":
+                # the first return is the dtw distance, see docs of similaritymeasures.dtw
                 d = [dist[0] for dist in res]
             else:
                 d = res
@@ -154,8 +155,9 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
             return D
 
         else:
-            raise AttributeError("Metric unknown. We only support ['dtw', 'frechet'] for LineStrings. "
-                                 f"You passed {dist_metric}")
+            raise AttributeError(
+                "Metric unknown. We only support ['dtw', 'frechet'] for LineStrings. " f"You passed {dist_metric}"
+            )
     else:
         raise AttributeError(f"We only support 'Point' and 'LineString'. Your geometry is {geom_type}")
 
@@ -211,8 +213,9 @@ def check_wgs_for_distance_calculation(crs):
 
     elif crs is None:
         is_wgs = True
-        warnings.warn('Your data is not projected. WGS84 is assumed and for length calculation the haversine '
-                      'distance is used')
+        warnings.warn(
+            "Your data is not projected. WGS84 is assumed and for length calculation the haversine " "distance is used"
+        )
     return is_wgs
 
 
@@ -264,9 +267,9 @@ def _calculate_haversine_length_single(linestring):
     >>> _calculate_haversine_length_single(ls)
     """
 
-    coords_df = pd.DataFrame(linestring.xy, index=['x_0', 'y_0']).transpose()
-    coords_df['x_1'] = coords_df['x_0'].shift(-1)
-    coords_df['y_1'] = coords_df['y_0'].shift(-1)
+    coords_df = pd.DataFrame(linestring.xy, index=["x_0", "y_0"]).transpose()
+    coords_df["x_1"] = coords_df["x_0"].shift(-1)
+    coords_df["y_1"] = coords_df["y_0"].shift(-1)
     coords_df.dropna(axis=0, inplace=True)
 
     distances = haversine_dist(coords_df.x_0, coords_df.y_0, coords_df.x_1, coords_df.y_1)

@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000):
     """
     Compute the great circle or haversine distance between two coordinates in WGS84.

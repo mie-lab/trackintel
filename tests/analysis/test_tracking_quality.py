@@ -33,9 +33,9 @@ class TestTemporal_tracking_quality:
 
         # test if the result of the user agrees
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="all")
-        
+
         assert quality_manual == quality.loc[quality["user_id"] == 0, "quality"].values[0]
-        assert (quality['quality']<=1).all()
+        assert (quality["quality"] <= 1).all()
 
     def test_tracking_quality_day(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated tracking quality per day is correct."""
@@ -54,7 +54,7 @@ class TestTemporal_tracking_quality:
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="day")
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["day"] == 0), "quality"].values[0]
-        assert (quality['quality']<1).all()
+        assert (quality["quality"] < 1).all()
 
     def test_tracking_quality_week(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated tracking quality per week is correct."""
@@ -76,7 +76,7 @@ class TestTemporal_tracking_quality:
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="week")
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0), "quality"].values[0]
-        assert (quality['quality']<1).all()
+        assert (quality["quality"] < 1).all()
 
     def test_tracking_quality_weekday(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated tracking quality per weekday is correct."""
@@ -100,7 +100,7 @@ class TestTemporal_tracking_quality:
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="weekday")
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["weekday"] == 3), "quality"].values[0]
-        assert (quality['quality']<1).all()
+        assert (quality["quality"] < 1).all()
 
     def test_tracking_quality_hour(self, testdata_stps_tpls_geolife_long):
         """Test if the calculated tracking quality per hour is correct."""
@@ -124,7 +124,7 @@ class TestTemporal_tracking_quality:
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="hour")
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["hour"] == 2), "quality"].values[0]
-        assert (quality['quality']<1).all()
+        assert (quality["quality"] < 1).all()
 
     def test_tracking_quality_error(self, testdata_stps_tpls_geolife_long):
         """Test if the an error is raised when passing unknown 'granularity' to temporal_tracking_quality()."""
@@ -134,29 +134,27 @@ class TestTemporal_tracking_quality:
             ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity=12345)
         with pytest.raises(AttributeError):
             ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="random")
-            
+
     def test_tracking_quality_wrong_datamodel(self, testdata_stps_tpls_geolife_long):
         """Test if the a keyerror is raised when passing incorrect datamodels."""
         # read positionfixes and feed to temporal_tracking_quality()
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
         with pytest.raises(KeyError):
             ti.analysis.tracking_quality.temporal_tracking_quality(pfs)
-        
+
         # generate locations and feed to temporal_tracking_quality()
-        stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
-        stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
-        _, locs = stps.as_staypoints.generate_locations(method='dbscan',
-                                                        epsilon=10,
-                                                        num_samples=0,
-                                                        distance_matrix_metric='haversine',
-                                                        agg_level='dataset')
+        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
+        _, locs = stps.as_staypoints.generate_locations(
+            method="dbscan", epsilon=10, num_samples=0, distance_matrix_metric="haversine", agg_level="dataset"
+        )
         with pytest.raises(KeyError):
             ti.analysis.tracking_quality.temporal_tracking_quality(locs)
-            
+
     def test_tracking_quality_user_error(self, testdata_stps_tpls_geolife_long):
         """Test if the an error is raised when passing unknown 'granularity' to _get_tracking_quality_user()."""
         stps_tpls = testdata_stps_tpls_geolife_long
-        user_0 = stps_tpls.loc[stps_tpls['user_id'] == 0] 
+        user_0 = stps_tpls.loc[stps_tpls["user_id"] == 0]
 
         with pytest.raises(AttributeError):
             ti.analysis.tracking_quality._get_tracking_quality_user(user_0, granularity=12345)

@@ -1,7 +1,6 @@
 import geopandas as gpd
 
 
-
 def spatial_filter(source, areas, method="within", re_project=False):
     """
     Filter staypoints, locations or triplegs with a geo extent.
@@ -40,11 +39,11 @@ def spatial_filter(source, areas, method="within", re_project=False):
     >>> spts.as_staypoints.spatial_filter(areas, method="within", re_project=False)
     """
     gdf = source.copy()
-    
+
     if re_project:
         init_crs = gdf.crs
         gdf = gdf.to_crs(areas.crs)
-    
+
     # build spatial index for pre filtering
     source_sindex = gdf.sindex
     possible_matches_index = []
@@ -56,18 +55,19 @@ def spatial_filter(source, areas, method="within", re_project=False):
     # Get unique candidates
     unique_candidate_matches = list(set(possible_matches_index))
     possible_matches = gdf.iloc[unique_candidate_matches]
-    
+
     # get final result
-    if method == 'within':
+    if method == "within":
         ret_gdf = possible_matches.loc[possible_matches.within(areas.unary_union)]
-    elif method == 'intersects':
+    elif method == "intersects":
         ret_gdf = possible_matches.loc[possible_matches.intersects(areas.unary_union)]
-    elif method == 'crosses':
+    elif method == "crosses":
         ret_gdf = possible_matches.loc[possible_matches.crosses(areas.unary_union)]
     else:
-        raise AttributeError("method unknown. We only support ['within', 'intersects', 'crosses']. "
-                                f"You passed {method}")
-        
+        raise AttributeError(
+            "method unknown. We only support ['within', 'intersects', 'crosses']. " f"You passed {method}"
+        )
+
     if re_project:
         return ret_gdf.to_crs(init_crs)
     else:

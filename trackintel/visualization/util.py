@@ -58,7 +58,7 @@ def a4_figsize(fig_height_mm=None, columns=2):
     fig_width = fig_width_mm.to(ureg.inch).magnitude
     fig_height = fig_height_mm.to(ureg.inch).magnitude
 
-    logging.info('Creating figure of %sx%s.' % (fig_width_mm, fig_height_mm))
+    logging.info("Creating figure of %sx%s." % (fig_width_mm, fig_height_mm))
     return fig_width, fig_height
 
 
@@ -72,16 +72,16 @@ def regular_figure():
     """
 
     params = {
-        'axes.labelsize': 7,  # Fontsize for x and y labels (originally 10).
-        'axes.titlesize': 7,
-        'font.size': 7,  # Originally 10.
-        'legend.fontsize': 7,  # Originally 10.
-        'xtick.labelsize': 7,
-        'ytick.labelsize': 7,
-        'grid.linewidth': 0.8,
-        'grid.linestyle': ':',
-        'legend.frameon': True,
-        'figure.dpi': 600,
+        "axes.labelsize": 7,  # Fontsize for x and y labels (originally 10).
+        "axes.titlesize": 7,
+        "font.size": 7,  # Originally 10.
+        "legend.fontsize": 7,  # Originally 10.
+        "xtick.labelsize": 7,
+        "ytick.labelsize": 7,
+        "grid.linewidth": 0.8,
+        "grid.linestyle": ":",
+        "legend.frameon": True,
+        "figure.dpi": 600,
     }
     matplotlib.rcParams.update(params)
     fig = plt.figure(figsize=a4_figsize(columns=2))
@@ -90,7 +90,7 @@ def regular_figure():
     return fig, ax
 
 
-def save_fig(out_filename, tight='tight', formats=['png', 'pdf']):
+def save_fig(out_filename, tight="tight", formats=["png", "pdf"]):
     """Saves a figure to a file.
 
     Parameters
@@ -103,19 +103,19 @@ def save_fig(out_filename, tight='tight', formats=['png', 'pdf']):
         A list denoting in which formats this figure should be saved ('png' or 'pdf').
     """
 
-    if out_filename.endswith('.png'):
+    if out_filename.endswith(".png"):
         outpath = out_filename
     else:
-        outpath = out_filename + '.png'
-    if 'png' in formats:
+        outpath = out_filename + ".png"
+    if "png" in formats:
         logging.info("Creating png...")
         ts = time.time()
         plt.savefig(outpath, dpi=600, bbox_inches=tight, pad_inches=0)
         logging.info("...took {} s!".format(round(time.time() - ts, 2)))
-    if 'pdf' in formats:
+    if "pdf" in formats:
         logging.info("Creating pdf...")
         ts = time.time()
-        plt.savefig(outpath.replace('.png', '.pdf'), bbox_inches=tight, pad_inches=0)
+        plt.savefig(outpath.replace(".png", ".pdf"), bbox_inches=tight, pad_inches=0)
         logging.info("...took {} s!".format(round(time.time() - ts, 2)))
     plt.close()
     logging.info("Finished!")
@@ -134,7 +134,7 @@ def transform_gdf_to_wgs84(gdf):
     -------
     >>> gdf = transform_gdf_to_wgs84(gdf)
     """
-    crs_wgs84 = 'EPSG:4326'
+    crs_wgs84 = "EPSG:4326"
     if gdf.crs is None:
         warnings.warn("Coordinate System (CRS) is not set, default to WGS84.")
         gdf.crs = crs_wgs84

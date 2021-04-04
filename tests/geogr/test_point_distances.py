@@ -20,22 +20,23 @@ class TestHaversineDist:
         """
 
         # {haversine-distance in meters[longitude_P1, latitudes_P1, longitude_P2, latitudes_P2]}
-        input_latlng = {18749: [8.5, 47.3, 8.7, 47.2],  # Source: see Information to function
-                        5897658.289: [-0.116773, 51.510357, -77.009003, 38.889931],
-
-                        3780627: [0.0, 4.0, 0.0, 38],
-                        # Source for next lines: self-computation with formula from link above
-                        2306879.363: [-7.345, -7.345, 7.345, 7.345],
-                        13222121.519: [-0.118746, 73.998, -120.947783, -21.4783],
-                        785767.221: [50, 0, 45, 5]}
+        input_latlng = {
+            18749: [8.5, 47.3, 8.7, 47.2],  # Source: see Information to function
+            5897658.289: [-0.116773, 51.510357, -77.009003, 38.889931],
+            3780627: [0.0, 4.0, 0.0, 38],
+            # Source for next lines: self-computation with formula from link above
+            2306879.363: [-7.345, -7.345, 7.345, 7.345],
+            13222121.519: [-0.118746, 73.998, -120.947783, -21.4783],
+            785767.221: [50, 0, 45, 5],
+        }
 
         for haversine, latlng in input_latlng.items():
             haversine_output = haversine_dist(latlng[0], latlng[1], latlng[2], latlng[3])
             assert np.isclose(haversine_output, haversine, atol=0.1)
 
     def test_haversine_vectorized(self):
-        stps_file = os.path.join('tests', 'data', 'geolife', 'geolife_staypoints.csv')
-        stps = ti.read_staypoints_csv(stps_file, tz='utc', index_col='id')
+        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
         x = stps.geometry.x.values
         y = stps.geometry.y.values
 
@@ -57,8 +58,7 @@ class TestHaversineDist:
 
         D_theirs = haversine_distances(yx, yx) * 6371000
         d_theirs = D_theirs[ix_1, ix_2]
-        assert np.sum(np.abs(d_ours - d_theirs)) < 0.01 #  1cm for 58 should be good enough
-
+        assert np.sum(np.abs(d_ours - d_theirs)) < 0.01  #  1cm for 58 should be good enough
 
     def test_example_from_sklean(self):
 

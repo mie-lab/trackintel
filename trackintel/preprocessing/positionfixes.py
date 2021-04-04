@@ -164,6 +164,7 @@ def generate_staypoints(
 
     return pfs, stps
 
+
 def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_threshold=15):
     """Generate triplegs from positionfixes.
 
@@ -239,7 +240,9 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
                 # step 1
                 # All positionfixes with timestamp between staypoints are assigned the value 0
                 # Intersect all positionfixes of a user with all staypoints of the same user
-                intervals = pd.IntervalIndex.from_arrays(spts_user["started_at"], spts_user["finished_at"], closed="left")
+                intervals = pd.IntervalIndex.from_arrays(
+                    spts_user["started_at"], spts_user["finished_at"], closed="left"
+                )
                 is_in_interval = pfs_user["tracked_at"].apply(lambda x: intervals.contains(x).any()).astype("bool")
                 pfs.loc[is_in_interval[is_in_interval].index, "staypoint_id"] = 0
 
@@ -275,7 +278,7 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
         # condition 3: stps
         # By our definition the pf after a stp is the first pf of a tpl.
         # this works only for numeric staypoint ids, TODO: can we change?
-        _stp_id = (pfs["staypoint_id"] + 1).fillna(0)  
+        _stp_id = (pfs["staypoint_id"] + 1).fillna(0)
         cond_stp = (_stp_id - _stp_id.shift(1)) != 0
 
         # special check for case 2: pfs that belong to stp might not present in the data.
@@ -288,11 +291,11 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
         # make sure not to create triplegs within staypoints:
         cond_all = cond_all & pd.isna(pfs["staypoint_id"])
         cond_all.sort_index(inplace=True)
-        
+
         # get the start position of tpls
         tpls_starts = np.where(cond_all)[0]
         tpls_diff = np.diff(tpls_starts)
-        
+
         # get the start position of stps
         # pd.NA causes error in boolen comparision, replace to -1
         stps_id = pfs["staypoint_id"].copy().fillna(-1)
@@ -300,7 +303,7 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
         # get the index of where the tpls_starts belong in stps_starts
         stps_starts = stps_starts[unique_stps != -1]
         tpls_place_in_stps = np.searchsorted(stps_starts, tpls_starts)
-        
+
         # get the length between each stp and tpl
         try:
             # pfs ends with stp

@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from trackintel.geogr.distances import check_wgs_for_distance_calculation, \
-    calculate_haversine_length
+from trackintel.geogr.distances import check_wgs_for_distance_calculation, calculate_haversine_length
 
 
-def calculate_modal_split(tpls_in, freq=None, metric='count', per_user=False, norm=False):
+def calculate_modal_split(tpls_in, freq=None, metric="count", per_user=False, norm=False):
     """Calculate the modal split of triplegs
 
     Parameters
@@ -48,55 +47,55 @@ def calculate_modal_split(tpls_in, freq=None, metric='count', per_user=False, no
     tpls = tpls_in.copy()
 
     # precalculate distance and duration if required
-    if metric == 'distance':
+    if metric == "distance":
         wgs = check_wgs_for_distance_calculation(tpls.crs)
         if wgs:
-            tpls['distance'] = calculate_haversine_length(tpls)
+            tpls["distance"] = calculate_haversine_length(tpls)
         else:
-            tpls['distance'] = tpls.length
-    elif metric == 'duration':
-        tpls['duration'] = tpls['finished_at'] - tpls['started_at']
+            tpls["distance"] = tpls.length
+    elif metric == "duration":
+        tpls["duration"] = tpls["finished_at"] - tpls["started_at"]
 
     # create grouper
     if freq is None:
         if per_user:
-            tpls_grouper = tpls.groupby(['user_id', 'mode'])
+            tpls_grouper = tpls.groupby(["user_id", "mode"])
         else:
-            tpls_grouper = tpls.groupby(['mode'])
+            tpls_grouper = tpls.groupby(["mode"])
     else:
-        tpls.set_index('started_at', inplace=True)
-        tpls.index.name = 'timestamp'
+        tpls.set_index("started_at", inplace=True)
+        tpls.index.name = "timestamp"
         if per_user:
-            tpls_grouper = tpls.groupby(['user_id', 'mode', pd.Grouper(freq=freq)])
+            tpls_grouper = tpls.groupby(["user_id", "mode", pd.Grouper(freq=freq)])
         else:
-            tpls_grouper = tpls.groupby(['mode', pd.Grouper(freq=freq)])
+            tpls_grouper = tpls.groupby(["mode", pd.Grouper(freq=freq)])
 
     # aggregate
-    if metric == 'count':
-        modal_split = tpls_grouper['mode'].count()
+    if metric == "count":
+        modal_split = tpls_grouper["mode"].count()
 
-    elif metric == 'distance':
-        modal_split = tpls_grouper['distance'].sum()
+    elif metric == "distance":
+        modal_split = tpls_grouper["distance"].sum()
 
-    elif metric == 'duration':
-        modal_split = tpls_grouper['duration'].sum()
+    elif metric == "duration":
+        modal_split = tpls_grouper["duration"].sum()
         modal_split = modal_split.dt.total_seconds()
 
     # move 'mode' to columns
-    modal_split.name = 'modal_split'
+    modal_split.name = "modal_split"
     modal_split = pd.DataFrame(modal_split)
 
     # if mode is the only index, we replace it with zeros so that everything gets aggregated into a single row
-    modal_split['mode'] = modal_split.index.get_level_values('mode')
+    modal_split["mode"] = modal_split.index.get_level_values("mode")
     if modal_split.index.nlevels == 1:
         modal_split.index = 0 * np.arange(0, modal_split.shape[0])
     else:
-        modal_split = modal_split.droplevel('mode')
+        modal_split = modal_split.droplevel("mode")
 
     # transform Dataframe such that:
     # - unique mode names are column names
     # - time/user_id are the indices
-    modal_split = modal_split.pivot_table(index=modal_split.index, columns='mode', values='modal_split')
+    modal_split = modal_split.pivot_table(index=modal_split.index, columns="mode", values="modal_split")
     modal_split.fillna(0, inplace=True)
 
     if norm:
