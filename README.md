@@ -53,6 +53,8 @@ import trackintel as ti
 
 # read pfs from csv file
 pfs = ti.io.file.read_positionfixes_csv(".\examples\data\pfs.csv", sep=";", index_col="id")
+# or with predefined dataset readers (here geolife) 
+pfs, _ = ti.io.dataset_reader.read_geolife(".\tests\data\geolife_long")
 ```
 
 **[2.]** Data model generation. 
