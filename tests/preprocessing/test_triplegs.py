@@ -26,23 +26,23 @@ class TestSmoothen_triplegs():
         assert len(line2_smoothed.coords) == 3
 
 class TestGenerate_trips():
-    # def test_generate_trips(self):
-    #     """Test if we can generate the example trips based on example data."""
-    #     gap_threshold = 15
-    #     # load pregenerated trips
-    #     trips_loaded = ti.read_trips_csv(os.path.join('tests', 'data', 'geolife_long', 'trips.csv'), index_col='id')
+    """Tests for generate_trips() method."""
+    
+    def test_generate_trips(self):
+        """Test if we can generate the example trips based on example data."""
+        # load pregenerated trips
+        trips_loaded = ti.read_trips_csv(os.path.join('tests', 'data', 'geolife_long', 'trips.csv'), index_col='id')
 
-    #     # create trips from geolife (based on positionfixes)
-    #     pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
-    #     pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25,
-    #                                                          time_threshold=5 * 60)
-    #     stps = stps.as_staypoints.create_activity_flag()
-    #     pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
+        # create trips from geolife (based on positionfixes)
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5)
+        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 
-    #     # generate trips and a joint staypoint/triplegs dataframe
-    #     stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=gap_threshold, id_offset=0)
-    #     # test if generated trips are equal
-    #     pd.testing.assert_frame_equal(trips_loaded, trips)
+        # generate trips and a joint staypoint/triplegs dataframe
+        stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
+        # test if generated trips are equal
+        pd.testing.assert_frame_equal(trips_loaded, trips)
         
     def test_generate_trips_missing_link(self):
         """Test nan is assigned for missing link between spts and trips, and tpls and trips."""
@@ -50,14 +50,12 @@ class TestGenerate_trips():
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                              dist_threshold=25,
-                                                             time_threshold=5 * 60)
-        stps = stps.as_staypoints.create_activity_flag()
+                                                             time_threshold=5)
+        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 
         # generate trips and a joint staypoint/triplegs dataframe
-        stps, tpls, _ = ti.preprocessing.triplegs.generate_trips(stps, tpls,
-                                                                 gap_threshold=15,
-                                                                 id_offset=0)
+        stps, tpls, _ = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
         assert pd.isna(stps['trip_id']).any()
         assert pd.isna(stps['prev_trip_id']).any()
         assert pd.isna(stps['next_trip_id']).any()
@@ -68,14 +66,12 @@ class TestGenerate_trips():
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                              dist_threshold=25,
-                                                             time_threshold=5 * 60)
-        stps = stps.as_staypoints.create_activity_flag()
+                                                             time_threshold=5)
+        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 
         # generate trips and a joint staypoint/triplegs dataframe
-        stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls,
-                                                                     gap_threshold=15,
-                                                                     id_offset=0)
+        stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
         
         assert stps['user_id'].dtype == trips['user_id'].dtype
         assert trips.index.dtype == "int64"
@@ -90,14 +86,12 @@ class TestGenerate_trips():
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding',
                                                              dist_threshold=25,
-                                                             time_threshold=5 * 60)
-        stps = stps.as_staypoints.create_activity_flag()
+                                                             time_threshold=5)
+        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
         
         # generate trips and a joint staypoint/triplegs dataframe
-        _, _, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls,
-                                                               gap_threshold=15, 
-                                                               id_offset=0)
+        _, _, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
         
         assert (trips.index == np.arange(len(trips))).any()
         
@@ -146,9 +140,7 @@ class TestGenerate_trips():
         stps_tpls_loaded['finished_at'] = pd.to_datetime(stps_tpls_loaded['finished_at'], utc=True)
 
         # generate trips and a joint staypoint/triplegs dataframe
-        stps_proc, tpls_proc, trips = ti.preprocessing.triplegs.generate_trips(stps_in, tpls_in,
-                                                                               gap_threshold=15,
-                                                                               id_offset=0)
+        stps_proc, tpls_proc, trips = ti.preprocessing.triplegs.generate_trips(stps_in, tpls_in, gap_threshold=15)
         spts_tpls = _create_debug_spts_tpls_data(stps_proc, tpls_proc, gap_threshold=gap_threshold)
 
         # test if generated trips are equal
@@ -157,36 +149,30 @@ class TestGenerate_trips():
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
         pd.testing.assert_frame_equal(stps_tpls_loaded, spts_tpls, check_dtype=False)
         
-    # def test_generate_trips_id_management(self):
-    #     """
-    #     Test if we can generate the example trips based on example data
-    #     """
-    #     gap_threshold = 15
+    def test_generate_trips_id_management(self):
+        """Test if we can generate the example trips based on example data."""
+        stps_tpls_loaded = pd.read_csv(os.path.join('tests', 'data', 'geolife_long', 'stps_tpls.csv'), index_col='id')
+        stps_tpls_loaded['started_at'] = pd.to_datetime(stps_tpls_loaded['started_at'])
+        stps_tpls_loaded['started_at_next'] = pd.to_datetime(stps_tpls_loaded['started_at_next'])
+        stps_tpls_loaded['finished_at'] = pd.to_datetime(stps_tpls_loaded['finished_at'])
 
-    #     stps_tpls_loaded = pd.read_csv(os.path.join('tests', 'data', 'geolife_long', 'tpls_spts.csv'), index_col='id')
-    #     stps_tpls_loaded['started_at'] = pd.to_datetime(stps_tpls_loaded['started_at'])
-    #     stps_tpls_loaded['started_at_next'] = pd.to_datetime(stps_tpls_loaded['started_at_next'])
-    #     stps_tpls_loaded['finished_at'] = pd.to_datetime(stps_tpls_loaded['finished_at'])
+        # create trips from geolife (based on positionfixes)
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5)
+        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 
-    #     # create trips from geolife (based on positionfixes)
-    #     pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
-    #     pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5 * 60)
-    #     stps = stps.as_staypoints.create_activity_flag()
-    #     pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
+        # generate trips and a joint staypoint/triplegs dataframe
+        gap_threshold = 15
+        stps, tpls, _ = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=gap_threshold)
+        spts_tpls = _create_debug_spts_tpls_data(stps, tpls, gap_threshold=gap_threshold)
 
-    #     # generate trips and a joint staypoint/triplegs dataframe
-    #     stps, tpls, _ = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=gap_threshold, id_offset=0)
-    #     spts_tpls = _create_debug_spts_tpls_data(stps, tpls, gap_threshold=gap_threshold)
-
-    #     # test if generated staypoints/triplegs are equal (especially important for trip ids)
-    #     pd.testing.assert_frame_equal(stps_tpls_loaded, spts_tpls, check_dtype=False)
+        # test if generated staypoints/triplegs are equal (especially important for trip ids)
+        pd.testing.assert_frame_equal(stps_tpls_loaded, spts_tpls, check_dtype=False)
 
 
 def _create_debug_spts_tpls_data(stps, tpls, gap_threshold):
-    """Helper function for "test_generate_trips_*."""
-    stps = stps.copy()
-    tpls = tpls.copy()
-
+    """Preprocess stps and tpls for "test_generate_trips_*."""
     # create table with relevant information from triplegs and staypoints.
     tpls['type'] = 'tripleg'
     stps['type'] = 'staypoint'

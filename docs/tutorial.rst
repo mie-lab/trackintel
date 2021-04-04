@@ -44,7 +44,7 @@ at which the user stayed for a certain amount of time)::
     from trackintel.geogr.distances import meters_to_decimal_degrees
 
     stps = pfs.as_positionfixes.extract_staypoints(method='sliding', 
-        dist_threshold=100, time_threshold=60)
+        dist_threshold=100, time_threshold=5)
     stps.as_staypoints.plot(out_filename='staypoints.png',
         radius=meters_to_decimal_degrees(100, 47.5), positionfixes=pfs, plot_osm=True)
 
