@@ -50,13 +50,13 @@ Steps until we get to version 1.0.0.
 
 ### v0.9.0
 
-* Tutorial for trackintel
+* :heavy_check_mark: Tutorial for trackintel
 
 ### Final Steps for v1.0.0
 
 * Documentation
   * :heavy_check_mark: Link a guide to the readme how to contribute to the documentation
-  * The documentation should be complete (all functions and methods are mentioned)
+  * :heavy_check_mark: The documentation should be complete (all functions and methods are mentioned)
   * The documentation should not be focused on PostGIS 
 
 
