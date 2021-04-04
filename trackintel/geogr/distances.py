@@ -15,7 +15,7 @@ from trackintel.geogr.point_distances import haversine_dist
 def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
     """
     Calculate a distance matrix based on a specific distance metric.
-    
+
     If only X is given, the pair-wise distances between all elements in X are calculated. If X and Y are given, the
     distances between all combinations of X and Y are calculated. Distances between elements of X and X, and distances
     between elements of Y and Y are not calculated.
@@ -23,38 +23,38 @@ def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kw
     Parameters
     ----------
     X : GeoDataFrame (as trackintel staypoints or triplegs)
-        
+
     Y : GeoDataFrame (as trackintel staypoints or triplegs), optional
-        
+
     dist_metric: {'haversine', 'euclidean', 'dtw', 'frechet'}
-        The distance metric to be used for calculating the matrix. 
-        
-        For staypoints, common choice is 'haversine' or 'euclidean'. This function wraps around 
-        the ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the 
-        ``scipy.spatial.distance.cdist`` function if X and Y are given. 
+        The distance metric to be used for calculating the matrix.
+
+        For staypoints, common choice is 'haversine' or 'euclidean'. This function wraps around
+        the ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
+        ``scipy.spatial.distance.cdist`` function if X and Y are given.
         Therefore the following metrics are also accepted:
-        
+
         via ``scikit-learn``: `[‘cityblock’, ‘cosine’, ‘euclidean’, ‘l1’, ‘l2’, ‘manhattan’]`
-        
+
         via ``scipy.spatial.distance``: `[‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘correlation’, ‘dice’, ‘hamming’, ‘jaccard’,
         ‘kulsinski’, ‘mahalanobis’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’,
         ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]`
-        
-        For triplegs, common choice is 'dtw' or 'frechet'. This function uses the implementation 
+
+        For triplegs, common choice is 'dtw' or 'frechet'. This function uses the implementation
         from similaritymeasures.
-        
+
     n_jobs: int
-        Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available 
+        Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available
         if only X is given) are parallelized.
-         
-    **kwds: 
+
+    **kwds:
         optional keywords passed to the distance functions.
 
     Returns
     -------
     D: np.array
         matrix of shape (len(X), len(X)) or of shape (len(X), len(Y)) if Y is provided.
-        
+
     """
     geom_type = X.geometry.iat[0].geom_type
     if Y is None:
@@ -171,7 +171,7 @@ def meters_to_decimal_degrees(meters, latitude):
         The meters to convert to degrees.
 
     latitude : float
-        As the conversion is dependent (approximatively) on the latitude where 
+        As the conversion is dependent (approximatively) on the latitude where
         the conversion happens, this needs to be specified. Use 0 for the equator.
 
     Returns

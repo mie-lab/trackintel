@@ -6,26 +6,26 @@ from trackintel.io.file import _localize_timestamp
 def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom="geom", tz=None, mapper={}):
     """
     Read positionfixes from GeoDataFrames.
-    
+
     Warps the pd.rename function to simplify the import of GeoDataFrames.
 
     Parameters
     ----------
     gdf : GeoDataFrame
         GeoDataFrame with valid point geometry, containing the positionfixes to import
-    
+
     tracked_at : str, default 'tracked_at'
         name of the column storing the timestamps.
-    
+
     user_id : str, default 'user_id'
         name of the column storing the user_id.
-    
+
     geom : str, default 'geom'
         name of the column storing the geometry.
-    
+
     tz : str, optional
         pytz compatible timezone string. If None UTC will be assumed
-    
+
     mapper : dict, optional
         further columns that should be renamed.
 
@@ -33,7 +33,7 @@ def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom
     -------
     pfs : GeoDataFrame (as trackintel positionfixes)
         A GeoDataFrame containing the positionfixes.
-    
+
     Examples
     --------
     >>> trackintel.read_positionfixes_gpd(gdf, user_id='User', geom='geometry', tz='utc')
@@ -58,29 +58,29 @@ def read_staypoints_gpd(
 ):
     """
     Read staypoints from GeoDataFrames.
-    
+
     Warps the pd.rename function to simplify the import of GeoDataFrames.
 
     Parameters
     ----------
     gdf : GeoDataFrame
         GeoDataFrame with valid point geometry, containing the staypoints to import
-    
+
     started_at : str, default 'started_at'
         name of the column storing the starttime of the staypoints.
-    
+
     finished_at : str, default 'finished_at'
         name of the column storing the endtime of the staypoints.
-    
+
     user_id : str, default 'user_id'
         name of the column storing the user_id.
-    
+
     geom : str, default 'geom'
         name of the column storing the geometry.
-    
+
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
-    
+
     mapper : dict, optional
         further columns that should be renamed.
 
@@ -88,7 +88,7 @@ def read_staypoints_gpd(
     -------
     stps : GeoDataFrame (as trackintel staypoints)
         A GeoDataFrame containing the staypoints
-        
+
     Examples
     --------
     >>> trackintel.read_staypoints_gpd(gdf, started_at='start_time', finished_at='end_time', tz='utc')
@@ -113,29 +113,29 @@ def read_triplegs_gpd(
 ):
     """
     Read triplegs from GeoDataFrames.
-    
+
     warps the pd.rename function to simplify the import of GeoDataFrames.
 
     Parameters
     ----------
     gdf : GeoDataFrame
         GeoDataFrame with valid line geometry, containing the triplegs to import.
-    
+
     started_at : str, default 'started_at'
         name of the column storing the starttime of the triplegs.
-    
+
     finished_at : str, default 'finished_at'
         name of the column storing the endtime of the triplegs.
-    
+
     user_id : str, default 'user_id'
         name of the column storing the user_id.
-        
+
     geom : str, default 'geom'
         name of the column storing the geometry.
-    
+
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
-        
+
     mapper : dict, optional
         further columns that should be renamed.
 
@@ -143,7 +143,7 @@ def read_triplegs_gpd(
     -------
     tpls : GeoDataFrame (as trackintel triplegs)
         A GeoDataFrame containing the triplegs
-        
+
     Examples
     --------
     >>> trackintel.read_triplegs_gpd(gdf, user_id='User', geom='geometry', tz='utc')
@@ -175,32 +175,32 @@ def read_trips_gpd(
 ):
     """
     Read trips from GeoDataFrames/DataFrames.
-    
+
     Warps the pd.rename function to simplify the import of GeoDataFrames (DataFrames).
 
     Parameters
     ----------
     gdf : GeoDataFrame or DataFrame
         GeoDataFrame/DataFrame containing the trips to import.
-        
+
     started_at : str, default 'started_at'
         name of the column storing the starttime of the staypoints.
-    
+
     finished_at : str, default 'finished_at'
         name of the column storing the endtime of the staypoints.
-    
+
     user_id : str, default 'user_id'
         name of the column storing the user_id.
-    
+
     origin_staypoint_id : str, default 'origin_staypoint_id'
         name of the column storing the staypoint_id of the start of the tripleg
-    
+
     destination_staypoint_id : str, default 'destination_staypoint_id'
         name of the column storing the staypoint_id of the end of the tripleg
-    
+
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
-    
+
     mapper : dict, optional
         further columns that should be renamed.
 
@@ -208,7 +208,7 @@ def read_trips_gpd(
     -------
     trips : GeoDataFrame/DataFrame (as trackintel trips)
         A GeoDataFrame/DataFrame containing the trips.
-        
+
     Examples
     --------
     >>> trackintel.read_trips_gpd(df, tz='utc')
@@ -236,23 +236,23 @@ def read_trips_gpd(
 def read_locations_gpd(gdf, user_id="user_id", center="center", mapper={}):
     """
     Read locations from GeoDataFrames.
-    
+
     Warps the pd.rename function to simplify the import of GeoDataFrames.
 
     Parameters
     ----------
     gdf : GeoDataFrame
         GeoDataFrame with valid point geometry, containing the locations to import.
-    
+
     user_id : str, default 'user_id'
         name of the column storing the user_id.
-    
+
     center : str, default 'center'
         name of the column storing the geometry (Center of the location).
-    
+
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
-    
+
     mapper : dict, optional
         further columns that should be renamed.
 
@@ -260,7 +260,7 @@ def read_locations_gpd(gdf, user_id="user_id", center="center", mapper={}):
     -------
     locs : GeoDataFrame (as trackintel locations)
         A GeoDataFrame containing the locations.
-        
+
     Examples
     --------
     >>> trackintel.read_locations_gpd(df, user_id='User', center='geometry')
@@ -287,29 +287,29 @@ def read_tours_gpd(
 ):
     """
     Read tours from GeoDataFrames.
-    
+
     Wraps the pd.rename function to simplify the import of GeoDataFrames.
 
     Parameters
     ----------
     gdf : GeoDataFrame
         GeoDataFrame with valid point geometry, containing the locations to import.
-    
+
     user_id : str, default 'user_id'
         name of the column storing the user_id.
-    
+
     started_at : str, default 'started_at'
         name of the column storing the starttime of the staypoints.
-    
+
     finished_at : str, default 'finished_at'
         name of the column storing the endtime of the staypoints.
-    
+
     origin_destination_location_id : str, default 'origin_destination_location_id'
         the name of the column storing the id of the location where the tour starts and ends.
-    
+
     journey : str, default 'journey'
         name of the column storing the information (bool) if the tour is a journey.
-    
+
     mapper : dict, optional
         further columns that should be renamed.
 

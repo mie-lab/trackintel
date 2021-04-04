@@ -6,11 +6,11 @@ import trackintel as ti
 @pd.api.extensions.register_dataframe_accessor("as_positionfixes")
 class PositionfixesAccessor(object):
     """A pandas accessor to treat (Geo)DataFrames as collections of `Positionfixes`.
-    
+
     This will define certain methods and accessors, as well as make sure that the DataFrame
     adheres to some requirements.
 
-    Requires at least the following columns: 
+    Requires at least the following columns:
     ['user_id', 'tracked_at']
 
     Requires valid point geometries; the 'index' of the GeoDataFrame will be treated as unique identifier
@@ -71,7 +71,7 @@ class PositionfixesAccessor(object):
     def generate_staypoints(self, *args, **kwargs):
         """
         Generate staypoints from this collection of positionfixes.
-        
+
         See :func:`trackintel.preprocessing.positionfixes.generate_staypoints`.
         """
         return ti.preprocessing.positionfixes.generate_staypoints(self._obj, *args, **kwargs)
@@ -79,7 +79,7 @@ class PositionfixesAccessor(object):
     def generate_triplegs(self, stps_input=None, *args, **kwargs):
         """
         Generate triplegs from this collection of positionfixes.
-        
+
         See :func:`trackintel.preprocessing.positionfixes.generate_triplegs`.
         """
         return ti.preprocessing.positionfixes.generate_triplegs(self._obj, stps_input, *args, **kwargs)
@@ -87,7 +87,7 @@ class PositionfixesAccessor(object):
     def plot(self, *args, **kwargs):
         """
         Plot this collection of positionfixes.
-        
+
         See :func:`trackintel.visualization.positionfixes.plot_positionfixes`.
         """
         ti.visualization.positionfixes.plot_positionfixes(self._obj, *args, **kwargs)
@@ -95,7 +95,7 @@ class PositionfixesAccessor(object):
     def to_csv(self, filename, *args, **kwargs):
         """
         Store this collection of trackpoints as a CSV file.
-        
+
         See :func:`trackintel.io.file.write_positionfixes_csv`.
         """
         ti.io.file.write_positionfixes_csv(self._obj, filename, *args, **kwargs)
@@ -103,7 +103,7 @@ class PositionfixesAccessor(object):
     def to_postgis(self, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
         """
         Store this collection of positionfixes to PostGIS.
-        
+
         See :func:`trackintel.io.postgis.write_positionfixes_postgis`.
         """
         ti.io.postgis.write_positionfixes_postgis(self._obj, conn_string, table_name, schema, sql_chunksize, if_exists)
@@ -111,7 +111,7 @@ class PositionfixesAccessor(object):
     def calculate_distance_matrix(self, *args, **kwargs):
         """
         Calculate pair-wise distance among positionfixes or to other positionfixes.
-        
+
         See :func:'trackintel.geogr.distances.calculate_distance_matrix'.
         """
         return ti.geogr.distances.calculate_distance_matrix(self._obj, *args, **kwargs)

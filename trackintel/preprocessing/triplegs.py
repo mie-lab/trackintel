@@ -9,22 +9,22 @@ from tqdm import tqdm
 def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
     """
     Reduce number of points while retaining structure of tripleg.
-    
+
     A wrapper function using shapely.simplify():
     https://shapely.readthedocs.io/en/stable/manual.html#object.simplify
-    
+
     Parameters
     ----------
     triplegs: GeoDataFrame (as trackintel triplegs)
         triplegs to be simplified
-        
+
     tolerance: float, default 1.0
-        a higher tolerance removes more points; the units of tolerance are the same as the 
+        a higher tolerance removes more points; the units of tolerance are the same as the
         projection of the input geometry
-    
+
     preserve_topology: bool, default True
         whether to preserve topology. If set to False the Douglas-Peucker algorithm is used.
-    
+
     Returns
     -------
     ret_tpls: GeoDataFrame (as trackintel triplegs)
@@ -273,7 +273,13 @@ def _generate_trips_user(df, gap_threshold):
     # if user ends generate last trip with unknown destination
     if (len(temp_trip_stack) > 0) and (_check_trip_stack_has_tripleg(temp_trip_stack)):
         destination_activity = unknown_activity
-        trip_ls.append(_create_trip_from_stack(temp_trip_stack, origin_activity, destination_activity,))
+        trip_ls.append(
+            _create_trip_from_stack(
+                temp_trip_stack,
+                origin_activity,
+                destination_activity,
+            )
+        )
 
     # print(trip_ls)
     trips = pd.DataFrame(trip_ls)
@@ -283,11 +289,11 @@ def _generate_trips_user(df, gap_threshold):
 def _check_trip_stack_has_tripleg(temp_trip_stack):
     """
     Check if a trip has at least 1 tripleg.
-    
+
     Parameters
     ----------
     temp_trip_stack : list
-        list of dictionary like elements (either pandas series or python dictionary). 
+        list of dictionary like elements (either pandas series or python dictionary).
         Contains all elements that will be aggregated into a trip
 
     Returns
@@ -310,12 +316,12 @@ def _create_trip_from_stack(temp_trip_stack, origin_activity, destination_activi
     Parameters
     ----------
     temp_trip_stack : list
-        list of dictionary like elements (either pandas series or python dictionary). 
+        list of dictionary like elements (either pandas series or python dictionary).
         Contains all elements that will be aggregated into a trip
-        
+
     origin_activity : dictionary like
         Either dictionary or pandas series
-        
+
     destination_activity : dictionary like
         Either dictionary or pandas series
 

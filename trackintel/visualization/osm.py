@@ -12,13 +12,13 @@ def plot_osm_streets(north, south, east, west, ax):
     ----------
     north : float
         The northernmost coordinate (to retrieve OSM data for).
-    
+
     south : float
         The southernmost coordinate.
 
     east : float
         The easternmost coordinate.
-    
+
     west : float
         The westernmost coordinate.
     """

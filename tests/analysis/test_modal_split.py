@@ -36,7 +36,7 @@ def ls_long():
 
 @pytest.fixture
 def test_triplegs_modal_split(ls_short, ls_long):
-    """ Triplegs with transport modes that can be aggregated over days and weeks.
+    """Triplegs with transport modes that can be aggregated over days and weeks.
 
     user 0: day 1:  2 triplegs (car + bike)
             day 2:  1 tripleg (walk)

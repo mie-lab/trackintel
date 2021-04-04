@@ -63,8 +63,8 @@ class TripsAccessor(object):
 
     def plot(self, *args, **kwargs):
         """
-        Plot this collection of trips. 
-        
+        Plot this collection of trips.
+
         See :func:`trackintel.visualization.trips.plot_trips`.
         """
         raise NotImplementedError
@@ -72,7 +72,7 @@ class TripsAccessor(object):
     def to_csv(self, filename, *args, **kwargs):
         """
         Store this collection of trips as a CSV file.
-        
+
         See :func:`trackintel.io.file.write_trips_csv`.
         """
         ti.io.file.write_trips_csv(self._obj, filename, *args, **kwargs)
@@ -80,7 +80,7 @@ class TripsAccessor(object):
     def to_postgis(self, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
         """
         Store this collection of trips to PostGIS.
-        
+
         See :func:`trackintel.io.postgis.write_trips_postgis`.
         """
         ti.io.postgis.write_trips_postgis(self._obj, conn_string, table_name, schema, sql_chunksize, if_exists)

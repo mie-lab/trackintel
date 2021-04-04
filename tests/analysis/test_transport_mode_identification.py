@@ -10,7 +10,7 @@ import trackintel as ti
 
 class TestTransportModeIdentification:
     def test_check_empty_dataframe(self):
-        """Assert that the method does not work for empty DataFrames 
+        """Assert that the method does not work for empty DataFrames
         (but that the rest works fine, e.g., method signature).
         """
         tpls_file = os.path.join("tests", "data", "triplegs_transport_mode_identification.csv")
@@ -20,7 +20,7 @@ class TestTransportModeIdentification:
             empty_frame.as_triplegs.predict_transport_mode(method="simple-coarse")
 
     def test_simple_coarse_identification_no_crs(self):
-        """Assert that the simple-coarse transport mode identification throws the correct 
+        """Assert that the simple-coarse transport mode identification throws the correct
         warning and and yields the correct results for WGS84.
         """
         tpls_file = os.path.join("tests", "data", "triplegs_transport_mode_identification.csv")
