@@ -283,13 +283,44 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
         cond_all = cond_new_user | cond_gap | cond_stp
         # make sure not to create triplegs within staypoints:
         cond_all = cond_all & pd.isna(pfs["staypoint_id"])
-
         cond_all.sort_index(inplace=True)
+        
         # get the start position of tpls
         tpls_starts = np.where(cond_all)[0]
+        tpls_diff = np.diff(tpls_starts)
+        
+        # get the start position of stps
+        stps_id = pfs["staypoint_id"].copy().fillna(-1)
+        unique, stps_starts = np.unique(stps_id, return_index=True)
+        # get the index of where the tpls_starts belong in stps_starts
+        stps_starts = stps_starts[unique != -1]
+        tpls_index = np.searchsorted(stps_starts, tpls_starts)
+        
+        # get the length between each stp and tpl
+        try:
+            # pfs ends with stp
+            stps_tpls_diff = stps_starts[tpls_index] - tpls_starts
+
+            # tpls_lengths is the minimum of tpls_diff and stps_tpls_diff
+            # stps_tpls_diff one larger than tpls_diff
+            tpls_lengths = np.minimum(tpls_diff, stps_tpls_diff[:-1])
+
+            # the last tpl has length (last stp begin - last tpl begin)
+            tpls_lengths = np.append(tpls_lengths, stps_tpls_diff[-1])
+        except IndexError:
+            # pfs ends with tpl
+            # ignore the tpls after the last stps stps_tpls_diff
+            ignore_index = tpls_index == len(stps_starts)
+            stps_tpls_diff = stps_starts[tpls_index[~ignore_index]] - tpls_starts[~ignore_index]
+
+            # tpls_lengths is the minimum of tpls_diff and stps_tpls_diff
+            tpls_lengths = np.minimum(tpls_diff[: len(stps_tpls_diff)], stps_tpls_diff)
+            tpls_lengths = np.append(tpls_lengths, tpls_diff[len(stps_tpls_diff) :])
+
+            # add the length of the last tpl
+            tpls_lengths = np.append(tpls_lengths, len(pfs) - tpls_starts[-1])
 
         # a valid linestring needs 2 points
-        tpls_lengths = np.diff(tpls_starts)
         cond_to_remove = np.take(tpls_starts, np.where(tpls_lengths < 2)[0])
         cond_all.iloc[cond_to_remove] = False
         pfs.loc[pfs.index.isin(cond_to_remove), "tripleg_id"] = -1

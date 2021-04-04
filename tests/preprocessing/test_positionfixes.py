@@ -13,6 +13,7 @@ import trackintel as ti
 
 @pytest.fixture
 def geolife_pfs_stps_long():
+    """Read geolife_long and generate stps."""
     pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join('tests', 'data', 'geolife_long'))
     pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding', dist_threshold=25, time_threshold=5)
     return pfs, stps
@@ -152,6 +153,7 @@ class TestGenerate_triplegs:
         _, tpls_case1 = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
         # only keep pfs where staypoint id is nan
         pfs_nostps = pfs[pd.isna(pfs["staypoint_id"])].drop(columns="staypoint_id")
+        print(pfs_nostps)
         _, tpls_case2 = pfs_nostps.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
 
         assert_geodataframe_equal(tpls_case1, tpls_case2)
@@ -258,8 +260,6 @@ class TestGenerate_triplegs:
             # check if the cuts are appropriate 
             assert (pfs['diff'] > gap_threshold).all()
             
-        
-        
     def test_stps_tpls_overlap(self, geolife_pfs_stps_long):
         """Tpls and spts should not overlap when generated using the default extract triplegs method."""
         pfs, stps = geolife_pfs_stps_long
