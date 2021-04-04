@@ -46,9 +46,9 @@ def generate_staypoints(
         will not be generated between gaps. Only valid in 'sliding' method.
         
     include_last: boolen, default False
-        The original algorithm (see Li et al. (2008)) only detects stp if the user steps out
-        of that stp. This will omit the last stp from the pfs series (if any). Set 'include_last'
-        to True to include this last stp.
+        The original algorithm (see Li et al. (2008)) only detects staypoint if the user steps out
+        of that staypoint. This will omit the last staypoint (if any). Set 'include_last'
+        to True to include this last staypoint.
         
     print_progress: boolen, default False
         Show per-user progress if set to True.
@@ -170,21 +170,21 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
     Parameters
     ----------
     pfs_input : GeoDataFrame (as trackintel positionfixes)
-        The pfs have to follow the standard definition for positionfixes DataFrames. 
+        The positionfixes have to follow the standard definition for positionfixes DataFrames. 
         If 'staypoint_id' column is not found, stps_input needs to be given.
 
     stps_input : GeoDataFrame (as trackintel staypoints), optional
-        The stps (corresponding to the positionfixes). If this is not passed, the
+        The staypoints (corresponding to the positionfixes). If this is not passed, the
         positionfixes need 'staypoint_id' associated with them.
 
     method: {'between_staypoints'}
-        Method to create triplegs. 'between_staypoints' method defines a tripleg as all pfs 
-        between two stps. This method requires either a column 'staypoint_id' on 
-        the pfs or passing stps as an input.
+        Method to create triplegs. 'between_staypoints' method defines a tripleg as all positionfixes 
+        between two staypoints (no overlap). This method requires either a column 'staypoint_id' on 
+        the positionfixes or passing staypoints as an input.
             
     gap_threshold: float, default 15 (minutes)
         Maximum allowed temporal gap size in minutes. If tracking data is missing for more than 
-        `gap_threshold` minutes, then a new tripleg will be generated.
+        `gap_threshold` minutes, a new tripleg will be generated.
 
     Returns
     -------
@@ -200,7 +200,11 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
     positionfixes or passing some staypoints that correspond to the positionfixes! 
     This means you usually should call ``generate_staypoints()`` first.
     
-    The first pfs after a stp is regarded as the first pfs of the generated tpl.
+    The first positionfix after a staypoint is regarded as the first positionfix of the 
+    generated tripleg. The generated tripleg will not have overlapping positionfix with 
+    the existing staypoints. This means a small temporal gap in user's trace will occur 
+    between the first positionfix of staypoint and the last positionfix of tripleg:
+    pfs_stp_first['tracked_at'] - pfs_tpl_last['tracked_at'].
 
     Examples
     --------
@@ -290,16 +294,17 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
         tpls_diff = np.diff(tpls_starts)
         
         # get the start position of stps
+        # pd.NA causes error in boolen comparision, replace to -1
         stps_id = pfs["staypoint_id"].copy().fillna(-1)
-        unique, stps_starts = np.unique(stps_id, return_index=True)
+        unique_stps, stps_starts = np.unique(stps_id, return_index=True)
         # get the index of where the tpls_starts belong in stps_starts
-        stps_starts = stps_starts[unique != -1]
-        tpls_index = np.searchsorted(stps_starts, tpls_starts)
+        stps_starts = stps_starts[unique_stps != -1]
+        tpls_place_in_stps = np.searchsorted(stps_starts, tpls_starts)
         
         # get the length between each stp and tpl
         try:
             # pfs ends with stp
-            stps_tpls_diff = stps_starts[tpls_index] - tpls_starts
+            stps_tpls_diff = stps_starts[tpls_place_in_stps] - tpls_starts
 
             # tpls_lengths is the minimum of tpls_diff and stps_tpls_diff
             # stps_tpls_diff one larger than tpls_diff
@@ -310,8 +315,8 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
         except IndexError:
             # pfs ends with tpl
             # ignore the tpls after the last stps stps_tpls_diff
-            ignore_index = tpls_index == len(stps_starts)
-            stps_tpls_diff = stps_starts[tpls_index[~ignore_index]] - tpls_starts[~ignore_index]
+            ignore_index = tpls_place_in_stps == len(stps_starts)
+            stps_tpls_diff = stps_starts[tpls_place_in_stps[~ignore_index]] - tpls_starts[~ignore_index]
 
             # tpls_lengths is the minimum of tpls_diff and stps_tpls_diff
             tpls_lengths = np.minimum(tpls_diff[: len(stps_tpls_diff)], stps_tpls_diff)

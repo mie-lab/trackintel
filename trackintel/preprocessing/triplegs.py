@@ -37,7 +37,7 @@ def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
     return ret_tpls
 
 
-def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_progress=False):
+def generate_trips(stps_input, tpls_input, gap_threshold=15, print_progress=False):
     """Generate trips based on staypoints and triplegs.
 
     Parameters
@@ -51,9 +51,6 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
     gap_threshold : float, default 15 (minutes)
         Maximum allowed temporal gap size in minutes. If tracking data is missing for more than 
         `gap_threshold` minutes, then a new trip begins after the gap.
-                
-    id_offset : int, default 0
-        IDs for trips are incremented starting from this value.
 
     Returns
     -------
@@ -119,7 +116,7 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, id_offset=0, print_
                                   as_index=False).apply(_generate_trips_user, gap_threshold=gap_threshold).reset_index(drop=True)
     
     # index management
-    trips['id'] = np.arange(len(trips)) + id_offset
+    trips['id'] = np.arange(len(trips))
     trips.set_index('id', inplace=True)
     
     # assign trip_id to tpls
