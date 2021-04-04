@@ -46,7 +46,7 @@ class TestGenerate_trips:
         pd.testing.assert_frame_equal(trips_loaded, trips)
 
     def test_generate_trips_missing_link(self):
-        """Test nan is assigned for missing link between spts and trips, and tpls and trips."""
+        """Test nan is assigned for missing link between stps and trips, and tpls and trips."""
         # create trips from geolife (based on positionfixes)
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
         pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
@@ -146,13 +146,13 @@ class TestGenerate_trips:
 
         # generate trips and a joint staypoint/triplegs dataframe
         stps_proc, tpls_proc, trips = ti.preprocessing.triplegs.generate_trips(stps_in, tpls_in, gap_threshold=15)
-        spts_tpls = _create_debug_spts_tpls_data(stps_proc, tpls_proc, gap_threshold=gap_threshold)
+        stps_tpls = _create_debug_stps_tpls_data(stps_proc, tpls_proc, gap_threshold=gap_threshold)
 
         # test if generated trips are equal
         pd.testing.assert_frame_equal(trips_loaded, trips)
 
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
-        pd.testing.assert_frame_equal(stps_tpls_loaded, spts_tpls, check_dtype=False)
+        pd.testing.assert_frame_equal(stps_tpls_loaded, stps_tpls, check_dtype=False)
 
     def test_generate_trips_id_management(self):
         """Test if we can generate the example trips based on example data."""
@@ -170,13 +170,13 @@ class TestGenerate_trips:
         # generate trips and a joint staypoint/triplegs dataframe
         gap_threshold = 15
         stps, tpls, _ = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=gap_threshold)
-        spts_tpls = _create_debug_spts_tpls_data(stps, tpls, gap_threshold=gap_threshold)
+        stps_tpls = _create_debug_stps_tpls_data(stps, tpls, gap_threshold=gap_threshold)
 
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
-        pd.testing.assert_frame_equal(stps_tpls_loaded, spts_tpls, check_dtype=False)
+        pd.testing.assert_frame_equal(stps_tpls_loaded, stps_tpls, check_dtype=False)
 
 
-def _create_debug_spts_tpls_data(stps, tpls, gap_threshold):
+def _create_debug_stps_tpls_data(stps, tpls, gap_threshold):
     """Preprocess stps and tpls for "test_generate_trips_*."""
     # create table with relevant information from triplegs and staypoints.
     tpls["type"] = "tripleg"

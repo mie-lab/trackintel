@@ -15,8 +15,8 @@ from trackintel.io.dataset_reader import read_geolife, geolife_add_modes_to_trip
 def read_geolife_with_modes():
     pfs, labels = read_geolife(os.path.join("tests", "data", "geolife_modes"))
 
-    pfs, spts = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
-    _, tpls = pfs.as_positionfixes.generate_triplegs(spts, method="between_staypoints")
+    pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+    _, tpls = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
 
     tpls_with_modes = geolife_add_modes_to_triplegs(tpls, labels)
     return tpls_with_modes
@@ -36,7 +36,7 @@ def ls_long():
 
 @pytest.fixture
 def test_triplegs_modal_split(ls_short, ls_long):
-    """ Triplegs with transport modes that can be aggregated over days and weeks.
+    """Triplegs with transport modes that can be aggregated over days and weeks.
 
     user 0: day 1:  2 triplegs (car + bike)
             day 2:  1 tripleg (walk)

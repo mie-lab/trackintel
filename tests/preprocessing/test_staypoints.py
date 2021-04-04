@@ -177,12 +177,12 @@ class TestCreate_activity_flag:
     """Tests for create_activity_flag() method."""
 
     def test_create_activity_flag(self):
-        spts_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        spts_test = ti.read_staypoints_csv(spts_file, tz="utc", index_col="id")
+        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        stps_test = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
 
-        activity_true = spts_test["activity"].copy()
-        spts_test["activity"] = False
+        activity_true = stps_test["activity"].copy()
+        stps_test["activity"] = False
 
-        spts_test = spts_test.as_staypoints.create_activity_flag()
+        stps_test = stps_test.as_staypoints.create_activity_flag()
 
-        pd.testing.assert_series_equal(spts_test["activity"], activity_true)
+        pd.testing.assert_series_equal(stps_test["activity"], activity_true)

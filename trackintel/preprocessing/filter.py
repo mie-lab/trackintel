@@ -36,7 +36,7 @@ def spatial_filter(source, areas, method="within", re_project=False):
         
     Examples
     --------
-    >>> spts.as_staypoints.spatial_filter(areas, method="within", re_project=False)
+    >>> stps.as_staypoints.spatial_filter(areas, method="within", re_project=False)
     """
     gdf = source.copy()
 
