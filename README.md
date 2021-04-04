@@ -83,6 +83,10 @@ stps.as_staypoints.to_csv('.\examples\data\stps.csv')
 tpls.as_triplegs.to_csv('.\examples\data\tpls.csv')
 ```
 
+For example, the plot below shows the generated staypoints and triplegs from the imported raw positionfix data.
+<p align="center">
+  <img width="492" height="500" src="https://github.com/mie-lab/trackintel/blob/master/docs/_static/example_triplegs.png?raw=true">
+</p>
 
 ## Installation and Usage
 *trackintel* is on [pypi.org](https://pypi.org/project/trackintel/), you can install it in a `GeoPandas` available environment using: 
