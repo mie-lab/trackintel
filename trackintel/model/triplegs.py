@@ -118,3 +118,11 @@ class TriplegsAccessor(object):
         See :func:`trackintel.analysis.modal_split.calculate_modal_split`.
         """
         return ti.analysis.modal_split.calculate_modal_split(self._obj, *args, **kwargs)
+
+    def temporal_tracking_quality(self, *args, **kwargs):
+        """
+        Calculate per-user temporal tracking quality (temporal coverage).
+
+        See :func:`trackintel.analysis.tracking_quality.temporal_tracking_quality`.
+        """
+        return ti.analysis.tracking_quality.temporal_tracking_quality(self._obj, *args, **kwargs)

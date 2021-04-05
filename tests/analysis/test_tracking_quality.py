@@ -1,7 +1,7 @@
 import os
 
 import pytest
-
+import pandas as pd
 import trackintel as ti
 
 
@@ -216,3 +216,26 @@ class TestTemporal_tracking_quality:
         # no record has different days after the split
         day_diff = splitted["finished_at"].dt.day - splitted["started_at"].dt.day
         assert (day_diff == 0).all()
+
+    def test_accessors(self):
+        """The result obtained from model accessors should be the same as calling the function."""
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+        stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
+
+        # for staypoints
+        stps_quality_accessor = stps.as_staypoints.temporal_tracking_quality()
+        stps_quality_method = ti.analysis.tracking_quality.temporal_tracking_quality(stps)
+        pd.testing.assert_frame_equal(stps_quality_accessor, stps_quality_method)
+
+        # for triplegs
+        tpls_quality_accessor = tpls.as_triplegs.temporal_tracking_quality()
+        tpls_quality_method = ti.analysis.tracking_quality.temporal_tracking_quality(tpls)
+        pd.testing.assert_frame_equal(tpls_quality_accessor, tpls_quality_method)
+
+        # for trips
+        trips_quality_accessor = trips.as_trips.temporal_tracking_quality()
+        trips_quality_method = ti.analysis.tracking_quality.temporal_tracking_quality(trips)
+        pd.testing.assert_frame_equal(trips_quality_accessor, trips_quality_method)
