@@ -52,6 +52,9 @@ def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
 
     Parameters
     ----------
+    triplegs: GeoDataFrame (as trackintel triplegs)
+        The original input triplegs.
+
     method: {'simple-coarse'}
         The following methods are available for transport mode inference/prediction:
 
@@ -70,6 +73,10 @@ def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
     ``fast_mobility`` (>100 km/h) modes such as high-speed rail or airplanes.
     These categories are default values and can be overwritten using the keyword argument categories.
 
+    Examples
+    --------
+    >>> tpls  = tpls.as_triplegs.predict_transport_mode()
+    >>> print(tpls["mode"])
     """
     if method == "simple-coarse":
         # implemented as keyword argument if later other methods that don't use categories are added
@@ -91,7 +98,7 @@ def _predict_transport_mode_simple_coarse(triplegs_in, categories):
 
     Parameters
     ----------
-    triplegs : trackintel triplegs GeoDataFrame
+    triplegs_in : GeoDataFrame (as trackintel triplegs)
         The triplegs for the transport mode prediction.
 
     categories : dict, optional
