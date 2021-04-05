@@ -73,9 +73,9 @@ tpls.as_triplegs.plot(positionfixes=pfs,staypoints=stps, staypoints_radius=10)
 **[4.]** Analysis.
  ```python
 # e.g., predict travel mode labels based on travel speed
-tpls.as_triplegs.predict_transport_mode()
+tpls = tpls.as_triplegs.predict_transport_mode()
 # or calculate the temporal tracking coverage of users
-ti.temporal_tracking_quality(tpls, granularity='all')
+tracking_coverage = ti.temporal_tracking_quality(tpls, granularity='all')
 ```
 
 **[5.]** Save results.

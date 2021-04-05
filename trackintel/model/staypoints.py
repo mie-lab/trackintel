@@ -83,9 +83,9 @@ class StaypointsAccessor(object):
         """
         Set a flag if a staypoint is also an activity.
 
-        See :func:`trackintel.preprocessing.staypoints.create_activity_flag`.
+        See :func:`trackintel.analysis.label.create_activity_flag`.
         """
-        return ti.preprocessing.staypoints.create_activity_flag(self._obj, *args, **kwargs)
+        return ti.analysis.label.create_activity_flag(self._obj, *args, **kwargs)
 
     def spatial_filter(self, *args, **kwargs):
         """

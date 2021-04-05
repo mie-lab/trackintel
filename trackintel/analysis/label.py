@@ -1,6 +1,46 @@
+import datetime
 import numpy as np
 
 from trackintel.geogr.distances import check_wgs_for_distance_calculation, calculate_haversine_length
+
+
+def create_activity_flag(staypoints, method="time_threshold", time_threshold=5.0, activity_column_name="activity"):
+    """
+    Add a flag whether or not a staypoint is considered an activity.
+
+    Parameters
+    ----------
+    staypoints: GeoDataFrame (as trackintel staypoints)
+        The original input staypoints
+
+    method: {'time_threshold'}, default = 'time_threshold'
+
+        - 'time_threshold' : All staypoints with a duration greater than the time_threshold are considered an activity.
+
+    time_threshold : float, default = 5 (minutes)
+        The time threshold for which a staypoint is considered an activity in minutes. Used by method 'time_threshold'
+
+    activity_column_name : str , default = 'activity'
+        The name of the newly created column that holds the activity flag.
+
+    Returns
+    -------
+    staypoints : GeoDataFrame (as trackintel staypoints)
+        Original staypoints with the additional activity column
+
+    Examples
+    --------
+    >>> stps  = stps.as_staypoints.create_activity_flag(method='time_threshold', time_threshold=5)
+    >>> print(stps['activity'])
+    """
+    if method == "time_threshold":
+        staypoints[activity_column_name] = staypoints["finished_at"] - staypoints["started_at"] > datetime.timedelta(
+            minutes=time_threshold
+        )
+    else:
+        raise AttributeError(f"Method {method} not known for creating activity flag.")
+
+    return staypoints
 
 
 def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
@@ -12,6 +52,9 @@ def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
 
     Parameters
     ----------
+    triplegs: GeoDataFrame (as trackintel triplegs)
+        The original input triplegs.
+
     method: {'simple-coarse'}
         The following methods are available for transport mode inference/prediction:
 
@@ -30,6 +73,10 @@ def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
     ``fast_mobility`` (>100 km/h) modes such as high-speed rail or airplanes.
     These categories are default values and can be overwritten using the keyword argument categories.
 
+    Examples
+    --------
+    >>> tpls  = tpls.as_triplegs.predict_transport_mode()
+    >>> print(tpls["mode"])
     """
     if method == "simple-coarse":
         # implemented as keyword argument if later other methods that don't use categories are added
@@ -39,7 +86,7 @@ def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
 
         return _predict_transport_mode_simple_coarse(triplegs, categories)
     else:
-        raise NameError(f"Method {method} not known for predicting tripleg transport modes.")
+        raise AttributeError(f"Method {method} not known for predicting tripleg transport modes.")
 
 
 def _predict_transport_mode_simple_coarse(triplegs_in, categories):
@@ -51,7 +98,7 @@ def _predict_transport_mode_simple_coarse(triplegs_in, categories):
 
     Parameters
     ----------
-    triplegs : trackintel triplegs GeoDataFrame
+    triplegs_in : GeoDataFrame (as trackintel triplegs)
         The triplegs for the transport mode prediction.
 
     categories : dict, optional
@@ -73,7 +120,7 @@ def _predict_transport_mode_simple_coarse(triplegs_in, categories):
     :func:`trackintel.analysis.transport_mode_identification.predict_transport_mode`.
 
     """
-    if not (check_categories(categories)):
+    if not (_check_categories(categories)):
         raise ValueError("the categories must be in increasing order")
 
     triplegs = triplegs_in.copy()
@@ -114,7 +161,7 @@ def _predict_transport_mode_simple_coarse(triplegs_in, categories):
     return triplegs
 
 
-def check_categories(cat):
+def _check_categories(cat):
     """
     Check if the keys of a dictionary are in ascending order.
 
