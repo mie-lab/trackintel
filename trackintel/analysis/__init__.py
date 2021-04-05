@@ -1,2 +1,3 @@
 from .transport_mode_identification import predict_transport_mode
 from .tracking_quality import temporal_tracking_quality
+from .label import create_activity_flag

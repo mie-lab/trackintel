@@ -172,17 +172,3 @@ class TestGenerate_locations:
         assert (locs_ds.index == np.arange(len(locs_ds))).any()
         assert (locs_us.index == np.arange(len(locs_us))).any()
 
-
-class TestCreate_activity_flag:
-    """Tests for create_activity_flag() method."""
-
-    def test_create_activity_flag(self):
-        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        stps_test = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
-
-        activity_true = stps_test["activity"].copy()
-        stps_test["activity"] = False
-
-        stps_test = stps_test.as_staypoints.create_activity_flag()
-
-        pd.testing.assert_series_equal(stps_test["activity"], activity_true)

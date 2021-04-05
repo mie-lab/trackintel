@@ -31,8 +31,6 @@ frequently visits and/or infer if they correspond to activities.
 
 .. autofunction:: trackintel.preprocessing.staypoints.generate_locations
 
-.. autofunction:: trackintel.preprocessing.staypoints.create_activity_flag
-
 Triplegs
 ========
 
