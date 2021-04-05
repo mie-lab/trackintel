@@ -118,3 +118,11 @@ class StaypointsAccessor(object):
         See :func:`trackintel.io.postgis.write_staypoints_postgis`.
         """
         ti.io.postgis.write_staypoints_postgis(self._obj, conn_string, table_name)
+
+    def temporal_tracking_quality(self, *args, **kwargs):
+        """
+        Calculate per-user temporal tracking quality (temporal coverage).
+
+        See :func:`trackintel.analysis.tracking_quality.temporal_tracking_quality`.
+        """
+        return ti.analysis.tracking_quality.temporal_tracking_quality(self._obj, *args, **kwargs)

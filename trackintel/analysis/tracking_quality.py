@@ -6,7 +6,7 @@ import numpy as np
 
 def temporal_tracking_quality(source, granularity="all"):
     """
-    Calculate per-user temporal tracking quality defined as the temporal coverage.
+    Calculate per-user temporal tracking quality (temporal coverage).
 
     Parameters
     ----------
