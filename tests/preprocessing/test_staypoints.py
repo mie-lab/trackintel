@@ -171,4 +171,3 @@ class TestGenerate_locations:
 
         assert (locs_ds.index == np.arange(len(locs_ds))).any()
         assert (locs_us.index == np.arange(len(locs_us))).any()
-
