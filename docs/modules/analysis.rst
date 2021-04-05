@@ -9,16 +9,12 @@ Label
 
 .. autofunction:: trackintel.analysis.label.create_activity_flag
 
+.. autofunction:: trackintel.analysis.label.predict_transport_mode
+
 Tracking Quality
 ================
 
 .. autofunction:: trackintel.analysis.tracking_quality.temporal_tracking_quality
-
-Transport mode identification
-=============================
-
-.. autofunction:: trackintel.analysis.transport_mode_identification.predict_transport_mode
-
 
 Modal Split
 ===========
