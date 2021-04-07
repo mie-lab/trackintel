@@ -2,15 +2,12 @@
 import datetime
 import os
 
-import geopandas
+import geopandas as gpd
 import pandas as pd
 import pytest
-from geopandas import GeoDataFrame, read_file, read_postgis
-from geopandas.tests.util import create_postgis, validate_boro_df
 from geopandas.testing import assert_geodataframe_equal
 from pandas.testing import assert_frame_equal
 from shapely.geometry import LineString, Point
-from sqlalchemy import create_engine
 import trackintel as ti
 
 
@@ -45,13 +42,6 @@ def engine_postgis():
 
     yield con
     con.dispose()
-
-
-@pytest.fixture
-def df_nybb():
-    nybb_path = geopandas.datasets.get_path("nybb")
-    df = read_file(nybb_path)
-    return df
 
 
 @pytest.fixture()
@@ -111,7 +101,7 @@ def example_positionfixes():
     list_dict = [{'user_id': 0, 'tracked_at': t1, 'geometry': p1},
                  {'user_id': 0, 'tracked_at': t2, 'geometry': p2},
                  {'user_id': 1, 'tracked_at': t3, 'geometry': p3}]
-    pfs = GeoDataFrame(data=list_dict, geometry='geometry', crs='EPSG:4326')
+    pfs = gpd.GeoDataFrame(data=list_dict, geometry='geometry', crs='EPSG:4326')
     pfs.index.name = 'id'
     assert pfs.as_positionfixes
     return pfs
@@ -131,7 +121,7 @@ def example_staypoints():
     list_dict = [{'user_id': 0, 'started_at': t1, 'finished_at': t2, 'geometry': p1},
                  {'user_id': 0, 'started_at': t2, 'finished_at': t3, 'geometry': p2},
                  {'user_id': 1, 'started_at': t3, 'finished_at': t3 + one_hour, 'geometry': p3}]
-    spts = GeoDataFrame(data=list_dict, geometry='geometry', crs='EPSG:4326')
+    spts = gpd.GeoDataFrame(data=list_dict, geometry='geometry', crs='EPSG:4326')
     spts.index.name = 'id'
     assert spts.as_staypoints
     return spts
@@ -153,7 +143,7 @@ def example_triplegs():
                  {'id': 1, 'user_id': 0, 'started_at': t2, 'finished_at': t3, 'geometry': g2},
                  {'id': 2, 'user_id': 1, 'started_at': t3, 'finished_at': t3 + one_hour, 'geometry': g3}]
 
-    tpls = GeoDataFrame(data=list_dict, geometry='geometry', crs='EPSG:4326')
+    tpls = gpd.GeoDataFrame(data=list_dict, geometry='geometry', crs='EPSG:4326')
     tpls.set_index('id', inplace=True)
 
     assert tpls.as_triplegs
@@ -169,7 +159,7 @@ def example_locations():
     list_dict = [{'user_id': 0, 'center': p1},
                  {'user_id': 0, 'center': p2},
                  {'user_id': 1, 'center': p3}]
-    spts = GeoDataFrame(data=list_dict, geometry='center', crs='EPSG:4326')
+    spts = gpd.GeoDataFrame(data=list_dict, geometry='center', crs='EPSG:4326')
     spts.index.name = 'id'
     assert spts.as_locations
     return spts
@@ -187,7 +177,7 @@ def example_trips():
         {'user_id': 0, 'started_at': t2, 'finished_at': t3, 'origin_staypoint_id': 1, 'destination_staypoint_id': 2},
         {'user_id': 1, 'started_at': t3, 'finished_at': t3+h, 'origin_staypoint_id': 0, 'destination_staypoint_id': 1}
     ]
-    trips = GeoDataFrame(data=list_dict)
+    trips = gpd.GeoDataFrame(data=list_dict)
     trips.index.name = 'id'
     assert trips.as_trips
     return trips
@@ -200,23 +190,6 @@ def del_table(con, table):
     finally:
         cursor.close()
         con.commit()
-
-
-class TestIO:
-    def test_read_postgis_default(self, connection_postgis, df_nybb):
-        con = connection_postgis
-        create_postgis(con, df_nybb)
-
-        sql = "SELECT * FROM nybb;"
-        df = read_postgis(sql, con)
-
-        validate_boro_df(df)
-        # no crs defined on the created geodatabase, and none specified
-        # by user; should not be set to 0, as from get_srid failure
-        assert df.crs is None
-
-    # def test_postgis_test_that_fails():
-    #     pytest.skip("This skip should cause a fail for the postgis test run")
 
 
 class TestPositionfixes:
