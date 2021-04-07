@@ -2,7 +2,7 @@ import geopandas as gpd
 import pandas as pd
 from geoalchemy2 import Geometry, WKTElement
 from sqlalchemy import create_engine
-import psycopg2
+import warnings
 
 
 def read_positionfixes_postgis(conn_string, table_name, geom_col='geom', *args, **kwargs):
@@ -75,17 +75,23 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
     --------
     >>> df.as_positionfixes.to_postgis(conn_string, table_name)
     """
-    
     # make a copy in order to avoid changing the geometry of the original array
     positionfixes_postgis = positionfixes.copy()
-
-    # If this GeoDataFrame already has an SRID, we use it, otherwise we default to WGS84.
     if positionfixes_postgis.crs is not None:
         srid = int(positionfixes_postgis.crs.to_epsg())
-    else:
-        srid = 4326
-    positionfixes_postgis['geom'] = \
-        positionfixes_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=srid))
+        geom_schema = Geometry('POINT', srid)
+    else:  # defaults to "GEOMETRY", srid=-1
+        geom_schema = Geometry()
+        srid = None
+
+    geom_col = positionfixes_postgis.geometry.name
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "Geometry column does not contain geometry.", UserWarning)
+        if srid is None:
+            positionfixes_postgis[geom_col] = positionfixes[geom_col].apply(lambda x: x.wkt)
+        else:
+            positionfixes_postgis[geom_col] = positionfixes[geom_col].apply(lambda x: WKTElement(x.wkt, srid=srid))
+
     if 'id' not in positionfixes_postgis.columns:
         positionfixes_postgis['id'] = positionfixes_postgis.index
 
@@ -94,7 +100,7 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
     try:
         positionfixes_postgis.to_sql(table_name, engine, schema=schema,
                                      if_exists=if_exists, index=False,  
-                                     dtype={'geom': Geometry('POINT', srid=srid)},
+                                     dtype={geom_col: geom_schema},
                                      chunksize=sql_chunksize)
     finally:
         conn.close()
@@ -240,17 +246,28 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
     >>> df.as_staypoints.to_postgis(conn_string, table_name)
     """
     
-    # todo: Think about a conecpt for the indices. At the moment, an index 
+    # todo: Think about a concept for the indices. At the moment, an index
     # column is required when downloading. This means, that the ID column is 
     # taken as pandas index. When uploading the default is "no index" and
     # thereby the index column is lost
     
     # make a copy in order to avoid changing the geometry of the original array
     staypoints_postgis = staypoints.copy()
-    
-    srid = int(staypoints_postgis.crs.to_epsg())
-    staypoints_postgis['geom'] = \
-        staypoints_postgis['geom'].apply(lambda x: WKTElement(x.wkt, srid=srid))
+    if staypoints_postgis.crs is not None:
+        srid = int(staypoints_postgis.crs.to_epsg())
+        geom_schema = Geometry('POINT', srid)
+    else:  # defaults to "GEOMETRY", srid=-1
+        geom_schema = Geometry()
+        srid = None
+
+    geom_col = staypoints_postgis.geometry.name
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "Geometry column does not contain geometry.", UserWarning)
+        if srid is None:
+            staypoints_postgis[geom_col] = staypoints[geom_col].apply(lambda x: x.wkt)
+        else:
+            staypoints_postgis[geom_col] = staypoints[geom_col].apply(lambda x: WKTElement(x.wkt, srid=srid))
+
     if 'id' not in staypoints_postgis.columns:
         staypoints_postgis['id'] = staypoints_postgis.index
 
@@ -259,7 +276,7 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
     try:
         staypoints_postgis.to_sql(table_name, engine, schema=schema,
                                   if_exists=if_exists, index=False, 
-                                  dtype={'geom': Geometry('POINT', srid=srid)},
+                                  dtype={geom_col: geom_schema},
                                   chunksize=sql_chunksize)
     finally:
         conn.close()
@@ -332,23 +349,40 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None,
     
     # make a copy in order to avoid changing the geometry of the original array
     locations_postgis = locations.copy()
-    
-    srid = int(locations_postgis.crs['init'].split(':')[1])
-    locations_postgis['center'] = \
-        locations_postgis['center'].apply(lambda x: WKTElement(x.wkt, srid=srid))
-    locations_postgis['extent'] = \
-        locations_postgis['extent'].apply(lambda x: WKTElement(x.wkt, srid=srid))
+
+    if locations_postgis.crs is not None:
+        srid = int(locations_postgis.crs.to_epsg())
+        center_schema = Geometry('POINT', srid)
+        extent_schema = Geometry('GEOMETRY', srid)
+    else:  # defaults to "GEOMETRY", srid=-1
+        geom_schema = Geometry()
+        extent_schema = Geometry()
+        srid = None
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "Geometry column does not contain geometry.", UserWarning)
+        if srid is None:
+            locations_postgis['center'] = locations['center'].apply(lambda x: x.wkt)
+            if 'extent' in locations_postgis.columns:
+                locations_postgis['extent'] = locations['extent'].apply(lambda x: x.wkt)
+        else:
+            locations_postgis['center'] = locations['center'].apply(lambda x: WKTElement(x.wkt, srid=srid))
+            if 'extent' in locations_postgis.columns:
+                locations_postgis['extent'] = locations['extent'].apply(lambda x: WKTElement(x.wkt, srid=srid))
+
     if 'id' not in locations_postgis.columns:
         locations_postgis['id'] = locations_postgis.index
 
     engine = create_engine(conn_string)
     conn = engine.connect()
+    dtype = {'center': center_schema}
+    if 'extent' in locations_postgis.columns:
+        dtype['extent'] = extent_schema
     try:
         locations_postgis.to_sql(table_name, engine, schema=schema,
-                              if_exists=if_exists, index=False, 
-                              dtype={'center': Geometry('POINT', srid=srid),
-                                     'extent': Geometry('GEOMETRY', srid=srid)},
-                              chunksize=sql_chunksize)
+                                 if_exists=if_exists, index=False,
+                                 dtype=dtype,
+                                 chunksize=sql_chunksize)
     finally:
         conn.close()
 
@@ -382,7 +416,7 @@ def read_trips_postgis(conn_string, table_name, *args, **kwargs):
 
 
 def write_trips_postgis(trips, conn_string, table_name, schema=None,
-                         sql_chunksize=None, if_exists='replace'):
+                        sql_chunksize=None, if_exists='replace'):
     """Stores trips to PostGIS. Usually, this is directly called on a trips 
     DataFrame (see example below).
 
@@ -429,9 +463,9 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None,
     conn = engine.connect()
     try:
         trips_postgis.to_sql(table_name, engine, schema=schema,
-                              if_exists=if_exists, index=False, 
-                        dtype={'center': Geometry('POINT', srid=srid),
-                               'extent': Geometry('GEOMETRY', srid=srid)},
-                               chunksize=sql_chunksize)
+                             if_exists=if_exists, index=False,
+                             type={'center': Geometry('POINT', srid=srid),
+                                   'extent': Geometry('GEOMETRY', srid=srid)},
+                             chunksize=sql_chunksize)
     finally:
         conn.close()
