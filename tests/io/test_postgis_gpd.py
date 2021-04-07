@@ -195,7 +195,7 @@ def del_table(con, table):
 class TestPositionfixes:
     def test_read_write_positionfixes(self, example_positionfixes, conn_string_postgis, connection_postgis):
         pfs = example_positionfixes
-        cs = conn_string_postgis + "?sslmode=disable"  # just for me tho
+        cs = conn_string_postgis
         table = 'positionfixes'
         geom_col = pfs.geometry.name
 
@@ -212,7 +212,7 @@ class TestPositionfixes:
 class TestStaypoints:
     def test_read_write_staypoints(self, example_staypoints, conn_string_postgis, connection_postgis):
         spts = example_staypoints
-        cs = conn_string_postgis + "?sslmode=disable"
+        cs = conn_string_postgis
         table = "staypoints"
         geom_col = spts.geometry.name
 
@@ -227,7 +227,7 @@ class TestStaypoints:
 class TestTriplegs:
     def test_read_write_triplegs(self, example_triplegs, conn_string_postgis, connection_postgis):
         tpls = example_triplegs
-        cs = conn_string_postgis + "?sslmode=disable"
+        cs = conn_string_postgis
         table = "triplegs"
         geom_col = tpls.geometry.name
 
@@ -242,7 +242,7 @@ class TestTriplegs:
 class TestLocations:
     def test_read_write_locations(self, example_locations, conn_string_postgis, connection_postgis):
         locs = example_locations
-        cs = conn_string_postgis + "?sslmode=disable"
+        cs = conn_string_postgis
         table = "locations"
         geom_col = locs.geometry.name
 
@@ -257,7 +257,7 @@ class TestLocations:
 class TestTrips:
     def test_read_write_trips(self, example_trips, conn_string_postgis, connection_postgis):
         trips = example_trips
-        cs = conn_string_postgis + "?sslmode=disable"
+        cs = conn_string_postgis
         table = "trips"
 
         try:
