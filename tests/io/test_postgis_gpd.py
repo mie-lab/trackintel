@@ -14,7 +14,7 @@ import trackintel as ti
 @pytest.fixture()
 def engine_postgis():
     """
-    Initiaties a connection engine to a postGIS database that must already exist.
+    Initiates a connection engine to a postGIS database that must already exist.
     """
     sqlalchemy = pytest.importorskip("sqlalchemy")
     from sqlalchemy.engine.url import URL
@@ -70,11 +70,10 @@ def conn_string_postgis():
 @pytest.fixture()
 def connection_postgis():
     """
-    Initiaties a connection to a postGIS database that must already exist.
+    Initiates a connection to a postGIS database that must already exist.
     See create_postgis for more information.
     """
     psycopg2 = pytest.importorskip("psycopg2")
-    from psycopg2 import OperationalError
 
     dbname = "test_geopandas"
     user = os.environ.get("PGUSER")
@@ -85,8 +84,12 @@ def connection_postgis():
         con = psycopg2.connect(
             dbname=dbname, user=user, password=password, host=host, port=port
         )
-    except OperationalError:
-        pytest.skip("Cannot connect with postgresql database")
+    except psycopg2.OperationalError:
+        try:
+            # psycopg2.connect gives operational error due to unsupported frontend protocol in conda environment
+            con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host, port=port, sslmode='disable')
+        except psycopg2.OperationalError:
+            pytest.skip("Cannot connect with postgresql database")
 
     yield con
     con.close()
