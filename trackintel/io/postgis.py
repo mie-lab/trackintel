@@ -1,6 +1,7 @@
 import geopandas as gpd
 import pandas as pd
 from geoalchemy2 import Geometry, WKTElement
+from sqlalchemy import create_engine
 import psycopg2
 
 
@@ -30,7 +31,7 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col='geom', *args, 
     GeoDataFrame
         A GeoDataFrame containing the positionfixes.
     """
-    engine = _create_engine(conn_string)
+    engine = create_engine(conn_string)
     conn = engine.connect()
     try:
         pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, 
@@ -88,7 +89,7 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
     if 'id' not in positionfixes_postgis.columns:
         positionfixes_postgis['id'] = positionfixes_postgis.index
 
-    engine = _create_engine(conn_string)
+    engine = create_engine(conn_string)
     conn = engine.connect()
     try:
         positionfixes_postgis.to_sql(table_name, engine, schema=schema,
@@ -119,7 +120,7 @@ def read_triplegs_postgis(conn_string, table_name, geom_col='geom', *args, **kwa
     GeoDataFrame
         A GeoDataFrame containing the triplegs.
     """
-    engine = _create_engine(conn_string)
+    engine = create_engine(conn_string)
     conn = engine.connect()
     try:
         pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn,
@@ -165,7 +166,7 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None, if_ex
     """
 
     if isinstance(conn_string, str):
-        engine = _create_engine(conn_string)
+        engine = create_engine(conn_string)
     else:
         engine = conn_string
 
@@ -194,7 +195,7 @@ def read_staypoints_postgis(conn_string, table_name, geom_col='geom', *args, **k
     GeoDataFrame
         A GeoDataFrame containing the staypoints.
     """
-    engine = _create_engine(conn_string)
+    engine = create_engine(conn_string)
     conn = engine.connect()
     try:
         pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, 
@@ -253,7 +254,7 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
     if 'id' not in staypoints_postgis.columns:
         staypoints_postgis['id'] = staypoints_postgis.index
 
-    engine = _create_engine(conn_string)
+    engine = create_engine(conn_string)
     conn = engine.connect()
     try:
         staypoints_postgis.to_sql(table_name, engine, schema=schema,
@@ -284,7 +285,7 @@ def read_locations_postgis(conn_string, table_name, geom_col='geom', *args, **kw
     GeoDataFrame
         A GeoDataFrame containing the locations.
     """
-    engine = _create_engine(conn_string)
+    engine = create_engine(conn_string)
     conn = engine.connect()
     try:
         locs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, 
@@ -340,7 +341,7 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None,
     if 'id' not in locations_postgis.columns:
         locations_postgis['id'] = locations_postgis.index
 
-    engine = _create_engine(conn_string)
+    engine = create_engine(conn_string)
     conn = engine.connect()
     try:
         locations_postgis.to_sql(table_name, engine, schema=schema,
@@ -369,7 +370,7 @@ def read_trips_postgis(conn_string, table_name, *args, **kwargs):
     DataFrame
         A DataFrame containing the trips.
     """
-    engine = _create_engine(conn_string)
+    engine = create_engine(conn_string)
     conn = engine.connect()
     try:
         trps = pd.read_sql("SELECT * FROM %s" % table_name, conn, index_col='id',
@@ -424,7 +425,7 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None,
     if 'id' not in trips_postgis.columns:
         trips_postgis['id'] = trips_postgis.index
 
-    engine = _create_engine(conn_string)
+    engine = create_engine(conn_string)
     conn = engine.connect()
     try:
         trips_postgis.to_sql(table_name, engine, schema=schema,
@@ -434,17 +435,3 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None,
                                chunksize=sql_chunksize)
     finally:
         conn.close()
-
-
-def _create_engine(conn_string):
-    """Wrapper for the psycopg2.connect in the style of sqlalchemy create engine."""
-    class EnginePsycogp2:
-        def __init__(self, cs):
-            self.cs = cs
-
-        def connect(self):
-            try:
-                return psycopg2.connect(self.cs)
-            except psycopg2.OperationalError:
-                return psycopg2.connect(self.cs, sslmode='disable')
-    return EnginePsycogp2(conn_string)
