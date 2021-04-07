@@ -8,6 +8,7 @@ import pytest
 from geopandas import GeoDataFrame, read_file, read_postgis
 from geopandas.tests.util import create_postgis, validate_boro_df
 from geopandas.testing import assert_geodataframe_equal
+from pandas.testing import assert_frame_equal
 from shapely.geometry import LineString, Point
 from sqlalchemy import create_engine
 import trackintel as ti
@@ -174,6 +175,24 @@ def example_locations():
     return spts
 
 
+@pytest.fixture
+def example_trips():
+    t1 = pd.Timestamp('1971-01-01 00:00:00', tz='utc')
+    t2 = pd.Timestamp('1971-01-01 05:00:00', tz='utc')
+    t3 = pd.Timestamp('1971-01-02 07:00:00', tz='utc')
+    h = datetime.timedelta(hours=1)
+
+    list_dict = [
+        {'user_id': 0, 'started_at': t1, 'finished_at': t2, 'origin_staypoint_id': 0, 'destination_staypoint_id': 1},
+        {'user_id': 0, 'started_at': t2, 'finished_at': t3, 'origin_staypoint_id': 1, 'destination_staypoint_id': 2},
+        {'user_id': 1, 'started_at': t3, 'finished_at': t3+h, 'origin_staypoint_id': 0, 'destination_staypoint_id': 1}
+    ]
+    trips = GeoDataFrame(data=list_dict)
+    trips.index.name = 'id'
+    assert trips.as_trips
+    return trips
+
+
 def del_table(con, table):
     try:
         cursor = con.cursor()
@@ -258,5 +277,19 @@ class TestLocations:
             locs.as_locations.to_postgis(cs, table)
             locs_db = ti.io.read_locations_postgis(cs, table, geom_col)
             assert_geodataframe_equal(locs, locs_db)
+        finally:
+            del_table(connection_postgis, table)
+
+
+class TestTrips:
+    def test_read_write_trips(self, example_trips, conn_string_postgis, connection_postgis):
+        trips = example_trips
+        cs = conn_string_postgis + "?sslmode=disable"
+        table = "trips"
+
+        try:
+            trips.as_trips.to_postgis(cs, table)
+            trips_db = ti.io.read_trips_postgis(cs, table)
+            assert_frame_equal(trips, trips_db)
         finally:
             del_table(connection_postgis, table)
