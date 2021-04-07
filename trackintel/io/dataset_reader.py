@@ -12,13 +12,14 @@ from sklearn.neighbors import NearestNeighbors
 
 FEET2METER = 0.3048
 
-CRS_WGS84 = 'epsg:4326'
+CRS_WGS84 = "epsg:4326"
 
 from trackintel.preprocessing.util import calc_temp_overlap
 
 
 def read_geolife(geolife_path):
-    """ Read raw geolife data and return trackintel positionfixes
+    """
+    Read raw geolife data and return trackintel positionfixes.
 
     This functions parses all geolife data available in the directory ``geolife_path``
 
@@ -29,13 +30,14 @@ def read_geolife(geolife_path):
 
     Returns
     -------
-    gdf: GeoPandas DataFrame
+    gdf: GeoDataFrame (as trackintel positionfixes)
         Contains all loaded geolife positionfixes
+
     labels: dict
         Dictionary with the available (optional) mode labels.
 
     Notes
-    ------
+    -----
     The geopandas dataframe has the following columns and datatype: 'lat': float64, Latitude WGS84; 'lon': float64, Latitude WGS84; 'elevation': float64, in meters;
     'tracked_at': datetime64[ns]; 'user_id': int64; 'geom': geopandas/shapely geometry; 'accuracy': None;
 
@@ -77,15 +79,14 @@ def read_geolife(geolife_path):
     ----------
     >>> geolife_pfs, labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'))
     """
-
-    geolife_path = os.path.join(geolife_path, '*')
+    geolife_path = os.path.join(geolife_path, "*")
     user_folder = sorted(glob.glob(geolife_path))
 
     df_list_users = []
     label_dict = dict()
 
     if len(user_folder) == 0:
-        raise NameError('No folders found with working directory {} and path {}'.format(os.getcwd(), geolife_path))
+        raise NameError("No folders found with working directory {} and path {}".format(os.getcwd(), geolife_path))
 
     for user_folder_this in user_folder:
 
@@ -95,39 +96,49 @@ def read_geolife(geolife_path):
 
         # check if labels are available
         try:
-            labels = pd.read_csv(os.path.join(user_folder_this, 'labels.txt'), delimiter="\t")
+            labels = pd.read_csv(os.path.join(user_folder_this, "labels.txt"), delimiter="\t")
             rename_dict = {"Start Time": "started_at", "End Time": "finished_at", "Transportation Mode": "mode"}
             labels.rename(rename_dict, axis=1, inplace=True)
-            labels['started_at'] = pd.to_datetime(labels['started_at'], format="%Y/%m/%d %H:%M:%S", utc=True)
-            labels['finished_at'] = pd.to_datetime(labels['finished_at'], format="%Y/%m/%d %H:%M:%S", utc=True)
+            labels["started_at"] = pd.to_datetime(labels["started_at"], format="%Y/%m/%d %H:%M:%S", utc=True)
+            labels["finished_at"] = pd.to_datetime(labels["finished_at"], format="%Y/%m/%d %H:%M:%S", utc=True)
         except OSError:
             labels = pd.DataFrame(columns=["started_at", "finished_at", "mode"])
 
         # extract user id from path
         _, tail = ntpath.split(user_folder_this)
-        user_id = int(tail)
+        try:
+            user_id = int(tail)
+        except ValueError as err:
+            errmsg = (
+                "Invalid user_id '{}' found in geolife path '{}'. The geolife path can only contain folders"
+                " named with integers that represent the user id.".format(tail, user_folder_this)
+            )
+            raise ValueError(errmsg) from err
+
         print("start importing geolife user_id: ", user_id)
 
-        input_files = sorted(glob.glob(os.path.join(
-            user_folder_this, "Trajectory", "*.plt")))
+        input_files = sorted(glob.glob(os.path.join(user_folder_this, "Trajectory", "*.plt")))
         df_list_days = []
 
         # read every day of every user and concatenate input files
         for input_file_this in input_files:
-            data_this = pd.read_csv(input_file_this, skiprows=6, header=None,
-                                    names=['lat', 'lon', 'zeros', 'elevation',
-                                           'date days', 'date', 'time'])
+            data_this = pd.read_csv(
+                input_file_this,
+                skiprows=6,
+                header=None,
+                names=["lat", "lon", "zeros", "elevation", "date days", "date", "time"],
+            )
 
-            data_this['tracked_at'] = pd.to_datetime(data_this['date']
-                                                     + ' ' + data_this['time'], format="%Y-%m-%d %H:%M:%S", utc=True)
+            data_this["tracked_at"] = pd.to_datetime(
+                data_this["date"] + " " + data_this["time"], format="%Y-%m-%d %H:%M:%S", utc=True
+            )
 
-            data_this.drop(['zeros', 'date days', 'date', 'time'], axis=1,
-                           inplace=True)
-            data_this['user_id'] = user_id
-            data_this['elevation'] = data_this['elevation'] * FEET2METER
+            data_this.drop(["zeros", "date days", "date", "time"], axis=1, inplace=True)
+            data_this["user_id"] = user_id
+            data_this["elevation"] = data_this["elevation"] * FEET2METER
 
-            data_this['geom'] = list(zip(data_this.lon, data_this.lat))
-            data_this['geom'] = data_this['geom'].apply(Point)
+            data_this["geom"] = list(zip(data_this["lon"], data_this["lat"]))
+            data_this["geom"] = data_this["geom"].apply(Point)
 
             df_list_days.append(data_this)
 
@@ -142,13 +153,14 @@ def read_geolife(geolife_path):
     gdf = gpd.GeoDataFrame(df, geometry="geom", crs=CRS_WGS84)
     gdf["accuracy"] = np.nan
 
-    gdf.index.name = 'id'
+    gdf.index.name = "id"
 
     return gdf, label_dict
 
 
-def geolife_add_modes_to_triplegs(tpls_in, labels, ratio_threshold=0.5, max_triplegs=20,
-                                  max_duration_tripleg=7 * 24 * 60 * 60):
+def geolife_add_modes_to_triplegs(
+    tpls_in, labels, ratio_threshold=0.5, max_triplegs=20, max_duration_tripleg=7 * 24 * 60 * 60
+):
     """
     Add available mode labels to geolife data.
 
@@ -158,72 +170,76 @@ def geolife_add_modes_to_triplegs(tpls_in, labels, ratio_threshold=0.5, max_trip
     Parameters
     ----------
     tpls_in : GeoDataFrame (as trackintel triplegs)
-        Geolife triplegs
+        Geolife triplegs.
+
     labels : dictionary
-        Geolife labels as provided by the trackintel `read_geolife` function
-    ratio_threshold : float, optional
+        Geolife labels as provided by the trackintel `read_geolife` function.
+
+    ratio_threshold : float, default 0.5
         How much a label needs to overlap a tripleg to assign a the to this tripleg.
-    max_triplegs : int, optional
+
+    max_triplegs : int, default 20
         Number of neighbors that are considered in the search for matching triplegs.
-    max_duration_tripleg : float, optional, (seconds)
-        Used for a primary filter. All triplegs that are further away in time than max_duration_tripleg from a
+
+    max_duration_tripleg : float, default 7 * 24 * 60 * 60 (seconds)
+        Used for a primary filter. All triplegs that are further away in time than 'max_duration_tripleg' from a
         label won't be considered for matching.
 
     Returns
     -------
     tpls : GeoDataFrame (as trackintel triplegs)
         triplegs with mode labels.
-
     """
-
     tpls = tpls_in.copy()
     # temp time fields for nn query
-    tpls['started_at_s'] = (tpls['started_at'] - pd.Timestamp("1970-01-01", tz='utc')) // pd.Timedelta('1s')
-    tpls['finished_at_s'] = (tpls['finished_at'] - pd.Timestamp("1970-01-01", tz='utc')) // pd.Timedelta('1s')
-    all_users = tpls['user_id'].unique()
+    tpls["started_at_s"] = (tpls["started_at"] - pd.Timestamp("1970-01-01", tz="utc")) // pd.Timedelta("1s")
+    tpls["finished_at_s"] = (tpls["finished_at"] - pd.Timestamp("1970-01-01", tz="utc")) // pd.Timedelta("1s")
+    all_users = tpls["user_id"].unique()
     # tpls_id_mode_list is used to collect tripleg-mode matches. It will be filled with dictionaries with the
     # following keys: [id', 'label_id', 'mode']
     tpls_id_mode_list = list()
 
     for user_this in all_users:
-        tpls_this = tpls[tpls['user_id'] == user_this]
+        tpls_this = tpls[tpls["user_id"] == user_this]
         labels_this = labels[user_this]
         if labels_this.empty:
             continue
 
-        labels_this['started_at_s'] = (labels_this['started_at'] -
-                                       pd.Timestamp("1970-01-01", tz='utc')) // pd.Timedelta('1s')
-        labels_this['finished_at_s'] = (labels_this['finished_at'] -
-                                        pd.Timestamp("1970-01-01", tz='utc')) // pd.Timedelta('1s')
+        labels_this["started_at_s"] = (
+            labels_this["started_at"] - pd.Timestamp("1970-01-01", tz="utc")
+        ) // pd.Timedelta("1s")
+        labels_this["finished_at_s"] = (
+            labels_this["finished_at"] - pd.Timestamp("1970-01-01", tz="utc")
+        ) // pd.Timedelta("1s")
 
         # fit search tree on timestamps
         if tpls_this.shape[0] < max_triplegs:
             max_triplegs = tpls_this.shape[0]
-        nn = NearestNeighbors(n_neighbors=max_triplegs, metric='chebyshev')
-        nn.fit(tpls_this[['started_at_s', 'finished_at_s']])
+        nn = NearestNeighbors(n_neighbors=max_triplegs, metric="chebyshev")
+        nn.fit(tpls_this[["started_at_s", "finished_at_s"]])
 
         # find closest neighbours for timestamps in labels
-        distances, candidates = nn.kneighbors(labels_this[['started_at_s', 'finished_at_s']])
+        distances, candidates = nn.kneighbors(labels_this[["started_at_s", "finished_at_s"]])
 
         # filter anything above max_duration_tripleg (max distance start or end)
         pre_filter = distances > max_duration_tripleg
 
-        candidates = pd.DataFrame(candidates, dtype='Int64')
+        candidates = pd.DataFrame(candidates, dtype="Int64")
         candidates[pre_filter] = np.nan
-        candidates.dropna(how='all', inplace=True)
+        candidates.dropna(how="all", inplace=True)
 
         # collect the tripleg - mode matches in the
         tpls_id_mode_list.extend(_calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_threshold))
 
     if len(tpls_id_mode_list) == 0:
-        tpls['mode'] = np.nan
+        tpls["mode"] = np.nan
     else:
-        tpls_id_mode = pd.DataFrame(tpls_id_mode_list).set_index('id')
+        tpls_id_mode = pd.DataFrame(tpls_id_mode_list).set_index("id")
         tpls = tpls.join(tpls_id_mode)
-        tpls = tpls.astype({'label_id': 'Int64'})
+        tpls = tpls.astype({"label_id": "Int64"})
 
     try:
-        tpls.drop(['started_at_s', 'finished_at_s'], axis=1, inplace=True)
+        tpls.drop(["started_at_s", "finished_at_s"], axis=1, inplace=True)
     except KeyError:
         pass
 
@@ -232,7 +248,7 @@ def geolife_add_modes_to_triplegs(tpls_in, labels, ratio_threshold=0.5, max_trip
 
 def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_threshold):
     """
-    Iterate all candidate triplegs and labels for a single user
+    Iterate all candidate triplegs and labels for a single user.
 
     Parameters
     ----------
@@ -244,8 +260,10 @@ def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_thres
 
     tpls_this : GeoDataFrame (as trackintel triplegs)
         triplegs of a single user
+
     labels_this : DataFrame
         labels of a single user
+
     ratio_threshold : float, optional
         How much a label needs to overlap a tripleg to assign a the to this tripleg.
 
@@ -256,7 +274,7 @@ def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_thres
         following keys: [id', 'label_id', 'mode']
 
     Notes
-    ------
+    -----
     Candidates is a matrix with one row per label and where each column corresponds to a potential tripleg match. All
     potential tripleg matches that are overlapped (in time) by more than ratio_threshold by a label are
     assigned this label.
@@ -274,13 +292,17 @@ def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_thres
                 continue
 
             potential_tripleg = tpls_this.iloc[tpls_pos, :]
-            ratio_this = calc_temp_overlap(potential_tripleg['started_at'], potential_tripleg['finished_at'],
-                                           potential_label['started_at'], potential_label['finished_at'])
+            ratio_this = calc_temp_overlap(
+                potential_tripleg["started_at"],
+                potential_tripleg["finished_at"],
+                potential_label["started_at"],
+                potential_label["finished_at"],
+            )
 
             if ratio_this >= ratio_threshold:
                 # assign label to tripleg (by storing matching in dictionary)
-                tpls_id_mode_list.append({'id': potential_tripleg.name,
-                                          'label_id': potential_label.name,
-                                          'mode': potential_label['mode']})
+                tpls_id_mode_list.append(
+                    {"id": potential_tripleg.name, "label_id": potential_label.name, "mode": potential_label["mode"]}
+                )
 
     return tpls_id_mode_list

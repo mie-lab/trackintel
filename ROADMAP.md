@@ -37,26 +37,26 @@ Steps until we get to version 1.0.0.
 ### v0.6.0
 * :heavy_check_mark: Support flexible geometry columns [Issue15](https://github.com/mie-lab/trackintel/issues/15)
 * :heavy_check_mark: Filter data by geographic location (e.g., all data within Switzerland)
-* Enhance tripleg extraction to be _gap aware_ [issue27](https://github.com/mie-lab/trackintel/issues/27)
+* :heavy_check_mark: Enhance tripleg extraction to be _gap aware_ [issue27](https://github.com/mie-lab/trackintel/issues/27)
 
 ### v0.7.0
 
 * :heavy_check_mark: Simple transport mode prediction. This functionality is based on properties of the movement data only.
-* :heavy_check_mark: Simple activity inference. This functionality is based on properties of the movement data only and should include {Home, Work, Other}.
+* Simple activity inference. This functionality is based on properties of the movement data only and should include {Home, Work, Other}.
 
 ### v0.8.0
 
-* Data quality assessments: statistical measures of temporal tracking frequency.
+* :heavy_check_mark: Data quality assessments: statistical measures of temporal tracking frequency.
 
 ### v0.9.0
 
-* Tutorial for trackintel
+* :heavy_check_mark: Tutorial for trackintel
 
 ### Final Steps for v1.0.0
 
 * Documentation
-  * Link a guide to the readme how to contribute to the documentation
-  * The documentation should be complete (all functions and methods are mentioned)
+  * :heavy_check_mark: Link a guide to the readme how to contribute to the documentation
+  * :heavy_check_mark: The documentation should be complete (all functions and methods are mentioned)
   * The documentation should not be focused on PostGIS 
 
 

@@ -1,20 +1,21 @@
 import multiprocessing
+import warnings
 from functools import partial
 from math import cos, pi
 
 import numpy as np
+import pandas as pd
 from scipy.spatial.distance import cdist
 from sklearn.metrics import pairwise_distances
+import similaritymeasures
 
 from trackintel.geogr.point_distances import haversine_dist
-from trackintel.geogr.trajectory_distances import dtw, frechet_dist
-import warnings
 
 
-def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kwds):
+def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
     """
     Calculate a distance matrix based on a specific distance metric.
-    
+
     If only X is given, the pair-wise distances between all elements in X are calculated. If X and Y are given, the
     distances between all combinations of X and Y are calculated. Distances between elements of X and X, and distances
     between elements of Y and Y are not calculated.
@@ -22,50 +23,53 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
     Parameters
     ----------
     X : GeoDataFrame (as trackintel staypoints or triplegs)
-        
+
     Y : GeoDataFrame (as trackintel staypoints or triplegs), optional
-        
+
     dist_metric: {'haversine', 'euclidean', 'dtw', 'frechet'}
-        The distance metric to be used for calculating the matrix. This function wraps around the
-        ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
-        ``scipy.spatial.distance.cdist`` function if X and Y are given. Therefore the following metrics 
-        are also accepted:
-        
+        The distance metric to be used for calculating the matrix.
+
+        For staypoints, common choice is 'haversine' or 'euclidean'. This function wraps around
+        the ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
+        ``scipy.spatial.distance.cdist`` function if X and Y are given.
+        Therefore the following metrics are also accepted:
+
         via ``scikit-learn``: `[‘cityblock’, ‘cosine’, ‘euclidean’, ‘l1’, ‘l2’, ‘manhattan’]`
-        
+
         via ``scipy.spatial.distance``: `[‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘correlation’, ‘dice’, ‘hamming’, ‘jaccard’,
         ‘kulsinski’, ‘mahalanobis’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’,
         ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]`
-        
-        triplegs can only be used in combination with `['dtw', 'frechet']`.
-        
+
+        For triplegs, common choice is 'dtw' or 'frechet'. This function uses the implementation
+        from similaritymeasures.
+
     n_jobs: int
-        Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available 
+        Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available
         if only X is given) are parallelized.
-         
-    **kwds: 
+
+    **kwds:
         optional keywords passed to the distance functions.
 
     Returns
     -------
-    np.array
-        matrix of shape (len(X), len(X)) or of shape (len(X), len(Y))
-        
+    D: np.array
+        matrix of shape (len(X), len(X)) or of shape (len(X), len(Y)) if Y is provided.
+
     """
     geom_type = X.geometry.iat[0].geom_type
     if Y is None:
         Y = X
-    assert Y.geometry.iat[0].geom_type == Y.geometry.iat[0].geom_type, "x and y need same geometry type " \
-                                                                       "(only first column checked)"
+    assert Y.geometry.iat[0].geom_type == Y.geometry.iat[0].geom_type, (
+        "x and y need same geometry type " "(only first column checked)"
+    )
 
-    if geom_type == 'Point':
+    if geom_type == "Point":
         x1 = X.geometry.x.values
         y1 = X.geometry.y.values
         x2 = Y.geometry.x.values
         y2 = Y.geometry.y.values
 
-
-        if dist_metric == 'haversine':
+        if dist_metric == "haversine":
             # create point pairs for distance calculation
             nx = len(X)
             ny = len(Y)
@@ -103,16 +107,15 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
 
         return D
 
-    elif geom_type == 'LineString':
+    elif geom_type == "LineString":
 
-        if dist_metric in ['dtw', 'frechet']:
+        if dist_metric in ["dtw", "frechet"]:
             # these are the preparation steps for all distance functions based only on coordinates
 
-            if dist_metric == 'dtw':
-                d_fun = partial(dtw, **kwds)
-
-            elif dist_metric == 'frechet':
-                d_fun = partial(frechet_dist, **kwds)
+            if dist_metric == "dtw":
+                d_fun = partial(similaritymeasures.dtw, **kwds)
+            else:
+                d_fun = partial(similaritymeasures.frechet_dist, **kwds)
 
             # get combinations of distances that have to be calculated
             nx = len(X)
@@ -125,8 +128,9 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
                 ix_1, ix_2 = np.tril_indices(nx, k=-1, m=ny)
                 trilix = np.triu_indices(nx, k=1, m=ny)
 
-            left = list(X.iloc[ix_1].geometry)
-            right = list(Y.iloc[ix_2].geometry)
+            # get the coordinates as list of each LineString
+            left = list(X.iloc[ix_1].geometry.apply(lambda x: x.coords))
+            right = list(Y.iloc[ix_2].geometry.apply(lambda x: x.coords))
 
             # map the combinations to the distance function
             if n_jobs == -1 or n_jobs > 1:
@@ -134,9 +138,15 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
                     n_jobs = multiprocessing.cpu_count()
                 with multiprocessing.Pool(processes=n_jobs) as pool:
                     left_right = list(zip(left, right))
-                    d = np.array(list(pool.starmap(d_fun, left_right)))
+                    res = list(pool.starmap(d_fun, left_right))
             else:
-                d = np.array(list(map(d_fun, left, right)))
+                res = list(map(d_fun, left, right))
+
+            if dist_metric == "dtw":
+                # the first return is the dtw distance, see docs of similaritymeasures.dtw
+                d = [dist[0] for dist in res]
+            else:
+                d = res
 
             # write results to (symmetric) distance matrix
             D = np.zeros((nx, ny))
@@ -145,11 +155,11 @@ def calculate_distance_matrix(X, Y=None, dist_metric='haversine', n_jobs=0, **kw
             return D
 
         else:
-            raise AttributeError("Metric unknown. We only support ['dtw', 'frechet'] for LineStrings. "
-                                 f"You passed {dist_metric}")
+            raise AttributeError(
+                "Metric unknown. We only support ['dtw', 'frechet'] for LineStrings. " f"You passed {dist_metric}"
+            )
     else:
         raise AttributeError(f"We only support 'Point' and 'LineString'. Your geometry is {geom_type}")
-
 
 
 def meters_to_decimal_degrees(meters, latitude):
@@ -161,7 +171,7 @@ def meters_to_decimal_degrees(meters, latitude):
         The meters to convert to degrees.
 
     latitude : float
-        As the conversion is dependent (approximatively) on the latitude where 
+        As the conversion is dependent (approximatively) on the latitude where
         the conversion happens, this needs to be specified. Use 0 for the equator.
 
     Returns
@@ -170,3 +180,97 @@ def meters_to_decimal_degrees(meters, latitude):
         An approximation of a distance (given in meters) in degrees.
     """
     return meters / (111.32 * 1000.0 * cos(latitude * (pi / 180.0)))
+
+
+def check_wgs_for_distance_calculation(crs):
+    """
+    This functions evaluates if the crs is wgs 84 and warns if no crs is defined.
+
+    Parameters
+    ----------
+    crs : 'pyproj.crs.crs.CRS'
+        Can be the result of `gdf.crs`
+
+    Returns
+    -------
+    is_wgs : bool
+        True if wgs84 is assumed
+
+    Notes
+    ______
+    We do not check for planar crs as this is already done when geopandas.length is called.
+
+    Examples
+    ---------
+    >>> from trackintel.geogr.distances import check_wgs_for_distance_calculation
+    >>> check_wgs_for_distance_calculation(triplegs.crs)
+    """
+
+    is_wgs = False
+
+    if crs == 4326:
+        is_wgs = True
+
+    elif crs is None:
+        is_wgs = True
+        warnings.warn(
+            "Your data is not projected. WGS84 is assumed and for length calculation the haversine " "distance is used"
+        )
+    return is_wgs
+
+
+def calculate_haversine_length(gdf):
+    """
+    Calculate the length of linestrings using the haversine distance.
+
+    Parameters
+    ----------
+    gdf : GeoDataFrame with linestring geometry
+        The coordinates are expected to be in WGS84
+
+    Returns
+    -------
+    length: Pandas Series
+        The length of each linestring in meters
+
+    Examples
+    --------
+    >>> from trackintel.geogr.distances import calculate_haversine_length
+    >>> triplegs['length'] = calculate_haversine_length(triplegs)
+    """
+
+    assert all(gdf.geom_type == "LineString")
+
+    length = gdf.geometry.apply(_calculate_haversine_length_single)
+    return length
+
+
+def _calculate_haversine_length_single(linestring):
+    """
+    calculate the length of a single linestring using the haversine distance
+
+    Parameters
+    ----------
+    linestring : 'shapely.geometry.linestring.LineString'
+        Coordinates of the linestring are expected to be in WGS84
+
+    Returns
+    -------
+    int
+        length of the linestring in meter
+
+    Examples
+    --------
+    >>> from shapely.geometry import LineString
+    >>> from trackintel.geogr.distances import _calculate_haversine_length_single
+    >>> ls = LineString([(13.476808430, 48.573711823), (11.5675446, 48.1485459), (8.5067847, 47.4084269)])
+    >>> _calculate_haversine_length_single(ls)
+    """
+
+    coords_df = pd.DataFrame(linestring.xy, index=["x_0", "y_0"]).transpose()
+    coords_df["x_1"] = coords_df["x_0"].shift(-1)
+    coords_df["y_1"] = coords_df["y_0"].shift(-1)
+    coords_df.dropna(axis=0, inplace=True)
+
+    distances = haversine_dist(coords_df.x_0, coords_df.y_0, coords_df.x_1, coords_df.y_1)
+    return np.sum(distances)

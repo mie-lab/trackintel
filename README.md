@@ -5,13 +5,14 @@
 [![Build Status](https://travis-ci.org/mie-lab/trackintel.svg?branch=master)](https://travis-ci.org/mie-lab/trackintel)
 [![Documentation Status](https://readthedocs.org/projects/trackintel/badge/?version=latest)](https://trackintel.readthedocs.io/en/latest/?badge=latest)
 [![codecov.io](https://codecov.io/gh/mie-lab/trackintel/coverage.svg?branch=master)](https://codecov.io/gh/mie-lab/trackintel)
-          
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+   
 *trackintel* is a library for the analysis of spatio-temporal tracking data with a focus on human mobility. The core of *trackintel* is the hierachical data model for movement data that is used in transport planning [[1]](#1). We provide functionalities for the full life-cycle of human mobility data analysis: import and export of tracking data of different types (e.g, trackpoints, check-ins, trajectories), preprocessing, data quality assessment, semantic enrichment, quantitative analysis and mining tasks, and visualization of data and results.
 Trackintel is based on [Pandas](https://pandas.pydata.org/) and [GeoPandas](https://geopandas.org/#)
 
 You can find the documentation on the [trackintel documentation page](https://trackintel.readthedocs.io/en/latest).
 
-Try *trackintel* online in a MyBinder notebook: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/mie-lab/trackintel/master?filepath=%2Fexamples%2Fexample_geolife%2FTrackintel_introduction.ipynb)
+Try *trackintel* online in a MyBinder notebook: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/mie-lab/trackintel/HEAD?filepath=%2Fexamples%2Ftrackintel_basic_tutorial.ipynb)
 
 ## Data model
 
@@ -42,6 +43,53 @@ You can enter the *trackintel* framework if your data corresponds to any of the 
 * **Aggregation**: We provide functionalities to aggregate into the next level of our data model. E.g., positionfixes->staypoints; positionfixes->triplegs; staypoints->locations; staypoints+triplegs->trips; trips->tours
 * **Enrichment**: Activity semantics for staypoints; Mode of transport semantics for triplegs; High level semantics for locations
 
+## How it works
+*trackintel* provides support for the full life-cycle of human mobility data analysis.
+
+**[1.]** Import data. 
+```python
+import geopandas as gpd
+import trackintel as ti
+
+# read pfs from csv file
+pfs = ti.io.file.read_positionfixes_csv(".\examples\data\pfs.csv", sep=";", index_col="id")
+# or with predefined dataset readers (here geolife) 
+pfs, _ = ti.io.dataset_reader.read_geolife(".\tests\data\geolife_long")
+```
+
+**[2.]** Data model generation. 
+```python
+# generate staypoints and triplegs
+pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding')
+pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
+```
+
+**[3.]** Visualization.
+ ```python
+# plot the generated tripleg result
+tpls.as_triplegs.plot(positionfixes=pfs,staypoints=stps, staypoints_radius=10)
+```
+
+**[4.]** Analysis.
+ ```python
+# e.g., predict travel mode labels based on travel speed
+tpls = tpls.as_triplegs.predict_transport_mode()
+# or calculate the temporal tracking coverage of users
+tracking_coverage = ti.temporal_tracking_quality(tpls, granularity='all')
+```
+
+**[5.]** Save results.
+ ```python
+# save the generated results as csv file 
+stps.as_staypoints.to_csv('.\examples\data\stps.csv')
+tpls.as_triplegs.to_csv('.\examples\data\tpls.csv')
+```
+
+For example, the plot below shows the generated staypoints and triplegs from the imported raw positionfix data.
+<p align="center">
+  <img width="492" height="500" src="https://github.com/mie-lab/trackintel/blob/master/docs/_static/example_triplegs.png?raw=true">
+</p>
+
 ## Installation and Usage
 *trackintel* is on [pypi.org](https://pypi.org/project/trackintel/), you can install it in a `GeoPandas` available environment using: 
 ```{python}
@@ -50,8 +98,23 @@ pip install trackintel
 
 You should then be able to run the examples in the `examples` folder or import trackintel using:
 ```{python}
-import trackintel
+import trackintel as ti
+
+ti.print_version()
 ```
+
+## Requirements and dependencies
+
+* Numpy
+* GeoPandas
+* Matplotlib 
+* Pint
+* NetworkX
+* GeoAlchemy2
+* scikit-learn
+* tqdm
+* OSMnx
+* similaritymeasures
 
 ## Development
 You can find the development roadmap under `ROADMAP.md` and further development guidelines under `CONTRIBUTING.md`.

@@ -5,15 +5,15 @@ from sqlalchemy import create_engine
 import warnings
 
 
-def read_positionfixes_postgis(conn_string, table_name, geom_col='geom', *args, **kwargs):
+def read_positionfixes_postgis(conn_string, table_name, geom_col="geom", *args, **kwargs):
     """Reads positionfixes from a PostGIS database.
 
     Parameters
     ----------
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The table to read the positionfixes from.
 
@@ -22,7 +22,7 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col='geom', *args, 
 
     *args
         Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
-    
+
     **kwargs
         Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
 
@@ -34,18 +34,17 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col='geom', *args, 
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, 
-                                            geom_col=geom_col,
-                                            *args, **kwargs)
+        pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, geom_col=geom_col, *args, **kwargs)
     finally:
         conn.close()
     assert pfs.as_positionfixes
     return pfs
 
 
-def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=None,
-                                sql_chunksize=None, if_exists='replace'):
-    """Stores positionfixes to PostGIS. Usually, this is directly called on a positionfixes 
+def write_positionfixes_postgis(
+    positionfixes, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"
+):
+    """Stores positionfixes to PostGIS. Usually, this is directly called on a positionfixes
     DataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
@@ -56,9 +55,9 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
         The positionfixes to store to the database.
 
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The name of the table to write to.
 
@@ -106,20 +105,20 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
         conn.close()
 
 
-def read_triplegs_postgis(conn_string, table_name, geom_col='geom', *args, **kwargs):
+def read_triplegs_postgis(conn_string, table_name, geom_col="geom", *args, **kwargs):
     """Reads triplegs from a PostGIS database.
 
     Parameters
     ----------
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The table to read the triplegs from.
 
     geom_col : str, default 'geom'
-        The geometry column of the table. 
+        The geometry column of the table.
 
     Returns
     -------
@@ -129,9 +128,9 @@ def read_triplegs_postgis(conn_string, table_name, geom_col='geom', *args, **kwa
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn,
-                                            geom_col=geom_col, index_col='id',
-                                            *args, **kwargs)
+        pfs = gpd.GeoDataFrame.from_postgis(
+            "SELECT * FROM %s" % table_name, conn, geom_col=geom_col, index_col="id", *args, **kwargs
+        )
     finally:
         conn.close()
     assert pfs.as_triplegs
@@ -150,10 +149,10 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None, if_ex
     triplegs : GeoDataFrame
         The triplegs to store to the database.
 
-    conn_string : engine or str
-        A connection string to connect to a database, e.g., 
+    conn_string : str
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The name of the table to write to.
 
@@ -170,31 +169,52 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None, if_ex
     --------
     >>> df.as_triplegs.to_postgis(conn_string, table_name)
     """
+    triplegs_postgis = triplegs.copy()
+    if triplegs_postgis.crs is not None:
+        srid = int(triplegs_postgis.crs.to_epsg())
+        geom_schema = Geometry('LINESTRING', srid)
+    else:  # defaults to "GEOMETRY", srid=-1
+        geom_schema = Geometry()
+        srid = None
 
-    if isinstance(conn_string, str):
-        engine = create_engine(conn_string)
-    else:
-        engine = conn_string
+    geom_col = triplegs_postgis.geometry.name
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "Geometry column does not contain geometry.", UserWarning)
+        if srid is None:
+            triplegs_postgis[geom_col] = triplegs[geom_col].apply(lambda x: x.wkt)
+        else:
+            triplegs_postgis[geom_col] = triplegs[geom_col].apply(lambda x: WKTElement(x.wkt, srid=srid))
 
-    index_name = triplegs.index.name
-    triplegs.to_postgis(table_name, con=engine, schema=schema, if_exists=if_exists, index=True, index_label=index_name,
-                        *args, **kwargs)
+    if "id" not in triplegs_postgis.columns:
+        triplegs_postgis["id"] = triplegs_postgis.index
+    try:
+        triplegs_postgis.to_sql(
+            table_name,
+            engine,
+            schema=schema,
+            if_exists=if_exists,
+            index=False,
+            dtype={geom_col: geom_schema},
+            chunksize=sql_chunksize,
+        )
+    finally:
+        conn.close()
 
 
-def read_staypoints_postgis(conn_string, table_name, geom_col='geom', *args, **kwargs):
+def read_staypoints_postgis(conn_string, table_name, geom_col="geom", *args, **kwargs):
     """Reads staypoints from a PostGIS database.
 
     Parameters
     ----------
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The table to read the staypoints from.
 
     geom_col : str, default 'geom'
-        The geometry column of the table. 
+        The geometry column of the table.
 
     Returns
     -------
@@ -204,18 +224,17 @@ def read_staypoints_postgis(conn_string, table_name, geom_col='geom', *args, **k
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, 
-                                            geom_col=geom_col, index_col='id',
-                                            *args, **kwargs)
+        pfs = gpd.GeoDataFrame.from_postgis(
+            "SELECT * FROM %s" % table_name, conn, geom_col=geom_col, index_col="id", *args, **kwargs
+        )
     finally:
         conn.close()
     assert pfs.as_staypoints
     return pfs
 
 
-def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
-                             sql_chunksize=None, if_exists='replace'):
-    """Stores staypoints to PostGIS. Usually, this is directly called on a staypoints 
+def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
+    """Stores staypoints to PostGIS. Usually, this is directly called on a staypoints
     DataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
@@ -226,9 +245,9 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
         The staypoints to store to the database.
 
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The name of the table to write to.
 
@@ -250,7 +269,7 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
     # column is required when downloading. This means, that the ID column is 
     # taken as pandas index. When uploading the default is "no index" and
     # thereby the index column is lost
-    
+
     # make a copy in order to avoid changing the geometry of the original array
     staypoints_postgis = staypoints.copy()
     if staypoints_postgis.crs is not None:
@@ -280,22 +299,22 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None,
                                   chunksize=sql_chunksize)
     finally:
         conn.close()
-        
-        
-def read_locations_postgis(conn_string, table_name, geom_col='geom', *args, **kwargs):
+
+
+def read_locations_postgis(conn_string, table_name, geom_col="geom", *args, **kwargs):
     """Reads locations from a PostGIS database.
 
     Parameters
     ----------
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The table to read the locations from.
 
     geom_col : str, default 'geom'
-        The geometry column of the table. 
+        The geometry column of the table.
 
     Returns
     -------
@@ -305,18 +324,17 @@ def read_locations_postgis(conn_string, table_name, geom_col='geom', *args, **kw
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        locs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, 
-                                            geom_col=geom_col, index_col='id',
-                                            *args, **kwargs)
+        locs = gpd.GeoDataFrame.from_postgis(
+            "SELECT * FROM %s" % table_name, conn, geom_col=geom_col, index_col="id", *args, **kwargs
+        )
     finally:
         conn.close()
     assert locs.as_locations
     return locs
 
 
-def write_locations_postgis(locations, conn_string, table_name, schema=None,
-                            sql_chunksize=None, if_exists='replace'):
-    """Stores locations to PostGIS. Usually, this is directly called on a locations 
+def write_locations_postgis(locations, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
+    """Stores locations to PostGIS. Usually, this is directly called on a locations
     GeoDataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
@@ -327,9 +345,9 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None,
         The locations to store to the database.
 
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The name of the table to write to.
 
@@ -346,7 +364,7 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None,
     --------
     >>> df.as_locations.to_postgis(conn_string, table_name)
     """
-    
+
     # make a copy in order to avoid changing the geometry of the original array
     locations_postgis = locations.copy()
 
@@ -386,16 +404,16 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None,
     finally:
         conn.close()
 
-        
+
 def read_trips_postgis(conn_string, table_name, *args, **kwargs):
     """Reads trips from a PostGIS database.
 
     Parameters
     ----------
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The table to read the trips from.
 
@@ -407,17 +425,15 @@ def read_trips_postgis(conn_string, table_name, *args, **kwargs):
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        trps = pd.read_sql("SELECT * FROM %s" % table_name, conn, index_col='id',
-                           *args, **kwargs)
+        trps = pd.read_sql("SELECT * FROM %s" % table_name, conn, index_col="id", *args, **kwargs)
     finally:
         conn.close()
     assert trps.as_trips
     return trps
 
 
-def write_trips_postgis(trips, conn_string, table_name, schema=None,
-                        sql_chunksize=None, if_exists='replace'):
-    """Stores trips to PostGIS. Usually, this is directly called on a trips 
+def write_trips_postgis(trips, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
+    """Stores trips to PostGIS. Usually, this is directly called on a trips
     DataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
@@ -428,9 +444,9 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None,
         The trips to store to the database.
 
     conn_string : str
-        A connection string to connect to a database, e.g., 
+        A connection string to connect to a database, e.g.,
         ``postgresql://username:password@host:socket/database``.
-    
+
     table_name : str
         The name of the table to write to.
 
@@ -447,7 +463,7 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None,
     --------
     >>> df.as_trips.to_postgis(conn_string, table_name)
     """
-    
+
     # make a copy in order to avoid changing the geometry of the original array
     trips_postgis = trips.copy()
     if 'id' not in trips_postgis.columns:

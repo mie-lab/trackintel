@@ -17,3 +17,4 @@ dependencies:
 - psycopg2
 - imageio
 - tqdm
+- similaritymeasures

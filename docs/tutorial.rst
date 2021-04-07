@@ -44,7 +44,7 @@ at which the user stayed for a certain amount of time)::
     from trackintel.geogr.distances import meters_to_decimal_degrees
 
     stps = pfs.as_positionfixes.extract_staypoints(method='sliding', 
-        dist_threshold=100, time_threshold=60)
+        dist_threshold=100, time_threshold=5)
     stps.as_staypoints.plot(out_filename='staypoints.png',
         radius=meters_to_decimal_degrees(100, 47.5), positionfixes=pfs, plot_osm=True)
 
@@ -52,10 +52,10 @@ This will additionally plot the original positionfixes, as well as the underlyin
 street network from OSM. We can for example continue by extracting and plotting locations 
 (locations that "contain" multiple staypoints, i.e., are visited often by a user)::
 
-    locs = spts.as_staypoints.extract_locations(method='dbscan', 
+    locs = stps.as_staypoints.extract_locations(method='dbscan', 
         epsilon=meters_to_decimal_degrees(120, 47.5), num_samples=3)
     locs.as_locations.plot(out_filename='locations.png', 
-        radius=meters_to_decimal_degrees(120, 47.5), positionfixes=pfs, staypoints=spts, 
+        radius=meters_to_decimal_degrees(120, 47.5), positionfixes=pfs, staypoints=stps, 
         staypoints_radius=meters_to_decimal_degrees(100, 47.5), plot_osm=True)
     
 This will extract locations and plot them to a file called ``locations.png``, additionally 
