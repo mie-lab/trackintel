@@ -99,8 +99,7 @@ def write_positionfixes_postgis(positionfixes, conn_string, table_name, schema=N
         conn.close()
 
 
-def read_triplegs_postgis(sql, con, geom_col='geom', crs=None,
-                          index_col=None, coerce_float=True, parse_dates=None, params=None, chunksize=None):
+def read_triplegs_postgis(conn_string, table_name, geom_col='geom', *args, **kwargs):
     """Reads triplegs from a PostGIS database.
 
     Parameters
@@ -122,11 +121,6 @@ def read_triplegs_postgis(sql, con, geom_col='geom', crs=None,
     """
     engine = _create_engine(conn_string)
     conn = engine.connect()
-
-    conn_string, table_name
-
-    triplegs_from_gpd
-
     try:
         pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn,
                                             geom_col=geom_col, index_col='id',
