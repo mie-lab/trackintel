@@ -74,13 +74,11 @@ def connection_postgis():
     host = os.environ.get("PGHOST")
     port = os.environ.get("PGPORT")
     try:
-        con = psycopg2.connect(
-            dbname=dbname, user=user, password=password, host=host, port=port
-        )
+        con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host, port=port)
     except psycopg2.OperationalError:
         try:
             # psycopg2.connect gives operational error due to unsupported frontend protocol in conda environment
-            con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host, port=port, sslmode='disable')
+            con = psycopg2.connect(dbname=dbname, user=user, password=password, host=host, port=port, sslmode="disable")
         except psycopg2.OperationalError:
             pytest.skip("Cannot connect with postgresql database")
 
@@ -94,15 +92,17 @@ def example_positionfixes():
     p2 = Point(8.5067847, 47.5)
     p3 = Point(8.5067847, 47.6)
 
-    t1 = pd.Timestamp('1971-01-01 00:00:00', tz='utc')
-    t2 = pd.Timestamp('1971-01-01 05:00:00', tz='utc')
-    t3 = pd.Timestamp('1971-01-02 07:00:00', tz='utc')
+    t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+    t2 = pd.Timestamp("1971-01-01 05:00:00", tz="utc")
+    t3 = pd.Timestamp("1971-01-02 07:00:00", tz="utc")
 
-    list_dict = [{'user_id': 0, 'tracked_at': t1, 'geometry': p1},
-                 {'user_id': 0, 'tracked_at': t2, 'geometry': p2},
-                 {'user_id': 1, 'tracked_at': t3, 'geometry': p3}]
-    pfs = gpd.GeoDataFrame(data=list_dict, geometry='geometry', crs='EPSG:4326')
-    pfs.index.name = 'id'
+    list_dict = [
+        {"user_id": 0, "tracked_at": t1, "geometry": p1},
+        {"user_id": 0, "tracked_at": t2, "geometry": p2},
+        {"user_id": 1, "tracked_at": t3, "geometry": p3},
+    ]
+    pfs = gpd.GeoDataFrame(data=list_dict, geometry="geometry", crs="EPSG:4326")
+    pfs.index.name = "id"
     assert pfs.as_positionfixes
     return pfs
 
@@ -113,16 +113,18 @@ def example_staypoints():
     p2 = Point(8.5067847, 47.5)
     p3 = Point(8.5067847, 47.6)
 
-    t1 = pd.Timestamp('1971-01-01 00:00:00', tz='utc')
-    t2 = pd.Timestamp('1971-01-01 05:00:00', tz='utc')
-    t3 = pd.Timestamp('1971-01-02 07:00:00', tz='utc')
+    t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+    t2 = pd.Timestamp("1971-01-01 05:00:00", tz="utc")
+    t3 = pd.Timestamp("1971-01-02 07:00:00", tz="utc")
     one_hour = datetime.timedelta(hours=1)
 
-    list_dict = [{'user_id': 0, 'started_at': t1, 'finished_at': t2, 'geometry': p1},
-                 {'user_id': 0, 'started_at': t2, 'finished_at': t3, 'geometry': p2},
-                 {'user_id': 1, 'started_at': t3, 'finished_at': t3 + one_hour, 'geometry': p3}]
-    spts = gpd.GeoDataFrame(data=list_dict, geometry='geometry', crs='EPSG:4326')
-    spts.index.name = 'id'
+    list_dict = [
+        {"user_id": 0, "started_at": t1, "finished_at": t2, "geometry": p1},
+        {"user_id": 0, "started_at": t2, "finished_at": t3, "geometry": p2},
+        {"user_id": 1, "started_at": t3, "finished_at": t3 + one_hour, "geometry": p3},
+    ]
+    spts = gpd.GeoDataFrame(data=list_dict, geometry="geometry", crs="EPSG:4326")
+    spts.index.name = "id"
     assert spts.as_staypoints
     return spts
 
@@ -134,17 +136,19 @@ def example_triplegs():
     g2 = LineString([(13.476808430, 48.573711823), (11.5675446, 48.1485459), (8.5067847, 47.5)])
     g3 = LineString([(13.476808430, 48.573711823), (11.5675446, 48.1485459), (8.5067847, 47.6)])
 
-    t1 = pd.Timestamp('1971-01-01 00:00:00', tz='utc')
-    t2 = pd.Timestamp('1971-01-01 05:00:00', tz='utc')
-    t3 = pd.Timestamp('1971-01-02 07:00:00', tz='utc')
+    t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+    t2 = pd.Timestamp("1971-01-01 05:00:00", tz="utc")
+    t3 = pd.Timestamp("1971-01-02 07:00:00", tz="utc")
     one_hour = datetime.timedelta(hours=1)
 
-    list_dict = [{'id': 0, 'user_id': 0, 'started_at': t1, 'finished_at': t2, 'geometry': g1},
-                 {'id': 1, 'user_id': 0, 'started_at': t2, 'finished_at': t3, 'geometry': g2},
-                 {'id': 2, 'user_id': 1, 'started_at': t3, 'finished_at': t3 + one_hour, 'geometry': g3}]
+    list_dict = [
+        {"id": 0, "user_id": 0, "started_at": t1, "finished_at": t2, "geometry": g1},
+        {"id": 1, "user_id": 0, "started_at": t2, "finished_at": t3, "geometry": g2},
+        {"id": 2, "user_id": 1, "started_at": t3, "finished_at": t3 + one_hour, "geometry": g3},
+    ]
 
-    tpls = gpd.GeoDataFrame(data=list_dict, geometry='geometry', crs='EPSG:4326')
-    tpls.set_index('id', inplace=True)
+    tpls = gpd.GeoDataFrame(data=list_dict, geometry="geometry", crs="EPSG:4326")
+    tpls.set_index("id", inplace=True)
 
     assert tpls.as_triplegs
     return tpls
@@ -156,29 +160,33 @@ def example_locations():
     p2 = Point(8.5067847, 47.5)
     p3 = Point(8.5067847, 47.6)
 
-    list_dict = [{'user_id': 0, 'center': p1},
-                 {'user_id': 0, 'center': p2},
-                 {'user_id': 1, 'center': p3}]
-    spts = gpd.GeoDataFrame(data=list_dict, geometry='center', crs='EPSG:4326')
-    spts.index.name = 'id'
+    list_dict = [{"user_id": 0, "center": p1}, {"user_id": 0, "center": p2}, {"user_id": 1, "center": p3}]
+    spts = gpd.GeoDataFrame(data=list_dict, geometry="center", crs="EPSG:4326")
+    spts.index.name = "id"
     assert spts.as_locations
     return spts
 
 
 @pytest.fixture
 def example_trips():
-    t1 = pd.Timestamp('1971-01-01 00:00:00', tz='utc')
-    t2 = pd.Timestamp('1971-01-01 05:00:00', tz='utc')
-    t3 = pd.Timestamp('1971-01-02 07:00:00', tz='utc')
+    t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+    t2 = pd.Timestamp("1971-01-01 05:00:00", tz="utc")
+    t3 = pd.Timestamp("1971-01-02 07:00:00", tz="utc")
     h = datetime.timedelta(hours=1)
 
     list_dict = [
-        {'user_id': 0, 'started_at': t1, 'finished_at': t2, 'origin_staypoint_id': 0, 'destination_staypoint_id': 1},
-        {'user_id': 0, 'started_at': t2, 'finished_at': t3, 'origin_staypoint_id': 1, 'destination_staypoint_id': 2},
-        {'user_id': 1, 'started_at': t3, 'finished_at': t3+h, 'origin_staypoint_id': 0, 'destination_staypoint_id': 1}
+        {"user_id": 0, "started_at": t1, "finished_at": t2, "origin_staypoint_id": 0, "destination_staypoint_id": 1},
+        {"user_id": 0, "started_at": t2, "finished_at": t3, "origin_staypoint_id": 1, "destination_staypoint_id": 2},
+        {
+            "user_id": 1,
+            "started_at": t3,
+            "finished_at": t3 + h,
+            "origin_staypoint_id": 0,
+            "destination_staypoint_id": 1,
+        },
     ]
     trips = gpd.GeoDataFrame(data=list_dict)
-    trips.index.name = 'id'
+    trips.index.name = "id"
     assert trips.as_trips
     return trips
 
@@ -196,13 +204,13 @@ class TestPositionfixes:
     def test_read_write_positionfixes(self, example_positionfixes, conn_string_postgis, connection_postgis):
         pfs = example_positionfixes
         cs = conn_string_postgis
-        table = 'positionfixes'
+        table = "positionfixes"
         geom_col = pfs.geometry.name
 
         try:
             pfs.as_positionfixes.to_postgis(cs, table)
             pfs_db = ti.io.read_positionfixes_postgis(cs, table, geom_col)
-            pfs_db = pfs_db.set_index('id')
+            pfs_db = pfs_db.set_index("id")
             assert_geodataframe_equal(pfs, pfs_db)
         finally:
             del_table(connection_postgis, table)

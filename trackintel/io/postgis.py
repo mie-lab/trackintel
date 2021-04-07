@@ -78,7 +78,7 @@ def write_positionfixes_postgis(
     positionfixes_postgis = positionfixes.copy()
     if positionfixes_postgis.crs is not None:
         srid = int(positionfixes_postgis.crs.to_epsg())
-        geom_schema = Geometry('POINT', srid)
+        geom_schema = Geometry("POINT", srid)
     else:  # defaults to "GEOMETRY", srid=-1
         geom_schema = Geometry()
         srid = None
@@ -91,16 +91,21 @@ def write_positionfixes_postgis(
         else:
             positionfixes_postgis[geom_col] = positionfixes[geom_col].apply(lambda x: WKTElement(x.wkt, srid=srid))
 
-    if 'id' not in positionfixes_postgis.columns:
-        positionfixes_postgis['id'] = positionfixes_postgis.index
+    if "id" not in positionfixes_postgis.columns:
+        positionfixes_postgis["id"] = positionfixes_postgis.index
 
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        positionfixes_postgis.to_sql(table_name, engine, schema=schema,
-                                     if_exists=if_exists, index=False,  
-                                     dtype={geom_col: geom_schema},
-                                     chunksize=sql_chunksize)
+        positionfixes_postgis.to_sql(
+            table_name,
+            engine,
+            schema=schema,
+            if_exists=if_exists,
+            index=False,
+            dtype={geom_col: geom_schema},
+            chunksize=sql_chunksize,
+        )
     finally:
         conn.close()
 
@@ -137,8 +142,9 @@ def read_triplegs_postgis(conn_string, table_name, geom_col="geom", *args, **kwa
     return pfs
 
 
-def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None, sql_chunksize=None, if_exists='replace',
-                           *args, **kwargs):
+def write_triplegs_postgis(
+    triplegs, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace", *args, **kwargs
+):
     """Stores triplegs to PostGIS. Usually, this is directly called on a triplegs 
     DataFrame (see example below).
 
@@ -172,7 +178,7 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None, sql_c
     triplegs_postgis = triplegs.copy()
     if triplegs_postgis.crs is not None:
         srid = int(triplegs_postgis.crs.to_epsg())
-        geom_schema = Geometry('LINESTRING', srid)
+        geom_schema = Geometry("LINESTRING", srid)
     else:  # defaults to "GEOMETRY", srid=-1
         geom_schema = Geometry()
         srid = None
@@ -267,9 +273,9 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, s
     --------
     >>> df.as_staypoints.to_postgis(conn_string, table_name)
     """
-    
+
     # todo: Think about a concept for the indices. At the moment, an index
-    # column is required when downloading. This means, that the ID column is 
+    # column is required when downloading. This means, that the ID column is
     # taken as pandas index. When uploading the default is "no index" and
     # thereby the index column is lost
 
@@ -277,7 +283,7 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, s
     staypoints_postgis = staypoints.copy()
     if staypoints_postgis.crs is not None:
         srid = int(staypoints_postgis.crs.to_epsg())
-        geom_schema = Geometry('POINT', srid)
+        geom_schema = Geometry("POINT", srid)
     else:  # defaults to "GEOMETRY", srid=-1
         geom_schema = Geometry()
         srid = None
@@ -290,16 +296,21 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, s
         else:
             staypoints_postgis[geom_col] = staypoints[geom_col].apply(lambda x: WKTElement(x.wkt, srid=srid))
 
-    if 'id' not in staypoints_postgis.columns:
-        staypoints_postgis['id'] = staypoints_postgis.index
+    if "id" not in staypoints_postgis.columns:
+        staypoints_postgis["id"] = staypoints_postgis.index
 
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        staypoints_postgis.to_sql(table_name, engine, schema=schema,
-                                  if_exists=if_exists, index=False, 
-                                  dtype={geom_col: geom_schema},
-                                  chunksize=sql_chunksize)
+        staypoints_postgis.to_sql(
+            table_name,
+            engine,
+            schema=schema,
+            if_exists=if_exists,
+            index=False,
+            dtype={geom_col: geom_schema},
+            chunksize=sql_chunksize,
+        )
     finally:
         conn.close()
 
@@ -373,8 +384,8 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None, sql
 
     if locations_postgis.crs is not None:
         srid = int(locations_postgis.crs.to_epsg())
-        center_schema = Geometry('POINT', srid)
-        extent_schema = Geometry('GEOMETRY', srid)
+        center_schema = Geometry("POINT", srid)
+        extent_schema = Geometry("GEOMETRY", srid)
     else:  # defaults to "GEOMETRY", srid=-1
         center_schema = Geometry()
         extent_schema = Geometry()
@@ -383,27 +394,26 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None, sql
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", "Geometry column does not contain geometry.", UserWarning)
         if srid is None:
-            locations_postgis['center'] = locations['center'].apply(lambda x: x.wkt)
-            if 'extent' in locations_postgis.columns:
-                locations_postgis['extent'] = locations['extent'].apply(lambda x: x.wkt)
+            locations_postgis["center"] = locations["center"].apply(lambda x: x.wkt)
+            if "extent" in locations_postgis.columns:
+                locations_postgis["extent"] = locations["extent"].apply(lambda x: x.wkt)
         else:
-            locations_postgis['center'] = locations['center'].apply(lambda x: WKTElement(x.wkt, srid=srid))
-            if 'extent' in locations_postgis.columns:
-                locations_postgis['extent'] = locations['extent'].apply(lambda x: WKTElement(x.wkt, srid=srid))
+            locations_postgis["center"] = locations["center"].apply(lambda x: WKTElement(x.wkt, srid=srid))
+            if "extent" in locations_postgis.columns:
+                locations_postgis["extent"] = locations["extent"].apply(lambda x: WKTElement(x.wkt, srid=srid))
 
-    if 'id' not in locations_postgis.columns:
-        locations_postgis['id'] = locations_postgis.index
+    if "id" not in locations_postgis.columns:
+        locations_postgis["id"] = locations_postgis.index
 
     engine = create_engine(conn_string)
     conn = engine.connect()
-    dtype = {'center': center_schema}
-    if 'extent' in locations_postgis.columns:
-        dtype['extent'] = extent_schema
+    dtype = {"center": center_schema}
+    if "extent" in locations_postgis.columns:
+        dtype["extent"] = extent_schema
     try:
-        locations_postgis.to_sql(table_name, engine, schema=schema,
-                                 if_exists=if_exists, index=False,
-                                 dtype=dtype,
-                                 chunksize=sql_chunksize)
+        locations_postgis.to_sql(
+            table_name, engine, schema=schema, if_exists=if_exists, index=False, dtype=dtype, chunksize=sql_chunksize
+        )
     finally:
         conn.close()
 
@@ -469,14 +479,14 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None, sql_chunksi
 
     # make a copy in order to avoid changing the geometry of the original array
     trips_postgis = trips.copy()
-    if 'id' not in trips_postgis.columns:
-        trips_postgis['id'] = trips_postgis.index
+    if "id" not in trips_postgis.columns:
+        trips_postgis["id"] = trips_postgis.index
 
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        trips_postgis.to_sql(table_name, engine, schema=schema,
-                             if_exists=if_exists, index=False,
-                             chunksize=sql_chunksize)
+        trips_postgis.to_sql(
+            table_name, engine, schema=schema, if_exists=if_exists, index=False, chunksize=sql_chunksize
+        )
     finally:
         conn.close()
