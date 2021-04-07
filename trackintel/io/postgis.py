@@ -137,7 +137,7 @@ def read_triplegs_postgis(conn_string, table_name, geom_col="geom", *args, **kwa
     return pfs
 
 
-def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None, if_exists='replace',
+def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None, sql_chunksize=None, if_exists='replace',
                            *args, **kwargs):
     """Stores triplegs to PostGIS. Usually, this is directly called on a triplegs 
     DataFrame (see example below).
@@ -187,6 +187,9 @@ def write_triplegs_postgis(triplegs, conn_string, table_name, schema=None, if_ex
 
     if "id" not in triplegs_postgis.columns:
         triplegs_postgis["id"] = triplegs_postgis.index
+
+    engine = create_engine(conn_string)
+    conn = engine.connect()
     try:
         triplegs_postgis.to_sql(
             table_name,
@@ -373,7 +376,7 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None, sql
         center_schema = Geometry('POINT', srid)
         extent_schema = Geometry('GEOMETRY', srid)
     else:  # defaults to "GEOMETRY", srid=-1
-        geom_schema = Geometry()
+        center_schema = Geometry()
         extent_schema = Geometry()
         srid = None
 
