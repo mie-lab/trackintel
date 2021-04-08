@@ -7,3 +7,5 @@ from .positionfixes import plot_positionfixes
 from .staypoints import plot_staypoints
 
 from .triplegs import plot_triplegs
+
+from .modal_split import *
