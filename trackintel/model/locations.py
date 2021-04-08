@@ -52,9 +52,9 @@ class LocationsAccessor(object):
         """
         Plot this collection of locations.
 
-        See :func:`trackintel.visualization.locations.plot_center_of_locations`.
+        See :func:`trackintel.visualization.locations.plot_locations`.
         """
-        ti.visualization.locations.plot_center_of_locations(self._obj, *args, **kwargs)
+        ti.visualization.locations.plot_locations(self._obj, *args, **kwargs)
 
     def to_csv(self, filename, *args, **kwargs):
         """
