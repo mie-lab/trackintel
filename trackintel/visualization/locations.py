@@ -7,7 +7,7 @@ from trackintel.visualization.osm import plot_osm_streets
 from trackintel.visualization.util import regular_figure, save_fig, transform_gdf_to_wgs84
 
 
-def plot_center_of_locations(
+def plot_locations(
     locations,
     out_filename=None,
     radius=None,
