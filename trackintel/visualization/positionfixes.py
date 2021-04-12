@@ -28,7 +28,7 @@ def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False, axis=No
 
     Examples
     --------
-    >>> df.as_positionfixes.plot('output.png', plot_osm=True)
+    >>> pfs.as_positionfixes.plot('output.png', plot_osm=True)
     """
     if axis is None:
         _, ax = regular_figure()

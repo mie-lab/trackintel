@@ -50,8 +50,7 @@ def plot_locations(
 
     Examples
     --------
-    >>> df.as_locations.plot('output.png', radius=100, positionfixes=pdf,
-    >>>                      staypoints=spf, staypoints_radius=80, plot_osm=True)
+    >>> locs.as_locations.plot('output.png', radius=200, positionfixes=pfs, staypoints=stps, plot_osm=True)
     """
     if axis is None:
         _, ax = regular_figure()
