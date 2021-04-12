@@ -28,7 +28,7 @@ Triplegs
 .. autofunction:: trackintel.visualization.triplegs.plot_triplegs
 
 .. image:: /_static/example_triplegs.png
-   :scale: 20 %
+   :scale: 16.5 %
    :align: center
 
 Locations
