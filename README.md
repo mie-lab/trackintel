@@ -87,7 +87,7 @@ tpls.as_triplegs.to_csv('.\examples\data\tpls.csv')
 
 For example, the plot below shows the generated staypoints and triplegs from the imported raw positionfix data.
 <p align="center">
-  <img width="492" height="500" src="https://github.com/mie-lab/trackintel/blob/master/docs/_static/example_triplegs.png?raw=true">
+  <img width="595" height="500" src="https://github.com/mie-lab/trackintel/blob/master/docs/_static/example_triplegs.png?raw=true">
 </p>
 
 ## Installation and Usage
