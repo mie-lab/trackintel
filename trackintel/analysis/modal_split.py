@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from trackintel.geogr.distances import check_wgs_for_distance_calculation, calculate_haversine_length
+from trackintel.geogr.distances import check_gdf_crs, calculate_haversine_length
 
 
 def calculate_modal_split(tpls_in, freq=None, metric="count", per_user=False, norm=False):
@@ -48,8 +48,8 @@ def calculate_modal_split(tpls_in, freq=None, metric="count", per_user=False, no
 
     # precalculate distance and duration if required
     if metric == "distance":
-        wgs = check_wgs_for_distance_calculation(tpls.crs)
-        if wgs:
+        if_planer_crs = check_gdf_crs(tpls)
+        if not if_planer_crs:
             tpls["distance"] = calculate_haversine_length(tpls)
         else:
             tpls["distance"] = tpls.length

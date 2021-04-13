@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import warnings
 
 from trackintel.visualization.osm import plot_osm_streets
-from trackintel.visualization.util import regular_figure, save_fig, transform_gdf_to_wgs84
+from trackintel.visualization.util import regular_figure, save_fig
+from trackintel.geogr.distances import check_gdf_crs
 
 
 def plot_triplegs(
@@ -47,7 +48,7 @@ def plot_triplegs(
         _, ax = regular_figure()
     else:
         ax = axis
-    triplegs = transform_gdf_to_wgs84(triplegs)
+    _, triplegs = check_gdf_crs(triplegs, transform=True)
 
     if staypoints is not None:
         staypoints.as_staypoints.plot(radius=staypoints_radius, positionfixes=positionfixes, plot_osm=plot_osm, axis=ax)

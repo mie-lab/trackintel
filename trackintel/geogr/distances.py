@@ -183,40 +183,58 @@ def meters_to_decimal_degrees(meters, latitude):
     return meters / (111.32 * 1000.0 * cos(latitude * (pi / 180.0)))
 
 
-def check_wgs_for_distance_calculation(crs):
+def check_gdf_crs(gdf, transform=False):
     """
-    Evaluate if the crs is wgs 84 and warns if no crs is defined.
+    Check if GeoDataFrame has CRS or is already in WGS84.
+
+    Additionally transform a GeoDataFrame into WGS84.
 
     Parameters
     ----------
-    crs : 'pyproj.crs.crs.CRS'
-        Can be the result of `gdf.crs`
+    gdf : GeoDataFrame
+        input GeoDataFrame for checking or transform
+
+    transform : bool, default False
+        whether to transform gdf into WGS84.
 
     Returns
     -------
-    is_wgs : bool
-        True if wgs84 is assumed
+    if_planer : bool
+        True if the returned gdf has planar crs.
 
-    Notes
-    -----
-    We do not check for planar crs as this is already done when geopandas.length is called.
+    gdf : GeoDataFrame
+        if transform is True, return the re-projected gdf.
+
 
     Examples
     --------
-    >>> from trackintel.geogr.distances import check_wgs_for_distance_calculation
-    >>> check_wgs_for_distance_calculation(triplegs.crs)
+    >>> from trackintel.geogr.distances import check_gdf_crs
+    >>> check_gdf_crs(triplegs, transform=False)
     """
-    is_wgs = False
+    if_planer = False
+    if gdf.crs is None:
+        # projection is not defined
+        if_planer = False
+        if transform:
+            gdf.crs = "EPSG:4326"
+        else:
+            warnings.warn("Your data is not projected.")
 
-    if crs == 4326:
-        is_wgs = True
+    elif gdf.crs == "EPSG:4326":
+        # if projection is defined as WGS84
+        if_planer = False
 
-    elif crs is None:
-        is_wgs = True
-        warnings.warn(
-            "Your data is not projected. WGS84 is assumed and for length calculation the haversine " "distance is used"
-        )
-    return is_wgs
+    else:
+        # if projection is defined but not as WGS84
+        if_planer = True
+        if transform:
+            if_planer = False
+            gdf = gdf.to_crs("EPSG:4326")
+
+    if transform:
+        return if_planer, gdf
+    else:
+        return if_planer
 
 
 def calculate_haversine_length(gdf):
