@@ -7,7 +7,7 @@ from trackintel.visualization.util import regular_figure, save_fig, transform_gd
 
 
 def plot_triplegs(
-    triplegs, out_filename=None, positionfixes=None, staypoints=None, staypoints_radius=None, plot_osm=False, axis=None
+    triplegs, out_filename=None, positionfixes=None, staypoints=None, staypoints_radius=100, plot_osm=False, axis=None
 ):
     """Plot triplegs (optionally to a file).
 
@@ -29,7 +29,7 @@ def plot_triplegs(
     staypoints : GeoDataFrame (as trackintel staypoints), optional
         If available, some staypoints that can additionally be plotted.
 
-    staypoints_radius : float, optional
+    staypoints_radius : float, default 100 (meter)
         The radius in meter with which circles around staypoints should be drawn.
 
     plot_osm : bool, default False
