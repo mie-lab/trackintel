@@ -16,7 +16,7 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs
     Read positionfixes from csv file.
 
     Wraps the pandas read_csv function, extracts longitude and latitude and
-    builds a geopandas GeoDataFrame. This also validates that the ingested data
+    builds a geopandas GeoDataFrame (POINT). This also validates that the ingested data
     conforms to the trackintel understanding of positionfixes (see
     :doc:`/modules/model`).
 
@@ -24,6 +24,8 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs
     ----------
     columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
+        The required columns for this function include: "user_id", "tracked_at", "latitude"
+        and "longitude".
 
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
@@ -53,6 +55,13 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs
     --------
     >>> trackintel.read_positionfixes_csv('data.csv')
     >>> trackintel.read_positionfixes_csv('data.csv', columns={'time':'tracked_at', 'User':'user_id'})
+                         tracked_at  user_id                        geom
+    id
+    0     2008-10-23 02:53:04+00:00        0  POINT (116.31842 39.98470)
+    1     2008-10-23 02:53:10+00:00        0  POINT (116.31845 39.98468)
+    2     2008-10-23 02:53:15+00:00        0  POINT (116.31842 39.98469)
+    3     2008-10-23 02:53:20+00:00        0  POINT (116.31839 39.98469)
+    4     2008-10-23 02:53:25+00:00        0  POINT (116.31826 39.98465)
     """
     columns = {} if columns is None else columns
 
@@ -92,7 +101,7 @@ def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
     """
     Write positionfixes to csv file.
 
-    Wraps the pandas to_csv function, but strips the geometry column ('geom') and
+    Wraps the pandas to_csv function, but strips the geometry column and
     stores the longitude and latitude in respective columns.
 
     Parameters
@@ -102,6 +111,11 @@ def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
 
     filename : str
         The file to write to.
+
+    Notes
+    -----
+    "longitude" and "latitude" is extracted from the geometry column and the orignal
+    geometry column is dropped.
     """
     gdf = positionfixes.copy()
     gdf["longitude"] = positionfixes.geometry.apply(lambda p: p.coords[0][0])
@@ -115,14 +129,16 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), crs=None
     """
     Read triplegs from csv file.
 
-    Wraps the pandas read_csv function, extracts a WKT for the leg geometry and
-    builds a geopandas GeoDataFrame. This also validates that the ingested data
+    Wraps the pandas read_csv function, extracts a WKT for the tripleg geometry (LINESTRING)
+    and builds a geopandas GeoDataFrame. This also validates that the ingested data
     conforms to the trackintel understanding of triplegs (see :doc:`/modules/model`).
 
     Parameters
     ----------
     columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
+        The required columns for this function include: "user_id", "started_at", "finished_at"
+        and "geom".
 
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
@@ -145,6 +161,10 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), crs=None
     --------
     >>> trackintel.read_triplegs_csv('data.csv')
     >>> trackintel.read_triplegs_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
+        user_id                started_at               finished_at                                               geom
+    id
+    0         1 2015-11-27 08:00:00+00:00 2015-11-27 10:00:00+00:00  LINESTRING (8.54878 47.37652, 8.52770 47.39935...
+    1         1 2015-11-27 12:00:00+00:00 2015-11-27 14:00:00+00:00  LINESTRING (8.56340 47.95600, 8.64560 47.23345...
     """
     columns = {} if columns is None else columns
 
@@ -205,7 +225,7 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), crs=No
     Read staypoints from csv file.
 
     Wraps the pandas read_csv function, extracts a WKT for the staypoint
-    geometry and builds a geopandas GeoDataFrame. This also validates that
+    geometry (POINT) and builds a geopandas GeoDataFrame. This also validates that
     the ingested data conforms to the trackintel understanding of staypoints
     (see :doc:`/modules/model`).
 
@@ -213,6 +233,8 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), crs=No
     ----------
     columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
+        The required columns for this function include: "user_id", "started_at", "finished_at"
+        and "geom".
 
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
@@ -235,6 +257,10 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), crs=No
     --------
     >>> trackintel.read_staypoints_csv('data.csv')
     >>> trackintel.read_staypoints_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
+        user_id                started_at               finished_at                      geom
+    id
+    0         1 2015-11-27 08:00:00+00:00 2015-11-27 10:00:00+00:00  POINT (8.52822 47.39519)
+    1         1 2015-11-27 12:00:00+00:00 2015-11-27 14:00:00+00:00  POINT (8.54340 47.95600)
     """
     columns = {} if columns is None else columns
 
@@ -295,7 +321,7 @@ def read_locations_csv(*args, columns=None, index_col=object(), crs=None, **kwar
     Read locations from csv file.
 
     Wraps the pandas read_csv function, extracts a WKT for the location
-    center (and extent) and builds a geopandas GeoDataFrame. This also
+    center (POINT) (and extent (POLYGON)) and builds a geopandas GeoDataFrame. This also
     validates that the ingested data conforms to the trackintel understanding
     of locations (see :doc:`/modules/model`).
 
@@ -303,6 +329,7 @@ def read_locations_csv(*args, columns=None, index_col=object(), crs=None, **kwar
     ----------
     columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
+        The required columns for this function include: "user_id" and "center".
 
     index_col : str, optional
         column name to be used as index. If None the default index is assumed
@@ -321,7 +348,11 @@ def read_locations_csv(*args, columns=None, index_col=object(), crs=None, **kwar
     Examples
     --------
     >>> trackintel.read_locations_csv('data.csv')
-    >>> trackintel.read_locations_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
+    >>> trackintel.read_locations_csv('data.csv', columns={'User':'user_id'})
+        user_id                    center                                             extent
+    id
+    0         1  POINT (8.54878 47.37652)  POLYGON ((8.548779487999999 47.37651505, 8.527...
+    1         1  POINT (8.56340 47.95600)  POLYGON ((8.5634 47.956, 8.6456 47.23345, 8.45...
     """
     columns = {} if columns is None else columns
 
@@ -383,6 +414,8 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
     ----------
     columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
+        The required columns for this function include: "user_id", "started_at",
+        "finished_at", "origin_staypoint_id" and "destination_staypoint_id".
 
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
@@ -396,10 +429,18 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
     trips : DataFrame (as trackintel trips)
         A DataFrame containing the trips.
 
+    Notes
+    -----
+    No geometry is required for trackintel trips.
+
     Examples
     --------
     >>> trackintel.read_trips_csv('data.csv')
     >>> trackintel.read_trips_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
+        user_id                started_at               finished_at  origin_staypoint_id  destination_staypoint_id
+    id
+    0         1 2015-11-27 08:00:00+00:00 2015-11-27 08:15:00+00:00                    2                         5
+    1         1 2015-11-27 08:20:22+00:00 2015-11-27 08:35:22+00:00                    5                         3
     """
     columns = {} if columns is None else columns
 
