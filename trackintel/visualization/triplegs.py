@@ -62,6 +62,7 @@ def plot_triplegs(
         plot_osm_streets(north, south, east, west, ax)
 
     triplegs.plot(ax=ax, cmap="viridis")
+    ax.set_aspect("equal", adjustable="box")
 
     if out_filename is not None:
         save_fig(out_filename, formats=["png"])

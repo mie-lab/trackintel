@@ -74,6 +74,7 @@ def plot_locations(
     for pt in locations.to_dict("records"):
         circle = mpatches.Circle((pt["center"].x, pt["center"].y), radius, facecolor="none", edgecolor="r", zorder=4)
         ax.add_artist(circle)
+    ax.set_aspect("equal", adjustable="box")
 
     if out_filename is not None:
         save_fig(out_filename, formats=["png"])

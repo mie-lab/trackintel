@@ -10,11 +10,10 @@ import trackintel as ti
 @pytest.fixture
 def test_data():
     """Read tests data from files."""
-    pfs_file = os.path.join("tests", "data", "positionfixes.csv")
-    pfs = ti.read_positionfixes_csv(pfs_file, sep=";", index_col="id", crs="EPSG:4326")
+    pfs_file = os.path.join("examples", "data", "geolife_trajectory.csv")
+    pfs = ti.read_positionfixes_csv(pfs_file, sep=";", index_col=None, crs="EPSG:4326")
 
-    stps_file = os.path.join("tests", "data", "staypoints.csv")
-    stps = ti.read_staypoints_csv(stps_file, sep=";", index_col="id", crs="EPSG:4326")
+    pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding")
     return pfs, stps
 
 
@@ -26,7 +25,7 @@ class TestPlot_staypoints:
         pfs, stps = test_data
         tmp_file = os.path.join("tests", "data", "staypoints_plot.png")
 
-        stps.as_staypoints.plot(out_filename=tmp_file, radius=0.01, positionfixes=pfs, plot_osm=False)
+        stps.as_staypoints.plot(out_filename=tmp_file, radius=100, positionfixes=pfs, plot_osm=False)
         assert os.path.exists(tmp_file)
         os.remove(tmp_file)
 

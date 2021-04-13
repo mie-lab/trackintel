@@ -66,6 +66,7 @@ def plot_staypoints(staypoints, out_filename=None, radius=100, positionfixes=Non
         )
         ax.add_artist(circle)
 
+    ax.set_aspect("equal", adjustable="box")
     if out_filename is not None:
         save_fig(out_filename, formats=["png"])
     elif axis is None:
