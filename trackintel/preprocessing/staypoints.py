@@ -8,7 +8,7 @@ from trackintel.geogr.distances import meters_to_decimal_degrees
 
 
 def generate_locations(
-    staypoints, method="dbscan", epsilon=100, num_samples=1, distance_matrix_metric="euclidean", agg_level="user"
+    staypoints, method="dbscan", epsilon=100, num_samples=1, distance_metric="haversine", agg_level="user"
 ):
     """
     Generate locations from the staypoints.
@@ -24,14 +24,14 @@ def generate_locations(
         - 'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
 
     epsilon : float, default 100
-        The epsilon for the 'dbscan' method. if 'distance_matrix_metric' is 'haversine'
+        The epsilon for the 'dbscan' method. if 'distance_metric' is 'haversine'
         or 'euclidean', the unit is in meters.
 
     num_samples : int, default 1
         The minimal number of samples in a cluster.
 
-    distance_matrix_metric: {'haversine', 'euclidean'}
-        The distance matrix used by the applied method. Any mentioned below are possible:
+    distance_metric: {'haversine', 'euclidean'}
+        The distance metric used by the applied method. Any mentioned below are possible:
         https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise_distances.html
 
     agg_level: {'user','dataset'}
@@ -62,16 +62,14 @@ def generate_locations(
 
     if method == "dbscan":
 
-        if distance_matrix_metric == "haversine":
+        if distance_metric == "haversine":
             # The input and output of sklearn's harvarsine metrix are both in radians,
             # see https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.haversine_distances.html
             # here the 'epsilon' is directly applied to the metric's output.
             # convert to radius
-            db = DBSCAN(
-                eps=epsilon / 6371000, min_samples=num_samples, algorithm="ball_tree", metric=distance_matrix_metric
-            )
+            db = DBSCAN(eps=epsilon / 6371000, min_samples=num_samples, algorithm="ball_tree", metric=distance_metric)
         else:
-            db = DBSCAN(eps=epsilon, min_samples=num_samples, algorithm="ball_tree", metric=distance_matrix_metric)
+            db = DBSCAN(eps=epsilon, min_samples=num_samples, algorithm="ball_tree", metric=distance_metric)
 
         if agg_level == "user":
             location_id_counter = 0
@@ -80,7 +78,7 @@ def generate_locations(
                 # Slice staypoints array by user. This is not a copy!
                 user_staypoints = ret_stps[ret_stps["user_id"] == user_id_this]
 
-                if distance_matrix_metric == "haversine":
+                if distance_metric == "haversine":
                     # the input is converted to list of (lat, lon) tuples in radians unit
                     p = np.array([[radians(g.y), radians(g.x)] for g in user_staypoints.geometry])
                 else:
@@ -96,7 +94,7 @@ def generate_locations(
                 # add staypoint - location matching to original staypoints
                 ret_stps.loc[user_staypoints.index, "location_id"] = labels
         else:
-            if distance_matrix_metric == "haversine":
+            if distance_metric == "haversine":
                 # the input is converted to list of (lat, lon) tuples in radians unit
                 p = np.array([[radians(g.y), radians(g.x)] for g in ret_stps.geometry])
             else:
@@ -143,7 +141,7 @@ def generate_locations(
 
             if not ret_loc.loc[pointLine_idx].empty:
                 # Perform meter to decimal conversion if the distance metric is haversine
-                if distance_matrix_metric == "haversine":
+                if distance_metric == "haversine":
                     ret_loc.loc[pointLine_idx, "extent"] = ret_loc.loc[pointLine_idx].apply(
                         lambda p: p["extent"].buffer(meters_to_decimal_degrees(epsilon, p["center"].y)), axis=1
                     )

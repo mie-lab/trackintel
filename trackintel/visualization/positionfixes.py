@@ -28,7 +28,7 @@ def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False, axis=No
 
     Examples
     --------
-    >>> df.as_positionfixes.plot('output.png', plot_osm=True)
+    >>> pfs.as_positionfixes.plot('output.png', plot_osm=True)
     """
     if axis is None:
         _, ax = regular_figure()
@@ -44,6 +44,7 @@ def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False, axis=No
         plot_osm_streets(north, south, east, west, ax)
 
     positionfixes.plot(ax=ax, markersize=0.5, zorder=2)
+    ax.set_aspect("equal", adjustable="box")
 
     if out_filename is not None:
         save_fig(out_filename, formats=["png"])

@@ -10,7 +10,7 @@ Positionfixes
 .. autofunction:: trackintel.visualization.positionfixes.plot_positionfixes
 
 .. image:: /_static/example_positionfixes.png
-   :scale: 50 %
+   :scale: 25 %
    :align: center
 
 Staypoints
@@ -19,7 +19,7 @@ Staypoints
 .. autofunction:: trackintel.visualization.staypoints.plot_staypoints
 
 .. image:: /_static/example_staypoints.png
-   :scale: 50 %
+   :scale: 25 %
    :align: center
 
 Triplegs
@@ -28,16 +28,16 @@ Triplegs
 .. autofunction:: trackintel.visualization.triplegs.plot_triplegs
 
 .. image:: /_static/example_triplegs.png
-   :scale: 20 %
+   :scale: 25 %
    :align: center
 
 Locations
 =========
 
-.. autofunction:: trackintel.visualization.locations.plot_center_of_locations
+.. autofunction:: trackintel.visualization.locations.plot_locations
 
 .. image:: /_static/example_locations.png
-   :scale: 50 %
+   :scale: 25 %
    :align: center
 
 

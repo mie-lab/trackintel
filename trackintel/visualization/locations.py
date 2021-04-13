@@ -10,10 +10,10 @@ from trackintel.visualization.util import regular_figure, save_fig, transform_gd
 def plot_locations(
     locations,
     out_filename=None,
-    radius=None,
+    radius=150,
     positionfixes=None,
     staypoints=None,
-    staypoints_radius=None,
+    staypoints_radius=100,
     plot_osm=False,
     axis=None,
 ):
@@ -29,7 +29,7 @@ def plot_locations(
     out_filename : str, optional
         The file to plot to, if this is not set, the plot will simply be shown.
 
-    radius : float, optional
+    radius : float, default 150 (meter)
         The radius in meter with which circles around locations should be drawn.
 
     positionfixes : GeoDataFrame (as trackintel positionfixes), optional
@@ -38,7 +38,7 @@ def plot_locations(
     staypoints : GeoDataFrame (as trackintel staypoints), optional
         If available, some staypoints that can additionally be plotted.
 
-    staypoints_radius : float, optional
+    staypoints_radius : float, default 100 (meter)
         The radius in meter with which circles around staypoints should be drawn.
 
     plot_osm : bool, default False
@@ -50,8 +50,7 @@ def plot_locations(
 
     Examples
     --------
-    >>> df.as_locations.plot('output.png', radius=100, positionfixes=pdf,
-    >>>                      staypoints=spf, staypoints_radius=80, plot_osm=True)
+    >>> locs.as_locations.plot('output.png', radius=200, positionfixes=pfs, staypoints=stps, plot_osm=True)
     """
     if axis is None:
         _, ax = regular_figure()
@@ -70,13 +69,13 @@ def plot_locations(
         south = locations["center"].y.min() - 0.03
         plot_osm_streets(north, south, east, west, ax)
 
-    if radius is None:
-        radius = 125
     center_latitude = (ax.get_ylim()[0] + ax.get_ylim()[1]) / 2
     radius = meters_to_decimal_degrees(radius, center_latitude)
     for pt in locations.to_dict("records"):
         circle = mpatches.Circle((pt["center"].x, pt["center"].y), radius, facecolor="none", edgecolor="r", zorder=4)
         ax.add_artist(circle)
+    ax.set_aspect("equal", adjustable="box")
+
     if out_filename is not None:
         save_fig(out_filename, formats=["png"])
     else:

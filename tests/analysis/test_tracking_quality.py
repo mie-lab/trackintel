@@ -146,7 +146,7 @@ class TestTemporal_tracking_quality:
         stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
         _, locs = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_matrix_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
         )
         with pytest.raises(KeyError):
             ti.analysis.tracking_quality.temporal_tracking_quality(locs)
