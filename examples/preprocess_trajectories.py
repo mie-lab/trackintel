@@ -22,7 +22,7 @@ stps.as_staypoints.plot(
     out_filename="examples/out/gps_trajectory_staypoints.png", radius=100, positionfixes=pfs, plot_osm=True
 )
 
-_, locs = stps.as_staypoints.generate_locations(method="dbscan", epsilon=0.01, num_samples=3)
+_, locs = stps.as_staypoints.generate_locations(method="dbscan", epsilon=100, num_samples=3)
 locs.as_locations.plot(
     out_filename="examples/out/gps_trajectory_locations.png",
     radius=120,

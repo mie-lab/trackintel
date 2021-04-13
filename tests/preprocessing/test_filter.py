@@ -15,7 +15,7 @@ def locs_from_geolife():
 
     # cluster staypoints to locations
     _, locs = stps.as_staypoints.generate_locations(
-        method="dbscan", epsilon=10, num_samples=0, distance_matrix_metric="haversine", agg_level="dataset"
+        method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
     )
 
     # the projection needs to be defined: WGS84

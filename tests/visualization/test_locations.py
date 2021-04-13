@@ -18,7 +18,7 @@ def test_data():
     pfs, _ = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
 
     stps, locs = stps.as_staypoints.generate_locations(
-        method="dbscan", distance_matrix_metric="haversine", epsilon=200, num_samples=1
+        method="dbscan", distance_metric="haversine", epsilon=200, num_samples=1
     )
     return pfs, stps, locs
 

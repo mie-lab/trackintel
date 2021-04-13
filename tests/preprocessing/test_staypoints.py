@@ -19,7 +19,7 @@ class TestGenerate_locations:
 
         # haversine calculation
         _, loc_har = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=100, num_samples=0, distance_matrix_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=100, num_samples=0, distance_metric="haversine", agg_level="dataset"
         )
         # WGS_1984
         stps.crs = "epsg:4326"
@@ -28,7 +28,7 @@ class TestGenerate_locations:
 
         # euclidean calculation
         _, loc_eu = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=100, num_samples=0, distance_matrix_metric="euclidean", agg_level="dataset"
+            method="dbscan", epsilon=100, num_samples=0, distance_metric="euclidean", agg_level="dataset"
         )
 
         assert len(loc_har) == len(loc_eu), "The #location should be the same for haversine" + "and euclidean distances"
@@ -39,7 +39,7 @@ class TestGenerate_locations:
 
         # haversine calculation using sklearn.metrics.pairwise_distances
         stps, locs = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_matrix_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
         )
 
         # calculate pairwise haversine matrix and fed to dbscan
@@ -53,7 +53,7 @@ class TestGenerate_locations:
         stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
         stps, locs = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_matrix_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
         )
 
         # create locations as grouped staypoints, another way to create locations
@@ -90,10 +90,10 @@ class TestGenerate_locations:
         # duplicate for a certain number
         stps = stps.append([stps] * 5, ignore_index=True)
         _, locs_ds = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_matrix_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
         )
         _, locs_us = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_matrix_metric="haversine", agg_level="user"
+            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="user"
         )
         loc_ds_num = len(locs_ds.index.unique())
         loc_us_num = len(locs_us.index.unique())
@@ -143,7 +143,7 @@ class TestGenerate_locations:
         stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
         #
         stps, locs = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_matrix_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
         )
         assert stps["user_id"].dtype == locs["user_id"].dtype
         assert stps["location_id"].dtype == "Int64"
@@ -151,7 +151,7 @@ class TestGenerate_locations:
         # change the user_id to string
         stps["user_id"] = stps["user_id"].apply(lambda x: str(x))
         stps, locs = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_matrix_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
         )
         assert stps["user_id"].dtype == locs["user_id"].dtype
         assert stps["location_id"].dtype == "Int64"
@@ -163,10 +163,10 @@ class TestGenerate_locations:
         stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
 
         _, locs_ds = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_matrix_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
         )
         _, locs_us = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_matrix_metric="haversine", agg_level="user"
+            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="user"
         )
 
         assert (locs_ds.index == np.arange(len(locs_ds))).any()
