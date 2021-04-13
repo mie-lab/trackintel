@@ -70,8 +70,7 @@ class TestPredict_transport_mode:
 
         with pytest.warns(
             UserWarning,
-            match="Your data is not projected. WGS84 is assumed and for length calculation"
-            " the haversine distance is used",
+            match="Your data is not projected.",
         ):
             tpls_transport_mode = tpls.as_triplegs.predict_transport_mode(method="simple-coarse")
 

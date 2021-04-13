@@ -1,7 +1,7 @@
 import datetime
 import numpy as np
 
-from trackintel.geogr.distances import check_wgs_for_distance_calculation, calculate_haversine_length
+from trackintel.geogr.distances import check_gdf_crs, calculate_haversine_length
 
 
 def create_activity_flag(staypoints, method="time_threshold", time_threshold=5.0, activity_column_name="activity"):
@@ -124,9 +124,9 @@ def _predict_transport_mode_simple_coarse(triplegs_in, categories):
         raise ValueError("the categories must be in increasing order")
 
     triplegs = triplegs_in.copy()
-    wgs = check_wgs_for_distance_calculation(triplegs.crs)
+    if_planer_crs = check_gdf_crs(triplegs)
     #
-    if wgs:
+    if not if_planer_crs:
         triplegs["distance"] = calculate_haversine_length(triplegs)
     else:
         triplegs["distance"] = triplegs.length

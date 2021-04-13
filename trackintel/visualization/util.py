@@ -118,25 +118,3 @@ def save_fig(out_filename, tight="tight", formats=["png", "pdf"]):
         logging.info("...took {} s!".format(round(time.time() - ts, 2)))
     plt.close()
     logging.info("Finished!")
-
-
-def transform_gdf_to_wgs84(gdf):
-    """Transform a GeoDataFrame into WGS84.
-
-    Additionally checks if data has CRS or is already in WGS84.
-
-    Parameters
-    ----------
-    gdf : GeoDataFrame
-
-    Example
-    -------
-    >>> gdf = transform_gdf_to_wgs84(gdf)
-    """
-    crs_wgs84 = "EPSG:4326"
-    if gdf.crs is None:
-        warnings.warn("Coordinate System (CRS) is not set, default to WGS84.")
-        gdf.crs = crs_wgs84
-    elif gdf.crs != crs_wgs84:
-        gdf = gdf.to_crs(crs_wgs84)
-    return gdf

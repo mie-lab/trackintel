@@ -4,7 +4,8 @@ import warnings
 
 from trackintel.geogr.distances import meters_to_decimal_degrees
 from trackintel.visualization.osm import plot_osm_streets
-from trackintel.visualization.util import regular_figure, save_fig, transform_gdf_to_wgs84
+from trackintel.visualization.util import regular_figure, save_fig
+from trackintel.geogr.distances import check_gdf_crs
 
 
 def plot_staypoints(staypoints, out_filename=None, radius=100, positionfixes=None, plot_osm=False, axis=None):
@@ -44,7 +45,7 @@ def plot_staypoints(staypoints, out_filename=None, radius=100, positionfixes=Non
     else:
         ax = axis
     name_geocol = staypoints.geometry.name
-    staypoints = transform_gdf_to_wgs84(staypoints)
+    _, staypoints = check_gdf_crs(staypoints, transform=True)
 
     if positionfixes is not None:
         positionfixes.as_positionfixes.plot(plot_osm=plot_osm, axis=ax)
