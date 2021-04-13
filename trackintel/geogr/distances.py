@@ -163,7 +163,8 @@ def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kw
 
 
 def meters_to_decimal_degrees(meters, latitude):
-    """Converts meters to decimal degrees (approximately).
+    """
+    Convert meters to decimal degrees (approximately).
 
     Parameters
     ----------
@@ -184,7 +185,7 @@ def meters_to_decimal_degrees(meters, latitude):
 
 def check_wgs_for_distance_calculation(crs):
     """
-    This functions evaluates if the crs is wgs 84 and warns if no crs is defined.
+    Evaluate if the crs is wgs 84 and warns if no crs is defined.
 
     Parameters
     ----------
@@ -197,15 +198,14 @@ def check_wgs_for_distance_calculation(crs):
         True if wgs84 is assumed
 
     Notes
-    ______
+    -----
     We do not check for planar crs as this is already done when geopandas.length is called.
 
     Examples
-    ---------
+    --------
     >>> from trackintel.geogr.distances import check_wgs_for_distance_calculation
     >>> check_wgs_for_distance_calculation(triplegs.crs)
     """
-
     is_wgs = False
 
     if crs == 4326:
@@ -238,7 +238,6 @@ def calculate_haversine_length(gdf):
     >>> from trackintel.geogr.distances import calculate_haversine_length
     >>> triplegs['length'] = calculate_haversine_length(triplegs)
     """
-
     assert all(gdf.geom_type == "LineString")
 
     length = gdf.geometry.apply(_calculate_haversine_length_single)
@@ -247,7 +246,7 @@ def calculate_haversine_length(gdf):
 
 def _calculate_haversine_length_single(linestring):
     """
-    calculate the length of a single linestring using the haversine distance
+    calculate the length of a single linestring using the haversine distance.
 
     Parameters
     ----------
@@ -266,7 +265,6 @@ def _calculate_haversine_length_single(linestring):
     >>> ls = LineString([(13.476808430, 48.573711823), (11.5675446, 48.1485459), (8.5067847, 47.4084269)])
     >>> _calculate_haversine_length_single(ls)
     """
-
     coords_df = pd.DataFrame(linestring.xy, index=["x_0", "y_0"]).transpose()
     coords_df["x_1"] = coords_df["x_0"].shift(-1)
     coords_df["y_1"] = coords_df["y_0"].shift(-1)
