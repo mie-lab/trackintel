@@ -145,7 +145,7 @@ def read_triplegs_postgis(conn_string, table_name, geom_col="geom", *args, **kwa
 def write_triplegs_postgis(
     triplegs, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace", *args, **kwargs
 ):
-    """Stores triplegs to PostGIS. Usually, this is directly called on a triplegs 
+    """Stores triplegs to PostGIS. Usually, this is directly called on a triplegs
     DataFrame (see example below).
 
     **Attention!** This replaces the table if it already exists!
