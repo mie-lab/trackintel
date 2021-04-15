@@ -306,3 +306,14 @@ class TestTrips:
             assert_frame_equal(trips, trips_db)
         finally:
             del_table(conn, table)
+
+
+class TestGetSrid:
+    def test_srid(self, example_positionfixes):
+        """Test if it returns the correct srid in two cases."""
+        gdf = example_positionfixes.copy()
+        gdf.crs = None
+        assert ti.io.postgis._get_srid(gdf) == -1
+        srid = 3857
+        gdf.set_crs(f"epsg:{srid}", inplace=True)
+        assert ti.io.postgis._get_srid(gdf) == srid

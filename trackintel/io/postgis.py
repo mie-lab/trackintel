@@ -76,10 +76,7 @@ def write_positionfixes_postgis(
     """
     # make a copy in order to avoid changing the geometry of the original array
     positionfixes_postgis = positionfixes.copy()
-    if positionfixes_postgis.crs is not None:
-        srid = positionfixes_postgis.crs.to_epsg()
-    else:
-        srid = -1
+    srid = _get_srid(positionfixes_postgis)
     geom_schema = Geometry("Point", srid)
 
     geom_col = positionfixes_postgis.geometry.name
@@ -172,10 +169,7 @@ def write_triplegs_postgis(
     >>> df.as_triplegs.to_postgis(conn_string, table_name)
     """
     triplegs_postgis = triplegs.copy()
-    if triplegs_postgis.crs is not None:
-        srid = triplegs_postgis.crs.to_epsg()
-    else:
-        srid = -1
+    srid = _get_srid(triplegs_postgis)
     geom_schema = Geometry("LINESTRING", srid)
     geom_col = triplegs_postgis.geometry.name
     with warnings.catch_warnings():
@@ -272,10 +266,7 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, s
 
     # make a copy in order to avoid changing the geometry of the original array
     staypoints_postgis = staypoints.copy()
-    if staypoints_postgis.crs is not None:
-        srid = staypoints_postgis.crs.to_epsg()
-    else:
-        srid = -1
+    srid = _get_srid(staypoints_postgis)
     geom_schema = Geometry("POINT", srid)
 
     geom_col = staypoints_postgis.geometry.name
@@ -369,10 +360,7 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None, sql
     # make a copy in order to avoid changing the geometry of the original array
     locations_postgis = locations.copy()
 
-    if locations_postgis.crs is not None:
-        srid = locations_postgis.crs.to_epsg()
-    else:
-        srid = -1
+    srid = _get_srid(locations_postgis)
     center_schema = Geometry("POINT", srid)
     extent_schema = Geometry("GEOMETRY", srid)
 
@@ -470,3 +458,19 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None, sql_chunksi
         )
     finally:
         conn.close()
+
+
+def _get_srid(gdf):
+    """Extract srid from gdf and default to -1 if there isn't one.
+
+    Parameters
+    ----------
+    gdf : GeoDataFrame
+
+    Returns
+    -------
+    int
+    """
+    if gdf.crs is not None:
+        return gdf.crs.to_epsg()
+    return -1
