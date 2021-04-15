@@ -77,19 +77,15 @@ def write_positionfixes_postgis(
     # make a copy in order to avoid changing the geometry of the original array
     positionfixes_postgis = positionfixes.copy()
     if positionfixes_postgis.crs is not None:
-        srid = int(positionfixes_postgis.crs.to_epsg())
-        geom_schema = Geometry("POINT", srid)
-    else:  # defaults to "GEOMETRY", srid=-1
-        geom_schema = Geometry()
-        srid = None
+        srid = positionfixes_postgis.crs.to_epsg()
+    else:
+        srid = -1
+    geom_schema = Geometry("Point", srid)
 
     geom_col = positionfixes_postgis.geometry.name
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", "Geometry column does not contain geometry.", UserWarning)
-        if srid is None:
-            positionfixes_postgis[geom_col] = positionfixes[geom_col].apply(lambda x: x.wkt)
-        else:
-            positionfixes_postgis[geom_col] = positionfixes[geom_col].apply(lambda x: WKTElement(x.wkt, srid=srid))
+        positionfixes_postgis[geom_col] = positionfixes[geom_col].apply(lambda x: WKTElement(x.wkt, srid=srid))
 
     if "id" not in positionfixes_postgis.columns:
         positionfixes_postgis["id"] = positionfixes_postgis.index
@@ -177,19 +173,14 @@ def write_triplegs_postgis(
     """
     triplegs_postgis = triplegs.copy()
     if triplegs_postgis.crs is not None:
-        srid = int(triplegs_postgis.crs.to_epsg())
-        geom_schema = Geometry("LINESTRING", srid)
-    else:  # defaults to "GEOMETRY", srid=-1
-        geom_schema = Geometry()
-        srid = None
-
+        srid = triplegs_postgis.crs.to_epsg()
+    else:
+        srid = -1
+    geom_schema = Geometry("LINESTRING", srid)
     geom_col = triplegs_postgis.geometry.name
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", "Geometry column does not contain geometry.", UserWarning)
-        if srid is None:
-            triplegs_postgis[geom_col] = triplegs[geom_col].apply(lambda x: x.wkt)
-        else:
-            triplegs_postgis[geom_col] = triplegs[geom_col].apply(lambda x: WKTElement(x.wkt, srid=srid))
+        triplegs_postgis[geom_col] = triplegs[geom_col].apply(lambda x: WKTElement(x.wkt, srid=srid))
 
     if "id" not in triplegs_postgis.columns:
         triplegs_postgis["id"] = triplegs_postgis.index
@@ -282,19 +273,15 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, s
     # make a copy in order to avoid changing the geometry of the original array
     staypoints_postgis = staypoints.copy()
     if staypoints_postgis.crs is not None:
-        srid = int(staypoints_postgis.crs.to_epsg())
-        geom_schema = Geometry("POINT", srid)
-    else:  # defaults to "GEOMETRY", srid=-1
-        geom_schema = Geometry()
-        srid = None
+        srid = staypoints_postgis.crs.to_epsg()
+    else:
+        srid = -1
+    geom_schema = Geometry("POINT", srid)
 
     geom_col = staypoints_postgis.geometry.name
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", "Geometry column does not contain geometry.", UserWarning)
-        if srid is None:
-            staypoints_postgis[geom_col] = staypoints[geom_col].apply(lambda x: x.wkt)
-        else:
-            staypoints_postgis[geom_col] = staypoints[geom_col].apply(lambda x: WKTElement(x.wkt, srid=srid))
+        staypoints_postgis[geom_col] = staypoints[geom_col].apply(lambda x: WKTElement(x.wkt, srid=srid))
 
     if "id" not in staypoints_postgis.columns:
         staypoints_postgis["id"] = staypoints_postgis.index
@@ -383,24 +370,17 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None, sql
     locations_postgis = locations.copy()
 
     if locations_postgis.crs is not None:
-        srid = int(locations_postgis.crs.to_epsg())
-        center_schema = Geometry("POINT", srid)
-        extent_schema = Geometry("GEOMETRY", srid)
-    else:  # defaults to "GEOMETRY", srid=-1
-        center_schema = Geometry()
-        extent_schema = Geometry()
-        srid = None
+        srid = locations_postgis.crs.to_epsg()
+    else:
+        srid = -1
+    center_schema = Geometry("POINT", srid)
+    extent_schema = Geometry("GEOMETRY", srid)
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", "Geometry column does not contain geometry.", UserWarning)
-        if srid is None:
-            locations_postgis["center"] = locations["center"].apply(lambda x: x.wkt)
-            if "extent" in locations_postgis.columns:
-                locations_postgis["extent"] = locations["extent"].apply(lambda x: x.wkt)
-        else:
-            locations_postgis["center"] = locations["center"].apply(lambda x: WKTElement(x.wkt, srid=srid))
-            if "extent" in locations_postgis.columns:
-                locations_postgis["extent"] = locations["extent"].apply(lambda x: WKTElement(x.wkt, srid=srid))
+        locations_postgis["center"] = locations["center"].apply(lambda x: WKTElement(x.wkt, srid=srid))
+        if "extent" in locations_postgis.columns:
+            locations_postgis["extent"] = locations["extent"].apply(lambda x: WKTElement(x.wkt, srid=srid))
 
     if "id" not in locations_postgis.columns:
         locations_postgis["id"] = locations_postgis.index
