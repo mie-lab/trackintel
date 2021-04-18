@@ -83,10 +83,10 @@ def example_staypoints():
         {"user_id": 0, "started_at": t2, "finished_at": t3, "geometry": p2},
         {"user_id": 1, "started_at": t3, "finished_at": t3 + one_hour, "geometry": p3},
     ]
-    spts = gpd.GeoDataFrame(data=list_dict, geometry="geometry", crs="EPSG:4326")
-    spts.index.name = "id"
-    assert spts.as_staypoints
-    return spts
+    stps = gpd.GeoDataFrame(data=list_dict, geometry="geometry", crs="EPSG:4326")
+    stps.index.name = "id"
+    assert stps.as_staypoints
+    return stps
 
 
 @pytest.fixture
@@ -127,10 +127,10 @@ def example_locations():
         {"user_id": 0, "center": p2},
         {"user_id": 1, "center": p3},
     ]
-    spts = gpd.GeoDataFrame(data=list_dict, geometry="center", crs="EPSG:4326")
-    spts.index.name = "id"
-    assert spts.as_locations
-    return spts
+    locs = gpd.GeoDataFrame(data=list_dict, geometry="center", crs="EPSG:4326")
+    locs.index.name = "id"
+    assert locs.as_locations
+    return locs
 
 
 @pytest.fixture
@@ -168,8 +168,63 @@ def del_table(con, table):
         con.commit()
 
 
+def get_table_schema(con, table):
+    """Get Schema of an SQL table (column names, datatypes)"""
+    # https://stackoverflow.com/questions/20194806/how-to-get-a-list-column-names-and-datatypes-of-a-table-in-postgresql
+    query = f"""
+    SELECT
+        a.attname as "Column",
+        pg_catalog.format_type(a.atttypid, a.atttypmod) as "Datatype"
+    FROM
+        pg_catalog.pg_attribute a
+    WHERE
+        a.attnum > 0
+        AND NOT a.attisdropped
+        AND a.attrelid = (
+            SELECT c.oid
+            FROM pg_catalog.pg_class c
+                LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+            WHERE c.relname ~ '^{table}$'
+                AND pg_catalog.pg_table_is_visible(c.oid)
+        );"""
+    cur = con.cursor()
+    cur.execute(query)
+    schema = cur.fetchall()
+    column, datatype = map(list, zip(*schema))
+    return column, datatype
+
+
+def get_tuple_count(con, table):
+    """Return the count of entries in sql table."""
+    query = f"""
+    SELECT COUNT(*)
+    FROM {table}
+    """
+    cur = con.cursor()
+    cur.execute(query)
+    count = cur.fetchall()
+    return count[0][0]
+
+
 class TestPositionfixes:
-    def test_io_positionfixes(self, example_positionfixes, conn_postgis):
+    def test_write(self, example_positionfixes, conn_postgis):
+        """Test if write of positionfixes create correct schema in database."""
+        pfs = example_positionfixes.copy()
+        conn_string, conn = conn_postgis
+        table = "positionfixes"
+        try:
+            pfs.as_positionfixes.to_postgis(conn_string, table)
+            columns_db, dtypes = get_table_schema(conn, table)
+            columns = pfs.columns.tolist() + [pfs.index.name]
+            assert len(columns_db) == len(columns)
+            assert set(columns_db) == set(columns)
+            srid = ti.io.postgis._get_srid(pfs)
+            geom_schema = f"geometry(Point,{srid})"
+            assert geom_schema in dtypes
+        finally:
+            del_table(conn, table)
+
+    def test_read(self, example_positionfixes, conn_postgis):
         """Test if positionfixes written to and read back from database are the same."""
         pfs = example_positionfixes.copy()
         conn_string, conn = conn_postgis
@@ -183,9 +238,8 @@ class TestPositionfixes:
             assert_geodataframe_equal(pfs, pfs_db)
         finally:
             del_table(conn, table)
-        pass
 
-    def test_no_crs_setting(self, example_positionfixes, conn_postgis):
+    def test_no_crs(self, example_positionfixes, conn_postgis):
         """Test if writing reading to postgis also works correctly without CRS."""
         pfs = example_positionfixes.copy()
         conn_string, conn = conn_postgis
@@ -199,11 +253,27 @@ class TestPositionfixes:
             assert_geodataframe_equal(pfs, pfs_db)
         finally:
             del_table(conn, table)
-        pass
 
 
 class TestStaypoints:
-    def test_io_staypoints(self, example_staypoints, conn_postgis):
+    def test_write(self, example_staypoints, conn_postgis):
+        """Test if write of staypoints create correct schema in database."""
+        spts = example_staypoints.copy()
+        conn_string, conn = conn_postgis
+        table = "staypoints"
+        try:
+            spts.as_staypoints.to_postgis(conn_string, table)
+            columns_db, dtypes = get_table_schema(conn, table)
+            columns = spts.columns.tolist() + [spts.index.name]
+            assert len(columns_db) == len(columns)
+            assert set(columns_db) == set(columns)
+            srid = ti.io.postgis._get_srid(spts)
+            geom_schema = f"geometry(Point,{srid})"
+            assert geom_schema in dtypes
+        finally:
+            del_table(conn, table)
+
+    def test_read(self, example_staypoints, conn_postgis):
         """Test if staypoints written to and read back from database are the same."""
         spts = example_staypoints.copy()
         conn_string, conn = conn_postgis
@@ -217,7 +287,7 @@ class TestStaypoints:
         finally:
             del_table(conn, table)
 
-    def test_no_crs_setting(self, example_staypoints, conn_postgis):
+    def test_no_crs(self, example_staypoints, conn_postgis):
         """Test if writing reading to postgis also works correctly without CRS."""
         spts = example_staypoints.copy()
         conn_string, conn = conn_postgis
@@ -233,7 +303,24 @@ class TestStaypoints:
 
 
 class TestTriplegs:
-    def test_io_triplegs(self, example_triplegs, conn_postgis):
+    def test_write(self, example_triplegs, conn_postgis):
+        """Test if write of triplegs create correct schema in database."""
+        tpls = example_triplegs.copy()
+        conn_string, conn = conn_postgis
+        table = "triplegs"
+        try:
+            tpls.as_triplegs.to_postgis(conn_string, table)
+            columns_db, dtypes = get_table_schema(conn, table)
+            columns = tpls.columns.tolist() + [tpls.index.name]
+            assert len(columns_db) == len(columns)
+            assert set(columns_db) == set(columns)
+            srid = ti.io.postgis._get_srid(tpls)
+            geom_schema = f"geometry(LineString,{srid})"
+            assert geom_schema in dtypes
+        finally:
+            del_table(conn, table)
+
+    def test_read(self, example_triplegs, conn_postgis):
         """Test if triplegs written to and read back from database are the same."""
         tpls = example_triplegs.copy()
         conn_string, conn = conn_postgis
@@ -247,7 +334,7 @@ class TestTriplegs:
         finally:
             del_table(conn, table)
 
-    def test_no_crs_setting(self, example_triplegs, conn_postgis):
+    def test_no_crs(self, example_triplegs, conn_postgis):
         """Test if writing reading to postgis also works correctly without CRS."""
         tpls = example_triplegs.copy()
         conn_string, conn = conn_postgis
@@ -264,7 +351,24 @@ class TestTriplegs:
 
 
 class TestLocations:
-    def test_io_locations(self, example_locations, conn_postgis):
+    def test_write(self, example_locations, conn_postgis):
+        """Test if write of locations create correct schema in database."""
+        locs = example_locations.copy()
+        conn_string, conn = conn_postgis
+        table = "locations"
+        try:
+            locs.as_locations.to_postgis(conn_string, table)
+            columns_db, dtypes = get_table_schema(conn, table)
+            columns = locs.columns.tolist() + [locs.index.name]
+            assert len(columns_db) == len(columns)
+            assert set(columns_db) == set(columns)
+            srid = ti.io.postgis._get_srid(locs)
+            geom_schema = f"geometry(Point,{srid})"
+            assert geom_schema in dtypes
+        finally:
+            del_table(conn, table)
+
+    def test_read(self, example_locations, conn_postgis):
         """Test if locations written to and read back from database are the same."""
         locs = example_locations.copy()
         conn_string, conn = conn_postgis
@@ -278,7 +382,7 @@ class TestLocations:
         finally:
             del_table(conn, table)
 
-    def test_no_crs_setting(self, example_locations, conn_postgis):
+    def test_no_crs(self, example_locations, conn_postgis):
         """Test if writing reading to postgis also works correctly without CRS."""
         locs = example_locations.copy()
         conn_string, conn = conn_postgis
@@ -294,7 +398,21 @@ class TestLocations:
 
 
 class TestTrips:
-    def test_io_trips(self, example_trips, conn_postgis):
+    def test_write(self, example_trips, conn_postgis):
+        """Test if write of locations create correct schema in database."""
+        trips = example_trips.copy()
+        conn_string, conn = conn_postgis
+        table = "trips"
+        try:
+            trips.as_trips.to_postgis(conn_string, table)
+            columns_db, dtypes = get_table_schema(conn, table)
+            columns = trips.columns.tolist() + [trips.index.name]
+            assert len(columns_db) == len(columns)
+            assert set(columns_db) == set(columns)
+        finally:
+            del_table(conn, table)
+
+    def test_read(self, example_trips, conn_postgis):
         """Test if trips written to and read back from database are the same."""
         trips = example_trips.copy()
         conn_string, conn = conn_postgis
@@ -310,7 +428,7 @@ class TestTrips:
 
 class TestGetSrid:
     def test_srid(self, example_positionfixes):
-        """Test if it returns the correct srid in two cases."""
+        """Test if `_get_srid` returns the correct srid."""
         gdf = example_positionfixes.copy()
         gdf.crs = None
         assert ti.io.postgis._get_srid(gdf) == -1
