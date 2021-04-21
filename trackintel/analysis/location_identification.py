@@ -1,41 +1,74 @@
-def location_identifier(sps, pre_filter=True, recipe="FREQ"):
-    """
+def location_identifier(sps, pre_filter=True, receipt="FREQ"):
+    """Finde home and work/location for each user with different receipts.
 
     Parameters
     ----------
-    sps
-    pre_filter
-    recipe
+    sps : Geodataframe (as trackintel staypoints)
+        Staypoints with column "location_id".
+    pre_filter : bool, default True
+        Prefiltering the staypoints to exclude locations with not enough data.
+        The filter function can also be acessed via `pre_filter`.
+    receipt : {'FREQ'}, default "FREQ"
+        Choose which receipt to use.
+        - FREQ: Select the most visited location
+        - PASS: just for decoration.
 
     Returns
     -------
+    Geodataframe (as trackintel staypoints)
+        With additional column assigning one of three location identies {'home', 'work', None}.
 
+    Note
+    ----
+    The receipt are adapted from [1]. The original algorithms count the distinct hours at a
+    location as the home location is derived from geo-tagged tweets. We directly sum the time
+    spent at a location as our data model includes that.
+
+    References
+    ----------
+    Chen, Qingqing, and Ate Poorthuis. 2021.
+    ‘Identifying Home Locations in Human Mobility Data: An Open-Source R Package for Comparison and Reproducibility’.
+    International Journal of Geographical Information Science 0 (0): 1–24.
+    https://doi.org/10.1080/13658816.2021.1887489.
+
+    Examples
+    --------
+    >>> ti.analysis.location_identification.location_idenifier(sps, pre_filter=True, receipt="FREQ")
     """
     pass
 
 
-def pre_filter(distinct_locs, staypoints_at_loc, distinct_hours_at_loc, num_of_day_active_at_loc):
-    """
-    something
+def pre_filter(sps, tresh_sp, thresh_min_locs, tresh_sp_at_locs, thresh_time, thresh_period):
+    """Filter locations and user out that have not enough data to do a proper analysis.
+
     Parameters
     ----------
-    distinct_locs
-    staypoints_at_loc
-    distinct_hours_at_loc
-    num_of_day_active_at_loc
+    sps : GeoDataFrame (as trackintel staypoints)
+        Staypoints with the column "location_id".
+    thresh_sp : int
+        Minimum staypoints a user must have to be included.
+    thresh_min_locs : int
+        Minimum locations a user must have to be included.
+    tresh_sp_at_locs : int
+        Minimum number of staypoints at a location to have to include location.
+    thresh_time : int
+        Minimum timespan that a user must spend at location.
+    thresh_period : pd.TimePeriod
+        Minimum number of time a user have spent at location.
 
     Returns
     -------
+    np.array
+        A boolean index arrray with True everywhere the Bedingungen are erfüllt.
 
+    Examples
+    --------
+    >> do something
     """
     pass
 
 
 def freq_recipe():
-    """
-
-    Returns
-    -------
-
+    """Docstring here :D
     """
     pass
