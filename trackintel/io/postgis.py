@@ -63,7 +63,7 @@ def write_positionfixes_postgis(
     sql_chunksize : int, optional
         How many entries should be written at the same time.
 
-    if_exists : str, {'fail', 'replace', 'append'}, default 'replace'
+    if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
         What should happen if the table already exists.
 
     Examples
@@ -134,7 +134,7 @@ def write_triplegs_postgis(
     sql_chunksize : int, optional
         How many entries should be written at the same time.
 
-    if_exists : str, {'fail', 'replace', 'append'}, default 'replace'
+    if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
         What should happen if the table already exists.
 
     Examples
@@ -203,7 +203,7 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, s
     sql_chunksize : int, optional
         How many entries should be written at the same time.
 
-    if_exists : str, {'fail', 'replace', 'append'}, default 'replace'
+    if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
         What should happen if the table already exists.
 
     Examples
@@ -279,7 +279,7 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None, sql
     sql_chunksize : int, optional
         How many entries should be written at the same time.
 
-    if_exists : str, {'fail', 'replace', 'append'}, default 'replace'
+    if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
         What should happen if the table already exists.
 
     Examples
@@ -343,7 +343,7 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None, sql_chunksi
     sql_chunksize : int, optional
         How many entries should be written at the same time.
 
-    if_exists : str, {'fail', 'replace', 'append'}, default 'replace'
+    if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
         What should happen if the table already exists.
 
     Examples
