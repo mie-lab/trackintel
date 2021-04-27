@@ -35,6 +35,7 @@ def conn_postgis():
         try:
             # psycopg2.connect may gives operational error due to
             # unsupported frontend protocol in conda environment.
+            # https://stackoverflow.com/questions/61081102/psycopg2-connect-gives-operational-error-unsupported-frontend-protocol
             conn_string = conn_string + "?sslmode=disable"
             con = psycopg2.connect(conn_string)
         except psycopg2.OperationalError:
@@ -206,6 +207,22 @@ def get_tuple_count(con, table):
     return count[0][0]
 
 
+def _get_srid(gdf):
+    """Extract srid from gdf and default to -1 if there isn't one.
+
+    Parameters
+    ----------
+    gdf : GeoDataFrame
+
+    Returns
+    -------
+    int
+    """
+    if gdf.crs is not None:
+        return gdf.crs.to_epsg()
+    return -1
+
+
 class TestPositionfixes:
     def test_write(self, example_positionfixes, conn_postgis):
         """Test if write of positionfixes create correct schema in database."""
@@ -218,7 +235,7 @@ class TestPositionfixes:
             columns = pfs.columns.tolist() + [pfs.index.name]
             assert len(columns_db) == len(columns)
             assert set(columns_db) == set(columns)
-            srid = ti.io.postgis._get_srid(pfs)
+            srid = _get_srid(pfs)
             geom_schema = f"geometry(Point,{srid})"
             assert geom_schema in dtypes
         finally:
@@ -267,7 +284,7 @@ class TestStaypoints:
             columns = spts.columns.tolist() + [spts.index.name]
             assert len(columns_db) == len(columns)
             assert set(columns_db) == set(columns)
-            srid = ti.io.postgis._get_srid(spts)
+            srid = _get_srid(spts)
             geom_schema = f"geometry(Point,{srid})"
             assert geom_schema in dtypes
         finally:
@@ -314,7 +331,7 @@ class TestTriplegs:
             columns = tpls.columns.tolist() + [tpls.index.name]
             assert len(columns_db) == len(columns)
             assert set(columns_db) == set(columns)
-            srid = ti.io.postgis._get_srid(tpls)
+            srid = _get_srid(tpls)
             geom_schema = f"geometry(LineString,{srid})"
             assert geom_schema in dtypes
         finally:
@@ -362,7 +379,7 @@ class TestLocations:
             columns = locs.columns.tolist() + [locs.index.name]
             assert len(columns_db) == len(columns)
             assert set(columns_db) == set(columns)
-            srid = ti.io.postgis._get_srid(locs)
+            srid = _get_srid(locs)
             geom_schema = f"geometry(Point,{srid})"
             assert geom_schema in dtypes
         finally:
@@ -431,7 +448,7 @@ class TestGetSrid:
         """Test if `_get_srid` returns the correct srid."""
         gdf = example_positionfixes.copy()
         gdf.crs = None
-        assert ti.io.postgis._get_srid(gdf) == -1
+        assert _get_srid(gdf) == -1
         srid = 3857
         gdf.set_crs(f"epsg:{srid}", inplace=True)
-        assert ti.io.postgis._get_srid(gdf) == srid
+        assert _get_srid(gdf) == srid

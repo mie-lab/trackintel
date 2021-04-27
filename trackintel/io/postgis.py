@@ -1,8 +1,6 @@
 import geopandas as gpd
 import pandas as pd
-from geoalchemy2 import Geometry, WKTElement
 from sqlalchemy import create_engine
-import warnings
 
 
 def read_positionfixes_postgis(conn_string, table_name, geom_col="geom", *args, **kwargs):
@@ -42,12 +40,10 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col="geom", *args, 
 
 
 def write_positionfixes_postgis(
-    positionfixes, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"
+    positionfixes, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail"
 ):
     """Stores positionfixes to PostGIS. Usually, this is directly called on a positionfixes
     DataFrame (see example below).
-
-    **Attention!** This replaces the table if it already exists!
 
     Parameters
     ----------
@@ -74,31 +70,10 @@ def write_positionfixes_postgis(
     --------
     >>> df.as_positionfixes.to_postgis(conn_string, table_name)
     """
-    # make a copy in order to avoid changing the geometry of the original array
-    positionfixes_postgis = positionfixes.copy()
-    srid = _get_srid(positionfixes_postgis)
-    geom_schema = Geometry("Point", srid)
-
-    geom_col = positionfixes_postgis.geometry.name
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "Geometry column does not contain geometry.", UserWarning)
-        positionfixes_postgis[geom_col] = positionfixes[geom_col].apply(lambda x: WKTElement(x.wkt, srid=srid))
-
-    if "id" not in positionfixes_postgis.columns:
-        positionfixes_postgis["id"] = positionfixes_postgis.index
-
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        positionfixes_postgis.to_sql(
-            table_name,
-            engine,
-            schema=schema,
-            if_exists=if_exists,
-            index=False,
-            dtype={geom_col: geom_schema},
-            chunksize=sql_chunksize,
-        )
+        positionfixes.to_postgis(table_name, conn, if_exists=if_exists, index=True, chunksize=sql_chunksize)
     finally:
         conn.close()
 
@@ -136,12 +111,10 @@ def read_triplegs_postgis(conn_string, table_name, geom_col="geom", *args, **kwa
 
 
 def write_triplegs_postgis(
-    triplegs, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace", *args, **kwargs
+    triplegs, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail", *args, **kwargs
 ):
     """Stores triplegs to PostGIS. Usually, this is directly called on a triplegs
     DataFrame (see example below).
-
-    **Attention!** This replaces the table if it already exists!
 
     Parameters
     ----------
@@ -168,29 +141,10 @@ def write_triplegs_postgis(
     --------
     >>> df.as_triplegs.to_postgis(conn_string, table_name)
     """
-    triplegs_postgis = triplegs.copy()
-    srid = _get_srid(triplegs_postgis)
-    geom_schema = Geometry("LINESTRING", srid)
-    geom_col = triplegs_postgis.geometry.name
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "Geometry column does not contain geometry.", UserWarning)
-        triplegs_postgis[geom_col] = triplegs[geom_col].apply(lambda x: WKTElement(x.wkt, srid=srid))
-
-    if "id" not in triplegs_postgis.columns:
-        triplegs_postgis["id"] = triplegs_postgis.index
-
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        triplegs_postgis.to_sql(
-            table_name,
-            engine,
-            schema=schema,
-            if_exists=if_exists,
-            index=False,
-            dtype={geom_col: geom_schema},
-            chunksize=sql_chunksize,
-        )
+        triplegs.to_postgis(table_name, conn, if_exists=if_exists, index=True, chunksize=sql_chunksize)
     finally:
         conn.close()
 
@@ -227,11 +181,9 @@ def read_staypoints_postgis(conn_string, table_name, geom_col="geom", *args, **k
     return pfs
 
 
-def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
+def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
     """Stores staypoints to PostGIS. Usually, this is directly called on a staypoints
     DataFrame (see example below).
-
-    **Attention!** This replaces the table if it already exists!
 
     Parameters
     ----------
@@ -265,30 +217,10 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, s
     # thereby the index column is lost
 
     # make a copy in order to avoid changing the geometry of the original array
-    staypoints_postgis = staypoints.copy()
-    srid = _get_srid(staypoints_postgis)
-    geom_schema = Geometry("POINT", srid)
-
-    geom_col = staypoints_postgis.geometry.name
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "Geometry column does not contain geometry.", UserWarning)
-        staypoints_postgis[geom_col] = staypoints[geom_col].apply(lambda x: WKTElement(x.wkt, srid=srid))
-
-    if "id" not in staypoints_postgis.columns:
-        staypoints_postgis["id"] = staypoints_postgis.index
-
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        staypoints_postgis.to_sql(
-            table_name,
-            engine,
-            schema=schema,
-            if_exists=if_exists,
-            index=False,
-            dtype={geom_col: geom_schema},
-            chunksize=sql_chunksize,
-        )
+        staypoints.to_postgis(table_name, conn, if_exists=if_exists, index=True, chunksize=sql_chunksize)
     finally:
         conn.close()
 
@@ -325,11 +257,9 @@ def read_locations_postgis(conn_string, table_name, geom_col="geom", *args, **kw
     return locs
 
 
-def write_locations_postgis(locations, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
+def write_locations_postgis(locations, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
     """Stores locations to PostGIS. Usually, this is directly called on a locations
     GeoDataFrame (see example below).
-
-    **Attention!** This replaces the table if it already exists!
 
     Parameters
     ----------
@@ -356,32 +286,10 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None, sql
     --------
     >>> df.as_locations.to_postgis(conn_string, table_name)
     """
-
-    # make a copy in order to avoid changing the geometry of the original array
-    locations_postgis = locations.copy()
-
-    srid = _get_srid(locations_postgis)
-    center_schema = Geometry("POINT", srid)
-    extent_schema = Geometry("GEOMETRY", srid)
-
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "Geometry column does not contain geometry.", UserWarning)
-        locations_postgis["center"] = locations["center"].apply(lambda x: WKTElement(x.wkt, srid=srid))
-        if "extent" in locations_postgis.columns:
-            locations_postgis["extent"] = locations["extent"].apply(lambda x: WKTElement(x.wkt, srid=srid))
-
-    if "id" not in locations_postgis.columns:
-        locations_postgis["id"] = locations_postgis.index
-
     engine = create_engine(conn_string)
     conn = engine.connect()
-    dtype = {"center": center_schema}
-    if "extent" in locations_postgis.columns:
-        dtype["extent"] = extent_schema
     try:
-        locations_postgis.to_sql(
-            table_name, engine, schema=schema, if_exists=if_exists, index=False, dtype=dtype, chunksize=sql_chunksize
-        )
+        locations.to_postgis(table_name, conn, if_exists=if_exists, index=True, chunksize=sql_chunksize)
     finally:
         conn.close()
 
@@ -413,11 +321,9 @@ def read_trips_postgis(conn_string, table_name, *args, **kwargs):
     return trps
 
 
-def write_trips_postgis(trips, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
+def write_trips_postgis(trips, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
     """Stores trips to PostGIS. Usually, this is directly called on a trips
     DataFrame (see example below).
-
-    **Attention!** This replaces the table if it already exists!
 
     Parameters
     ----------
@@ -446,31 +352,9 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None, sql_chunksi
     """
 
     # make a copy in order to avoid changing the geometry of the original array
-    trips_postgis = trips.copy()
-    if "id" not in trips_postgis.columns:
-        trips_postgis["id"] = trips_postgis.index
-
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        trips_postgis.to_sql(
-            table_name, engine, schema=schema, if_exists=if_exists, index=False, chunksize=sql_chunksize
-        )
+        trips.to_sql(table_name, conn, if_exists=if_exists, index=True, chunksize=sql_chunksize)
     finally:
         conn.close()
-
-
-def _get_srid(gdf):
-    """Extract srid from gdf and default to -1 if there isn't one.
-
-    Parameters
-    ----------
-    gdf : GeoDataFrame
-
-    Returns
-    -------
-    int
-    """
-    if gdf.crs is not None:
-        return gdf.crs.to_epsg()
-    return -1
