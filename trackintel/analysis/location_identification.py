@@ -1,3 +1,5 @@
+import pandas as pd
+
 _RECEIPTS = {
     "FREQ": freq_receipt,
 }
@@ -10,9 +12,11 @@ def location_identifier(sps, pre_filter=True, receipt="FREQ"):
     ----------
     sps : Geodataframe (as trackintel staypoints)
         Staypoints with column "location_id".
+
     pre_filter : bool, default True
         Prefiltering the staypoints to exclude locations with not enough data.
         The filter function can also be acessed via `pre_filter`.
+
     receipt : {'FREQ'}, default "FREQ"
         Choose which receipt to use.
         - FREQ: Select the most visited location
@@ -56,34 +60,78 @@ def location_identifier(sps, pre_filter=True, receipt="FREQ"):
     return m
 
 
-def pre_filter_locations(sps, tresh_sp, thresh_min_locs, tresh_sp_at_locs, thresh_time, thresh_period):
+def pre_filter_locations(sps, agg_level, thresh_min_sp=10, thresh_min_loc=10, thresh_sp_at_loc=10,
+                         thresh_loc_time=1, thresh_loc_period=pd.Timedelta("5h")):
     """Filter locations and user out that have not enough data to do a proper analysis.
 
     Parameters
     ----------
     sps : GeoDataFrame (as trackintel staypoints)
         Staypoints with the column "location_id".
-    thresh_sp : int
+
+    agg_level: {"user", "dataset"}, default "user"
+        The level of aggregation when filtering locations:
+        - 'user' : locations are filtered per-user.
+        - 'dataset' : locations are filtered over the whole dataset.
+
+    thresh_min_sp : int, default 10
         Minimum staypoints a user must have to be included.
-    thresh_min_locs : int
+
+    thresh_min_loc : int, default 10
         Minimum locations a user must have to be included.
-    tresh_sp_at_locs : int
-        Minimum number of staypoints at a location to have to include location.
-    thresh_time : int
-        Minimum timespan that a user must spend at location.
-    thresh_period : pd.TimePeriod
+
+    thresh_sp_at_loc : int, default 10
+        Minimum number of staypoints at a location must have to be included.
+
+    thresh_loc_time : int, default 1
+        Minimum timespan in hour that a user must spend at location for the location.
+
+    thresh_loc_period : pd.Timedelta (or parseable from `pd.to_timedelta`), default 5h
         Minimum number of time a user have spent at location.
 
     Returns
     -------
     GeoDataFrame (as trackintel staypoints)
-        A boolean index arrray with True everywhere the Bedingungen are erfüllt.
 
     Examples
     --------
     >> do something
     """
-    return sps.copy()
+    assert sps.as_staypoints
+    sps = sps.copy()
+
+    # filtering users
+    user = sps.groupby("user_id").nunique()
+    user_sp = user['id'] >= thresh_min_sp
+    user_loc = user['location_id'] >= thresh_min_loc  # how should we design our values inclusive or exclusive
+    user_filter_agg = user_sp & user_loc
+    user_filter_agg.rename("user_filter", inplace=True)  # rename for merging
+    user_filter = pd.merge(sps['user_id'], user_filter_agg, left_on="user_id", right_index=True)["user_filter"]
+
+    # filtering locations
+    sps["timedelta"] = sps["finished_at"] - sps["started_at"]
+    if agg_level == "User":
+        groupby_loc = ["user_id", "location_id"]
+    else:
+        groupby_loc = ["location_id"]
+    loc = sps.groupby(groupby_loc).agg({"started_at": [min, "count"], "finished_at": max, "time_spent": sum})
+    loc.columns = loc.columns.droplevel(0)  # remove multi-index
+    loc.rename(columns={"min": "started_at", "max": "finished_at", "sum": "duration"}, inplace=True)
+    loc["period"] = loc["finished_at"] - loc["started_at"]
+    loc_sp = loc["count"] >= thresh_sp_at_loc
+    # how should we handle the timedeltas as input to our function
+    # are both integers or do we accept other values?
+    if isinstance(thresh_loc_time, int):
+        thresh_loc_time = pd.to_timedelta(thresh_loc_time, unit="h")
+    loc_time = loc["duration"] >= thresh_loc_time
+    loc_period = loc["period"] >= thresh_loc_period
+    loc_filter_agg = loc_sp & loc_time & loc_period
+    loc_filter_agg.rename("loc_fiter", inplace=True)  # rename for merging
+    loc_filter = pd.merge(sps[groupby_loc], loc_filter_agg.reset_index(), on=groupby_loc)
+
+    total_filter = user_filter & loc_filter
+
+    return total_filter
 
 
 def freq_receipt(sps):
@@ -94,4 +142,4 @@ def freq_receipt(sps):
 
 
 def staypoints_with_location_assertion(funct):
-    
+    pass
