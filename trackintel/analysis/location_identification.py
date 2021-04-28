@@ -48,20 +48,30 @@ def location_identifier(sps, pre_filter=True, receipt="FREQ"):
     # we take the gdf and assert two things 1. is staypoint 2. has location_id column
     assert sps.as_staypoints
     if "location_id" not in sps.columns:
-        raise KeyError((
-            "To derive location activities the GeoDataFrame (as trackintel staypoints)must have a column "
-            f"named 'location_id' but it has [{', '.join(sps.columns)}]"))
+        raise KeyError(
+            (
+                "To derive location activities the GeoDataFrame (as trackintel staypoints)must have a column "
+                f"named 'location_id' but it has [{', '.join(sps.columns)}]"
+            )
+        )
     # then hand it to to the filter function if necessary.
     if pre_filter:
-        sps = pre_filter_locations()
+        f = pre_filter_locations()
+        sps = sps[f]
 
     m = _RECEIPTS[receipt]()  # das müssen wir mal schöner machen.
 
     return m
 
 
-def pre_filter_locations(sps, agg_level, thresh_min_sp=10, thresh_min_loc=10, thresh_sp_at_loc=10,
-                         thresh_loc_time=1, thresh_loc_period=pd.Timedelta("5h")):
+def pre_filter_locations(
+        sps, agg_level,
+        thresh_min_sp=10,
+        thresh_min_loc=10,
+        thresh_sp_at_loc=10,
+        thresh_loc_time=1,
+        thresh_loc_period=pd.Timedelta("5h"),
+):
     """Filter locations and user out that have not enough data to do a proper analysis.
 
     Parameters
@@ -87,7 +97,7 @@ def pre_filter_locations(sps, agg_level, thresh_min_sp=10, thresh_min_loc=10, th
         Minimum timespan in hour that a user must spend at location for the location.
 
     thresh_loc_period : pd.Timedelta (or parseable from `pd.to_timedelta`), default 5h
-        Minimum number of time a user have spent at location.
+        Minimum timespan of first to last visit of a user at a location.
 
     Returns
     -------
@@ -102,11 +112,11 @@ def pre_filter_locations(sps, agg_level, thresh_min_sp=10, thresh_min_loc=10, th
 
     # filtering users
     user = sps.groupby("user_id").nunique()
-    user_sp = user['id'] >= thresh_min_sp
-    user_loc = user['location_id'] >= thresh_min_loc  # how should we design our values inclusive or exclusive
+    user_sp = user["id"] >= thresh_min_sp
+    user_loc = user["location_id"] >= thresh_min_loc  # how should we design our values inclusive or exclusive
     user_filter_agg = user_sp & user_loc
     user_filter_agg.rename("user_filter", inplace=True)  # rename for merging
-    user_filter = pd.merge(sps['user_id'], user_filter_agg, left_on="user_id", right_index=True)["user_filter"]
+    user_filter = pd.merge(sps["user_id"], user_filter_agg, left_on="user_id", right_index=True)["user_filter"]
 
     # filtering locations
     sps["timedelta"] = sps["finished_at"] - sps["started_at"]
