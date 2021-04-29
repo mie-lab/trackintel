@@ -1,12 +1,13 @@
+import numpy as np
 import pandas as pd
 
-_RECEIPTS = {
-    "FREQ": freq_receipt,
+_RECIPES = {
+    "FREQ": freq_recipe,
 }
 
 
-def location_identifier(sps, pre_filter=True, receipt="FREQ"):
-    """Finde home and work/location for each user with different receipts.
+def location_identifier(sps, pre_filter=True, recipe="FREQ"):
+    """Finde home and work/location for each user with different recipes.
 
     Parameters
     ----------
@@ -17,8 +18,8 @@ def location_identifier(sps, pre_filter=True, receipt="FREQ"):
         Prefiltering the staypoints to exclude locations with not enough data.
         The filter function can also be acessed via `pre_filter`.
 
-    receipt : {'FREQ'}, default "FREQ"
-        Choose which receipt to use.
+    recipe : {'FREQ'}, default "FREQ"
+        Choose which recipe to use.
         - FREQ: Select the most visited location
         - PASS: just for decoration.
 
@@ -29,7 +30,7 @@ def location_identifier(sps, pre_filter=True, receipt="FREQ"):
 
     Note
     ----
-    The receipt are adapted from [1]. The original algorithms count the distinct hours at a
+    The recipe are adapted from [1]. The original algorithms count the distinct hours at a
     location as the home location is derived from geo-tagged tweets. We directly sum the time
     spent at a location as our data model includes that.
 
@@ -42,26 +43,20 @@ def location_identifier(sps, pre_filter=True, receipt="FREQ"):
 
     Examples
     --------
-    >>> ti.analysis.location_identification.location_idenifier(sps, pre_filter=True, receipt="FREQ")
+    >>> ti.analysis.location_identification.location_idenifier(sps, pre_filter=True, recipe="FREQ")
     """
     # what do we do here?
     # we take the gdf and assert two things 1. is staypoint 2. has location_id column
     assert sps.as_staypoints
     if "location_id" not in sps.columns:
-        raise KeyError(
-            (
-                "To derive location activities the GeoDataFrame (as trackintel staypoints)must have a column "
-                f"named 'location_id' but it has [{', '.join(sps.columns)}]"
-            )
-        )
+        raise KeyError(("To derive location activities the GeoDataFrame (as trackintel staypoints)must have a column "
+                        f"named 'location_id' but it has [{', '.join(sps.columns)}]"))
     # then hand it to to the filter function if necessary.
     if pre_filter:
         f = pre_filter_locations()
         sps = sps[f]
 
-    m = _RECEIPTS[receipt]()  # das müssen wir mal schöner machen.
-
-    return m
+    return _RECIPES[recipe](sps)
 
 
 def pre_filter_locations(
@@ -70,7 +65,7 @@ def pre_filter_locations(
         thresh_min_loc=10,
         thresh_sp_at_loc=10,
         thresh_loc_time=1,
-        thresh_loc_period=pd.Timedelta("5h"),
+        thresh_loc_period=pd.Timedelta("5h")
 ):
     """Filter locations and user out that have not enough data to do a proper analysis.
 
@@ -144,12 +139,45 @@ def pre_filter_locations(
     return total_filter
 
 
-def freq_receipt(sps):
-    """Docstring here :D
+def freq_recipe(sps, *labels):
+    """Generate a location activity per user by assigning the most visited location the label "home"
+    and the second most visited location the label "work". The remaining location get no label.
+
+    Parameters
+    ----------
+    sps : GeoDataFrame (as trackintel staypoints)
+        Staypoints with the column "location_id".
+
+    Returns
+    -------
+    pd.Series
+        Staypoints with label given labels
+
+    Examples
+    --------
+    >> do something
     """
+    if not labels:
+        labels = ("home", "work")
+    if sps["duration"] not in sps.columns:
+        sps = sps.copy()
+        sps["duration"] = sps["finished_at"] - sps["started_at"]
+    return sps.groupby(["user_id"])["duration"].transform(_freq_transform, *labels)
 
-    pass
 
+def _freq_transform(duration, *labels):
+    """Transform function that assigns the longest visited data point the labels in order.
 
-def staypoints_with_location_assertion(funct):
-    pass
+    Parameters
+    ----------
+    duration : pd.Series
+
+    Returns
+    -------
+    np.array
+        dtype : `object`
+    """
+    kth = np.argpartition(-duration, kth=len(labels))[:len(labels)]
+    label_array = np.full(len(duration), fill_value=None)
+    label_array[kth] = labels
+    return label_array
