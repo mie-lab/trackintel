@@ -18,4 +18,9 @@ createuser -U ${USER} -s postgres
 createdb --owner=postgres test_geopandas
 psql -d test_geopandas -q -c "CREATE EXTENSION postgis"
 
+export PGUSER=postgres
+export PGPASSWORD=postgres
+export PGHOST=localhost
+export PGPORT=5432
+
 echo "Done setting up Postgresql"

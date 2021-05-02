@@ -38,16 +38,16 @@ jobs:
       uses: s-weigand/setup-conda@v1
       with:
         activate-conda: false
-        
+
     - name: Install Env
       shell: bash
       run: conda env create -f ${{ matrix.env }}
-        
+
     - name: Test with pytest
       shell: bash
       run: |
         source activate test
-        pytest --color=yes --cov=./ 
+        pytest -v -r s -n auto --color=yes --cov=trackintel --cov-append --cov-report term-missing --cov-report xml tests/
 
     - name: Test with PostGIS
       shell: bash
@@ -60,4 +60,5 @@ jobs:
         source activate test
         conda install postgis -c conda-forge
         source ci/envs/setup_postgres.sh
-        pytest -v -r s --color=yes --cov=./ | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
+        pytest -v -r s --color=yes --cov=trackintel --cov-append --cov-report term-missing --cov-report xml tests/io/test_postgis_gpd.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
+    - uses: codecov/codecov-action@v1
