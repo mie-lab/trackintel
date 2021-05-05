@@ -45,8 +45,12 @@ def location_identifier(sps, pre_filter=True, recipe="FREQ"):
     # we take the gdf and assert two things 1. is staypoint 2. has location_id column
     assert sps.as_staypoints
     if "location_id" not in sps.columns:
-        raise KeyError(("To derive location activities the GeoDataFrame (as trackintel staypoints)must have a column "
-                        f"named 'location_id' but it has [{', '.join(sps.columns)}]"))
+        raise KeyError(
+            (
+                "To derive location activities the GeoDataFrame (as trackintel staypoints)must have a column "
+                f"named 'location_id' but it has [{', '.join(sps.columns)}]"
+            )
+        )
     # then hand it to to the filter function if necessary.
     if pre_filter:
         f = pre_filter_locations()
@@ -58,13 +62,13 @@ def location_identifier(sps, pre_filter=True, recipe="FREQ"):
 
 
 def pre_filter_locations(
-        sps,
-        agg_level="user",
-        thresh_min_sp=10,
-        thresh_min_loc=10,
-        thresh_sp_at_loc=10,
-        thresh_loc_time=1,
-        thresh_loc_period=pd.Timedelta("5h")
+    sps,
+    agg_level="user",
+    thresh_min_sp=10,
+    thresh_min_loc=10,
+    thresh_sp_at_loc=10,
+    thresh_loc_time=1,
+    thresh_loc_period=pd.Timedelta("5h"),
 ):
     """Filter locations and user out that have not enough data to do a proper analysis.
 
@@ -186,8 +190,9 @@ def _freq_transform(group, *labels):
     """
     group_agg = group.groupby("location_id").agg({"duration": sum})
     group_agg["activity_label"] = _freq_assign(group_agg["duration"], *labels)
-    group_merge = pd.merge(group["location_id"], group_agg["activity_label"],
-                           how="left", left_on="location_id", right_index=True)
+    group_merge = pd.merge(
+        group["location_id"], group_agg["activity_label"], how="left", left_on="location_id", right_index=True
+    )
     return group_merge["activity_label"]
 
 
@@ -203,7 +208,7 @@ def _freq_assign(duration, *labels):
     np.array
         dtype : object
     """
-    kth = (-duration).argsort()[:len(labels)]  # if inefficient use partial sort.
+    kth = (-duration).argsort()[: len(labels)]  # if inefficient use partial sort.
     label_array = np.full(len(duration), fill_value=None)
     label_array[kth] = labels
     return label_array

@@ -44,7 +44,7 @@ def default_kwargs():
         "thresh_min_loc": 0,
         "thresh_sp_at_loc": 0,
         "thresh_loc_time": 0,
-        "thresh_loc_period": pd.Timedelta("0h")
+        "thresh_loc_period": pd.Timedelta("0h"),
     }
     return kw
 
@@ -54,7 +54,7 @@ class TestPre_Filter:
 
     def test_no_kw(self, example_staypoints, default_kwargs):
         """Test that nothing gets filtered if all parameters are set to zero."""
-        assert(all(pre_filter_locations(example_staypoints, **default_kwargs)))
+        assert all(pre_filter_locations(example_staypoints, **default_kwargs))
 
     def test_thresh_min_sp(self, example_staypoints, default_kwargs):
         """Test the minimum staypoint per user parameter."""
@@ -128,6 +128,7 @@ def example_freq():
 
 class TestFreq_Recipe:
     """Test freq_recipe."""
+
     def test_default_labels(self, example_freq):
         """Test recipe with default labels"""
         freq = freq_recipe(example_freq)
@@ -149,7 +150,7 @@ class TestFreq_Recipe:
     def test_creation_duration(self, example_freq):
         """Test if function can handle no "duration" column."""
         del example_freq["duration"]
-        times = pd.date_range("1971-01-01", periods=len(example_freq)+1, freq="H")
+        times = pd.date_range("1971-01-01", periods=len(example_freq) + 1, freq="H")
         example_freq["started_at"] = times[:-1]
         example_freq["finished_at"] = times[1:]
         freq = freq_recipe(example_freq)
@@ -162,6 +163,7 @@ class TestFreq_Recipe:
 
 class Test_Freq_Transform:
     """Test help function _freq_transform."""
+
     def test_function(self):
         list_dict = [
             {"location_id": 0, "duration": 1},
@@ -176,6 +178,7 @@ class Test_Freq_Transform:
 
 class Test_Freq_Assign:
     """Test help function _freq_assign."""
+
     def test_function(self):
         """Test function with simple input."""
         dur = pd.Series([9, 0, 8, 1, 7, 6, 5])
