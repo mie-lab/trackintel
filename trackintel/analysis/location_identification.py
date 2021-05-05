@@ -143,32 +143,56 @@ def pre_filter_locations(
 
 def freq_recipe(sps, *labels):
     """Generate a location activity per user by assigning the most visited location the label "home"
-    and the second most visited location the label "work". The remaining location get no label.
+    and the second most visited location the label "work". The remaining locations get no label.
 
     Parameters
     ----------
     sps : GeoDataFrame (as trackintel staypoints)
         Staypoints with the column "location_id".
+    labels : collection of str, default ("home", "work")
+        Labels in decreasing time of activity.
+
+    Returns
+    -------
+    GeoDataFrame
+        with column "activity_label".
+
+    Examples
+    --------
+    >> staypoints["activity"] = ti.analysis.freq_recipe(staypoints, "home", "work")
+    """
+    sps = sps.copy()
+    if not labels:
+        labels = ("home", "work")
+    for name, group in sps.groupby("user_id"):
+        if "duration" not in group.columns:
+            group["duration"] = group["finished_at"] - group["started_at"]
+        # pandas keeps inner order or groups
+        sps.loc[sps["user_id"] == name, "activity_label"] = _freq_transform(group, *labels)
+    return sps
+
+
+def _freq_transform(group, *labels):
+    """Transform function that assigns the longest visited data point the labels in order.
+
+    Parameters
+    ----------
+    group : DataFrame
 
     Returns
     -------
     pd.Series
-        Staypoints with label given labels
-
-    Examples
-    --------
-    >> do something
+        dtype : `object`
     """
-    if not labels:
-        labels = ("home", "work")
-    if sps["duration"] not in sps.columns:
-        sps = sps.copy()
-        sps["duration"] = sps["finished_at"] - sps["started_at"]
-    return sps.groupby(["user_id"])["duration"].transform(_freq_transform, *labels)
+    group_agg = group.groupby("location_id").agg({"duration": sum})
+    group_agg["activity_label"] = _freq_assign(group_agg["duration"], *labels)
+    group_merge = pd.merge(group["location_id"], group_agg["activity_label"],
+                           how="left", left_on="location_id", right_index=True)
+    return group_merge["activity_label"]
 
 
-def _freq_transform(duration, *labels):
-    """Transform function that assigns the longest visited data point the labels in order.
+def _freq_assign(duration, *labels):
+    """Assign labels to array with longest duration.
 
     Parameters
     ----------
