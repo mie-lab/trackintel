@@ -1,13 +1,9 @@
 import numpy as np
 import pandas as pd
 
-_RECIPES = {
-    "FREQ": freq_recipe,
-}
-
 
 def location_identifier(sps, pre_filter=True, recipe="FREQ"):
-    """Finde home and work/location for each user with different recipes.
+    """Find home and work/location for each user with different recipes.
 
     Parameters
     ----------
@@ -16,7 +12,7 @@ def location_identifier(sps, pre_filter=True, recipe="FREQ"):
 
     pre_filter : bool, default True
         Prefiltering the staypoints to exclude locations with not enough data.
-        The filter function can also be acessed via `pre_filter`.
+        The filter function can also be accessed via `pre_filter`.
 
     recipe : {'FREQ'}, default "FREQ"
         Choose which recipe to use.
@@ -43,7 +39,7 @@ def location_identifier(sps, pre_filter=True, recipe="FREQ"):
 
     Examples
     --------
-    >>> ti.analysis.location_identification.location_idenifier(sps, pre_filter=True, recipe="FREQ")
+    >>> ti.analysis.location_identifier(sps, pre_filter=True, recipe="FREQ")
     """
     # what do we do here?
     # we take the gdf and assert two things 1. is staypoint 2. has location_id column
@@ -55,12 +51,15 @@ def location_identifier(sps, pre_filter=True, recipe="FREQ"):
     if pre_filter:
         f = pre_filter_locations()
         sps = sps[f]
-
-    return _RECIPES[recipe](sps)
+    if recipe == "FREQ":
+        return freq_recipe(sps, "home", "work")
+    else:
+        raise ValueError(f"Recipe {recipe} does not exist.")
 
 
 def pre_filter_locations(
-        sps, agg_level,
+        sps,
+        agg_level="user",
         thresh_min_sp=10,
         thresh_min_loc=10,
         thresh_sp_at_loc=10,
@@ -96,31 +95,34 @@ def pre_filter_locations(
 
     Returns
     -------
-    GeoDataFrame (as trackintel staypoints)
+    pd.Series
+        Boolean Series containing the filter.
 
     Examples
     --------
-    >> do something
+    >> sps = sps[ti.analysis.pre_filter_locations(sps)]
     """
     assert sps.as_staypoints
     sps = sps.copy()
 
     # filtering users
     user = sps.groupby("user_id").nunique()
-    user_sp = user["id"] >= thresh_min_sp
-    user_loc = user["location_id"] >= thresh_min_loc  # how should we design our values inclusive or exclusive
+    user_sp = user["started_at"] >= thresh_min_sp  # every staypoint should have a started_at -> count
+    user_loc = user["location_id"] >= thresh_min_loc
     user_filter_agg = user_sp & user_loc
     user_filter_agg.rename("user_filter", inplace=True)  # rename for merging
     user_filter = pd.merge(sps["user_id"], user_filter_agg, left_on="user_id", right_index=True)["user_filter"]
 
     # filtering locations
-    sps["timedelta"] = sps["finished_at"] - sps["started_at"]
-    if agg_level == "User":
+    sps["duration"] = sps["finished_at"] - sps["started_at"]
+    if agg_level == "user":
         groupby_loc = ["user_id", "location_id"]
-    else:
+    elif agg_level == "dataset":
         groupby_loc = ["location_id"]
-    loc = sps.groupby(groupby_loc).agg({"started_at": [min, "count"], "finished_at": max, "time_spent": sum})
-    loc.columns = loc.columns.droplevel(0)  # remove multi-index
+    else:
+        raise ValueError(f"Unknown agg_level '{agg_level}' use instead {{'user', 'dataset'}}.")
+    loc = sps.groupby(groupby_loc).agg({"started_at": [min, "count"], "finished_at": max, "duration": sum})
+    loc.columns = loc.columns.droplevel(0)  # remove possible multi-index
     loc.rename(columns={"min": "started_at", "max": "finished_at", "sum": "duration"}, inplace=True)
     loc["period"] = loc["finished_at"] - loc["started_at"]
     loc_sp = loc["count"] >= thresh_sp_at_loc
@@ -131,8 +133,8 @@ def pre_filter_locations(
     loc_time = loc["duration"] >= thresh_loc_time
     loc_period = loc["period"] >= thresh_loc_period
     loc_filter_agg = loc_sp & loc_time & loc_period
-    loc_filter_agg.rename("loc_fiter", inplace=True)  # rename for merging
-    loc_filter = pd.merge(sps[groupby_loc], loc_filter_agg.reset_index(), on=groupby_loc)
+    loc_filter_agg.rename("loc_filter", inplace=True)  # rename for merging
+    loc_filter = pd.merge(sps[groupby_loc], loc_filter_agg.reset_index(), on=groupby_loc, how="left")["loc_filter"]
 
     total_filter = user_filter & loc_filter
 
@@ -175,9 +177,9 @@ def _freq_transform(duration, *labels):
     Returns
     -------
     np.array
-        dtype : `object`
+        dtype : object
     """
-    kth = np.argpartition(-duration, kth=len(labels))[:len(labels)]
+    kth = (-duration).argsort()[:len(labels)]  # if inefficient use partial sort.
     label_array = np.full(len(duration), fill_value=None)
     label_array[kth] = labels
     return label_array
