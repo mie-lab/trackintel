@@ -40,11 +40,11 @@ def example_staypoints():
 def default_kwargs():
     kw = {
         "agg_level": "dataset",
-        "thresh_min_sp": 0,
-        "thresh_min_loc": 0,
+        "thresh_sp": 0,
+        "thresh_loc": 0,
         "thresh_sp_at_loc": 0,
-        "thresh_loc_time": 0,
-        "thresh_loc_period": pd.Timedelta("0h"),
+        "thresh_loc_time": "0h",
+        "thresh_loc_period": "0h",
     }
     return kw
 
@@ -58,13 +58,13 @@ class TestPre_Filter:
 
     def test_thresh_min_sp(self, example_staypoints, default_kwargs):
         """Test the minimum staypoint per user parameter."""
-        default_kwargs["thresh_min_sp"] = 2
+        default_kwargs["thresh_sp"] = 2
         f = pre_filter_locations(example_staypoints, **default_kwargs)
         assert all(f == (example_staypoints["user_id"] == 0))
 
     def test_thresh_min_loc(self, example_staypoints, default_kwargs):
         """Test the minimum location per user parameter."""
-        default_kwargs["thresh_min_loc"] = 2
+        default_kwargs["thresh_loc"] = 2
         f = pre_filter_locations(example_staypoints, **default_kwargs)
         assert all(f == (example_staypoints["user_id"] == 0))
 
@@ -76,13 +76,13 @@ class TestPre_Filter:
 
     def test_tresh_loc_time(self, example_staypoints, default_kwargs):
         """Test the minimum duration per location parameter."""
-        default_kwargs["thresh_loc_time"] = 14
+        default_kwargs["thresh_loc_time"] = "14h"
         f = pre_filter_locations(example_staypoints, **default_kwargs)
         assert all(f == (example_staypoints["location_id"] == 1))
 
     def test_loc_period(self, example_staypoints, default_kwargs):
         """Test the minimum period per location parameter."""
-        default_kwargs["thresh_loc_period"] = pd.Timedelta("2d")
+        default_kwargs["thresh_loc_period"] = "2d"
         f = pre_filter_locations(example_staypoints, **default_kwargs)
         assert all(f == (example_staypoints["location_id"] == 0))
 
