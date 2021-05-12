@@ -1,28 +1,32 @@
 import numpy as np
 import pandas as pd
+import trackintel as ti
 
 
-def location_identifier(sps, pre_filter=True, recipe="FREQ"):
-    """Find home and work/location for each user with different recipes.
+def location_identifier(sps, recipe="FREQ", pre_filter=True, **pre_filter_kwargs):
+    """Assign "home" and "work" activity label for each user with different recipes.
 
     Parameters
     ----------
     sps : Geodataframe (as trackintel staypoints)
         Staypoints with column "location_id".
 
-    pre_filter : bool, default True
-        Prefiltering the staypoints to exclude locations with not enough data.
-        The filter function can also be accessed via `pre_filter`.
-
     recipe : {'FREQ'}, default "FREQ"
         Choose which recipe to use.
-        - FREQ: Select the most visited location
-        - PASS: just for decoration.
+        - FREQ: "Generate a activity label per user by assigning the most visited location the label "home"
+          and the second most visited location the label "work". The remaining locations get no label.
+
+    pre_filter : bool, default True
+        Prefiltering the staypoints to exclude locations with not enough data.
+        The filter function can also be accessed via `pre_filter_locations`.
+
+    pre_filter_kwargs : dict
+        Kwargs to hand to `pre_filter_locations` if used. See function for more informations.
 
     Returns
     -------
     Geodataframe (as trackintel staypoints)
-        With additional column assigning one of three location identies {'home', 'work', None}.
+        With additional column `activity label` assigning one of three activity labels {'home', 'work', None}.
 
     Note
     ----
@@ -41,36 +45,41 @@ def location_identifier(sps, pre_filter=True, recipe="FREQ"):
     --------
     >>> ti.analysis.location_identifier(sps, pre_filter=True, recipe="FREQ")
     """
-    # what do we do here?
-    # we take the gdf and assert two things 1. is staypoint 2. has location_id column
     assert sps.as_staypoints
+    sps.copy()
     if "location_id" not in sps.columns:
         raise KeyError(
             (
-                "To derive location activities the GeoDataFrame (as trackintel staypoints)must have a column "
+                "To derive activity labels the GeoDataFrame (as trackintel staypoints) must have a column "
                 f"named 'location_id' but it has [{', '.join(sps.columns)}]"
             )
         )
-    # then hand it to to the filter function if necessary.
     if pre_filter:
-        f = pre_filter_locations()
-        sps = sps[f]
+        f = pre_filter_locations(sps, **pre_filter_kwargs)
+    else:
+        f = pd.Series([True for _ in sps.index])
+
     if recipe == "FREQ":
-        return freq_recipe(sps, "home", "work")
+        recipe_val = freq_recipe(sps[f], "home", "work")
     else:
         raise ValueError(f"Recipe {recipe} does not exist.")
+
+    sps.loc[f, "activity_label"] = recipe_val["activity_label"]
+    return sps
 
 
 def pre_filter_locations(
     sps,
     agg_level="user",
-    thresh_min_sp=10,
-    thresh_min_loc=10,
+    thresh_sp=10,
+    thresh_loc=10,
     thresh_sp_at_loc=10,
-    thresh_loc_time=1,
-    thresh_loc_period=pd.Timedelta("5h"),
+    thresh_loc_time="1h",
+    thresh_loc_period="5h",
 ):
     """Filter locations and user out that have not enough data to do a proper analysis.
+
+    To disable a specific filter parameter set it to zero.
 
     Parameters
     ----------
@@ -82,25 +91,27 @@ def pre_filter_locations(
         - 'user' : locations are filtered per-user.
         - 'dataset' : locations are filtered over the whole dataset.
 
-    thresh_min_sp : int, default 10
+    thresh_sp : int, default 10
         Minimum staypoints a user must have to be included.
 
-    thresh_min_loc : int, default 10
+    thresh_loc : int, default 10
         Minimum locations a user must have to be included.
 
     thresh_sp_at_loc : int, default 10
         Minimum number of staypoints at a location must have to be included.
 
-    thresh_loc_time : int, default 1
-        Minimum timespan in hour that a user must spend at location for the location.
+    thresh_loc_time : str or pd.Timedelta, default "1h"
+        Minimum sum of durations that was spent at location to be included.
+        If str must be parsable by pd.to_timedelta.
 
-    thresh_loc_period : pd.Timedelta (or parseable from `pd.to_timedelta`), default 5h
-        Minimum timespan of first to last visit of a user at a location.
+    thresh_loc_period : str or pd.Timedelta, default "5h"
+        Minimum timespan of first to last visit at a location to be included.
+        If str must be parsable by pd.to_timedelta.
 
     Returns
     -------
     pd.Series
-        Boolean Series containing the filter.
+        Boolean series containing the filter as a mask.
 
     Examples
     --------
@@ -108,11 +119,15 @@ def pre_filter_locations(
     """
     assert sps.as_staypoints
     sps = sps.copy()
+    if isinstance(thresh_loc_time, str):
+        thresh_loc_time = pd.to_timedelta(thresh_loc_time)
+    if isinstance(thresh_loc_period, str):
+        thresh_loc_period = pd.to_timedelta(thresh_loc_period)
 
     # filtering users
     user = sps.groupby("user_id").nunique()
-    user_sp = user["started_at"] >= thresh_min_sp  # every staypoint should have a started_at -> count
-    user_loc = user["location_id"] >= thresh_min_loc
+    user_sp = user["started_at"] >= thresh_sp  # every staypoint should have a started_at -> count
+    user_loc = user["location_id"] >= thresh_loc
     user_filter_agg = user_sp & user_loc
     user_filter_agg.rename("user_filter", inplace=True)  # rename for merging
     user_filter = pd.merge(sps["user_id"], user_filter_agg, left_on="user_id", right_index=True)["user_filter"]
@@ -128,12 +143,10 @@ def pre_filter_locations(
     loc = sps.groupby(groupby_loc).agg({"started_at": [min, "count"], "finished_at": max, "duration": sum})
     loc.columns = loc.columns.droplevel(0)  # remove possible multi-index
     loc.rename(columns={"min": "started_at", "max": "finished_at", "sum": "duration"}, inplace=True)
+    # period for maximal time span first visit - last visit.
+    # duration for effective time spent at location summed up.
     loc["period"] = loc["finished_at"] - loc["started_at"]
     loc_sp = loc["count"] >= thresh_sp_at_loc
-    # how should we handle the timedeltas as input to our function
-    # are both integers or do we accept other values?
-    if isinstance(thresh_loc_time, int):
-        thresh_loc_time = pd.to_timedelta(thresh_loc_time, unit="h")
     loc_time = loc["duration"] >= thresh_loc_time
     loc_period = loc["period"] >= thresh_loc_period
     loc_filter_agg = loc_sp & loc_time & loc_period
@@ -146,8 +159,9 @@ def pre_filter_locations(
 
 
 def freq_recipe(sps, *labels):
-    """Generate a location activity per user by assigning the most visited location the label "home"
-    and the second most visited location the label "work". The remaining locations get no label.
+    """Generate an activity label per user by assigning the most visited location the label "home"
+    and the second most visited location the label "work" or assign your own labels. The remaining
+    locations get no label.
 
     Parameters
     ----------
@@ -163,7 +177,7 @@ def freq_recipe(sps, *labels):
 
     Examples
     --------
-    >> staypoints["activity"] = ti.analysis.freq_recipe(staypoints, "home", "work")
+    >> staypoints = ti.analysis.freq_recipe(staypoints, "home", "work")
     """
     sps = sps.copy()
     if not labels:
@@ -171,7 +185,7 @@ def freq_recipe(sps, *labels):
     for name, group in sps.groupby("user_id"):
         if "duration" not in group.columns:
             group["duration"] = group["finished_at"] - group["started_at"]
-        # pandas keeps inner order or groups
+        # pandas keeps inner order of groups
         sps.loc[sps["user_id"] == name, "activity_label"] = _freq_transform(group, *labels)
     return sps
 
@@ -181,7 +195,8 @@ def _freq_transform(group, *labels):
 
     Parameters
     ----------
-    group : DataFrame
+    group : pd.DataFrame
+        Should have columns "location_id" and "duration".
 
     Returns
     -------
@@ -197,7 +212,7 @@ def _freq_transform(group, *labels):
 
 
 def _freq_assign(duration, *labels):
-    """Assign labels to array with longest duration.
+    """Assign k labels to k longest durations the rest is `None`.
 
     Parameters
     ----------
