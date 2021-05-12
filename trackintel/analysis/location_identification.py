@@ -46,7 +46,7 @@ def location_identifier(sps, recipe="FREQ", pre_filter=True, **pre_filter_kwargs
     >>> ti.analysis.location_identifier(sps, pre_filter=True, recipe="FREQ")
     """
     assert sps.as_staypoints
-    sps.copy()
+    sps = sps.copy()
     if "location_id" not in sps.columns:
         raise KeyError(
             (
@@ -57,7 +57,7 @@ def location_identifier(sps, recipe="FREQ", pre_filter=True, **pre_filter_kwargs
     if pre_filter:
         f = pre_filter_locations(sps, **pre_filter_kwargs)
     else:
-        f = pd.Series([True for _ in sps.index])
+        f = pd.Series(np.full(len(sps.index), True))
 
     if recipe == "FREQ":
         recipe_val = freq_recipe(sps[f], "home", "work")
@@ -115,7 +115,8 @@ def pre_filter_locations(
 
     Examples
     --------
-    >> sps = sps[ti.analysis.pre_filter_locations(sps)]
+    >> mask = ti.analysis.pre_filter_locations(sps)
+    >> sps = sps[mask]
     """
     assert sps.as_staypoints
     sps = sps.copy()
