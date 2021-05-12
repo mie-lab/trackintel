@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import trackintel as ti
 
 
 def location_identifier(sps, recipe="FREQ", pre_filter=True, **pre_filter_kwargs):
@@ -45,6 +46,7 @@ def location_identifier(sps, recipe="FREQ", pre_filter=True, **pre_filter_kwargs
     >>> ti.analysis.location_identifier(sps, pre_filter=True, recipe="FREQ")
     """
     assert sps.as_staypoints
+    sps.copy()
     if "location_id" not in sps.columns:
         raise KeyError(
             (
@@ -53,12 +55,17 @@ def location_identifier(sps, recipe="FREQ", pre_filter=True, **pre_filter_kwargs
             )
         )
     if pre_filter:
-        f = pre_filter_locations(**pre_filter_kwargs)
-        sps = sps[f]
+        f = pre_filter_locations(sps, **pre_filter_kwargs)
+    else:
+        f = pd.Series([True for _ in sps.index])
+
     if recipe == "FREQ":
-        return freq_recipe(sps, "home", "work")
+        recipe_val = freq_recipe(sps[f], "home", "work")
     else:
         raise ValueError(f"Recipe {recipe} does not exist.")
+
+    sps.loc[f, "activity_label"] = recipe_val["activity_label"]
+    return sps
 
 
 def pre_filter_locations(
@@ -152,7 +159,7 @@ def pre_filter_locations(
 
 
 def freq_recipe(sps, *labels):
-    """Generate a activity label per user by assigning the most visited location the label "home"
+    """Generate an activity label per user by assigning the most visited location the label "home"
     and the second most visited location the label "work" or assign your own labels. The remaining
     locations get no label.
 
@@ -170,7 +177,7 @@ def freq_recipe(sps, *labels):
 
     Examples
     --------
-    >> staypoints["activity"] = ti.analysis.freq_recipe(staypoints, "home", "work")
+    >> staypoints = ti.analysis.freq_recipe(staypoints, "home", "work")
     """
     sps = sps.copy()
     if not labels:
