@@ -20,3 +20,12 @@ Modal Split
 ===========
 
 .. autofunction:: trackintel.analysis.modal_split.calculate_modal_split
+
+Location Identification
+=======================
+
+.. autofunction:: trackintel.analysis.location_identification.location_identifier
+
+.. autofunction:: trackintel.analysis.location_identification.pre_filter_locations
+
+.. autofunction:: trackintel.analysis.location_identification.freq_recipe
