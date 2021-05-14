@@ -13,6 +13,7 @@ def location_identifier(sps, recipe="FREQ", pre_filter=True, **pre_filter_kwargs
 
     recipe : {'FREQ'}, default "FREQ"
         Choose which recipe to use.
+
         - FREQ: "Generate a activity label per user by assigning the most visited location the label "home"
           and the second most visited location the label "work". The remaining locations get no label.
 
