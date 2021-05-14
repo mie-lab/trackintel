@@ -178,6 +178,7 @@ class Test_Freq_Transform:
     """Test help function _freq_transform."""
 
     def test_function(self):
+        """Test if groupby assign works."""
         list_dict = [
             {"location_id": 0, "duration": 1},
             {"location_id": 0, "duration": 1},
@@ -216,6 +217,7 @@ class TestLocation_Identifier:
             location_identifier(example_staypoints)
 
     def test_pre_filter(self, example_freq, default_kwargs):
+        """Test if function calls pre_filter correctly."""
         default_kwargs["agg_level"] = "user"
         default_kwargs["thresh_sp_at_loc"] = 2
         li = location_identifier(example_freq, recipe="FREQ", pre_filter=True, **default_kwargs)
@@ -224,6 +226,7 @@ class TestLocation_Identifier:
         assert_geodataframe_equal(li, example_freq)
 
     def test_freq_recipe(self, example_freq):
+        """Test if function calls freq recipe correctly."""
         li = location_identifier(example_freq, recipe="FREQ", pre_filter=False)
         fr = freq_recipe(example_freq)
         assert_geodataframe_equal(li, fr)
