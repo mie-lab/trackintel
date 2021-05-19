@@ -42,7 +42,9 @@ class TestGenerate_trips:
 
         # generate trips and a joint staypoint/triplegs dataframe
         stps_run_1, tpls_run_1, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
-        stps_run_2, tpls_run_2, trips = ti.preprocessing.triplegs.generate_trips(stps_run_1, tpls_run_1, gap_threshold=15)
+        stps_run_2, tpls_run_2, trips = ti.preprocessing.triplegs.generate_trips(
+            stps_run_1, tpls_run_1, gap_threshold=15
+        )
 
         assert set(tpls_run_1.columns) == set(tpls_run_2.columns)
         assert set(stps_run_1.columns) == set(stps_run_2.columns)
