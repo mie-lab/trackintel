@@ -91,6 +91,15 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, print_progress=Fals
     tpls = tpls_input.copy()
     stps = stps_input.copy()
 
+    # if the triplegs already have a column "trip_id", we drop it
+    if "trip_id" in tpls:
+        tpls.drop(columns="trip_id", inplace=True)
+
+    # if the staypoints already have any of the columns  "trip_id", "prev_trip_id", "next_trip_id", we drop them
+    for col in ["trip_id", "prev_trip_id", "next_trip_id"]:
+        if col in stps:
+            stps.drop(columns=col, inplace=True)
+
     tpls["type"] = "tripleg"
     stps["type"] = "staypoint"
 

@@ -30,10 +30,10 @@ class TestGenerate_staypoints:
         # not cause any problems in the second run
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
         pfs_run_1, stps = pfs.as_positionfixes.generate_staypoints(
-            method="sliding", dist_threshold=0, time_threshold=0, include_last=True
+            method="sliding", dist_threshold=100, time_threshold=5.0, include_last=True
         )
         pfs_run_2, stps = pfs_run_1.as_positionfixes.generate_staypoints(
-            method="sliding", dist_threshold=0, time_threshold=0, include_last=True
+            method="sliding", dist_threshold=100, time_threshold=5.0, include_last=True
         )
         assert set(pfs_run_1.columns) == set(pfs_run_2.columns)
 
