@@ -85,6 +85,10 @@ def generate_staypoints(
     # copy the original pfs for adding 'staypoint_id' column
     pfs = pfs_input.copy()
 
+    # if the positionfixes already have a column "staypoint_id", we drop it
+    if "staypoint_id" in pfs:
+        pfs.drop(columns="staypoint_id", inplace=True)
+
     elevation_flag = "elevation" in pfs.columns  # if there is elevation data
 
     geo_col = pfs.geometry.name
@@ -213,6 +217,10 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
     """
     # copy the original pfs for adding 'staypoint_id' column
     pfs = pfs_input.copy()
+
+    # if the positionfixes already have a column "tripleg_id", we drop it
+    if "tripleg_id" in pfs:
+        pfs.drop(columns="tripleg_id", inplace=True)
 
     if method == "between_staypoints":
 

@@ -23,6 +23,20 @@ def geolife_pfs_stps_long():
 class TestGenerate_staypoints:
     """Tests for generate_staypoints() method."""
 
+    def test_duplicate_columns(self):
+        """Test if running the function twice, the generated column does not yield exception in join statement"""
+
+        # we run generate_staypoints twice in order to check that the extra column(tripleg_id) does
+        # not cause any problems in the second run
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
+        pfs_run_1, _ = pfs.as_positionfixes.generate_staypoints(
+            method="sliding", dist_threshold=100, time_threshold=5.0, include_last=True
+        )
+        pfs_run_2, _ = pfs_run_1.as_positionfixes.generate_staypoints(
+            method="sliding", dist_threshold=100, time_threshold=5.0, include_last=True
+        )
+        assert set(pfs_run_1.columns) == set(pfs_run_2.columns)
+
     def test_sliding_min(self):
         """Test if using small thresholds, stp extraction yields each pfs."""
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
@@ -122,6 +136,17 @@ class TestGenerate_staypoints:
 
 class TestGenerate_triplegs:
     """Tests for generate_triplegs() method."""
+
+    def test_duplicate_columns(self, geolife_pfs_stps_long):
+        """Test if running the function twice, the generated column does not yield exception in join statement"""
+
+        # we run generate_triplegs twice in order to check that the extra column (tripleg_id) does
+        # not cause any problems in the second run
+        pfs, stps = geolife_pfs_stps_long
+
+        pfs_run_1, _ = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+        pfs_run_2, _ = pfs_run_1.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+        assert set(pfs_run_1.columns) == set(pfs_run_2.columns)
 
     def test_user_without_stps(self, geolife_pfs_stps_long):
         """Check if it is safe to have users that have pfs but no stps."""

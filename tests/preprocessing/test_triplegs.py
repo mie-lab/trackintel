@@ -29,6 +29,24 @@ class TestSmoothen_triplegs:
 class TestGenerate_trips:
     """Tests for generate_trips() method."""
 
+    def test_duplicate_columns(self):
+        """Test if running the function twice, the generated column does not yield exception in join statement"""
+        # load pregenerated trips
+        trips_loaded = ti.read_trips_csv(os.path.join("tests", "data", "geolife_long", "trips.csv"), index_col="id")
+
+        # create trips from geolife (based on positionfixes)
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
+
+        # generate trips and a joint staypoint/triplegs dataframe
+        stps_run_1, tpls_run_1, _ = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
+        stps_run_2, tpls_run_2, _ = ti.preprocessing.triplegs.generate_trips(stps_run_1, tpls_run_1, gap_threshold=15)
+
+        assert set(tpls_run_1.columns) == set(tpls_run_2.columns)
+        assert set(stps_run_1.columns) == set(stps_run_2.columns)
+
     def test_generate_trips(self):
         """Test if we can generate the example trips based on example data."""
         # load pregenerated trips
