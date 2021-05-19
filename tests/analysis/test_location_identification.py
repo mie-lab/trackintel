@@ -329,6 +329,7 @@ class TestOsna_Method:
 
 class Test_Osna_Label_Funct:
     """Test function `_osna_label_funct`"""
+
     def test_weekend(self):
         """Test if weekend only depends on day and not time."""
         t1 = pd.Timestamp("2021-05-22 01:00:00")
