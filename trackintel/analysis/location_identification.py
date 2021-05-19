@@ -14,8 +14,10 @@ def location_identifier(spts, method="FREQ", pre_filter=True, **pre_filter_kwarg
     method : {'FREQ'}, default "FREQ"
         Choose which method to use.
 
-        - FREQ: "Generate a activity label per user by assigning the most visited location the label "home"
+        - FREQ: Generate an activity label per user by assigning the most visited location the label "home"
           and the second most visited location the label "work". The remaining locations get no label.
+        - OSNA: Use weekdays data divided in three time frames ["rest", "work", "leisure"]. Finds most popular
+        home location for timeframes "rest" and "leisure" and most popular "work" location for "work" timeframe.
 
     pre_filter : bool, default True
         Prefiltering the staypoints to exclude locations with not enough data.
@@ -62,6 +64,8 @@ def location_identifier(spts, method="FREQ", pre_filter=True, **pre_filter_kwarg
 
     if method == "FREQ":
         method_val = freq_method(spts[f], "home", "work")
+    elif method == "OSNA":
+        method_val = osna_method(spts[f])
     else:
         raise ValueError(f"Method {method} does not exist.")
 
@@ -229,3 +233,80 @@ def _freq_assign(duration, *labels):
     label_array = np.full(len(duration), fill_value=None)
     label_array[kth] = labels
     return label_array
+
+
+def osna_recipe(spts):
+    """Use weekdays data divided in three time frames ["rest", "work", "leisure"]. Finds most popular
+    home location for timeframes "rest" and "leisure" and most popular "work" location for "work" timeframe.
+
+    "rest" + "leisure" durations are weighted together. Location with longest duration is assigned "home" label.
+    "work" locations with longest duration is assigned "work" label.
+    The "weekend" label isn't used for any label.
+
+    Parameters
+    ----------
+    spts : GeoDataFrame (as trackintel staypoints)
+        Staypoints with the column "location_id"
+
+    Returns
+    -------
+    GeoDataFrame
+        with additional column "activity_label"
+
+    Note
+    ----
+    The recipe is adapted from [1].
+    When "home" and "work" label overlap, the method selects the next location by 2nd highest score.
+    The original algorithm count the distinct hours at a location as the home location is derived from
+    geo-tagged tweets. We directly sum the time spent at a location as our data model includes that.
+
+    References
+    ----------
+    [1] Efstathiades, Hariton, Demetris Antoniades, George Pallis, and Marios Dikaiakos. 2015.
+    ‘Identification of Key Locations Based on Online Social Network Activity’.
+    In https://doi.org/10.1145/2808797.2808877.
+
+    Examples
+    --------
+    >>> staypoints = ti.analysis.osna_recipe(staypoints, "home", "work")
+
+    """
+    spts_in = spts  # not sure how to handle changing columns
+    spts = spts.copy()
+    spts["duration"] = spts["finished_at"] - spts["started_at"]
+    spts["mean_time"] = spts["started_at"] + spts["duration"] / 2
+
+    def _label_funct(dt, weekend=[5, 6], start_rest=2, start_work=8, start_leisure=19):
+        """Help function to assign "weekend", "rest", "work", "leisure"."""
+        if dt.weekday() in weekend:
+            return "weekend"
+        if start_rest <= dt.hour < start_work:
+            return "rest"
+        if start_work <= dt.hour < start_leisure:
+            return "work"
+        return "leisure"
+
+    spts["label"] = spts["mean_time"].apply(_label_funct)
+    spts.loc[spts["label"] == "rest", "duration"] *= 0.739  # weight given in paper
+    spts.loc[spts["label"] == "leisure", "duration"] *= 0.358  # weight given in paper
+
+    groups_map = {
+        "rest": "home",
+        "leisure": "home",
+        "work": "work",
+    }  # weekends aren't included in analysis
+    groups = ["user_id", "location_id", spts["label"].map(groups_map)]
+    spts_pivot = spts.groupby(groups)["duration"].sum().unstack()  # pivot table with "label" in columns
+    spts_idxmax = spts.groupby(["user_id"]).idxmax()
+    spts_pivot.loc[spts_idxmax["home"], "activity_label"] = "home"
+    # The "home" label could overlap with the "work" label
+    # we set the rows where that happens to zero and recalculate work maxima.
+    redo_work = spts_idxmax[spts_idxmax["home"] == spts_idxmax["work"]]
+    spts_pivot.loc[redo_work["work"], "work"] = pd.NaT
+    spts_idxmax = spts.groupby(["user_id"])["work"].idxmax()
+    spts_pivot.loc[spts_idxmax, "activity_label"] = "work"
+
+    # now join it back together
+    return pd.merge(
+        spts_in, spts_pivot["activity_label"], how="left", left_on=["user_id", "location_id"], right_index=True
+    )
