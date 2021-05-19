@@ -70,7 +70,7 @@ Preprocessing
 
 Augment tracking data:
 * :heavy_check_mark: Simple transport mode prediction. This functionality is based on properties of the movement data only.
-* Simple activity inference. This functionality is based on properties of the movement data only and should include {Home, Work, Other}.
+* :heavy_check_mark: Simple activity inference. This functionality is based on properties of the movement data only and should include {Home, Work, Other}.
 
 Analysis:
 * :heavy_check_mark: Create transition graphs from *locations*.
