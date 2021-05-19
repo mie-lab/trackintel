@@ -37,7 +37,7 @@ def location_identifier(spts, method="FREQ", pre_filter=True, **pre_filter_kwarg
 
     References
     ----------
-    Chen, Qingqing, and Ate Poorthuis. 2021.
+    [1] Chen, Qingqing, and Ate Poorthuis. 2021.
     ‘Identifying Home Locations in Human Mobility Data: An Open-Source R Package for Comparison and Reproducibility’.
     International Journal of Geographical Information Science 0 (0): 1–24.
     https://doi.org/10.1080/13658816.2021.1887489.
