@@ -235,7 +235,7 @@ def _freq_assign(duration, *labels):
     return label_array
 
 
-def osna_recipe(spts):
+def osna_method(spts):
     """Use weekdays data divided in three time frames ["rest", "work", "leisure"]. Finds most popular
     home location for timeframes "rest" and "leisure" and most popular "work" location for "work" timeframe.
 
@@ -255,7 +255,7 @@ def osna_recipe(spts):
 
     Note
     ----
-    The recipe is adapted from [1].
+    The method is adapted from [1].
     When "home" and "work" label overlap, the method selects the next location by 2nd highest score.
     The original algorithm count the distinct hours at a location as the home location is derived from
     geo-tagged tweets. We directly sum the time spent at a location as our data model includes that.
@@ -268,7 +268,7 @@ def osna_recipe(spts):
 
     Examples
     --------
-    >>> staypoints = ti.analysis.osna_recipe(staypoints, "home", "work")
+    >>> staypoints = ti.analysis.osna_method(staypoints, "home", "work")
 
     """
     spts_in = spts  # not sure how to handle changing columns
