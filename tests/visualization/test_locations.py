@@ -29,7 +29,7 @@ class TestPlot_locations:
     def test_locations_plot(self, test_data):
         """Use trackintel visualization function to plot locations and check if the file exists."""
         pfs, stps, locs = test_data
-        tmp_file = os.path.join("tests", "data", "locations_plot.png")
+        tmp_file = os.path.join("tests", "data", "locations_plot1.png")
         locs.as_locations.plot(
             out_filename=tmp_file, radius=200, positionfixes=pfs, staypoints=stps, staypoints_radius=100, plot_osm=False
         )
@@ -39,7 +39,7 @@ class TestPlot_locations:
     def test_axis(self, test_data):
         """Test the use of regular_figure() to create axis."""
         pfs, _, locs = test_data
-        tmp_file = os.path.join("tests", "data", "locations_plot.png")
+        tmp_file = os.path.join("tests", "data", "locations_plot2.png")
         _, ax = regular_figure()
 
         locs.as_locations.plot(
@@ -54,8 +54,8 @@ class TestPlot_locations:
 
     def test_parameter(self, test_data):
         """Test other parameter configurations."""
-        pfs, _, locs = test_data
-        tmp_file = os.path.join("tests", "data", "locations_plot.png")
+        _, _, locs = test_data
+        tmp_file = os.path.join("tests", "data", "locations_plot3.png")
 
         # plot only location
         locs.as_locations.plot(out_filename=tmp_file, plot_osm=True)
