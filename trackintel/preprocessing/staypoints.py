@@ -94,7 +94,6 @@ def generate_locations(
             labels = db.fit_predict(p)
 
             ret_stps["location_id"] = labels
-            ret_stps.geometry = ret_stps.geom
 
         ### create locations as grouped staypoints
         temp_sp = ret_stps[["user_id", "location_id", ret_stps.geometry.name]]
@@ -174,7 +173,7 @@ def _generate_locations_per_user(df, location_id_counter, distance_metric, db, g
         # the input is converted to list of (lat, lon) tuples in radians unit
         p = np.array([[radians(q.y), radians(q.x)] for q in (user_staypoints[geo_col])])
     else:
-        p = np.array([[radians(q.x), radians(q.y)] for q in (user_staypoints[geo_col])])
+        p = np.array([[q.x, q.y] for q in (user_staypoints[geo_col])])
     labels = db.fit_predict(p)
 
     # enforce unique lables across all users without changing noise labels
