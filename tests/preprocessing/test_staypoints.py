@@ -49,6 +49,22 @@ class TestGenerate_locations:
 
         assert len(set(locs.index)) == len(set(labels)), "The number of locations should be the same"
 
+    def test_generate_locations_dbscan_euclidean(self):
+        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
+
+        # haversine calculation using sklearn.metrics.pairwise_distances
+        stps, locs = stps.as_staypoints.generate_locations(
+            method="dbscan", epsilon=10, num_samples=0, distance_metric="euclidean", agg_level="dataset"
+        )
+
+        # calculate pairwise haversine matrix and fed to dbscan
+        sp_distance_matrix = calculate_distance_matrix(stps, dist_metric="euclidean")
+        db = DBSCAN(eps=10, min_samples=0, metric="precomputed")
+        labels = db.fit_predict(sp_distance_matrix)
+
+        assert len(set(locs.index)) == len(set(labels)), "The number of locations should be the same"
+
     def test_generate_locations_dbscan_loc(self):
         stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")

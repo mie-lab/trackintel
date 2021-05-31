@@ -62,8 +62,6 @@ def generate_locations(
     ret_stps = staypoints.copy()
     geo_col = ret_stps.geometry.name
 
-    # ret_stps.geo_col = ret_stps.geometry
-
     if method == "dbscan":
 
         if distance_metric == "haversine":
