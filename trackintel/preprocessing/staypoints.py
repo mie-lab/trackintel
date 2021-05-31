@@ -77,12 +77,8 @@ def generate_locations(
 
         if agg_level == "user":
             location_id_counter = 0
-            # TODO: change into groupby
-            # for user_id_this in ret_stps["user_id"].unique():
-            # Slice staypoints array by user. This is not a copy!
-            # user_staypoints = ret_stps[ret_stps["user_id"] == user_id_this]
             ret_stps = ret_stps.groupby("user_id", as_index=False).apply(
-                helper,
+                _generate_locations_per_user,
                 location_id_counter=location_id_counter,
                 geo_col=geo_col,
                 distance_metric=distance_metric,
@@ -167,8 +163,8 @@ def generate_locations(
 
     return ret_stps, ret_loc
 
-import time
-def helper(df, location_id_counter, distance_metric, db, geo_col):
+
+def _generate_locations_per_user(df, location_id_counter, distance_metric, db, geo_col):
     user_staypoints = df
 
     # ensuring unique labels: we assume that every pandas group must have a unique index for the first element of the group
@@ -181,11 +177,8 @@ def helper(df, location_id_counter, distance_metric, db, geo_col):
         p = np.array([[radians(q.x), radians(q.y)] for q in (user_staypoints[geo_col])])
     labels = db.fit_predict(p)
 
-    # # enforce unique lables across all users without changing noise labels
-    # max_label = np.max(labels)
+    # enforce unique lables across all users without changing noise labels
     labels[labels != -1] = labels[labels != -1] + location_id_counter
-    # if max_label > -1:
-    #     location_id_counter = location_id_counter + max_label + 1
 
     # add staypoint - location matching to original staypoints
     user_staypoints.loc[user_staypoints.index, "location_id"] = labels
