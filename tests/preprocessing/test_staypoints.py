@@ -39,37 +39,11 @@ class TestGenerate_locations:
 
         # haversine calculation using sklearn.metrics.pairwise_distances
         stps, locs = stps.as_staypoints.generate_locations(
-            method="dbscan",
-            epsilon=10,
-            num_samples=0,
-            distance_metric="haversine",
-            agg_level="dataset",
-            print_progress=True,
+            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
         )
 
         # calculate pairwise haversine matrix and fed to dbscan
         sp_distance_matrix = calculate_distance_matrix(stps, dist_metric="haversine")
-        db = DBSCAN(eps=10, min_samples=0, metric="precomputed")
-        labels = db.fit_predict(sp_distance_matrix)
-
-        assert len(set(locs.index)) == len(set(labels)), "The number of locations should be the same"
-
-    def test_generate_locations_dbscan_euclidean(self):
-        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
-
-        # euclidean calculation using sklearn.metrics.pairwise_distances
-        stps, locs = stps.as_staypoints.generate_locations(
-            method="dbscan",
-            epsilon=10,
-            num_samples=0,
-            distance_metric="euclidean",
-            agg_level="dataset",
-            print_progress=True,
-        )
-
-        # calculate euclidean haversine matrix and fed to dbscan
-        sp_distance_matrix = calculate_distance_matrix(stps, dist_metric="euclidean")
         db = DBSCAN(eps=10, min_samples=0, metric="precomputed")
         labels = db.fit_predict(sp_distance_matrix)
 
@@ -193,6 +167,31 @@ class TestGenerate_locations:
         )
         _, locs_us = stps.as_staypoints.generate_locations(
             method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="user"
+        )
+
+        assert (locs_ds.index == np.arange(len(locs_ds))).any()
+        assert (locs_us.index == np.arange(len(locs_us))).any()
+
+    def test_generate_locations_index_start_euclidean_print_progress(self):
+        """Test the generated index start from 0 for different methods."""
+        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
+
+        _, locs_ds = stps.as_staypoints.generate_locations(
+            method="dbscan",
+            epsilon=10,
+            num_samples=0,
+            distance_metric="euclidean",
+            agg_level="dataset",
+            print_progress=False,
+        )
+        _, locs_us = stps.as_staypoints.generate_locations(
+            method="dbscan",
+            epsilon=10,
+            num_samples=0,
+            distance_metric="euclidean",
+            agg_level="user",
+            print_progress=True,
         )
 
         assert (locs_ds.index == np.arange(len(locs_ds))).any()
