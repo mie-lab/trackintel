@@ -39,7 +39,12 @@ class TestGenerate_locations:
 
         # haversine calculation using sklearn.metrics.pairwise_distances
         stps, locs = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
+            method="dbscan",
+            epsilon=10,
+            num_samples=0,
+            distance_metric="haversine",
+            agg_level="dataset",
+            print_progress=True,
         )
 
         # calculate pairwise haversine matrix and fed to dbscan
@@ -53,7 +58,7 @@ class TestGenerate_locations:
         stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
 
-        # haversine calculation using sklearn.metrics.pairwise_distances
+        # euclidean calculation using sklearn.metrics.pairwise_distances
         stps, locs = stps.as_staypoints.generate_locations(
             method="dbscan",
             epsilon=10,
@@ -63,7 +68,7 @@ class TestGenerate_locations:
             print_progress=True,
         )
 
-        # calculate pairwise haversine matrix and fed to dbscan
+        # calculate euclidean haversine matrix and fed to dbscan
         sp_distance_matrix = calculate_distance_matrix(stps, dist_metric="euclidean")
         db = DBSCAN(eps=10, min_samples=0, metric="precomputed")
         labels = db.fit_predict(sp_distance_matrix)
