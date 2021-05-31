@@ -4,12 +4,19 @@ import numpy as np
 import geopandas as gpd
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
+from tqdm import tqdm
 
 from trackintel.geogr.distances import meters_to_decimal_degrees
 
 
 def generate_locations(
-    staypoints, method="dbscan", epsilon=100, num_samples=1, distance_metric="haversine", agg_level="user"
+    staypoints,
+    method="dbscan",
+    epsilon=100,
+    num_samples=1,
+    distance_metric="haversine",
+    agg_level="user",
+    print_progress=False,
 ):
     """
     Generate locations from the staypoints.
@@ -37,9 +44,11 @@ def generate_locations(
 
     agg_level: {'user','dataset'}
         The level of aggregation when generating locations:
-
         - 'user'      : locations are generated independently per-user.
         - 'dataset'   : shared locations are generated for all users.
+
+    print_progress : bool, default False
+        If print_progress is True, the progress bar is displayed
 
     Returns
     -------
@@ -73,15 +82,25 @@ def generate_locations(
         else:
             db = DBSCAN(eps=epsilon, min_samples=num_samples, algorithm="ball_tree", metric=distance_metric)
 
+        location_id_counter = 0
         if agg_level == "user":
-            location_id_counter = 0
-            ret_stps = ret_stps.groupby("user_id", as_index=False).apply(
-                _generate_locations_per_user,
-                location_id_counter=location_id_counter,
-                geo_col=geo_col,
-                distance_metric=distance_metric,
-                db=db,
-            )
+            if print_progress:
+                tqdm.pandas(desc="User location generation")
+                ret_stps = ret_stps.groupby("user_id", as_index=False).progress_apply(
+                    _generate_locations_per_user,
+                    location_id_counter=location_id_counter,
+                    geo_col=geo_col,
+                    distance_metric=distance_metric,
+                    db=db,
+                )
+            else:
+                ret_stps = ret_stps.groupby("user_id", as_index=False).apply(
+                    _generate_locations_per_user,
+                    location_id_counter=location_id_counter,
+                    geo_col=geo_col,
+                    distance_metric=distance_metric,
+                    db=db,
+                )
 
         else:
             if distance_metric == "haversine":
@@ -162,6 +181,8 @@ def generate_locations(
 
 
 def _generate_locations_per_user(df, location_id_counter, distance_metric, db, geo_col):
+    """function called after groupby: should only contain records of one user; see generate_locations() function for parameter meaning."""
+
     user_staypoints = df
 
     # ensuring unique labels: we assume that every pandas group must have a unique index for the first element of the group

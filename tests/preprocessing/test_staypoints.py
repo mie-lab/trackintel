@@ -55,7 +55,12 @@ class TestGenerate_locations:
 
         # haversine calculation using sklearn.metrics.pairwise_distances
         stps, locs = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_metric="euclidean", agg_level="dataset"
+            method="dbscan",
+            epsilon=10,
+            num_samples=0,
+            distance_metric="euclidean",
+            agg_level="dataset",
+            print_progress=True,
         )
 
         # calculate pairwise haversine matrix and fed to dbscan
