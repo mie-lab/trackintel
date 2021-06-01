@@ -69,6 +69,7 @@ def generate_locations(
 
     # initialize the return GeoDataFrames
     ret_stps = staypoints.copy()
+    ret_stps = ret_stps.sort_values("started_at")
     geo_col = ret_stps.geometry.name
 
     if method == "dbscan":
@@ -183,8 +184,8 @@ def generate_locations(
 def _generate_locations_per_user(user_staypoints, location_id_counter, distance_metric, db, geo_col):
     """function called after groupby: should only contain records of one user; see generate_locations() function for parameter meaning."""
 
-    # ensuring unique labels: we assume that every pandas group must have a unique index for the first element of the group
-    location_id_counter += user_staypoints.index[0]
+    # ensuring unique labels for each user
+    location_id_counter += user_staypoints["user_id"].unique()[0] * len(user_staypoints)
 
     if distance_metric == "haversine":
         # the input is converted to list of (lat, lon) tuples in radians unit
