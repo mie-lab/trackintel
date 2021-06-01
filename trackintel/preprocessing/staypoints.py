@@ -180,10 +180,8 @@ def generate_locations(
     return ret_stps, ret_loc
 
 
-def _generate_locations_per_user(df, location_id_counter, distance_metric, db, geo_col):
+def _generate_locations_per_user(user_staypoints, location_id_counter, distance_metric, db, geo_col):
     """function called after groupby: should only contain records of one user; see generate_locations() function for parameter meaning."""
-
-    user_staypoints = df
 
     # ensuring unique labels: we assume that every pandas group must have a unique index for the first element of the group
     location_id_counter += user_staypoints.index[0]
@@ -199,7 +197,7 @@ def _generate_locations_per_user(df, location_id_counter, distance_metric, db, g
     labels[labels != -1] = labels[labels != -1] + location_id_counter
 
     # add staypoint - location matching to original staypoints
-    user_staypoints.loc[user_staypoints.index, "location_id"] = labels
+    user_staypoints["location_id"] = labels
     user_staypoints = gpd.GeoDataFrame(user_staypoints, geometry=geo_col)
 
     return user_staypoints
