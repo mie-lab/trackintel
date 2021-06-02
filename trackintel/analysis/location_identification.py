@@ -276,7 +276,7 @@ def osna_method(spts):
     spts["duration"] = spts["finished_at"] - spts["started_at"]
     spts["mean_time"] = spts["started_at"] + spts["duration"] / 2
 
-    spts["label"] = spts["mean_time"].apply(_osna_label_funct)
+    spts["label"] = spts["mean_time"].apply(_osna_label_timeframes)
     spts.loc[spts["label"] == "rest", "duration"] *= 0.739  # weight given in paper
     spts.loc[spts["label"] == "leisure", "duration"] *= 0.358  # weight given in paper
     groups_map = {
@@ -286,10 +286,10 @@ def osna_method(spts):
     }  # weekends aren't included in analysis
     groups = ["user_id", "location_id", spts["label"].map(groups_map)]
     spts_pivot = spts.groupby(groups)["duration"].sum().unstack()  # pivot table with "label" in columns
-    spts_idxmax = spts_pivot.groupby(["user_id"]).idxmax()
+    spts_idxmax = spts_pivot.groupby(["user_id"]).idxmax()  # maximum for home and work
     spts_pivot.loc[spts_idxmax["home"], "activity_label"] = "home"
     # The "home" label could overlap with the "work" label
-    # we set the rows where that happens to zero and recalculate work maxima.
+    # we set the rows where that happens to zero and recalculate work maximum.
     # alternatively we could assign activity label on staypoint level instead of location level?
     redo_work = spts_idxmax[spts_idxmax["home"] == spts_idxmax["work"]]
     spts_pivot.loc[redo_work["work"], "work"] = pd.NaT
@@ -302,7 +302,7 @@ def osna_method(spts):
     )
 
 
-def _osna_label_funct(dt, weekend=[5, 6], start_rest=2, start_work=8, start_leisure=19):
+def _osna_label_timeframes(dt, weekend=[5, 6], start_rest=2, start_work=8, start_leisure=19):
     """Help function to assign "weekend", "rest", "work", "leisure"."""
     if dt.weekday() in weekend:
         return "weekend"
