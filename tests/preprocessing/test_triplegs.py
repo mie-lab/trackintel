@@ -26,6 +26,7 @@ class TestSmoothen_triplegs:
         assert len(line1_smoothed.coords) == 4
         assert len(line2_smoothed.coords) == 3
 
+
 class TestGenerate_trips:
     """Tests for generate_trips() method."""
     def test_duplicate_columns(self):
@@ -267,8 +268,8 @@ def _generate_trips_old(stps_input, tpls_input, gap_threshold=15, print_progress
     The following assumptions are implemented
 
         - All movement before the first and after the last activity is omitted
-        - If we do not record a person for more than `gap_threshold` minutes, \
-            we assume that the person performed an activity in the recording gap and split the trip at the gap.
+        - If we do not record a person for more than `gap_threshold` minutes,
+          we assume that the person performed an activity in the recording gap and split the trip at the gap.
         - Trips that start/end in a recording gap can have an unknown origin/destination
         - There are no trips without a (recored) tripleg
 
@@ -276,10 +277,7 @@ def _generate_trips_old(stps_input, tpls_input, gap_threshold=15, print_progress
     --------
     >>> staypoints, triplegs, trips = generate_trips(staypoints, triplegs)
     """
-    assert (
-            "activity" in stps_input.columns
-    ), "staypoints need the column 'activities' \
-                                         to be able to generate trips"
+    assert ("activity" in stps_input.columns), "staypoints need the column 'activities' to be able to generate trips"
 
     # we copy the input because we need to add a temporary column
     tpls = tpls_input.copy()
@@ -289,7 +287,7 @@ def _generate_trips_old(stps_input, tpls_input, gap_threshold=15, print_progress
     if "trip_id" in tpls:
         tpls.drop(columns="trip_id", inplace=True)
 
-    # if the staypoints already have any of the columns  "trip_id", "prev_trip_id", "next_trip_id", we drop them
+    # if the staypoints already have any of the columns "trip_id", "prev_trip_id", "next_trip_id", we drop them
     for col in ["trip_id", "prev_trip_id", "next_trip_id"]:
         if col in stps:
             stps.drop(columns=col, inplace=True)
@@ -298,9 +296,10 @@ def _generate_trips_old(stps_input, tpls_input, gap_threshold=15, print_progress
     stps["type"] = "staypoint"
 
     # create table with relevant information from triplegs and staypoints.
-    stps_tpls = stps[["started_at", "finished_at", "user_id", "type", "activity"]].append(
+    stps_tpls = pd.concat([
+        stps[["started_at", "finished_at", "user_id", "type", "activity"]],
         tpls[["started_at", "finished_at", "user_id", "type"]]
-    )
+    ])
 
     # create ID field from index
     stps_tpls["id"] = stps_tpls.index
@@ -316,14 +315,14 @@ def _generate_trips_old(stps_input, tpls_input, gap_threshold=15, print_progress
         tqdm.pandas(desc="User trip generation")
         trips = (
             stps_tpls.groupby(["user_id"], group_keys=False, as_index=False)
-                .progress_apply(_generate_trips_user, gap_threshold=gap_threshold)
-                .reset_index(drop=True)
+                     .progress_apply(_generate_trips_user, gap_threshold=gap_threshold)
+                     .reset_index(drop=True)
         )
     else:
         trips = (
             stps_tpls.groupby(["user_id"], group_keys=False, as_index=False)
-                .apply(_generate_trips_user, gap_threshold=gap_threshold)
-                .reset_index(drop=True)
+                     .apply(_generate_trips_user, gap_threshold=gap_threshold)
+                     .reset_index(drop=True)
         )
 
     # index management
@@ -417,6 +416,7 @@ def _generate_trips_user(df, gap_threshold):
             # during trip generation/recording
 
             # check if trip ends regularly
+            is_gap = row["started_at_next"] - row["finished_at"] > datetime.timedelta(minutes=gap_threshold)
             if row["activity"] is True:
 
                 # if there are no triplegs in the trip, set the current activity as origin and start over
@@ -431,7 +431,7 @@ def _generate_trips_user(df, gap_threshold):
                     trip_ls.append(_create_trip_from_stack(temp_trip_stack, origin_activity, destination_activity))
 
                     # set values for next trip
-                    if row["started_at_next"] - row["finished_at"] > datetime.timedelta(minutes=gap_threshold):
+                    if is_gap:
                         # if there is a gap after this trip the origin of the next trip is unknown
                         origin_activity = unknown_activity
                         destination_activity = None
@@ -447,7 +447,7 @@ def _generate_trips_user(df, gap_threshold):
                         in_trip = False
 
             # check if gap during the trip
-            elif row["started_at_next"] - row["finished_at"] > datetime.timedelta(minutes=gap_threshold):
+            elif is_gap:
                 # in case of a gap, the destination of the current trip and the origin of the next trip
                 # are unknown.
 
