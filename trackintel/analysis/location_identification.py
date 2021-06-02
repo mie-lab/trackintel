@@ -268,7 +268,7 @@ def osna_method(spts):
 
     Examples
     --------
-    >>> staypoints = ti.analysis.osna_method(staypoints, "home", "work")
+    >>> staypoints = ti.analysis.osna_method(staypoints)
 
     """
     spts_in = spts  # not sure how to handle changing columns
