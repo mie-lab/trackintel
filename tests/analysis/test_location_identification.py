@@ -14,7 +14,7 @@ from trackintel.analysis.location_identification import (
     location_identifier,
     pre_filter_locations,
     osna_method,
-    _osna_label_funct,
+    _osna_label_timeframes,
 )
 
 
@@ -327,8 +327,8 @@ class TestOsna_Method:
         assert_geodataframe_equal(osna_method(spts).iloc[:-4], example_osna)
 
 
-class Test_Osna_Label_Funct:
-    """Test function `_osna_label_funct`"""
+class Test_osna_label_timeframes:
+    """Test function `_osna_label_timeframes`"""
 
     def test_weekend(self):
         """Test if weekend only depends on day and not time."""
@@ -336,10 +336,10 @@ class Test_Osna_Label_Funct:
         t2 = pd.Timestamp("2021-05-22 07:00:00")
         t3 = pd.Timestamp("2021-05-22 08:00:00")
         t4 = pd.Timestamp("2021-05-22 20:00:00")
-        assert _osna_label_funct(t1) == "weekend"
-        assert _osna_label_funct(t2) == "weekend"
-        assert _osna_label_funct(t3) == "weekend"
-        assert _osna_label_funct(t4) == "weekend"
+        assert _osna_label_timeframes(t1) == "weekend"
+        assert _osna_label_timeframes(t2) == "weekend"
+        assert _osna_label_timeframes(t3) == "weekend"
+        assert _osna_label_timeframes(t4) == "weekend"
 
     def test_weekday(self):
         """Test the different labels on a weekday."""
@@ -348,8 +348,8 @@ class Test_Osna_Label_Funct:
         t3 = pd.Timestamp("2021-05-20 08:00:00")
         t4 = pd.Timestamp("2021-05-20 19:00:00")
         t5 = pd.Timestamp("2021-05-20 18:59:59")
-        assert _osna_label_funct(t1) == "leisure"
-        assert _osna_label_funct(t2) == "rest"
-        assert _osna_label_funct(t3) == "work"
-        assert _osna_label_funct(t4) == "leisure"
-        assert _osna_label_funct(t5) == "work"
+        assert _osna_label_timeframes(t1) == "leisure"
+        assert _osna_label_timeframes(t2) == "rest"
+        assert _osna_label_timeframes(t3) == "work"
+        assert _osna_label_timeframes(t4) == "leisure"
+        assert _osna_label_timeframes(t5) == "work"
