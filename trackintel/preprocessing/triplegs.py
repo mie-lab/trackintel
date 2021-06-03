@@ -36,12 +36,12 @@ def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
     return ret_tpls
 
 
-def generate_trips(stps, tpls, gap_threshold=15):
+def generate_trips(spts, tpls, gap_threshold=15):
     """Generate trips based on staypoints and triplegs.
 
     Parameters
     ----------
-    stps : GeoDataFrame (as trackintel staypoints)
+    spts : GeoDataFrame (as trackintel staypoints)
 
     tpls : GeoDataFrame (as trackintel triplegs)
 
@@ -78,11 +78,11 @@ def generate_trips(stps, tpls, gap_threshold=15):
     >>> staypoints, triplegs, trips = generate_trips(staypoints, triplegs)
     """
 
-    assert ("activity" in stps.columns), "staypoints need the column 'activities' to be able to generate trips"
+    assert ("activity" in spts.columns), "staypoints need the column 'activities' to be able to generate trips"
 
     # Copy the input because we add a temporary columns
     tpls = tpls.copy()
-    stps = stps.copy()
+    spts = spts.copy()
     gap_threshold = pd.to_timedelta(gap_threshold, unit="min")
 
     # If the triplegs already have a column "trip_id", we drop it
@@ -91,73 +91,73 @@ def generate_trips(stps, tpls, gap_threshold=15):
 
     # if the staypoints already have any of the columns "trip_id", "prev_trip_id", "next_trip_id", we drop them
     for col in ["trip_id", "prev_trip_id", "next_trip_id"]:
-        if col in stps:
-            stps.drop(columns=col, inplace=True)
+        if col in spts:
+            spts.drop(columns=col, inplace=True)
 
     tpls["type"] = "tripleg"
-    stps["type"] = "staypoint"
+    spts["type"] = "staypoint"
 
     # create table with relevant information from triplegs and staypoints.
-    stps_tpls = pd.concat(
+    spts_tpls = pd.concat(
         [
-            stps[["started_at", "finished_at", "user_id", "type", "activity"]],
+            spts[["started_at", "finished_at", "user_id", "type", "activity"]],
             tpls[["started_at", "finished_at", "user_id", "type"]],
         ]
     )
     # transform nan to bool
-    stps_tpls["activity"].fillna(False, inplace=True)
+    spts_tpls["activity"].fillna(False, inplace=True)
 
     # create ID field from index
-    stps_tpls["id"] = stps_tpls.index
+    spts_tpls["id"] = spts_tpls.index
 
-    stps_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
-    stps_tpls.reset_index(inplace=True, drop=True)
+    spts_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
+    spts_tpls.reset_index(inplace=True, drop=True)
 
     # delete intermediate activities
     # intermediate activities are activities that are surrounded by other activities
     # therefor their are neither at the end, start, nor in a trip
-    first_activities, inter_activities, last_activities = _get_activity_masks(stps_tpls)
-    stps_tpls["first_activity"] = first_activities
-    stps_tpls["last_activity"] = last_activities  # trip may start here
-    stps_tpls = stps_tpls[~inter_activities]  # no trip interaction
-    stps_tpls["started_at_next"] = stps_tpls["started_at"].shift(-1)
+    first_activities, inter_activities, last_activities = _get_activity_masks(spts_tpls)
+    spts_tpls["first_activity"] = first_activities
+    spts_tpls["last_activity"] = last_activities  # trip may start here
+    spts_tpls = spts_tpls[~inter_activities]  # no trip interaction
+    spts_tpls["started_at_next"] = spts_tpls["started_at"].shift(-1)
 
     # conditions for new trip
     # new user flag
-    condition_new_user = stps_tpls["user_id"] != stps_tpls["user_id"].shift(1)
+    condition_new_user = spts_tpls["user_id"] != spts_tpls["user_id"].shift(1)
 
     # start new trip if there is a new activity
-    condition_new_activity = stps_tpls["last_activity"]
+    condition_new_activity = spts_tpls["last_activity"]
 
     # gap conditions
-    gap = (stps_tpls["started_at_next"] - stps_tpls["finished_at"]) > gap_threshold
+    gap = (spts_tpls["started_at_next"] - spts_tpls["finished_at"]) > gap_threshold
     condition_time_gap = gap.shift(1, fill_value=False)  # trip starts on next entry
     # no gaps between activities
-    condition_time_gap = condition_time_gap & ~stps_tpls["first_activity"]
+    condition_time_gap = condition_time_gap & ~spts_tpls["first_activity"]
 
     cond_all = condition_new_user | condition_new_activity | condition_time_gap
-    stps_tpls["new_trip"] = cond_all
+    spts_tpls["new_trip"] = cond_all
 
     # assign an incrementing id to all positionfixes that start a tripleg
-    stps_tpls.loc[cond_all, "trip_id"] = np.arange(cond_all.sum())
-    stps_tpls["trip_id"].fillna(method="ffill", inplace=True)
+    spts_tpls.loc[cond_all, "trip_id"] = np.arange(cond_all.sum())
+    spts_tpls["trip_id"].fillna(method="ffill", inplace=True)
 
     # exclude activities to aggregate trips together.
     # activity can be thought of as the same level as trips.
-    stps_tpls_no_act = stps_tpls[~stps_tpls["activity"]]
-    stps_tpls_only_act = stps_tpls[stps_tpls["activity"]]
+    spts_tpls_no_act = spts_tpls[~spts_tpls["activity"]]
+    spts_tpls_only_act = spts_tpls[spts_tpls["activity"]]
 
     # add gaps as activities, to simplify id assignment later.
-    gaps = pd.DataFrame(stps_tpls.loc[gap, "user_id"])
-    gaps["started_at"] = stps_tpls.loc[gap, "finished_at"] + gap_threshold/2
+    gaps = pd.DataFrame(spts_tpls.loc[gap, "user_id"])
+    gaps["started_at"] = spts_tpls.loc[gap, "finished_at"] + gap_threshold/2
     gaps[["type", "activity", "new_trip"]] = ["gap", True, True]
 
     # same for user changes
-    user_change = pd.DataFrame(stps_tpls.loc[condition_new_user, "user_id"])
-    user_change["started_at"] = stps_tpls.loc[condition_new_user, "started_at"] - gap_threshold/2
+    user_change = pd.DataFrame(spts_tpls.loc[condition_new_user, "user_id"])
+    user_change["started_at"] = spts_tpls.loc[condition_new_user, "started_at"] - gap_threshold/2
     user_change[["type", "activity", "new_trip"]] = ["user_change", True, True]
 
-    trips_grouper = stps_tpls_no_act.groupby("trip_id")
+    trips_grouper = spts_tpls_no_act.groupby("trip_id")
     trips = trips_grouper.agg(
         {
             "user_id": "mean",
@@ -172,10 +172,10 @@ def generate_trips(stps, tpls, gap_threshold=15):
         """Split aggregated ids into staypoints and triplegs arrays."""
         t = (row["type"] == "tripleg")
         tpls_ids = row.loc["id"][t]
-        stps_ids = row.loc["id"][np.logical_not(t)]
-        return [stps_ids, tpls_ids]
+        spts_ids = row.loc["id"][np.logical_not(t)]
+        return [spts_ids, tpls_ids]
 
-    trips[["stps", "tpls"]] = trips.apply(_seperate_ids, axis=1, result_type="expand")
+    trips[["spts", "tpls"]] = trips.apply(_seperate_ids, axis=1, result_type="expand")
 
     # save trip_id as column
     trips.reset_index(inplace=True)
@@ -183,8 +183,8 @@ def generate_trips(stps, tpls, gap_threshold=15):
 
     # merge with activities
     trips.drop(columns=["type", "id"], inplace=True)  # make space so no overlap with activity "id"
-    stps_tpls_only_act.drop(columns=["trip_id"])  # no overlap of activity trip_ids to real trip_ids in trips
-    trips = pd.concat((trips, stps_tpls_only_act, gaps, user_change), axis=0, ignore_index=True)
+    spts_tpls_only_act.drop(columns=["trip_id"])  # no overlap of activity trip_ids to real trip_ids in trips
+    trips = pd.concat((trips, spts_tpls_only_act, gaps, user_change), axis=0, ignore_index=True)
     trips = trips.sort_values(["user_id", "started_at"])
 
     # add origin/destination ids by shifting
@@ -196,7 +196,7 @@ def generate_trips(stps, tpls, gap_threshold=15):
     trips["next_trip_id"] = trips["trip_id"].shift(-1)
     activity_staypoints = trips[trips["type"] == "staypoint"].copy()
     activity_staypoints.index = activity_staypoints["id"]
-    stps = stps.join(activity_staypoints[["prev_trip_id", "next_trip_id"]], how="left")
+    spts = spts.join(activity_staypoints[["prev_trip_id", "next_trip_id"]], how="left")
 
     # transform column to binary
     trips["activity"].fillna(False, inplace=True)
@@ -227,35 +227,35 @@ def generate_trips(stps, tpls, gap_threshold=15):
     # assign trip_id to tpls
     temp = trips.explode("tpls")
     temp.index = temp["tpls"]
-    temp = temp[temp['stps'].notna()]
+    temp = temp[temp['spts'].notna()]
     temp.rename(columns={"id": "trip_id"}, inplace=True)
     tpls = tpls.join(temp["trip_id"], how="left")
 
-    # assign trip_id to stps, for non-activity stps
-    temp = trips.explode("stps")
-    temp.index = temp["stps"]
-    temp = temp[temp['stps'].notna()]
+    # assign trip_id to spts, for non-activity spts
+    temp = trips.explode("spts")
+    temp.index = temp["spts"]
+    temp = temp[temp['spts'].notna()]
     temp.rename(columns={"id": "trip_id"}, inplace=True)
-    stps = stps.join(temp["trip_id"], how="left")
+    spts = spts.join(temp["trip_id"], how="left")
 
     # final cleaning
     tpls.drop(columns=["type"], inplace=True)
-    stps.drop(columns=["type"], inplace=True)
-    trips.drop(columns=["tpls", "stps", "id"], inplace=True)
+    spts.drop(columns=["type"], inplace=True)
+    trips.drop(columns=["tpls", "spts", "id"], inplace=True)
 
     # dtype consistency
     # trips id (generated by this function) should be int64
     trips.index = trips.index.astype("int64")
-    # trip id of stps and tpls can only be in Int64 (missing values)
-    stps["trip_id"] = stps["trip_id"].astype("Int64")
-    stps["prev_trip_id"] = stps["prev_trip_id"].astype("Int64")
-    stps["next_trip_id"] = stps["next_trip_id"].astype("Int64")
+    # trip id of spts and tpls can only be in Int64 (missing values)
+    spts["trip_id"] = spts["trip_id"].astype("Int64")
+    spts["prev_trip_id"] = spts["prev_trip_id"].astype("Int64")
+    spts["next_trip_id"] = spts["next_trip_id"].astype("Int64")
     tpls["trip_id"] = tpls["trip_id"].astype("Int64")
 
     # user_id of trips should be the same as tpls
     trips["user_id"] = trips["user_id"].astype(tpls["user_id"].dtype)
 
-    return stps, tpls, trips
+    return spts, tpls, trips
 
 
 def _get_activity_masks(df):
