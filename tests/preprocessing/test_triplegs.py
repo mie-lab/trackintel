@@ -31,6 +31,7 @@ class TestSmoothen_triplegs:
 
 class TestGenerate_trips:
     """Tests for generate_trips() method."""
+
     def test_duplicate_columns(self):
         """Test if running the function twice, the generated column does not yield exception in join statement"""
         # create trips from geolife (based on positionfixes)
@@ -277,7 +278,7 @@ def _generate_trips_old(stps_input, tpls_input, gap_threshold=15, print_progress
     --------
     >>> staypoints, triplegs, trips = generate_trips(staypoints, triplegs)
     """
-    assert ("activity" in stps_input.columns), "staypoints need the column 'activities' to be able to generate trips"
+    assert "activity" in stps_input.columns, "staypoints need the column 'activities' to be able to generate trips"
 
     # we copy the input because we need to add a temporary column
     tpls = tpls_input.copy()
@@ -296,10 +297,12 @@ def _generate_trips_old(stps_input, tpls_input, gap_threshold=15, print_progress
     stps["type"] = "staypoint"
 
     # create table with relevant information from triplegs and staypoints.
-    stps_tpls = pd.concat([
-        stps[["started_at", "finished_at", "user_id", "type", "activity"]],
-        tpls[["started_at", "finished_at", "user_id", "type"]]
-    ])
+    stps_tpls = pd.concat(
+        [
+            stps[["started_at", "finished_at", "user_id", "type", "activity"]],
+            tpls[["started_at", "finished_at", "user_id", "type"]],
+        ]
+    )
 
     # create ID field from index
     stps_tpls["id"] = stps_tpls.index
@@ -315,14 +318,14 @@ def _generate_trips_old(stps_input, tpls_input, gap_threshold=15, print_progress
         tqdm.pandas(desc="User trip generation")
         trips = (
             stps_tpls.groupby(["user_id"], group_keys=False, as_index=False)
-                     .progress_apply(_generate_trips_user, gap_threshold=gap_threshold)
-                     .reset_index(drop=True)
+            .progress_apply(_generate_trips_user, gap_threshold=gap_threshold)
+            .reset_index(drop=True)
         )
     else:
         trips = (
             stps_tpls.groupby(["user_id"], group_keys=False, as_index=False)
-                     .apply(_generate_trips_user, gap_threshold=gap_threshold)
-                     .reset_index(drop=True)
+            .apply(_generate_trips_user, gap_threshold=gap_threshold)
+            .reset_index(drop=True)
         )
 
     # index management
@@ -476,13 +479,7 @@ def _generate_trips_user(df, gap_threshold):
     # if user ends generate last trip with unknown destination
     if (len(temp_trip_stack) > 0) and (_check_trip_stack_has_tripleg(temp_trip_stack)):
         destination_activity = unknown_activity
-        trip_ls.append(
-            _create_trip_from_stack(
-                temp_trip_stack,
-                origin_activity,
-                destination_activity,
-            )
-        )
+        trip_ls.append(_create_trip_from_stack(temp_trip_stack, origin_activity, destination_activity,))
 
     # print(trip_ls)
     trips = pd.DataFrame(trip_ls)

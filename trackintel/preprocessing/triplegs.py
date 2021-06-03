@@ -28,9 +28,7 @@ def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
     """
     ret_tpls = triplegs.copy()
     origin_geom = ret_tpls.geom
-    simplified_geom = origin_geom.simplify(
-        tolerance, preserve_topology=preserve_topology
-    )
+    simplified_geom = origin_geom.simplify(tolerance, preserve_topology=preserve_topology)
     ret_tpls.geom = simplified_geom
 
     return ret_tpls
@@ -78,7 +76,7 @@ def generate_trips(spts, tpls, gap_threshold=15):
     >>> staypoints, triplegs, trips = generate_trips(staypoints, triplegs)
     """
 
-    assert ("activity" in spts.columns), "staypoints need the column 'activities' to be able to generate trips"
+    assert "activity" in spts.columns, "staypoints need the column 'activities' to be able to generate trips"
 
     # Copy the input because we add a temporary columns
     tpls = tpls.copy()
@@ -149,28 +147,22 @@ def generate_trips(spts, tpls, gap_threshold=15):
 
     # add gaps as activities, to simplify id assignment later.
     gaps = pd.DataFrame(spts_tpls.loc[gap, "user_id"])
-    gaps["started_at"] = spts_tpls.loc[gap, "finished_at"] + gap_threshold/2
+    gaps["started_at"] = spts_tpls.loc[gap, "finished_at"] + gap_threshold / 2
     gaps[["type", "activity", "new_trip"]] = ["gap", True, True]
 
     # same for user changes
     user_change = pd.DataFrame(spts_tpls.loc[condition_new_user, "user_id"])
-    user_change["started_at"] = spts_tpls.loc[condition_new_user, "started_at"] - gap_threshold/2
+    user_change["started_at"] = spts_tpls.loc[condition_new_user, "started_at"] - gap_threshold / 2
     user_change[["type", "activity", "new_trip"]] = ["user_change", True, True]
 
     trips_grouper = spts_tpls_no_act.groupby("trip_id")
     trips = trips_grouper.agg(
-        {
-            "user_id": "mean",
-            "started_at": min,
-            "finished_at": max,
-            "type": np.array,
-            "id": np.array,
-        }
+        {"user_id": "mean", "started_at": min, "finished_at": max, "type": np.array, "id": np.array,}
     )
 
     def _seperate_ids(row):
         """Split aggregated ids into staypoints and triplegs arrays."""
-        t = (row["type"] == "tripleg")
+        t = row["type"] == "tripleg"
         tpls_ids = row.loc["id"][t]
         spts_ids = row.loc["id"][np.logical_not(t)]
         return [spts_ids, tpls_ids]
@@ -227,14 +219,14 @@ def generate_trips(spts, tpls, gap_threshold=15):
     # assign trip_id to tpls
     temp = trips.explode("tpls")
     temp.index = temp["tpls"]
-    temp = temp[temp['spts'].notna()]
+    temp = temp[temp["spts"].notna()]
     temp.rename(columns={"id": "trip_id"}, inplace=True)
     tpls = tpls.join(temp["trip_id"], how="left")
 
     # assign trip_id to spts, for non-activity spts
     temp = trips.explode("spts")
     temp.index = temp["spts"]
-    temp = temp[temp['spts'].notna()]
+    temp = temp[temp["spts"].notna()]
     temp.rename(columns={"id": "trip_id"}, inplace=True)
     spts = spts.join(temp["trip_id"], how="left")
 
