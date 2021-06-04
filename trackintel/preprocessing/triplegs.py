@@ -86,11 +86,13 @@ def generate_trips(spts, tpls, gap_threshold=15):
     # If the triplegs already have a column "trip_id", we drop it
     if "trip_id" in tpls:
         tpls.drop(columns="trip_id", inplace=True)
+        #todo: should we add a warning here?
 
     # if the staypoints already have any of the columns "trip_id", "prev_trip_id", "next_trip_id", we drop them
     for col in ["trip_id", "prev_trip_id", "next_trip_id"]:
         if col in spts:
             spts.drop(columns=col, inplace=True)
+            #todo: same here, we should warn the user about this
 
     tpls["type"] = "tripleg"
     spts["type"] = "staypoint"
@@ -113,7 +115,7 @@ def generate_trips(spts, tpls, gap_threshold=15):
 
     # delete intermediate activities
     # intermediate activities are activities that are surrounded by other activities
-    # therefor their are neither at the end, start, nor in a trip
+    # therefore they are neither at the end, at the start, nor within a trip
     first_activities, inter_activities, last_activities = _get_activity_masks(spts_tpls)
     spts_tpls["first_activity"] = first_activities
     spts_tpls["last_activity"] = last_activities  # trip may start here
@@ -121,22 +123,24 @@ def generate_trips(spts, tpls, gap_threshold=15):
     spts_tpls["started_at_next"] = spts_tpls["started_at"].shift(-1)
 
     # conditions for new trip
-    # new user flag
+    # start new trip if the user changes
     condition_new_user = spts_tpls["user_id"] != spts_tpls["user_id"].shift(1)
 
     # start new trip if there is a new activity
     condition_new_activity = spts_tpls["last_activity"]
 
     # gap conditions
+    # start new trip after a gap
     gap = (spts_tpls["started_at_next"] - spts_tpls["finished_at"]) > gap_threshold
     condition_time_gap = gap.shift(1, fill_value=False)  # trip starts on next entry
-    # no gaps between activities
+
+    # no gaps between activities #todo: please elaborate condition further
     condition_time_gap = condition_time_gap & ~spts_tpls["first_activity"]
 
     cond_all = condition_new_user | condition_new_activity | condition_time_gap
     spts_tpls["new_trip"] = cond_all
 
-    # assign an incrementing id to all positionfixes that start a tripleg
+    # assign an incrementing id to all triplegs that start a trip
     spts_tpls.loc[cond_all, "trip_id"] = np.arange(cond_all.sum())
     spts_tpls["trip_id"].fillna(method="ffill", inplace=True)
 
@@ -145,6 +149,7 @@ def generate_trips(spts, tpls, gap_threshold=15):
     spts_tpls_no_act = spts_tpls[~spts_tpls["activity"]]
     spts_tpls_only_act = spts_tpls[spts_tpls["activity"]]
 
+    # todo: maybe move this part down to where you need it
     # add gaps as activities, to simplify id assignment later.
     gaps = pd.DataFrame(spts_tpls.loc[gap, "user_id"])
     gaps["started_at"] = spts_tpls.loc[gap, "finished_at"] + gap_threshold / 2
@@ -152,24 +157,32 @@ def generate_trips(spts, tpls, gap_threshold=15):
 
     # same for user changes
     user_change = pd.DataFrame(spts_tpls.loc[condition_new_user, "user_id"])
+    # todo: if the started_at will be used for sorting then the time difference should be as small as possible
     user_change["started_at"] = spts_tpls.loc[condition_new_user, "started_at"] - gap_threshold / 2
     user_change[["type", "activity", "new_trip"]] = ["user_change", True, True]
 
     trips_grouper = spts_tpls_no_act.groupby("trip_id")
+    # todo: for me using `np.array` raised an exception: "ValueError: Must produce aggregated value"
     trips = trips_grouper.agg(
-        {"user_id": "mean", "started_at": min, "finished_at": max, "type": np.array, "id": np.array,}
+        {"user_id": "mean", "started_at": min, "finished_at": max, "type":list, "id": list,}
     )
 
     def _seperate_ids(row):
         """Split aggregated ids into staypoints and triplegs arrays."""
-        t = row["type"] == "tripleg"
-        tpls_ids = row.loc["id"][t]
-        spts_ids = row.loc["id"][np.logical_not(t)]
+        row_type = np.array(row["type"])
+        row_id = np.array(row["id"])
+        t = row_type == "tripleg"
+        tpls_ids = row_id[t]
+        spts_ids = row_id[np.logical_not(t)]
         return [spts_ids, tpls_ids]
 
     trips[["spts", "tpls"]] = trips.apply(_seperate_ids, axis=1, result_type="expand")
 
     # save trip_id as column
+    # todo: I don't understand this. The trip id is the index. Therefore the reset operation creates the column "trip
+    #  id" and creates a new incremental index that goes from 0 to n. Then we overwrite the column that was just
+    #  created with the new index.
+       # and creates a new
     trips.reset_index(inplace=True)
     trips["trip_id"] = trips.index
 
@@ -221,7 +234,7 @@ def generate_trips(spts, tpls, gap_threshold=15):
     # assign trip_id to tpls
     temp = trips.explode("tpls")
     temp.index = temp["tpls"]
-    temp = temp[temp["spts"].notna()]
+    temp = temp[temp["spts"].notna()] #todo: what is this dropping exactly? Should be tpls?
     temp.rename(columns={"id": "trip_id"}, inplace=True)
     tpls = tpls.join(temp["trip_id"], how="left")
 
