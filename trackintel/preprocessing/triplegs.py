@@ -177,6 +177,8 @@ def generate_trips(spts, tpls, gap_threshold=15):
     trips.drop(columns=["type", "id"], inplace=True)  # make space so no overlap with activity "id"
     spts_tpls_only_act.drop(columns=["trip_id"])  # no overlap of activity trip_ids to real trip_ids in trips
     trips = pd.concat((trips, spts_tpls_only_act, gaps, user_change), axis=0, ignore_index=True)
+    # Inserting `gaps` and `user_change` into the dataframe we create buffers that catch shifted
+    # "staypoint_id" and "trip_id", finally they get deleted together with the other activities.
     trips = trips.sort_values(["user_id", "started_at"])
 
     # add origin/destination ids by shifting
