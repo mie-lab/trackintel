@@ -2,10 +2,20 @@
 
 This document explains the functionality planned for various releases.
 
+Ideas that are planned:
+## v1.1.0
+
+
+* More method to predict activity without context data.
+* Next place prediction (e.g., markov-model)
+
+## v1.2.0
+* Map match *triplegs* (based on transport mode identification). Solutions could be *LeuvenMapMatching* or based on *osrm*.
+* Add context data to movement trajectories (using spatio-temporal map algebra).
+* Implement *tours* (starting and ending at a persons home location) and *customermovements* (consecutive triplegs with using transport provided by a single provider (e.g., a local bus company)).
 
 ## v2.0.0
-
-Ideas for a later version.
+Ideas that are on the list:
 
 I/O:
 * Read *customermovements*, *tours* from files.
@@ -16,33 +26,26 @@ I/O:
 
 
 Preprocessing:
-* Implement *tours* (starting and ending at a persons home location) and *customermovements* (consecutive triplegs with using transport provided by a single provider (e.g., a local bus company)).
 * Short walks to/from cars/buses/etc.: These are often not recognized by the tracking applications.
-* Map match *triplegs* (based on transport mode identification). 
 * Imputation of trivial gaps in tracking data (*triplegs* and *staypoints*).
 * Simple outlier filtering for *triplegs*
 
 Augment tracking data:
 * Better transport mode prediction based on movement data (speed, associated features from accelerometer data, etc.) as well as by aligning them with context data such as from OpenStreetMap or GTFS departure schedules. 
-* Add context data to movement trajectories (using spatio-temporal map algebra).
 * Better activity prediction. This functionality is based on properties of the movement data and on context data such as points of interests.
 * Provide holistic inference of transport modes (take into account the fact that if someone uses the car to reach a certain location, the person is likely to leave by car as well).
 
 Analysis
 * Mobility behaviour (and its changes): automatic detection of uncharacteristic changes in mobility patterns.
 * User profiling and clustering.
-* Anomaly detection (based on properties of movement data as well as contextual factors).
 * Extract *customermovements* from *triplegs* and *trips*.
-* next place prediction (e.g., markov-model)
 * Anomaly detection (based on properties of movement data as well as contextual factors).
 * Clustering of triplegs using similarity metrics
 * Include the calculation of common mobility indicators (e.g., radius of gyration)
 
 Visualization 
 * Visualize *customermovements*, *tours* geographically.
-* Visualize *trips* and *locations* geographically, e.g., by coloring *triplegs*
-  differently or by making a buffer around all *staypoints* that are part of
-  a *locations*.
+* Visualize *trips* and *locations* geographically, e.g., by coloring *triplegs* differently or by making a buffer around all *staypoints* that are part of a *locations*.
 
 Various
 * Parallelization

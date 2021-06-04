@@ -27,7 +27,7 @@ class TestPlot_triplegs:
         """Use trackintel visualization function to plot triplegs and check if the file exists."""
         pfs, stps, tpls = test_data
 
-        tmp_file = os.path.join("tests", "data", "triplegs_plot.png")
+        tmp_file = os.path.join("tests", "data", "triplegs_plot1.png")
         tpls.as_triplegs.plot(out_filename=tmp_file, positionfixes=pfs, staypoints=stps, plot_osm=False)
         assert os.path.exists(tmp_file)
         os.remove(tmp_file)
@@ -35,7 +35,7 @@ class TestPlot_triplegs:
     def test_axis(self, test_data):
         """Test the use of regular_figure() to create axis."""
         _, _, tpls = test_data
-        tmp_file = os.path.join("tests", "data", "triplegs_plot.png")
+        tmp_file = os.path.join("tests", "data", "triplegs_plot2.png")
         _, ax = regular_figure()
 
         tpls.as_triplegs.plot(out_filename=tmp_file, axis=ax)
@@ -45,7 +45,7 @@ class TestPlot_triplegs:
     def test_parameter(self, test_data):
         """Test other parameter configurations."""
         _, _, tpls = test_data
-        tmp_file = os.path.join("tests", "data", "triplegs_plot.png")
+        tmp_file = os.path.join("tests", "data", "triplegs_plot3.png")
 
         # test plot_osm
         tpls.as_triplegs.plot(out_filename=tmp_file, plot_osm=True)
