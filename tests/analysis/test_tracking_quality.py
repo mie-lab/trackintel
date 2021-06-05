@@ -18,6 +18,18 @@ def testdata_stps_tpls_geolife_long():
     return stps_tpls
 
 
+@pytest.fixture
+def testdata_all_geolife_long():
+    """Generate stps, tpls and trips of the original pfs for subsequent testing."""
+    pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+    pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+    stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
+    pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+    stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
+
+    return stps, tpls, trips
+
+
 class TestTemporal_tracking_quality:
     """Tests for the temporal_tracking_quality() function."""
 
@@ -161,23 +173,27 @@ class TestTemporal_tracking_quality:
         with pytest.raises(AttributeError):
             ti.analysis.tracking_quality._get_tracking_quality_user(user_0, granularity="random")
 
-    def test_accessors(self):
-        """The result obtained from model accessors should be the same as calling the function."""
-        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
-        pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
-        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
-        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
-        stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
+    def test_staypoints_accessors(self, testdata_all_geolife_long):
+        """Test tracking_quality calculation from staypoints accessor."""
+        stps, _, _ = testdata_all_geolife_long
 
         # for staypoints
         stps_quality_accessor = stps.as_staypoints.temporal_tracking_quality()
         stps_quality_method = ti.analysis.tracking_quality.temporal_tracking_quality(stps)
         pd.testing.assert_frame_equal(stps_quality_accessor, stps_quality_method)
 
+    def test_triplegs_accessors(self, testdata_all_geolife_long):
+        """Test tracking_quality calculation from triplegs accessor."""
+        _, tpls, _ = testdata_all_geolife_long
+
         # for triplegs
         tpls_quality_accessor = tpls.as_triplegs.temporal_tracking_quality()
         tpls_quality_method = ti.analysis.tracking_quality.temporal_tracking_quality(tpls)
         pd.testing.assert_frame_equal(tpls_quality_accessor, tpls_quality_method)
+
+    def test_trips_accessors(self, testdata_all_geolife_long):
+        """Test tracking_quality calculation from trips accessor."""
+        _, _, trips = testdata_all_geolife_long
 
         # for trips
         trips_quality_accessor = trips.as_trips.temporal_tracking_quality()
@@ -245,8 +261,9 @@ class TestSplit_overlaps:
         assert (day_diff == 0).all()
 
     def test_split_overlaps_duration(self, testdata_stps_tpls_geolife_long):
-        """Test if _split_overlaps() function can split records that span several days."""
+        """Test if the column 'duration' gets updated after using the _split_overlaps() function."""
         stps_tpls = testdata_stps_tpls_geolife_long
+        # initiate the duration column
         stps_tpls["duration"] = stps_tpls["finished_at"] - stps_tpls["started_at"]
         stps_tpls.reset_index(inplace=True)
 
