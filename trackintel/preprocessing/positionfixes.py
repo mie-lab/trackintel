@@ -1,10 +1,9 @@
+import datetime
+
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 from shapely.geometry import LineString, Point
-from sklearn.cluster import DBSCAN
-
-import datetime
 from tqdm import tqdm
 
 from trackintel.geogr.distances import haversine_dist
@@ -36,7 +35,8 @@ def generate_staypoints(
 
     dist_threshold : float, default 100
         The distance threshold for the 'sliding' method, i.e., how far someone has to travel to
-        generate a new staypoint. Units depend on the dist_func parameter.
+        generate a new staypoint. Units depend on the dist_func parameter. If 'distance_metric' is 'haversine' the
+        unit is in meters
 
     time_threshold : float, default 5.0 (minutes)
         The time threshold for the 'sliding' method in minutes.
