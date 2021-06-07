@@ -103,6 +103,21 @@ class TriplegsAccessor(object):
         """
         return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
 
+    def generate_trips(self, *args, **kwargs):
+        """
+        Generate trips based on staypoints and triplegs.
+
+        See :func:`trackintel.preprocessing.triplegs.generate_trips`.
+        """
+        # if spts in kwargs: 'spts' can not be in args as it would be the first argument
+        if 'stps_input' in kwargs:
+            return ti.preprocessing.triplegs.generate_trips(tpls_input=self._obj, **kwargs)
+        # if 'spts' no in kwargs it has to be the first argument in 'args'
+        else:
+            assert len(args) <= 1, "All arguments except 'stps_input' have to be given as keyword arguments. You gave" \
+                                   f" {args[1:]} as positional arguments."
+            return ti.preprocessing.triplegs.generate_trips(stps_input=args[0], tpls_input=self._obj, **kwargs)
+
     def predict_transport_mode(self, *args, **kwargs):
         """
         Predict/impute the transport mode with which each tripleg was likely covered.
