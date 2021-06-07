@@ -83,7 +83,6 @@ def generate_locations(
         else:
             db = DBSCAN(eps=epsilon, min_samples=num_samples, algorithm="ball_tree", metric=distance_metric)
 
-        location_id_counter = 0
         if agg_level == "user":
 
             # we create a new column: 'serial_num' where we assign serial numbers to each user id
