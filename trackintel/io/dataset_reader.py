@@ -34,7 +34,7 @@ def read_geolife(geolife_path):
         Contains all loaded geolife positionfixes
 
     labels: dict
-        Dictionary with the available (optional) mode labels.
+        Dictionary with the available mode labels.
 
     Notes
     -----
@@ -77,7 +77,8 @@ def read_geolife(geolife_path):
 
     Example
     ----------
-    >>> geolife_pfs, labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'))
+    >>> from trackintel.io.dataset_reader import geolife_add_modes_to_triplegs
+    >>> geolife_pfs, labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'), return_labels=True)
     """
     geolife_path = os.path.join(geolife_path, "*")
     user_folder = sorted(glob.glob(geolife_path))
