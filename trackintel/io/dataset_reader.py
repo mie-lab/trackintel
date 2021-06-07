@@ -82,8 +82,8 @@ def read_geolife(geolife_path, print_progress=False):
 
     Example
     ----------
-    >>> from trackintel.io.dataset_reader import geolife_add_modes_to_triplegs
-    >>> geolife_pfs, labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'), return_labels=True)
+    >>> from trackintel.io.dataset_reader import read_geolife
+    >>> pfs, mode_labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'))
     """
     geolife_path = os.path.join(geolife_path, "*")
     user_folder = sorted(glob.glob(geolife_path))
@@ -192,7 +192,16 @@ def geolife_add_modes_to_triplegs(
     -------
     tpls : GeoDataFrame (as trackintel triplegs)
         triplegs with mode labels.
+
+    Example
+    ----------
+    >>> from trackintel.io.dataset_reader import read_geolife, geolife_add_modes_to_triplegs
+    >>> pfs, mode_labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'))
+    >>> pfs, spts = pfs.as_positionfixes.generate_staypoints()
+    >>> pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts)
+    >>> tpls = geolife_add_modes_to_triplegs(tpls, mode_labels)
     """
+
     tpls = tpls_in.copy()
     # temp time fields for nn query
     tpls["started_at_s"] = (tpls["started_at"] - pd.Timestamp("1970-01-01", tz="utc")) // pd.Timedelta("1s")
