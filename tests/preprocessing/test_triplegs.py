@@ -4,6 +4,7 @@ import os
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+import pytest
 from pandas.testing import assert_frame_equal
 from shapely.geometry import LineString, Point
 
@@ -42,7 +43,8 @@ class TestGenerate_trips:
 
         # generate trips and a joint staypoint/triplegs dataframe
         stps_run_1, tpls_run_1, _ = generate_trips(stps, tpls, gap_threshold=15)
-        stps_run_2, tpls_run_2, _ = generate_trips(stps_run_1, tpls_run_1, gap_threshold=15)
+        with pytest.warns(UserWarning):
+            stps_run_2, tpls_run_2, _ = generate_trips(stps_run_1, tpls_run_1, gap_threshold=15)
 
         assert set(tpls_run_1.columns) == set(tpls_run_2.columns)
         assert set(stps_run_1.columns) == set(stps_run_2.columns)
