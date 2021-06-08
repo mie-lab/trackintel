@@ -11,14 +11,15 @@ from trackintel.geogr.distances import haversine_dist
 
 
 def generate_staypoints(
-    pfs_input,
-    method="sliding",
-    distance_metric="haversine",
-    dist_threshold=100,
-    time_threshold=5.0,
-    gap_threshold=1e6,
-    include_last=False,
-    print_progress=False,
+        pfs_input,
+        method="sliding",
+        distance_metric="haversine",
+        dist_threshold=100,
+        time_threshold=5.0,
+        gap_threshold=1e6,
+        include_last=False,
+        print_progress=False,
+        exclude_duplicate_pfs=True,
 ):
     """
     Generate staypoints from positionfixes.
@@ -53,6 +54,10 @@ def generate_staypoints(
     print_progress: boolen, default False
         Show per-user progress if set to True.
 
+    exclude_duplicate_pfs: boolean, default True
+        Filters duplicate positionfixes before generating staypoints. Duplicates can lead to problems in later
+        processing steps (e.g., when generating triplegs). It is not recommended to set this to False.
+
     Returns
     -------
     pfs: GeoDataFrame (as trackintel positionfixes)
@@ -84,6 +89,17 @@ def generate_staypoints(
     """
     # copy the original pfs for adding 'staypoint_id' column
     pfs = pfs_input.copy()
+
+    if exclude_duplicate_pfs:
+        len_org = pfs.shape[0]
+        pfs = pfs.drop_duplicates()
+        nb_dropped = len_org - pfs.shape[0]
+        if nb_dropped > 0:
+            warn_str = (
+                    f"{nb_dropped} duplicates were dropped from your positionfixes. Dropping duplicates is"
+                    + " recommended but can be prevented using the 'exclude_duplicate_pfs' flag."
+            )
+            warnings.warn(warn_str)
 
     # if the positionfixes already have a column "staypoint_id", we drop it
     if "staypoint_id" in pfs:
