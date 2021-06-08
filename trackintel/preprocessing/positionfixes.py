@@ -393,7 +393,7 @@ def _generate_staypoints_sliding_user(
     else:
         raise AttributeError("distance_metric unknown. We only support ['haversine']. " f"You passed {distance_metric}")
 
-    df.sort_values("tracked_at", inplace=True)
+    df = df.sort_index(kind="mergesort").sort_values(by=["tracked_at"], kind="mergesort")
     # pfs id should be in index, create separate idx for storing the matching
     pfs = df.to_dict("records")
     idx = df.index.to_list()
