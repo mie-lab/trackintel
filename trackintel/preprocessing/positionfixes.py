@@ -1,10 +1,10 @@
+import datetime
+import warnings
+
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 from shapely.geometry import LineString, Point
-from sklearn.cluster import DBSCAN
-
-import datetime
 from tqdm import tqdm
 
 from trackintel.geogr.distances import haversine_dist
@@ -185,7 +185,12 @@ def generate_staypoints(
     return pfs, stps
 
 
-def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_threshold=15):
+def generate_triplegs(
+        pfs_input,
+        stps_input,
+        method="between_staypoints",
+        gap_threshold=15,
+):
     """Generate triplegs from positionfixes.
 
     Parameters
@@ -380,7 +385,24 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
         tpls = tpls.set_geometry("geom")
         tpls.crs = pfs.crs
 
-        # check the correctness of the generated tpls
+        # check the correctness of the generated triplegs
+        invalid_tpls = tpls[~tpls.geometry.is_valid]
+        if invalid_tpls.shape[0] > 0:
+            # identify invalid tripleg ids
+            invalid_tpls_ids = invalid_tpls.index.to_list()
+
+            # reset tpls id in pfs
+            invalid_pfs_ixs = pfs[pfs.tripleg_id.isin(invalid_tpls_ids)].index
+            pfs.loc[invalid_pfs_ixs, "tripleg_id"] = pd.NA
+            warn_string = (
+                f"The positionfixes with ids {invalid_pfs_ixs.values} lead to invalid tripleg geometries. The "
+                f"resulting triplegs were omitted and the tripleg id of the positionfixes was set to nan"
+            )
+            warnings.warn(warn_string)
+
+            # drop triplegs
+            tpls = tpls[tpls.geometry.is_valid]
+
         assert tpls.as_triplegs
 
         if case == 2:
