@@ -111,7 +111,9 @@ def generate_locations(
         else:
             ## generate user-location pairs with same geometries across users
             # get user-location pairs
-            ret_loc = temp_sp.dissolve(by=["user_id", "location_id"], as_index=False).drop(columns={"geom"})
+            ret_loc = temp_sp.dissolve(by=["user_id", "location_id"], as_index=False).drop(
+                columns={temp_sp.geometry.name}
+            )
             # get location geometries
             geom_df = temp_sp.dissolve(by=["location_id"], as_index=False).drop(columns={"user_id"})
             # merge pairs with location geometries
@@ -124,17 +126,17 @@ def generate_locations(
         # locations with only one staypoints is of type "Point"
         point_idx = ret_loc.geom_type == "Point"
         if not ret_loc.loc[point_idx].empty:
-            ret_loc.loc[point_idx, "center"] = ret_loc.loc[point_idx, "geom"]
+            ret_loc.loc[point_idx, "center"] = ret_loc.loc[point_idx, ret_loc.geometry.name]
         # locations with multiple staypoints is of type "MultiPoint"
         if not ret_loc.loc[~point_idx].empty:
-            ret_loc.loc[~point_idx, "center"] = ret_loc.loc[~point_idx, "geom"].apply(
+            ret_loc.loc[~point_idx, "center"] = ret_loc.loc[~point_idx, ret_loc.geometry.name].apply(
                 lambda p: Point(np.array(p)[:, 0].mean(), np.array(p)[:, 1].mean())
             )
 
         # extent is the convex hull of the geometry
         ret_loc["extent"] = None  # initialize
         if not ret_loc.empty:
-            ret_loc["extent"] = ret_loc["geom"].apply(lambda p: p.convex_hull)
+            ret_loc["extent"] = ret_loc[ret_loc.geometry.name].apply(lambda p: p.convex_hull)
             # convex_hull of one point would be a Point and two points a Linestring,
             # we change them into Polygon by creating a buffer of epsilon around them.
             pointLine_idx = (ret_loc["extent"].geom_type == "LineString") | (ret_loc["extent"].geom_type == "Point")
