@@ -42,11 +42,14 @@ def read_geolife(geolife_path, print_progress=False):
 
     Notes
     -----
-    The geopandas dataframe has the following columns and datatype: 'lat': float64, Latitude WGS84; 'lon': float64,
-     Latitude WGS84; 'elevation': float64, in meters; 'tracked_at': datetime64[ns]; 'user_id': int64;
-     'geom': geopandas/shapely geometry; 'accuracy': None;
+    The geopandas dataframe has the following columns and datatype: 'lat': float64, Latitude WGS84;
+    'lon': float64, Longitude WGS84; 'elevation': float64, in meters; 'tracked_at': datetime64[ns];
+    'user_id': int64; 'geom': geopandas/shapely geometry; 'accuracy': None;
 
+    For some users, travel mode labels are provided as .txt file. These labels are read and returned as label dictionary.
     The label dictionary contains the user ids as keys and DataFrames with the available labels as values.
+    Labels can be added to each user at the tripleg level, see
+    :func:`trackintel.io.dataset_reader.geolife_add_modes_to_triplegs` for more details.
 
     The folder structure within the geolife directory needs to be identical with the folder structure
     available from the official download. The means that the top level folder (provided with 'geolife_path')
@@ -57,8 +60,14 @@ def read_geolife(geolife_path, print_progress=False):
     | │   ├── Trajectory
     | │   │   ├── 20081023025304.plt
     | │   │   ├── 20081024020959.plt
-    | │   │   └── 20081026134407.plt
+    | │   │   ├── 20081026134407.plt
+    | │   │   └── ...
     | ├── 001
+    | │   ├── Trajectory
+    | │   │   └── ...
+    | │   ...
+    | ├── 010
+    | │   ├── labels.txt
     | │   ├── Trajectory
     | │   │   └── ...
     | └── ...
@@ -66,7 +75,6 @@ def read_geolife(geolife_path, print_progress=False):
     the geolife dataset as it can be downloaded from:
 
     https://www.microsoft.com/en-us/research/publication/geolife-gps-trajectory-dataset-user-guide/
-
 
     References
     ----------
@@ -201,7 +209,6 @@ def geolife_add_modes_to_triplegs(
     >>> pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts)
     >>> tpls = geolife_add_modes_to_triplegs(tpls, mode_labels)
     """
-
     tpls = tpls_in.copy()
     # temp time fields for nn query
     tpls["started_at_s"] = (tpls["started_at"] - pd.Timestamp("1970-01-01", tz="utc")) // pd.Timedelta("1s")
