@@ -87,4 +87,10 @@ Predefined dataset readers
 ==========================
 We also provide functionality to parse well-known datasets directly into the trackintel framework.
 
+Geolife
+-----------
+We support easy parsing of the Geolife dataset including available mode labels.
+
 .. autofunction:: trackintel.io.dataset_reader.read_geolife
+
+.. autofunction:: trackintel.io.dataset_reader.geolife_add_modes_to_triplegs
