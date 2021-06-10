@@ -227,25 +227,28 @@ def _split_overlaps(source, granularity="day"):
     # Iteratively split one day/hour from multi day/hour entries until no entry spans over multiple days/hours
     while change_flag.sum() > 0:
 
-        # calculate new finished_at timestamp (1sec before midnight)
+        # calculate new finished_at timestamp (00:00 midnight)
         finished_at_temp = df.loc[change_flag, "finished_at"].copy()
         if granularity == "day":
             df.loc[change_flag, "finished_at"] = df.loc[change_flag, "started_at"].apply(
-                lambda x: x.replace(hour=23, minute=59, second=59)
+                lambda x: x.replace(hour=23, minute=59, second=59) + datetime.timedelta(seconds=1)
             )
         elif granularity == "hour":
             df.loc[change_flag, "finished_at"] = df.loc[change_flag, "started_at"].apply(
-                lambda x: x.replace(minute=59, second=59)
+                lambda x: x.replace(minute=59, second=59) + datetime.timedelta(seconds=1)
             )
 
         # create new entries with remaining timestamp
         new_df = df.loc[change_flag].copy()
-        new_df.loc[change_flag, "started_at"] = df.loc[change_flag, "finished_at"] + datetime.timedelta(seconds=1)
+        new_df.loc[change_flag, "started_at"] = df.loc[change_flag, "finished_at"]
         new_df.loc[change_flag, "finished_at"] = finished_at_temp
 
         df = df.append(new_df, ignore_index=True, sort=True)
 
         change_flag = __get_split_index(df, granularity=granularity)
+
+    if "duration" in df.columns:
+        df["duration"] = df["finished_at"] - df["started_at"]
 
     return df
 
@@ -268,9 +271,9 @@ def __get_split_index(df, granularity="day"):
     change_flag: pd.Series
         Boolean index indicating which records needs to be splitted
     """
-    change_flag = df["started_at"].dt.date != df["finished_at"].dt.date
+    change_flag = df["started_at"].dt.date != (df["finished_at"] - pd.to_timedelta("1s")).dt.date
     if granularity == "hour":
-        hour_flag = df["started_at"].dt.hour != df["finished_at"].dt.hour
+        hour_flag = df["started_at"].dt.hour != (df["finished_at"] - pd.to_timedelta("1s")).dt.hour
         # union of day and hour change flag
         change_flag = change_flag | hour_flag
 
