@@ -1,10 +1,11 @@
 import datetime
+
 import numpy as np
 
 from trackintel.geogr.distances import check_gdf_crs, calculate_haversine_length
 
 
-def create_activity_flag(staypoints, method="time_threshold", time_threshold=5.0, activity_column_name="activity"):
+def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.0, activity_column_name="activity"):
     """
     Add a flag whether or not a staypoint is considered an activity.
 
@@ -17,7 +18,7 @@ def create_activity_flag(staypoints, method="time_threshold", time_threshold=5.0
 
         - 'time_threshold' : All staypoints with a duration greater than the time_threshold are considered an activity.
 
-    time_threshold : float, default = 5 (minutes)
+    time_threshold : float, default = 15 (minutes)
         The time threshold for which a staypoint is considered an activity in minutes. Used by method 'time_threshold'
 
     activity_column_name : str , default = 'activity'
@@ -30,7 +31,7 @@ def create_activity_flag(staypoints, method="time_threshold", time_threshold=5.0
 
     Examples
     --------
-    >>> stps  = stps.as_staypoints.create_activity_flag(method='time_threshold', time_threshold=5)
+    >>> stps  = stps.as_staypoints.create_activity_flag(method='time_threshold', time_threshold=15)
     >>> print(stps['activity'])
     """
     if method == "time_threshold":
