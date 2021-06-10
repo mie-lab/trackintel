@@ -171,3 +171,28 @@ class TestGenerate_locations:
 
         assert (locs_ds.index == np.arange(len(locs_ds))).any()
         assert (locs_us.index == np.arange(len(locs_us))).any()
+
+    def test_generate_locations_index_start_euclidean_print_progress(self):
+        """Test the generated index start from 0 for different methods."""
+        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
+
+        _, locs_ds = stps.as_staypoints.generate_locations(
+            method="dbscan",
+            epsilon=10,
+            num_samples=0,
+            distance_metric="euclidean",
+            agg_level="dataset",
+            print_progress=False,
+        )
+        _, locs_us = stps.as_staypoints.generate_locations(
+            method="dbscan",
+            epsilon=10,
+            num_samples=0,
+            distance_metric="euclidean",
+            agg_level="user",
+            print_progress=True,
+        )
+
+        assert (locs_ds.index == np.arange(len(locs_ds))).any()
+        assert (locs_us.index == np.arange(len(locs_us))).any()
