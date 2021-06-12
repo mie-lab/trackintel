@@ -69,7 +69,7 @@ def generate_locations(
 
     # initialize the return GeoDataFrames
     ret_stps = staypoints.copy()
-    ret_stps = ret_stps.sort_values("started_at")
+    ret_stps = ret_stps.sort_values(["user_id", "started_at"])
     geo_col = ret_stps.geometry.name
 
     if method == "dbscan":
@@ -86,7 +86,6 @@ def generate_locations(
         if agg_level == "user":
 
             # we create a new column: 'serial_num' where we assign serial numbers to each user id
-            ret_stps = ret_stps.assign(serial_num=(ret_stps["user_id"]).astype("category").cat.codes)
             if print_progress:
                 tqdm.pandas(desc="User location generation")
                 ret_stps = ret_stps.groupby("user_id", as_index=False).progress_apply(
@@ -94,7 +93,6 @@ def generate_locations(
                     geo_col=geo_col,
                     distance_metric=distance_metric,
                     db=db,
-                    num_total_stps=len(ret_stps),
                 )
             else:
                 ret_stps = ret_stps.groupby("user_id", as_index=False).apply(
@@ -102,15 +100,23 @@ def generate_locations(
                     geo_col=geo_col,
                     distance_metric=distance_metric,
                     db=db,
-                    num_total_stps=len(ret_stps),
                 )
 
-            ret_stps = ret_stps.drop(columns={"serial_num"})
+            # sort so that the last location id of a user = max(location id)
+            ret_stps = ret_stps.sort_values(["user_id", "location_id"])
 
-            # we remove the holes in the staypoint ids to ensure sequential location ids
-            noise_labels = ret_stps["location_id"] == -1
-            ret_stps = ret_stps.assign(location_id=(ret_stps["location_id"]).astype("category").cat.codes)
-            ret_stps.loc[noise_labels, "location_id"] = -1
+            # identify start positions of new user_ids
+            start_of_user_id = ret_stps["user_id"] != ret_stps["user_id"].shift(1)
+
+            # calculate the offset (= last location id of the previous user)
+            # multiplication is to mask all positions where no new user starts and addition is to have a +1 when a
+            # new user starts
+            loc_id_offset = ret_stps["location_id"].shift(1) * start_of_user_id + start_of_user_id
+
+            # fill first nan with 0 and create the cumulative sum
+            loc_id_offset = loc_id_offset.fillna(0).cumsum()
+
+            ret_stps["location_id"] = ret_stps["location_id"] + loc_id_offset
 
         else:
             if distance_metric == "haversine":
@@ -190,11 +196,8 @@ def generate_locations(
     return ret_stps, ret_loc
 
 
-def _generate_locations_per_user(user_staypoints, distance_metric, db, geo_col, num_total_stps):
+def _generate_locations_per_user(user_staypoints, distance_metric, db, geo_col):
     """function called after groupby: should only contain records of one user; see generate_locations() function for parameter meaning."""
-
-    # ensuring unique labels for each user, by reserving a new block of ids (size of block = num_total_stps)
-    offset = user_staypoints["serial_num"].iloc[0] * num_total_stps
 
     if distance_metric == "haversine":
         # the input is converted to list of (lat, lon) tuples in radians unit
@@ -202,9 +205,6 @@ def _generate_locations_per_user(user_staypoints, distance_metric, db, geo_col, 
     else:
         p = np.array([[q.x, q.y] for q in (user_staypoints[geo_col])])
     labels = db.fit_predict(p)
-
-    # enforce unique lables across all users without changing noise labels
-    labels[labels != -1] = labels[labels != -1] + offset
 
     # add staypoint - location matching to original staypoints
     user_staypoints["location_id"] = labels
