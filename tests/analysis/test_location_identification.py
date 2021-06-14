@@ -241,36 +241,28 @@ class TestLocation_Identifier:
 
 @pytest.fixture
 def example_osna():
-    """Example staypoints with 2 location for 2 users with 4 different times."""
+    """Example staypoints with 3 location for 1 users within 3 different timeframes."""
     weekday = "2021-05-19 "
-    weekend = "2021-05-22 "
     t_rest = pd.Timestamp(weekday + "07:00:00", tz="utc")
     t_work = pd.Timestamp(weekday + "18:00:00", tz="utc")
-    t_weekend = pd.Timestamp(weekend + "00:00:00", tz="utc")
     t_leisure = pd.Timestamp(weekday + "01:00:00", tz="utc")
     h = pd.Timedelta("1h")
+
     list_dict = [
         {"user_id": 0, "location_id": 0, "started_at": t_rest},
         {"user_id": 0, "location_id": 0, "started_at": t_leisure},
-        {"user_id": 0, "location_id": 0, "started_at": t_work},  # (0, 0) 1 rest + 1 leisure + 1 work
+        {"user_id": 0, "location_id": 0, "started_at": t_work},
         {"user_id": 0, "location_id": 1, "started_at": t_rest},
         {"user_id": 0, "location_id": 1, "started_at": t_work},
-        {"user_id": 0, "location_id": 1, "started_at": t_work},  # (0, 1) 1 rest + 2 work + 1 weekend
-        {"user_id": 0, "location_id": 1, "started_at": t_weekend},
-        {"user_id": 0, "location_id": 2, "started_at": t_leisure},  # (0, 2) 1 leisure
-        {"user_id": 1, "location_id": 0, "started_at": t_rest},
-        {"user_id": 1, "location_id": 0, "started_at": t_leisure},
-        {"user_id": 1, "location_id": 0, "started_at": t_work},  # (1, 0) 1 rest + 1 leisure + 1 work
-        {"user_id": 1, "location_id": 1, "started_at": t_leisure},
-        {"user_id": 1, "location_id": 1, "started_at": t_leisure},
-        {"user_id": 1, "location_id": 1, "started_at": t_work},
-        {"user_id": 1, "location_id": 1, "started_at": t_work},  # (1, 1) 2 leisure + 2 work
-        {"user_id": 1, "location_id": 2, "started_at": t_leisure},  # (1, 2) 1 leisure
-    ]  # I am not happy with this fixture as we test for a lot of things at the same time.
-    p = Point(8.5, 47.1)  # geometry isn't used
+        {"user_id": 0, "location_id": 1, "started_at": t_work},
+        {"user_id": 0, "location_id": 2, "started_at": t_leisure},
+    ]
+
+    p = Point(8.0, 47.0)  # geometry isn't used
     for d in list_dict:
         d["finished_at"] = d["started_at"] + h
         d["geom"] = p
+
     spts = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     spts.index.name = "id"
     assert "location_id" in spts.columns
@@ -293,38 +285,84 @@ class TestOsna_Method:
         # for that lets add 2 work times to location 0
         t = pd.Timestamp("2021-05-19 12:00:00", tz="utc")
         h = pd.to_timedelta("1h")
-        p = Point(0, 0)
+        p = Point(0.0, 0.0)
         list_dict = [
             {"user_id": 0, "location_id": 0, "started_at": t, "finished_at": t + h, "geom": p},
             {"user_id": 0, "location_id": 0, "started_at": t, "finished_at": t + h, "geom": p},
-            {"user_id": 1, "location_id": 0, "started_at": t, "finished_at": t + h, "geom": p},
-            {"user_id": 1, "location_id": 0, "started_at": t, "finished_at": t + h, "geom": p},
         ]
         spts = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
         spts.index.name = "id"
         spts = example_osna.append(spts)
+        result = osna_method(spts).iloc[:-2]
         example_osna.loc[example_osna["location_id"] == 0, "activity_label"] = "home"
         example_osna.loc[example_osna["location_id"] == 1, "activity_label"] = "work"
-        assert_geodataframe_equal(osna_method(spts).iloc[:-4], example_osna)
+        assert_geodataframe_equal(result, example_osna)
 
-    def test_weekends_ignored(self, example_osna):
-        """Test that weekends aren't included in analysis."""
-        # just add a bunch of weekends to user 0 at location 0
-        t = pd.Timestamp("2021-05-22 12:00:00", tz="utc")  # saturday
-        h = pd.to_timedelta("1h")
-        p = Point(0, 0)
+    def test_only_weekends(self, example_osna):
+        """Test if an "empty df" warning rises if only weekends are included."""
+        weekend = "2021-05-22"  # a saturday
+
+        def _insert_weekend(dt, day=weekend):
+            """Take datetime and return new datetime with same time and new day (str)."""
+            time = dt.time().strftime("%H:%M:%S")
+            new_dt = " ".join((day, time))
+            return pd.Timestamp(new_dt, tz=dt.tz)
+
+        # replace all days with weekends --> no label in data.
+        example_osna["started_at"] = example_osna["started_at"].apply(_insert_weekend)
+        example_osna["finished_at"] = example_osna["finished_at"].apply(_insert_weekend)
+
+        # check if warning is raised if all points are excluded (weekend)
+        with pytest.warns(UserWarning):
+            result = osna_method(example_osna)
+
+        example_osna["activity_label"] = np.full(len(example_osna), np.nan, dtype=object)
+        assert_geodataframe_equal(result, example_osna)
+
+    def test_two_users(self, example_osna):
+        """Test if two users are handled correctly."""
+        two_user = example_osna.append(example_osna)
+        two_user.iloc[len(example_osna) :, 0] = 1  # second user gets id 1
+        result = osna_method(two_user)
+        two_user.loc[two_user["location_id"] == 0, "activity_label"] = "home"
+        two_user.loc[two_user["location_id"] == 1, "activity_label"] = "work"
+        assert_geodataframe_equal(result, two_user)
+
+    def test_leisure_weighting(self, example_osna):
+        """Test if leisure has the weight given in the paper."""
+        weight_rest = 0.739
+        weight_leis = 0.358
+        ratio = weight_rest / weight_leis
+        ratio += 0.01  # tip the scale in favour of leisure
+        weekday = "2021-05-19 "
+        t_rest = pd.Timestamp(weekday + "07:00:00", tz="utc")
+        t_work = pd.Timestamp(weekday + "18:00:00", tz="utc")
+        t_leis = pd.Timestamp(weekday + "01:00:00", tz="utc")
+        h = pd.Timedelta("1h")
+
         list_dict = [
-            {"user_id": 0, "location_id": 2, "started_at": t, "finished_at": t + h, "geom": p},
-            {"user_id": 0, "location_id": 2, "started_at": t, "finished_at": t + h, "geom": p},
-            {"user_id": 0, "location_id": 2, "started_at": t, "finished_at": t + h, "geom": p},
-            {"user_id": 0, "location_id": 2, "started_at": t, "finished_at": t + h, "geom": p},
+            {"user_id": 0, "location_id": 0, "started_at": t_rest, "finished_at": t_rest + h},
+            {"user_id": 0, "location_id": 1, "started_at": t_leis, "finished_at": t_leis + ratio * h},
+            {"user_id": 0, "location_id": 2, "started_at": t_work, "finished_at": t_work + h},
         ]
+        p = Point(8.0, 47.0)  # geometry isn't used
+        for d in list_dict:
+            d["geom"] = p
         spts = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
         spts.index.name = "id"
-        spts = example_osna.append(spts)
+        result = osna_method(spts)
+        spts.loc[spts["location_id"] == 1, "activity_label"] = "home"
+        spts.loc[spts["location_id"] == 2, "activity_label"] = "work"
+        assert_geodataframe_equal(spts, result)
+
+    def test_prior_activity_label(self, example_osna):
+        """Test that prior activity_label column does not corrupt output."""
+        example_osna["activity_label"] = np.arange(len(example_osna))
+        result = osna_method(example_osna)
+        del example_osna["activity_label"]
         example_osna.loc[example_osna["location_id"] == 0, "activity_label"] = "home"
         example_osna.loc[example_osna["location_id"] == 1, "activity_label"] = "work"
-        assert_geodataframe_equal(osna_method(spts).iloc[:-4], example_osna)
+        assert_geodataframe_equal(example_osna, result)
 
 
 class Test_osna_label_timeframes:
