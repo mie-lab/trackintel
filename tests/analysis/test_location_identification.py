@@ -241,7 +241,7 @@ class TestLocation_Identifier:
 
 @pytest.fixture
 def example_osna():
-    """Example staypoints with 3 location for 1 users within 3 different timeframes."""
+    """Example staypoints with 3 location for 1 user within 3 different timeframes."""
     weekday = "2021-05-19 "
     t_rest = pd.Timestamp(weekday + "07:00:00", tz="utc")
     t_work = pd.Timestamp(weekday + "18:00:00", tz="utc")
