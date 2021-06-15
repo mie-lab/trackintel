@@ -37,7 +37,8 @@ def generate_staypoints(
 
     dist_threshold : float, default 100
         The distance threshold for the 'sliding' method, i.e., how far someone has to travel to
-        generate a new staypoint. Units depend on the dist_func parameter.
+        generate a new staypoint. Units depend on the dist_func parameter. If 'distance_metric' is 'haversine' the
+        unit is in meters
 
     time_threshold : float, default 5.0 (minutes)
         The time threshold for the 'sliding' method in minutes.
@@ -375,7 +376,7 @@ def generate_triplegs(
         posfix_grouper = pfs.groupby("tripleg_id")
 
         tpls = posfix_grouper.agg(
-            {"user_id": ["mean"], "tracked_at": [min, max], "geom": list}
+            {"user_id": ["mean"], "tracked_at": [min, max], pfs.geometry.name: list}
         )  # could add a "number of pfs": can be any column "count"
 
         # prepare dataframe: Rename columns; read/set geometry/crs;

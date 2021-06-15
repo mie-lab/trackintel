@@ -81,12 +81,25 @@ def impossible_matching_data():
 class TestReadGeolife:
     def test_loop_read(self):
         """Use read_geolife reader, store posfix as .csv, load them again."""
-        pfs, _ = read_geolife(os.path.join("tests", "data", "geolife"))
+        pfs, _ = read_geolife(os.path.join("tests", "data", "geolife"), print_progress=True)
         tmp_file = os.path.join("tests", "data", "positionfixes_test.csv")
         pfs.as_positionfixes.to_csv(tmp_file)
         pfs2 = ti.read_positionfixes_csv(tmp_file, index_col="id")[pfs.columns]
         os.remove(tmp_file)
         assert np.isclose(0, (pfs.lat - pfs2.lat).abs().sum())
+
+    def test_print_progress_flag(self, capsys):
+        """Test if the print_progress par controls the printing behavior"""
+        g_path = os.path.join("tests", "data", "geolife")
+        pfs, _ = read_geolife(g_path, print_progress=True)
+        captured_print = capsys.readouterr()
+        assert captured_print.err != ""
+
+        pfs, _ = read_geolife(g_path, print_progress=False)
+        captured_noprint = capsys.readouterr()
+        assert captured_noprint.err == ""
+
+        assert True
 
     def test_label_reading(self):
         """test data types of the labels returned by read_geolife"""

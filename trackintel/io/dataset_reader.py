@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import Point
 from sklearn.neighbors import NearestNeighbors
+from tqdm import tqdm
 
 FEET2METER = 0.3048
 
@@ -17,7 +18,7 @@ CRS_WGS84 = "epsg:4326"
 from trackintel.preprocessing.util import calc_temp_overlap
 
 
-def read_geolife(geolife_path):
+def read_geolife(geolife_path, print_progress=False):
     """
     Read raw geolife data and return trackintel positionfixes.
 
@@ -28,20 +29,27 @@ def read_geolife(geolife_path):
     geolife_path: str
         path to the directory with the geolife data
 
+    print_progress: Bool, default False
+        Show per-user progress if set to True.
+
     Returns
     -------
     gdf: GeoDataFrame (as trackintel positionfixes)
         Contains all loaded geolife positionfixes
 
     labels: dict
-        Dictionary with the available (optional) mode labels.
+        Dictionary with the available mode labels.
 
     Notes
     -----
-    The geopandas dataframe has the following columns and datatype: 'lat': float64, Latitude WGS84; 'lon': float64, Latitude WGS84; 'elevation': float64, in meters;
-    'tracked_at': datetime64[ns]; 'user_id': int64; 'geom': geopandas/shapely geometry; 'accuracy': None;
+    The geopandas dataframe has the following columns and datatype: 'lat': float64, Latitude WGS84;
+    'lon': float64, Longitude WGS84; 'elevation': float64, in meters; 'tracked_at': datetime64[ns];
+    'user_id': int64; 'geom': geopandas/shapely geometry; 'accuracy': None;
 
+    For some users, travel mode labels are provided as .txt file. These labels are read and returned as label dictionary.
     The label dictionary contains the user ids as keys and DataFrames with the available labels as values.
+    Labels can be added to each user at the tripleg level, see
+    :func:`trackintel.io.dataset_reader.geolife_add_modes_to_triplegs` for more details.
 
     The folder structure within the geolife directory needs to be identical with the folder structure
     available from the official download. The means that the top level folder (provided with 'geolife_path')
@@ -52,8 +60,14 @@ def read_geolife(geolife_path):
     | │   ├── Trajectory
     | │   │   ├── 20081023025304.plt
     | │   │   ├── 20081024020959.plt
-    | │   │   └── 20081026134407.plt
+    | │   │   ├── 20081026134407.plt
+    | │   │   └── ...
     | ├── 001
+    | │   ├── Trajectory
+    | │   │   └── ...
+    | │   ...
+    | ├── 010
+    | │   ├── labels.txt
     | │   ├── Trajectory
     | │   │   └── ...
     | └── ...
@@ -61,7 +75,6 @@ def read_geolife(geolife_path):
     the geolife dataset as it can be downloaded from:
 
     https://www.microsoft.com/en-us/research/publication/geolife-gps-trajectory-dataset-user-guide/
-
 
     References
     ----------
@@ -77,7 +90,8 @@ def read_geolife(geolife_path):
 
     Example
     ----------
-    >>> geolife_pfs, labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'))
+    >>> from trackintel.io.dataset_reader import read_geolife
+    >>> pfs, mode_labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'))
     """
     geolife_path = os.path.join(geolife_path, "*")
     user_folder = sorted(glob.glob(geolife_path))
@@ -88,7 +102,7 @@ def read_geolife(geolife_path):
     if len(user_folder) == 0:
         raise NameError("No folders found with working directory {} and path {}".format(os.getcwd(), geolife_path))
 
-    for user_folder_this in user_folder:
+    for user_folder_this in tqdm(user_folder, disable=not print_progress):
 
         # skip files
         if not os.path.isdir(user_folder_this):
@@ -114,8 +128,6 @@ def read_geolife(geolife_path):
                 " named with integers that represent the user id.".format(tail, user_folder_this)
             )
             raise ValueError(errmsg) from err
-
-        print("start importing geolife user_id: ", user_id)
 
         input_files = sorted(glob.glob(os.path.join(user_folder_this, "Trajectory", "*.plt")))
         df_list_days = []
@@ -145,7 +157,6 @@ def read_geolife(geolife_path):
         # concat all days of a user into a single dataframe
         df_user_this = pd.concat(df_list_days, axis=0, ignore_index=True)
         label_dict[user_id] = labels
-        print("finished user_id: ", user_id)
 
         df_list_users.append(df_user_this)
 
@@ -189,6 +200,14 @@ def geolife_add_modes_to_triplegs(
     -------
     tpls : GeoDataFrame (as trackintel triplegs)
         triplegs with mode labels.
+
+    Example
+    ----------
+    >>> from trackintel.io.dataset_reader import read_geolife, geolife_add_modes_to_triplegs
+    >>> pfs, mode_labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'))
+    >>> pfs, spts = pfs.as_positionfixes.generate_staypoints()
+    >>> pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts)
+    >>> tpls = geolife_add_modes_to_triplegs(tpls, mode_labels)
     """
     tpls = tpls_in.copy()
     # temp time fields for nn query
