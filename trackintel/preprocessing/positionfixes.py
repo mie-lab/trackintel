@@ -1,4 +1,5 @@
 import datetime
+import warnings
 
 import geopandas as gpd
 import numpy as np
@@ -10,14 +11,15 @@ from trackintel.geogr.distances import haversine_dist
 
 
 def generate_staypoints(
-    pfs_input,
-    method="sliding",
-    distance_metric="haversine",
-    dist_threshold=100,
-    time_threshold=5.0,
-    gap_threshold=1e6,
-    include_last=False,
-    print_progress=False,
+        pfs_input,
+        method="sliding",
+        distance_metric="haversine",
+        dist_threshold=100,
+        time_threshold=5.0,
+        gap_threshold=1e6,
+        include_last=False,
+        print_progress=False,
+        exclude_duplicate_pfs=True,
 ):
     """
     Generate staypoints from positionfixes.
@@ -53,6 +55,10 @@ def generate_staypoints(
     print_progress: boolen, default False
         Show per-user progress if set to True.
 
+    exclude_duplicate_pfs: boolean, default True
+        Filters duplicate positionfixes before generating staypoints. Duplicates can lead to problems in later
+        processing steps (e.g., when generating triplegs). It is not recommended to set this to False.
+
     Returns
     -------
     pfs: GeoDataFrame (as trackintel positionfixes)
@@ -84,6 +90,17 @@ def generate_staypoints(
     """
     # copy the original pfs for adding 'staypoint_id' column
     pfs = pfs_input.copy()
+
+    if exclude_duplicate_pfs:
+        len_org = pfs.shape[0]
+        pfs = pfs.drop_duplicates()
+        nb_dropped = len_org - pfs.shape[0]
+        if nb_dropped > 0:
+            warn_str = (
+                    f"{nb_dropped} duplicates were dropped from your positionfixes. Dropping duplicates is"
+                    + " recommended but can be prevented using the 'exclude_duplicate_pfs' flag."
+            )
+            warnings.warn(warn_str)
 
     # if the positionfixes already have a column "staypoint_id", we drop it
     if "staypoint_id" in pfs:
@@ -169,7 +186,12 @@ def generate_staypoints(
     return pfs, stps
 
 
-def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_threshold=15):
+def generate_triplegs(
+        pfs_input,
+        stps_input,
+        method="between_staypoints",
+        gap_threshold=15,
+):
     """Generate triplegs from positionfixes.
 
     Parameters
@@ -364,7 +386,24 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
         tpls = tpls.set_geometry("geom")
         tpls.crs = pfs.crs
 
-        # check the correctness of the generated tpls
+        # check the correctness of the generated triplegs
+        invalid_tpls = tpls[~tpls.geometry.is_valid]
+        if invalid_tpls.shape[0] > 0:
+            # identify invalid tripleg ids
+            invalid_tpls_ids = invalid_tpls.index.to_list()
+
+            # reset tpls id in pfs
+            invalid_pfs_ixs = pfs[pfs.tripleg_id.isin(invalid_tpls_ids)].index
+            pfs.loc[invalid_pfs_ixs, "tripleg_id"] = pd.NA
+            warn_string = (
+                f"The positionfixes with ids {invalid_pfs_ixs.values} lead to invalid tripleg geometries. The "
+                f"resulting triplegs were omitted and the tripleg id of the positionfixes was set to nan"
+            )
+            warnings.warn(warn_string)
+
+            # drop triplegs
+            tpls = tpls[tpls.geometry.is_valid]
+
         assert tpls.as_triplegs
 
         if case == 2:
@@ -393,7 +432,7 @@ def _generate_staypoints_sliding_user(
     else:
         raise AttributeError("distance_metric unknown. We only support ['haversine']. " f"You passed {distance_metric}")
 
-    df.sort_values("tracked_at", inplace=True)
+    df = df.sort_index(kind="mergesort").sort_values(by=["tracked_at"], kind="mergesort")
     # pfs id should be in index, create separate idx for storing the matching
     pfs = df.to_dict("records")
     idx = df.index.to_list()
