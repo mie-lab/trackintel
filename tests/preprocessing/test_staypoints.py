@@ -13,7 +13,8 @@ from trackintel.geogr.distances import calculate_distance_matrix
 class TestGenerate_locations:
     """Tests for generate_locations() method."""
 
-    def test_generate_locations_dbscan_hav_euc(self):
+    def test_dbscan_hav_euc(self):
+        """Test if using haversine and euclidean distances will generate the same location result."""
         stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
 
@@ -31,9 +32,10 @@ class TestGenerate_locations:
             method="dbscan", epsilon=100, num_samples=0, distance_metric="euclidean", agg_level="dataset"
         )
 
-        assert len(loc_har) == len(loc_eu), "The #location should be the same for haversine" + "and euclidean distances"
+        assert len(loc_har) == len(loc_eu)
 
-    def test_generate_locations_dbscan_haversine(self):
+    def test_dbscan_haversine(self):
+        """Test haversine dbscan location result with manually calling the DBSCAN method."""
         stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
 
@@ -47,9 +49,10 @@ class TestGenerate_locations:
         db = DBSCAN(eps=10, min_samples=0, metric="precomputed")
         labels = db.fit_predict(sp_distance_matrix)
 
-        assert len(set(locs.index)) == len(set(labels)), "The number of locations should be the same"
+        assert len(set(locs.index)) == len(set(labels))
 
-    def test_generate_locations_dbscan_loc(self):
+    def test_dbscan_loc(self):
+        """Test haversine dbscan location result with manually grouping the locations method."""
         stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
         stps, locs = stps.as_staypoints.generate_locations(
@@ -75,10 +78,11 @@ class TestGenerate_locations:
         other_locs = gpd.GeoDataFrame(other_locs, geometry="center", crs=stps.crs)
         other_locs.set_index("id", inplace=True)
 
-        assert all(other_locs["center"] == locs["center"]), "The location geometry should be the same"
-        assert all(other_locs.index == locs.index), "The location id should be the same"
+        assert all(other_locs["center"] == locs["center"])
+        assert all(other_locs.index == locs.index)
 
-    def test_generate_locations_dbscan_user_dataset(self):
+    def test_dbscan_user_dataset(self):
+        """Test user and dataset location generation."""
         stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
         # take the first row and duplicate once
@@ -95,12 +99,13 @@ class TestGenerate_locations:
         _, locs_us = stps.as_staypoints.generate_locations(
             method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="user"
         )
-        loc_ds_num = len(locs_ds.index.unique())
-        loc_us_num = len(locs_us.index.unique())
-        assert loc_ds_num == 1, "Considering all staypoints at once, there should be only one location"
-        assert loc_us_num == 2, "Considering user staypoints separately, there should be two locations"
+        loc_dataset_num = len(locs_ds.index.unique())
+        loc_user_num = len(locs_us.index.unique())
+        assert loc_dataset_num == 1
+        assert loc_user_num == 2
 
-    def test_generate_locations_dbscan_min(self):
+    def test_dbscan_min(self):
+        """Test with small epsilon parameter."""
         pfs_file = os.path.join("tests", "data", "positionfixes.csv")
         pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id")
         _, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=0, time_threshold=0)
@@ -110,10 +115,12 @@ class TestGenerate_locations:
         _, locs_data = stps.as_staypoints.generate_locations(
             method="dbscan", epsilon=1e-18, num_samples=0, agg_level="dataset"
         )
-        assert len(locs_user) == len(stps), "With small hyperparameters, clustering should not reduce the number"
-        assert len(locs_data) == len(stps), "With small hyperparameters, clustering should not reduce the number"
+        # With small hyperparameters, clustering should not reduce the number
+        assert len(locs_user) == len(stps)
+        assert len(locs_data) == len(stps)
 
-    def test_generate_locations_dbscan_max(self):
+    def test_dbscan_max(self):
+        """Test with large epsilon parameter."""
         pfs_file = os.path.join("tests", "data", "positionfixes.csv")
         pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id")
         _, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=0, time_threshold=0)
@@ -123,10 +130,11 @@ class TestGenerate_locations:
         _, locs_data = stps.as_staypoints.generate_locations(
             method="dbscan", epsilon=1e18, num_samples=1000, agg_level="dataset"
         )
-        assert len(locs_user) == 0, "With large hyperparameters, every user location is an outlier"
-        assert len(locs_data) == 0, "With large hyperparameters, every dataset location is an outlier"
+        # "With large epsilon, every user location is an outlier"
+        assert len(locs_user) == 0
+        assert len(locs_data) == 0
 
-    def test_generate_locations_missing_link(self):
+    def test_missing_link(self):
         """Test nan is assigned for missing link between stps and locs."""
         pfs_file = os.path.join("tests", "data", "positionfixes.csv")
         pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id")
@@ -137,12 +145,12 @@ class TestGenerate_locations:
 
         assert pd.isna(stps["location_id"]).any()
 
-    def test_generate_locations_num_samples_high(self):
-        """Test higher values of num_samples for generate_locations"""
+    def test_num_samples_high(self):
+        """Test higher values of num_samples for generate_locations."""
         stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
         stps_ns_5, _ = stps.as_staypoints.generate_locations(
-            epsilon=50, distance_metric="haversine", agg_level="user", num_samples=5
+            epsilon=50, distance_metric="haversine", agg_level="user", num_samples=2
         )
         non_noise_stps = stps_ns_5[stps_ns_5["location_id"] != -1]
 
@@ -152,10 +160,11 @@ class TestGenerate_locations:
         for loc_list in grouped:
             loc_set.append(set(loc_list))
 
-        # we assert that the count of overlaps is equal to the count of users (each user has overlap with the same user)
+        # we assert that the count of overlaps is equal to the count of users
+        # (each user has overlap with the same user)
         assert sum([int(len(p & q) > 0) for p in loc_set for q in loc_set]) == len(loc_set)
 
-    def test_generate_locations_dtype_consistent(self):
+    def test_dtype_consistent(self):
         """Test the dtypes for the generated columns."""
         stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
@@ -175,42 +184,29 @@ class TestGenerate_locations:
         assert stps["location_id"].dtype == "Int64"
         assert locs.index.dtype == "int64"
 
-    def test_generate_locations_index_start(self):
+    def test_index_start(self):
         """Test the generated index start from 0 for different methods."""
         stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
 
-        _, locs_ds = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
-        )
-        _, locs_us = stps.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="user"
-        )
+        distance_metric_ls = ["haversine", "euclidean"]
+        agg_level_ls = ["dataset", "user"]
+        for distance_metric in distance_metric_ls:
+            for agg_level in agg_level_ls:
+                _, locations = stps.as_staypoints.generate_locations(
+                    method="dbscan", epsilon=10, num_samples=0, distance_metric=distance_metric, agg_level=agg_level
+                )
+                assert (locations.index == np.arange(len(locations))).any()
 
-        assert (locs_ds.index == np.arange(len(locs_ds))).any()
-        assert (locs_us.index == np.arange(len(locs_us))).any()
+    def test_print_progress_flag(self, capsys):
+        """Test if the print_progress bar controls the printing behavior."""
+        file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        staypoints = ti.read_staypoints_csv(file, tz="utc", index_col="id")
 
-    def test_generate_locations_index_start_euclidean_print_progress(self):
-        """Test the generated index start from 0 for different methods."""
-        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
+        staypoints.as_staypoints.generate_locations(print_progress=True)
+        captured_print = capsys.readouterr()
+        assert captured_print.err != ""
 
-        _, locs_ds = stps.as_staypoints.generate_locations(
-            method="dbscan",
-            epsilon=10,
-            num_samples=0,
-            distance_metric="euclidean",
-            agg_level="dataset",
-            print_progress=False,
-        )
-        _, locs_us = stps.as_staypoints.generate_locations(
-            method="dbscan",
-            epsilon=10,
-            num_samples=0,
-            distance_metric="euclidean",
-            agg_level="user",
-            print_progress=True,
-        )
-
-        assert (locs_ds.index == np.arange(len(locs_ds))).any()
-        assert (locs_us.index == np.arange(len(locs_us))).any()
+        staypoints.as_staypoints.generate_locations(print_progress=False)
+        captured_print = capsys.readouterr()
+        assert captured_print.err == ""
