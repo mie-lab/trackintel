@@ -2,6 +2,7 @@ from math import radians
 
 import numpy as np
 import geopandas as gpd
+import pandas as pd
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
 from tqdm import tqdm
@@ -84,8 +85,6 @@ def generate_locations(
             db = DBSCAN(eps=epsilon, min_samples=num_samples, algorithm="ball_tree", metric=distance_metric)
 
         if agg_level == "user":
-
-            # we create a new column: 'serial_num' where we assign serial numbers to each user id
             if print_progress:
                 tqdm.pandas(desc="User location generation")
                 ret_stps = ret_stps.groupby("user_id", as_index=False).progress_apply(
@@ -102,21 +101,29 @@ def generate_locations(
                     db=db,
                 )
 
+            # keeping track of noise labels
+            ret_stps_non_noise_labels = ret_stps[ret_stps["location_id"] != -1]
+            ret_stps_noise_labels = ret_stps[ret_stps["location_id"] == -1]
+
+
             # sort so that the last location id of a user = max(location id)
-            ret_stps = ret_stps.sort_values(["user_id", "location_id"])
+            ret_stps_non_noise_labels = ret_stps_non_noise_labels.sort_values(["user_id", "location_id"])
 
             # identify start positions of new user_ids
-            start_of_user_id = ret_stps["user_id"] != ret_stps["user_id"].shift(1)
+            start_of_user_id = ret_stps_non_noise_labels["user_id"] != ret_stps_non_noise_labels["user_id"].shift(1)
 
             # calculate the offset (= last location id of the previous user)
             # multiplication is to mask all positions where no new user starts and addition is to have a +1 when a
             # new user starts
-            loc_id_offset = ret_stps["location_id"].shift(1) * start_of_user_id + start_of_user_id
+            loc_id_offset = ret_stps_non_noise_labels["location_id"].shift(1) * start_of_user_id + start_of_user_id
 
             # fill first nan with 0 and create the cumulative sum
             loc_id_offset = loc_id_offset.fillna(0).cumsum()
 
-            ret_stps["location_id"] = ret_stps["location_id"] + loc_id_offset
+
+            ret_stps_non_noise_labels["location_id"] = ret_stps["location_id"] + loc_id_offset
+            ret_stps = gpd.GeoDataFrame(pd.concat([ret_stps_non_noise_labels, ret_stps_noise_labels]), geometry=geo_col)
+
 
         else:
             if distance_metric == "haversine":
@@ -197,7 +204,8 @@ def generate_locations(
 
 
 def _generate_locations_per_user(user_staypoints, distance_metric, db, geo_col):
-    """function called after groupby: should only contain records of one user; see generate_locations() function for parameter meaning."""
+    """function called after groupby: should only contain records of one user;
+    see generate_locations() function for parameter meaning."""
 
     if distance_metric == "haversine":
         # the input is converted to list of (lat, lon) tuples in radians unit
