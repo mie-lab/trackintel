@@ -201,6 +201,7 @@ class TestGenerate_locations:
             num_samples=0,
             distance_metric="euclidean",
             agg_level="dataset",
+            print_progress=False,
         )
         _, locs_us = stps.as_staypoints.generate_locations(
             method="dbscan",
@@ -208,6 +209,7 @@ class TestGenerate_locations:
             num_samples=0,
             distance_metric="euclidean",
             agg_level="user",
+            print_progress=True,
         )
 
         assert (locs_ds.index == np.arange(len(locs_ds))).any()
