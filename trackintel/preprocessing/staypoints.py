@@ -105,7 +105,6 @@ def generate_locations(
             ret_stps_non_noise_labels = ret_stps[ret_stps["location_id"] != -1]
             ret_stps_noise_labels = ret_stps[ret_stps["location_id"] == -1]
 
-
             # sort so that the last location id of a user = max(location id)
             ret_stps_non_noise_labels = ret_stps_non_noise_labels.sort_values(["user_id", "location_id"])
 
@@ -120,10 +119,8 @@ def generate_locations(
             # fill first nan with 0 and create the cumulative sum
             loc_id_offset = loc_id_offset.fillna(0).cumsum()
 
-
             ret_stps_non_noise_labels["location_id"] = ret_stps["location_id"] + loc_id_offset
             ret_stps = gpd.GeoDataFrame(pd.concat([ret_stps_non_noise_labels, ret_stps_noise_labels]), geometry=geo_col)
-
 
         else:
             if distance_metric == "haversine":

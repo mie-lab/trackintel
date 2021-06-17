@@ -137,6 +137,24 @@ class TestGenerate_locations:
 
         assert pd.isna(stps["location_id"]).any()
 
+    def test_generate_locations_num_samples_high(self):
+        """Test higher values of num_samples for generate_locations"""
+        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
+        stps_ns_5, _ = stps.as_staypoints.generate_locations(
+            epsilon=50, distance_metric="haversine", agg_level="user", num_samples=5
+        )
+        non_noise_stps = stps_ns_5[stps_ns_5["location_id"] != -1]
+
+        # group_by_user_id and check that no two different user ids share a common location id
+        grouped = list(non_noise_stps.groupby(["user_id"])["location_id"].unique())
+        loc_set = []
+        for loc_list in grouped:
+            loc_set.append(set(loc_list))
+
+        # we assert that the count of overlaps is equal to the count of users (each user has overlap with the same user)
+        assert sum([int(len(p & q) > 0) for p in loc_set for q in loc_set]) == len(loc_set)
+
     def test_generate_locations_dtype_consistent(self):
         """Test the dtypes for the generated columns."""
         stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
@@ -183,7 +201,6 @@ class TestGenerate_locations:
             num_samples=0,
             distance_metric="euclidean",
             agg_level="dataset",
-            print_progress=False,
         )
         _, locs_us = stps.as_staypoints.generate_locations(
             method="dbscan",
@@ -191,7 +208,6 @@ class TestGenerate_locations:
             num_samples=0,
             distance_metric="euclidean",
             agg_level="user",
-            print_progress=True,
         )
 
         assert (locs_ds.index == np.arange(len(locs_ds))).any()
