@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 import trackintel as ti
-from trackintel.analysis.label import _check_categories
+from trackintel.analysis.labelling import _check_categories
 
 
 class TestCreate_activity_flag:

@@ -1,5 +1,7 @@
 import trackintel.model
 import trackintel.analysis
+import trackintel.geogr
+import trackintel.preprocessing
 
 from trackintel.io.file import read_positionfixes_csv
 from trackintel.io.file import read_triplegs_csv
