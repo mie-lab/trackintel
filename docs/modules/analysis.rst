@@ -4,12 +4,12 @@ Analysis
 The analysis module provides a variety of functions to analyze the mobility
 datasets computed by trackintel. 
 
-Label
-=====
+Labelling
+=========
 
-.. autofunction:: trackintel.analysis.label.create_activity_flag
+.. autofunction:: trackintel.analysis.labelling.create_activity_flag
 
-.. autofunction:: trackintel.analysis.label.predict_transport_mode
+.. autofunction:: trackintel.analysis.labelling.predict_transport_mode
 
 Tracking Quality
 ================

@@ -1,3 +1,3 @@
 from .tracking_quality import *
-from .label import *
+from .labelling import *
 from .modal_split import *
