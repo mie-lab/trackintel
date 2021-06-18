@@ -15,7 +15,7 @@ def generate_staypoints(
     distance_metric="haversine",
     dist_threshold=100,
     time_threshold=5.0,
-    gap_threshold=1e6,
+    gap_threshold=15.0,
     include_last=False,
     print_progress=False,
 ):
@@ -41,12 +41,13 @@ def generate_staypoints(
     time_threshold : float, default 5.0 (minutes)
         The time threshold for the 'sliding' method in minutes.
 
-    gap_threshold : float, default 1e6 (minutes)
-        The time threshold of determine whether a gap exists between consecutive pfs. Staypoints
-        will not be generated between gaps. Only valid in 'sliding' method.
+    gap_threshold : float, default 15.0 (minutes)
+        The time threshold of determine whether a gap exists between consecutive pfs. Consecutive pfs with
+        temporal gaps larger than 'gap_threshold' will be excluded from staypoints generation.
+        Only valid in 'sliding' method.
 
     include_last: boolen, default False
-        The original algorithm (see Li et al. (2008)) only detects staypoint if the user steps out
+        The algorithm in Li et al. (2008) only detects staypoint if the user steps out
         of that staypoint. This will omit the last staypoint (if any). Set 'include_last'
         to True to include this last staypoint.
 
@@ -65,9 +66,9 @@ def generate_staypoints(
     -----
     The 'sliding' method is adapted from Li et al. (2008). In the original algorithm, the 'finished_at'
     time for the current staypoint lasts until the 'tracked_at' time of the first positionfix outside
-    this staypoint. This implies potential tracking gaps may be included in staypoints, and users
-    are assumed to be stationary during this missing period. To avoid including too large gaps, set
-    'gap_threshold' parameter to a small value, e.g., 15 min.
+    this staypoint. Users are assumed to be stationary during this missing period and potential tracking
+    gaps may be included in staypoints. To avoid including too large missing signal gaps, set 'gap_threshold'
+    to a small value, e.g., 15 min.
 
     Examples
     --------
@@ -413,7 +414,7 @@ def _generate_staypoints_sliding_user(
             # the duration of gap in the last two pfs
             gap_t = (pfs[curr]["tracked_at"] - pfs[curr - 1]["tracked_at"]).total_seconds()
 
-            # we want the spt to have long duration, but the gap of missing signal should not be too long
+            # we want the spt to have long duration, but the gap of two consecutive pfs should not be too long
             if (delta_t >= (time_threshold * 60)) and (gap_t < gap_threshold * 60):
                 new_stps = __create_new_staypoints(start, curr, pfs, idx, elevation_flag, geo_col)
                 # add staypoint
