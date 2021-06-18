@@ -110,28 +110,26 @@ class TestGenerate_staypoints:
 
         # the duration should be not longer than time_threshold
         time_threshold_ls = [3, 5, 10]
-        for time_threshold in time_threshold_ls:
-            _, stps = pfs_input.as_positionfixes.generate_staypoints(
-                method="sliding", dist_threshold=50, time_threshold=time_threshold
-            )
-
-            duration_stps_min = (stps["finished_at"] - stps["started_at"]).dt.total_seconds() / 60
-            # all durations should be longer than the time_threshold
-            assert (duration_stps_min > time_threshold).all()
 
         # the missing time should not exceed gap_threshold
-        gap_threshold_ls = [10, 15, 20]
-        for gap_threshold in gap_threshold_ls:
-            pfs, _ = pfs_input.as_positionfixes.generate_staypoints(
-                method="sliding", dist_threshold=50, time_threshold=time_threshold, gap_threshold=gap_threshold
-            )
-            # get the difference between pfs tracking time, and assign back to the previous pfs
-            pfs["diff"] = ((pfs["tracked_at"] - pfs["tracked_at"].shift(1)).dt.total_seconds() / 60).shift(-1)
-            # get the last pf of stps and check the gap size
-            pfs.dropna(subset=["staypoint_id"], inplace=True)
-            pfs.drop_duplicates(subset=["staypoint_id"], keep="last", inplace=True)
-            # all last pfs should be shorter than the gap_threshold
-            assert (pfs["diff"] < gap_threshold).all()
+        gap_threshold_ls = [5, 10, 15, 20]
+        for time_threshold in time_threshold_ls:
+            for gap_threshold in gap_threshold_ls:
+                pfs, stps = pfs_input.as_positionfixes.generate_staypoints(
+                    method="sliding", dist_threshold=50, time_threshold=time_threshold, gap_threshold=gap_threshold
+                )
+
+                # all durations should be longer than the time_threshold
+                duration_stps_min = (stps["finished_at"] - stps["started_at"]).dt.total_seconds() / 60
+                assert (duration_stps_min > time_threshold).all()
+
+                # all last pfs should be shorter than the gap_threshold
+                # get the difference between pfs tracking time, and assign back to the previous pfs
+                pfs["diff"] = ((pfs["tracked_at"] - pfs["tracked_at"].shift(1)).dt.total_seconds() / 60).shift(-1)
+                # get the last pf of stps and check the gap size
+                pfs.dropna(subset=["staypoint_id"], inplace=True)
+                pfs.drop_duplicates(subset=["staypoint_id"], keep="last", inplace=True)
+                assert (pfs["diff"] < gap_threshold).all()
 
 
 class TestGenerate_triplegs:
