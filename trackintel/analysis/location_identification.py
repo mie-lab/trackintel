@@ -46,7 +46,8 @@ def location_identifier(spts, method="FREQ", pre_filter=True, **pre_filter_kwarg
     --------
     >>> ti.analysis.location_identifier(spts, pre_filter=True, method="FREQ")
     """
-    assert spts.as_staypoints
+    # check the correctness
+    spts.as_staypoints
     spts = spts.copy()
     if "location_id" not in spts.columns:
         raise KeyError(
@@ -119,7 +120,8 @@ def pre_filter_locations(
     >> mask = ti.analysis.pre_filter_locations(spts)
     >> spts = spts[mask]
     """
-    assert spts.as_staypoints
+    # check the correctness
+    spts.as_staypoints
     spts = spts.copy()
     if isinstance(thresh_loc_time, str):
         thresh_loc_time = pd.to_timedelta(thresh_loc_time)

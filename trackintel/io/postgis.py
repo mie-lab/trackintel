@@ -35,7 +35,8 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col="geom", *args, 
         pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, geom_col=geom_col, *args, **kwargs)
     finally:
         conn.close()
-    assert pfs.as_positionfixes
+    # check the correctness of the positionfix
+    pfs.as_positionfixes
     return pfs
 
 
@@ -106,7 +107,8 @@ def read_triplegs_postgis(conn_string, table_name, geom_col="geom", *args, **kwa
         )
     finally:
         conn.close()
-    assert pfs.as_triplegs
+    # check the correctness of the tripleg
+    pfs.as_triplegs
     return pfs
 
 
@@ -150,7 +152,7 @@ def write_triplegs_postgis(
 
 
 def read_staypoints_postgis(conn_string, table_name, geom_col="geom", *args, **kwargs):
-    """Reads staypoints from a PostGIS database.
+    """Read staypoints from a PostGIS database.
 
     Parameters
     ----------
@@ -172,13 +174,14 @@ def read_staypoints_postgis(conn_string, table_name, geom_col="geom", *args, **k
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        pfs = gpd.GeoDataFrame.from_postgis(
+        stps = gpd.GeoDataFrame.from_postgis(
             "SELECT * FROM %s" % table_name, conn, geom_col=geom_col, index_col="id", *args, **kwargs
         )
     finally:
         conn.close()
-    assert pfs.as_staypoints
-    return pfs
+    # check the correctness of the staypoint
+    stps.as_staypoints
+    return stps
 
 
 def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
@@ -253,13 +256,13 @@ def read_locations_postgis(conn_string, table_name, geom_col="geom", *args, **kw
         )
     finally:
         conn.close()
-    assert locs.as_locations
+    # check the correctness of the location
+    locs.as_locations
     return locs
 
 
 def write_locations_postgis(locations, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
-    """Stores locations to PostGIS. Usually, this is directly called on a locations
-    GeoDataFrame (see example below).
+    """Store locations to PostGIS. Usually, this is directly called on a locations GeoDataFrame (see example below).
 
     Parameters
     ----------
@@ -295,7 +298,7 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None, sql
 
 
 def read_trips_postgis(conn_string, table_name, *args, **kwargs):
-    """Reads trips from a PostGIS database.
+    """Read trips from a PostGIS database.
 
     Parameters
     ----------
@@ -314,11 +317,13 @@ def read_trips_postgis(conn_string, table_name, *args, **kwargs):
     engine = create_engine(conn_string)
     conn = engine.connect()
     try:
-        trps = pd.read_sql("SELECT * FROM %s" % table_name, conn, index_col="id", *args, **kwargs)
+        trips = pd.read_sql("SELECT * FROM %s" % table_name, conn, index_col="id", *args, **kwargs)
     finally:
         conn.close()
-    assert trps.as_trips
-    return trps
+
+    # check the correctness of the trips
+    trips.as_trips
+    return trips
 
 
 def write_trips_postgis(trips, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail"):

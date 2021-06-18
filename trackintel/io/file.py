@@ -93,7 +93,8 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs
     pfs = gpd.GeoDataFrame(df, geometry="geom")
     if crs:
         pfs.set_crs(crs, inplace=True)
-    assert pfs.as_positionfixes
+    # check the correctness
+    pfs.as_positionfixes
     return pfs
 
 
@@ -195,7 +196,9 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), crs=None
     tpls = gpd.GeoDataFrame(df, geometry="geom")
     if crs:
         tpls.set_crs(crs, inplace=True)
-    assert tpls.as_triplegs
+
+    # check the correctness
+    tpls.as_triplegs
     return tpls
 
 
@@ -291,7 +294,9 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), crs=No
     stps = gpd.GeoDataFrame(df, geometry="geom")
     if crs:
         stps.set_crs(crs, inplace=True)
-    assert stps.as_staypoints
+
+    # check the correctness
+    stps.as_staypoints
     return stps
 
 
@@ -376,7 +381,9 @@ def read_locations_csv(*args, columns=None, index_col=object(), crs=None, **kwar
     locs = gpd.GeoDataFrame(df, geometry="center")
     if crs:
         locs.set_crs(crs, inplace=True)
-    assert locs.as_locations
+
+    # check the correctness
+    locs.as_locations
     return locs
 
 
@@ -464,7 +471,8 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
         if not pd.api.types.is_datetime64tz_dtype(trips[col]):
             trips[col] = _localize_timestamp(dt_series=trips[col], pytz_tzinfo=tz, col_name=col)
 
-    assert trips.as_trips
+    # check the correctness
+    trips.as_trips
     return trips
 
 
