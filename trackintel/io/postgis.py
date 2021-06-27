@@ -35,7 +35,8 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col="geom", *args, 
         pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, geom_col=geom_col, *args, **kwargs)
     finally:
         conn.close()
-    # check the correctness of the positionfix
+
+    # assert validity of positionfixes
     pfs.as_positionfixes
     return pfs
 
@@ -107,7 +108,8 @@ def read_triplegs_postgis(conn_string, table_name, geom_col="geom", *args, **kwa
         )
     finally:
         conn.close()
-    # check the correctness of the tripleg
+
+    # assert validity of triplegs
     pfs.as_triplegs
     return pfs
 
@@ -179,7 +181,8 @@ def read_staypoints_postgis(conn_string, table_name, geom_col="geom", *args, **k
         )
     finally:
         conn.close()
-    # check the correctness of the staypoint
+
+    # assert validity of staypoints
     stps.as_staypoints
     return stps
 
@@ -256,7 +259,8 @@ def read_locations_postgis(conn_string, table_name, geom_col="geom", *args, **kw
         )
     finally:
         conn.close()
-    # check the correctness of the location
+
+    # assert validity of locations
     locs.as_locations
     return locs
 
@@ -321,7 +325,7 @@ def read_trips_postgis(conn_string, table_name, *args, **kwargs):
     finally:
         conn.close()
 
-    # check the correctness of the trips
+    # assert validity of trips
     trips.as_trips
     return trips
 

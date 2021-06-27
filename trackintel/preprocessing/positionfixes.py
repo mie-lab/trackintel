@@ -364,7 +364,7 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
         tpls = tpls.set_geometry("geom")
         tpls.crs = pfs.crs
 
-        # check the correctness of the generated tpls
+        # assert validity of triplegs
         tpls.as_triplegs
 
         if case == 2:

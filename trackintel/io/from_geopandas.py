@@ -49,7 +49,7 @@ def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom
         if not pd.api.types.is_datetime64tz_dtype(pfs[col]):
             pfs[col] = _localize_timestamp(dt_series=pfs[col], pytz_tzinfo=tz, col_name=col)
 
-    # check the correctness
+    # assert validity of positionfixes
     pfs.as_positionfixes
     return pfs
 
@@ -105,7 +105,7 @@ def read_staypoints_gpd(
         if not pd.api.types.is_datetime64tz_dtype(stps[col]):
             stps[col] = _localize_timestamp(dt_series=stps[col], pytz_tzinfo=tz, col_name=col)
 
-    # check the correctness
+    # assert validity of staypoints
     stps.as_staypoints
     return stps
 
@@ -161,7 +161,7 @@ def read_triplegs_gpd(
         if not pd.api.types.is_datetime64tz_dtype(tpls[col]):
             tpls[col] = _localize_timestamp(dt_series=tpls[col], pytz_tzinfo=tz, col_name=col)
 
-    # check the correctness
+    # assert validity of triplegs
     tpls.as_triplegs
     return tpls
 
@@ -232,7 +232,7 @@ def read_trips_gpd(
         if not pd.api.types.is_datetime64tz_dtype(trips[col]):
             trips[col] = _localize_timestamp(dt_series=trips[col], pytz_tzinfo=tz, col_name=col)
 
-    # check the correctness
+    # assert validity of trips
     trips.as_trips
     return trips
 
@@ -275,7 +275,7 @@ def read_locations_gpd(gdf, user_id="user_id", center="center", mapper={}):
     locs = gdf.rename(columns=columns)
     locs = locs.set_geometry("center")
 
-    # check the correctness
+    # assert validity of locations
     locs.as_locations
     return locs
 
