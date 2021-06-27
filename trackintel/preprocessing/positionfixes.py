@@ -414,7 +414,8 @@ def _generate_staypoints_sliding_user(
             # the duration of gap in the last two pfs
             gap_t = (pfs[curr]["tracked_at"] - pfs[curr - 1]["tracked_at"]).total_seconds()
 
-            # we want the spt to have long duration, but the gap of two consecutive pfs should not be too long
+            # we want the staypoint to have long duration,
+            # but the gap of two consecutive positionfixes should not be too long
             if (delta_t >= (time_threshold * 60)) and (gap_t < gap_threshold * 60):
                 new_stps = __create_new_staypoints(start, curr, pfs, idx, elevation_flag, geo_col)
                 # add staypoint
