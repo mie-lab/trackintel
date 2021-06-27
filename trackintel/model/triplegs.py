@@ -124,9 +124,9 @@ class TriplegsAccessor(object):
         """
         Predict/impute the transport mode with which each tripleg was likely covered.
 
-        See :func:`trackintel.analysis.label.predict_transport_mode`.
+        See :func:`trackintel.analysis.labelling.predict_transport_mode`.
         """
-        return ti.analysis.label.predict_transport_mode(self._obj, *args, **kwargs)
+        return ti.analysis.labelling.predict_transport_mode(self._obj, *args, **kwargs)
 
     def calculate_modal_split(self, *args, **kwargs):
         """
