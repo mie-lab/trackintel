@@ -2,9 +2,16 @@
   {% block footer %} {{ super() }}
 
   <style>
-    .section dl:nth-of-type(1) dt:nth-of-type(1){
-      color:#FF0000;
-    }
+
+html.writer-html4 .rst-content dl:not(.docutils)>dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple)>dt {
+	background: rgba(181, 213, 219, 0.54);
+	color: #004465;
+}
+.rst-content .viewcode-back,
+.rst-content .viewcode-link {
+	color: #0801fc;
+}
 
   </style>
 {% endblock %}
