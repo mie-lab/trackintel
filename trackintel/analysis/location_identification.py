@@ -244,8 +244,8 @@ def osna_method(spts):
     """Find "home" location for timeframes "rest" and "leisure" and "work" location for "work" timeframe.
 
     Use weekdays data divided in three time frames ["rest", "work", "leisure"] to generate location labels.
-    "rest" + "leisure" durations are weighted together and location with longest duration is assigned "home" label.
-    "work" locations with longest duration is assigned "work" label.
+    "rest" + "leisure" locations are weighted together. The location with the longest duration is assigned "home" label.
+    The longest "work" location is assigned "work" label.
 
     Parameters
     ----------
