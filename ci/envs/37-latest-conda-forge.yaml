@@ -6,7 +6,7 @@ dependencies:
 - python=3.7
 - matplotlib
 - numpy
-- pandas
+- pandas<=1.2.5
 - geopandas
 - scikit-learn
 - networkx 
@@ -15,7 +15,6 @@ dependencies:
 - geoalchemy2 
 - osmnx 
 - psycopg2
-- imageio
 - pytest
 - pytest-cov
 - pytest-xdist

@@ -1,10 +1,9 @@
+import datetime
+
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 from shapely.geometry import LineString, Point
-from sklearn.cluster import DBSCAN
-
-import datetime
 from tqdm import tqdm
 
 from trackintel.geogr.distances import haversine_dist
@@ -36,7 +35,8 @@ def generate_staypoints(
 
     dist_threshold : float, default 100
         The distance threshold for the 'sliding' method, i.e., how far someone has to travel to
-        generate a new staypoint. Units depend on the dist_func parameter.
+        generate a new staypoint. Units depend on the dist_func parameter. If 'distance_metric' is 'haversine' the
+        unit is in meters
 
     time_threshold : float, default 5.0 (minutes)
         The time threshold for the 'sliding' method in minutes.
@@ -354,7 +354,7 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
         posfix_grouper = pfs.groupby("tripleg_id")
 
         tpls = posfix_grouper.agg(
-            {"user_id": ["mean"], "tracked_at": [min, max], "geom": list}
+            {"user_id": ["mean"], "tracked_at": [min, max], pfs.geometry.name: list}
         )  # could add a "number of pfs": can be any column "count"
 
         # prepare dataframe: Rename columns; read/set geometry/crs;
@@ -364,8 +364,8 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
         tpls = tpls.set_geometry("geom")
         tpls.crs = pfs.crs
 
-        # check the correctness of the generated tpls
-        assert tpls.as_triplegs
+        # assert validity of triplegs
+        tpls.as_triplegs
 
         if case == 2:
             pfs.drop(columns="staypoint_id", inplace=True)
