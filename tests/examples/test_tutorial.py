@@ -31,7 +31,7 @@ class Test_tutorial:
             "--to",
             "script",
             "--execute",
-            "--ExecutePreprocessor.timeout=60",
+            "--ExecutePreprocessor.timeout=120",
         ]
 
         # check if the .py file runs without error
