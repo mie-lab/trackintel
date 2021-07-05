@@ -13,11 +13,9 @@ def location_identifier(spts, method="FREQ", pre_filter=True, **pre_filter_kwarg
         Staypoints with column "location_id".
 
     method : {'FREQ', 'OSNA'}, default "FREQ"
-        Choose which method to use.
-
-        - FREQ: Generate an activity label per user by assigning the most visited location the label "home"
-          and the second most visited location the label "work". The remaining locations get no label.
-        - OSNA: Use weekdays data divided in three time frames ["rest", "work", "leisure"]. Finds most popular
+        'FREQ': Generate an activity label per user by assigning the most visited location the label "home"
+        and the second most visited location the label "work". The remaining locations get no label.
+        'OSNA': Use weekdays data divided in three time frames ["rest", "work", "leisure"]. Finds most popular
         home location for timeframes "rest" and "leisure" and most popular "work" location for "work" timeframe.
 
     pre_filter : bool, default True
@@ -96,9 +94,8 @@ def pre_filter_locations(
         Staypoints with the column "location_id".
 
     agg_level: {"user", "dataset"}, default "user"
-        The level of aggregation when filtering locations:
-        - 'user' : locations are filtered per-user.
-        - 'dataset' : locations are filtered over the whole dataset.
+        The level of aggregation when filtering locations. 'user' : locations are filtered per-user;
+        'dataset' : locations are filtered over the whole dataset.
 
     thresh_sp : int, default 10
         Minimum staypoints a user must have to be included.
@@ -119,7 +116,7 @@ def pre_filter_locations(
 
     Returns
     -------
-    pd.Series
+    total_filter: pd.Series
         Boolean series containing the filter as a mask.
 
     Examples

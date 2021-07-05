@@ -29,3 +29,5 @@ Location Identification
 .. autofunction:: trackintel.analysis.location_identification.pre_filter_locations
 
 .. autofunction:: trackintel.analysis.location_identification.freq_method
+
+.. autofunction:: trackintel.analysis.location_identification.osna_method
