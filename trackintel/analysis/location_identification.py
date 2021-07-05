@@ -13,11 +13,9 @@ def location_identifier(spts, method="FREQ", pre_filter=True, **pre_filter_kwarg
         Staypoints with column "location_id".
 
     method : {'FREQ', 'OSNA'}, default "FREQ"
-        Choose which method to use.
-
-        - FREQ: Generate an activity label per user by assigning the most visited location the label "home"
-          and the second most visited location the label "work". The remaining locations get no label.
-        - OSNA: Use weekdays data divided in three time frames ["rest", "work", "leisure"]. Finds most popular
+        'FREQ': Generate an activity label per user by assigning the most visited location the label "home"
+        and the second most visited location the label "work". The remaining locations get no label.
+        'OSNA': Use weekdays data divided in three time frames ["rest", "work", "leisure"]. Finds most popular
         home location for timeframes "rest" and "leisure" and most popular "work" location for "work" timeframe.
 
     pre_filter : bool, default True
@@ -47,7 +45,8 @@ def location_identifier(spts, method="FREQ", pre_filter=True, **pre_filter_kwarg
 
     Examples
     --------
-    >>> ti.analysis.location_identifier(spts, pre_filter=True, method="FREQ")
+    >>> from ti.analysis.location_identification import location_identifier
+    >>> location_identifier(spts, pre_filter=True, method="FREQ")
     """
     # assert validity of staypoints
     spts.as_staypoints
@@ -95,9 +94,8 @@ def pre_filter_locations(
         Staypoints with the column "location_id".
 
     agg_level: {"user", "dataset"}, default "user"
-        The level of aggregation when filtering locations:
-        - 'user' : locations are filtered per-user.
-        - 'dataset' : locations are filtered over the whole dataset.
+        The level of aggregation when filtering locations. 'user' : locations are filtered per-user;
+        'dataset' : locations are filtered over the whole dataset.
 
     thresh_sp : int, default 10
         Minimum staypoints a user must have to be included.
@@ -118,13 +116,14 @@ def pre_filter_locations(
 
     Returns
     -------
-    pd.Series
+    total_filter: pd.Series
         Boolean series containing the filter as a mask.
 
     Examples
     --------
-    >> mask = ti.analysis.pre_filter_locations(spts)
-    >> spts = spts[mask]
+    >>> from ti.analysis.location_identification import pre_filter_locations
+    >>> mask = pre_filter_locations(spts)
+    >>> spts = spts[mask]
     """
     # assert validity of staypoints
     spts.as_staypoints
@@ -170,25 +169,30 @@ def pre_filter_locations(
 
 
 def freq_method(spts, *labels):
-    """Generate an activity label per user by assigning the most visited location the label "home"
-    and the second most visited location the label "work" or assign your own labels. The remaining
-    locations get no label.
+    """Generate an activity label per user.
+
+    Assigning the most visited location the label "home" and the second most visited location the label "work".
+    The remaining locations get no label.
+
+    Labels can also be passes as an arguement.
 
     Parameters
     ----------
     spts : GeoDataFrame (as trackintel staypoints)
         Staypoints with the column "location_id".
+
     labels : collection of str, default ("home", "work")
         Labels in decreasing time of activity.
 
     Returns
     -------
-    GeoDataFrame
-        with column "activity_label".
+    GeoDataFrame (as trackintel staypoints)
+        The input staypoints with additional column "activity_label".
 
     Examples
     --------
-    >> staypoints = ti.analysis.freq_method(staypoints, "home", "work")
+    >>> from ti.analysis.location_identification import freq_method
+    >>> staypoints = freq_method(staypoints, "home", "work")
     """
     spts = spts.copy()
     if not labels:
@@ -250,12 +254,12 @@ def osna_method(spts):
     Parameters
     ----------
     spts : GeoDataFrame (as trackintel staypoints)
-        Staypoints with the column "location_id"
+        Staypoints with the column "location_id".
 
     Returns
     -------
     GeoDataFrame (as trackintel staypoints)
-        with additional column "activity_label"
+        The input staypoints with additional column "activity_label".
 
     Note
     ----
@@ -272,8 +276,8 @@ def osna_method(spts):
 
     Examples
     --------
-    >>> staypoints = ti.analysis.osna_method(staypoints)
-
+    >>> from ti.analysis.location_identification import osna_method
+    >>> staypoints = osna_method(staypoints)
     """
     spts_in = spts  # no copy --> used to join back later.
     spts = spts_in.copy()
