@@ -241,7 +241,7 @@ class TestLocation_Identifier:
 
 @pytest.fixture
 def example_osna():
-    """Example staypoints with 3 location for 1 user within 3 different timeframes."""
+    """Generate example staypoints with 3 location for 1 user within 3 different timeframes."""
     weekday = "2021-05-19 "
     t_rest = pd.Timestamp(weekday + "07:00:00", tz="utc")
     t_work = pd.Timestamp(weekday + "18:00:00", tz="utc")
@@ -271,7 +271,7 @@ def example_osna():
 
 
 class TestOsna_Method:
-    """Test `osna_method`"""
+    """Test for the osna_method() function."""
 
     def test_default(self, example_osna):
         """Test with no changes to test data."""
@@ -281,8 +281,9 @@ class TestOsna_Method:
         assert_geodataframe_equal(example_osna, osna)
 
     def test_overlap(self, example_osna):
-        """Test if overlap of home and work location next work location is taken."""
-        # for that lets add 2 work times to location 0
+        """Test if overlap of home and work location the 2nd location is taken as work location."""
+        # add 2 work times to location 0,
+        # location 0 would be the most stayed location for both home and work
         t = pd.Timestamp("2021-05-19 12:00:00", tz="utc")
         h = pd.to_timedelta("1h")
         p = Point(0.0, 0.0)
@@ -293,6 +294,7 @@ class TestOsna_Method:
         spts = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
         spts.index.name = "id"
         spts = example_osna.append(spts)
+
         result = osna_method(spts).iloc[:-2]
         example_osna.loc[example_osna["location_id"] == 0, "activity_label"] = "home"
         example_osna.loc[example_osna["location_id"] == 1, "activity_label"] = "work"
@@ -303,7 +305,7 @@ class TestOsna_Method:
         weekend = "2021-05-22"  # a saturday
 
         def _insert_weekend(dt, day=weekend):
-            """Take datetime and return new datetime with same time and new day (str)."""
+            """Take datetime and return new datetime with same time but new day."""
             time = dt.time().strftime("%H:%M:%S")
             new_dt = " ".join((day, time))
             return pd.Timestamp(new_dt, tz=dt.tz)
@@ -316,7 +318,8 @@ class TestOsna_Method:
         with pytest.warns(UserWarning):
             result = osna_method(example_osna)
 
-        example_osna["activity_label"] = np.full(len(example_osna), np.nan, dtype=object)
+        # activity_label column is all pd.NA
+        example_osna["activity_label"] = pd.NA
         assert_geodataframe_equal(result, example_osna)
 
     def test_two_users(self, example_osna):
@@ -328,7 +331,7 @@ class TestOsna_Method:
         two_user.loc[two_user["location_id"] == 1, "activity_label"] = "work"
         assert_geodataframe_equal(result, two_user)
 
-    def test_leisure_weighting(self, example_osna):
+    def test_leisure_weighting(self):
         """Test if leisure has the weight given in the paper."""
         weight_rest = 0.739
         weight_leis = 0.358
@@ -366,7 +369,7 @@ class TestOsna_Method:
 
 
 class Test_osna_label_timeframes:
-    """Test function `_osna_label_timeframes`"""
+    """Test for the _osna_label_timeframes() function."""
 
     def test_weekend(self):
         """Test if weekend only depends on day and not time."""

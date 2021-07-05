@@ -237,12 +237,11 @@ def _freq_assign(duration, *labels):
 
 
 def osna_method(spts):
-    """Use weekdays data divided in three time frames ["rest", "work", "leisure"]. Finds most popular
-    home location for timeframes "rest" and "leisure" and most popular "work" location for "work" timeframe.
+    """Find "home" location for timeframes "rest" and "leisure" and "work" location for "work" timeframe.
 
-    "rest" + "leisure" durations are weighted together. Location with longest duration is assigned "home" label.
+    Use weekdays data divided in three time frames ["rest", "work", "leisure"] to generate location labels.
+    "rest" + "leisure" durations are weighted together and location with longest duration is assigned "home" label.
     "work" locations with longest duration is assigned "work" label.
-    The "weekend" label isn't used for any label.
 
     Parameters
     ----------
@@ -257,9 +256,9 @@ def osna_method(spts):
     Note
     ----
     The method is adapted from [1].
-    When "home" and "work" label overlap, the method selects the next location by 2nd highest score.
+    When "home" and "work" label overlap, the method selects the "work" location by the 2nd highest score.
     The original algorithm count the distinct hours at a location as the home location is derived from
-    geo-tagged tweets. We directly sum the time spent at a location as our data model includes that.
+    geo-tagged tweets. We directly sum the time spent at a location.
 
     References
     ----------
@@ -291,15 +290,15 @@ def osna_method(spts):
 
     spts_agg = spts.groupby(groups)["duration"].sum()
     if spts_agg.empty:
-        warnings.warn("Got empty table, check if your dates lie in weekends.")
-        spts["activity_label"] = np.full(len(spts), np.nan, dtype=object)
-        return pd.merge(spts_in, spts["activity_label"], how="left", left_index=True, right_index=True)
+        warnings.warn("Got empty table in the osna method, check if the dates lie in weekends.")
+        spts_in["activity_label"] = pd.NA
+        return spts_in
 
     # create a pivot table -> labels "home" and "work" as columns. ("user_id", "location_id" still in index.)
     spts_pivot = spts_agg.unstack()
     # get index of maximum for columns "work" and "home"
     spts_idxmax = spts_pivot.groupby(["user_id"]).idxmax()
-    # first assign "home" label and assign "work" label after more checks.
+    # first assign "home" label
     spts_pivot.loc[spts_idxmax["home"], "activity_label"] = "home"
 
     # The "home" label could overlap with the "work" label
