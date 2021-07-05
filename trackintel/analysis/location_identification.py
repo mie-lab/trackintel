@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 import pandas as pd
 import trackintel as ti
@@ -207,7 +208,7 @@ def _freq_transform(group, *labels):
     Returns
     -------
     pd.Series
-        dtype : `object`
+        dtype : object
     """
     group_agg = group.groupby("location_id").agg({"duration": sum})
     group_agg["activity_label"] = _freq_assign(group_agg["duration"], *labels)
@@ -250,7 +251,7 @@ def osna_method(spts):
 
     Returns
     -------
-    GeoDataFrame
+    GeoDataFrame (as trackintel staypoints)
         with additional column "activity_label"
 
     Note
@@ -271,34 +272,51 @@ def osna_method(spts):
     >>> staypoints = ti.analysis.osna_method(staypoints)
 
     """
-    spts_in = spts  # not sure how to handle changing columns
-    spts = spts.copy()
+    spts_in = spts  # no copy --> used to join back later.
+    spts = spts_in.copy()
     spts["duration"] = spts["finished_at"] - spts["started_at"]
     spts["mean_time"] = spts["started_at"] + spts["duration"] / 2
 
     spts["label"] = spts["mean_time"].apply(_osna_label_timeframes)
     spts.loc[spts["label"] == "rest", "duration"] *= 0.739  # weight given in paper
     spts.loc[spts["label"] == "leisure", "duration"] *= 0.358  # weight given in paper
+
     groups_map = {
         "rest": "home",
         "leisure": "home",
         "work": "work",
-    }  # weekends aren't included in analysis
+    }  # weekends aren't included in analysis!
+    # groupby user, location and label.
     groups = ["user_id", "location_id", spts["label"].map(groups_map)]
-    spts_pivot = spts.groupby(groups)["duration"].sum().unstack()  # pivot table with "label" in columns
-    spts_idxmax = spts_pivot.groupby(["user_id"]).idxmax()  # maximum for home and work
+
+    spts_agg = spts.groupby(groups)["duration"].sum()
+    if spts_agg.empty:
+        warnings.warn("Got empty table, check if your dates lie in weekends.")
+        spts["activity_label"] = np.full(len(spts), np.nan, dtype=object)
+        return pd.merge(spts_in, spts["activity_label"], how="left", left_index=True, right_index=True)
+
+    # create a pivot table -> labels "home" and "work" as columns. ("user_id", "location_id" still in index.)
+    spts_pivot = spts_agg.unstack()
+    # get index of maximum for columns "work" and "home"
+    spts_idxmax = spts_pivot.groupby(["user_id"]).idxmax()
+    # first assign "home" label and assign "work" label after more checks.
     spts_pivot.loc[spts_idxmax["home"], "activity_label"] = "home"
+
     # The "home" label could overlap with the "work" label
-    # we set the rows where that happens to zero and recalculate work maximum.
-    # alternatively we could assign activity label on staypoint level instead of location level?
+    # we set the rows where "home" is maximum to zero (pd.NaT) and recalculate index of work maximum.
     redo_work = spts_idxmax[spts_idxmax["home"] == spts_idxmax["work"]]
     spts_pivot.loc[redo_work["work"], "work"] = pd.NaT
-    spts_idxmax = spts_pivot.groupby(["user_id"])["work"].idxmax()
-    spts_pivot.loc[spts_idxmax, "activity_label"] = "work"
+    spts_idxmax_work = spts_pivot.groupby(["user_id"])["work"].idxmax()
+    spts_pivot.loc[spts_idxmax_work, "activity_label"] = "work"
 
     # now join it back together
+    sel = spts_in.columns != "activity_label"  # no overlap with older "activity_label"
     return pd.merge(
-        spts_in, spts_pivot["activity_label"], how="left", left_on=["user_id", "location_id"], right_index=True
+        spts_in.loc[:, sel],
+        spts_pivot["activity_label"],
+        how="left",
+        left_on=["user_id", "location_id"],
+        right_index=True,
     )
 
 
