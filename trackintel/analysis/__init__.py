@@ -8,7 +8,7 @@ from .modal_split import calculate_modal_split
 
 from .location_identification import location_identifier
 from .location_identification import pre_filter_locations
-from .location_identification import freq_method
+from .location_identification import freq_method, osna_method
 
 __all__ = [
     "temporal_tracking_quality",
@@ -19,4 +19,5 @@ __all__ = [
     "location_identifier",
     "pre_filter_locations",
     "freq_method",
+    "osna_method",
 ]
