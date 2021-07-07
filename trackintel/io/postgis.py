@@ -65,7 +65,7 @@ def read_positionfixes_postgis(sql, con, geom_col="geom", *args, **kwargs):
 
     Examples
     --------
-    >>> pfs = ti.io.read_postifionfixes("SELECT * FROM postionfixes", con, geom_col="geom")
+    >>> pfs = ti.io.postgis.read_postifionfixes("SELECT * FROM postionfixes", con, geom_col="geom")
     """
     pfs = gpd.GeoDataFrame.from_postgis(sql, con, geom_col, *args, **kwargs)
     return ti.io.read_positionfixes_gpd(pfs, geom=geom_col)
@@ -103,6 +103,7 @@ def write_positionfixes_postgis(positionfixes, con, table_name, schema=None, sql
     Examples
     --------
     >>> pfs.as_positionfixes.to_postgis(conn_string, table_name)
+    >>> ti.io.postgis.write_positionfixes_postgis(pfs, conn_string, table_name)
     """
     positionfixes.to_postgis(table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize)
 
@@ -171,6 +172,7 @@ def write_triplegs_postgis(
     Examples
     --------
     >>> tpls.as_triplegs.to_postgis(conn_string, table_name)
+    >>> ti.io.postgis.write_triplegs_postgis(tpls, conn_string, table_name)
     """
     triplegs.to_postgis(table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize)
 
@@ -239,6 +241,7 @@ def write_staypoints_postgis(staypoints, con, table_name, schema=None, sql_chunk
     Examples
     --------
     >>> spts.as_staypoints.to_postgis(conn_string, table_name)
+    >>> ti.io.postgis.write_staypoints_postgis(spts, conn_string, table_name)
     """
 
     # todo: Think about a concept for the indices. At the moment, an index
@@ -312,6 +315,7 @@ def write_locations_postgis(locations, con, table_name, schema=None, sql_chunksi
     Examples
     --------
     >>> locs.as_locations.to_postgis(conn_string, table_name)
+    >>> ti.io.postgis.write_locations_postgis(locs, conn_string, table_name)
     """
     # Assums that "extent" is not geometry column but center is.
     # May build additional check for that.
@@ -394,5 +398,6 @@ def write_trips_postgis(trips, con, table_name, schema=None, sql_chunksize=None,
     Examples
     --------
     >>> trips.as_trips.to_postgis(conn_string, table_name)
+    >>> ti.io.postgis.write_trips_postgis(trips, conn_string, table_name)
     """
     trips.to_sql(table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize)

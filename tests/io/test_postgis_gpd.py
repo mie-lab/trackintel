@@ -490,7 +490,7 @@ class TestGetSrid:
 class Test_Handle_Con_String:
     def test_conn_string(self, conn_postgis):
         """Test if decorator opens a connection with connection string and closes it."""
-        conn_string, conn = conn_postgis
+        conn_string, _ = conn_postgis
 
         @ti.io.postgis._handle_con_string
         def wrapped(con):
@@ -502,7 +502,7 @@ class Test_Handle_Con_String:
 
     def test_conn(self, conn_postgis):
         """Test handeling of connection input"""
-        conn_string, conn = conn_postgis
+        _ , conn = conn_postgis
 
         @ti.io.postgis._handle_con_string
         def wrapped(con):
