@@ -64,7 +64,7 @@ class LocationsAccessor(object):
         """
         ti.io.file.write_locations_csv(self._obj, filename, *args, **kwargs)
 
-    def to_postgis(self, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
+    def to_postgis(self, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
         """
         Store this collection of locations to PostGIS.
 

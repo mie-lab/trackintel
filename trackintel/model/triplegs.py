@@ -79,13 +79,13 @@ class TriplegsAccessor(object):
         """
         ti.io.file.write_triplegs_csv(self._obj, filename, *args, **kwargs)
 
-    def to_postgis(self, conn_string, table_name):
+    def to_postgis(self, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
         """
         Store this collection of triplegs to PostGIS.
 
         See :func:`trackintel.io.postgis.store_positionfixes_postgis`.
         """
-        ti.io.postgis.write_triplegs_postgis(self._obj, conn_string, table_name)
+        ti.io.postgis.write_triplegs_postgis(self._obj, conn_string, table_name, schema=schema, sql_chunksize=sql_chunksize, if_exists=if_exists)
 
     def calculate_distance_matrix(self, *args, **kwargs):
         """
