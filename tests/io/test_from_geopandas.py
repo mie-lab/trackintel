@@ -13,10 +13,11 @@ class TestFromGeopandas:
         """Test if the results of reading from gpd and csv agrees."""
         gdf = gpd.read_file(os.path.join("tests", "data", "positionfixes.geojson"))
         gdf.set_index("id", inplace=True)
-        pfs_from_gpd = ti.io.from_geopandas.read_positionfixes_gpd(gdf, user_id="User", geom="geometry", tz="utc")
+        pfs_from_gpd = ti.io.from_geopandas.read_positionfixes_gpd(gdf, user_id="User", geom_col="geometry", tz="utc")
 
         pfs_file = os.path.join("tests", "data", "positionfixes.csv")
         pfs_from_csv = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id")
+        pfs_from_csv = pfs_from_csv.rename(columns={"geom":"geometry"})
 
         pd.testing.assert_frame_equal(pfs_from_gpd, pfs_from_csv, check_exact=False)
 
@@ -24,10 +25,11 @@ class TestFromGeopandas:
         """Test if the results of reading from gpd and csv agrees."""
         gdf = gpd.read_file(os.path.join("tests", "data", "triplegs.geojson"))
         gdf.set_index("id", inplace=True)
-        tpls_from_gpd = ti.io.from_geopandas.read_triplegs_gpd(gdf, user_id="User", geom="geometry", tz="utc")
+        tpls_from_gpd = ti.io.from_geopandas.read_triplegs_gpd(gdf, user_id="User", geom_col="geometry", tz="utc")
 
         tpls_file = os.path.join("tests", "data", "triplegs.csv")
         tpls_from_csv = ti.read_triplegs_csv(tpls_file, sep=";", tz="utc", index_col="id")
+        tpls_from_csv = tpls_from_csv.rename(columns={"geom":"geometry"})
 
         pd.testing.assert_frame_equal(tpls_from_gpd, tpls_from_csv, check_exact=False)
 
@@ -36,11 +38,12 @@ class TestFromGeopandas:
         gdf = gpd.read_file(os.path.join("tests", "data", "staypoints.geojson"))
         gdf.set_index("id", inplace=True)
         stps_from_gpd = ti.io.from_geopandas.read_staypoints_gpd(
-            gdf, "start_time", "end_time", geom="geometry", tz="utc"
+            gdf, "start_time", "end_time", geom_col="geometry", tz="utc"
         )
 
         stps_file = os.path.join("tests", "data", "staypoints.csv")
         stps_from_csv = ti.read_staypoints_csv(stps_file, sep=";", tz="utc", index_col="id")
+        stps_from_csv = stps_from_csv.rename(columns={"geom": "geometry"})
 
         pd.testing.assert_frame_equal(stps_from_gpd, stps_from_csv, check_exact=False)
 
