@@ -6,16 +6,18 @@ import pandas as pd
 from geoalchemy2 import Geometry, WKTElement
 from sqlalchemy import create_engine
 
+import trackintel as ti
+
 
 def _handle_con_string(func):
-    """Handle connection string input."""
+    """Decorator function to create a `Connection` out of a connection string."""
 
     @wraps(func)  # copy all metadata
     def wrapper(*args, **kwargs):
         # bind to name for easy access of both kwargs and args
         bound_values = signature(func).bind(*args, **kwargs)
         con = bound_values.arguments["con"]
-        # only do something if string
+        # only do something if connection string
         if not isinstance(con, str):
             return func(*args, **kwargs)
 
@@ -36,32 +38,37 @@ def _handle_con_string(func):
 
 
 @_handle_con_string
-def read_positionfixes_postgis(con, table_name, geom_col="geom", *args, **kwargs):
+def read_positionfixes_postgis(sql, con, geom_col="geom", *args, **kwargs):
     """Reads positionfixes from a PostGIS database.
 
     Parameters
     ----------
+    sql : str
+        SQL query e.g. "SELECT * FROM positionfixes"
+
     con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
         Connection string or active connection to PostGIS database.
-
-    table_name : str
-        The table from PostGIS database to read the positionfixes from.
 
     geom_col : str, default 'geom'
         The geometry column of the table.
 
-    **kwargs
+    *args
         Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
+
+    **kwargs
+        Further keyword arguments as available in GeoPanda's GeoDataFrame.from_postgis().
 
     Returns
     -------
     GeoDataFrame
         A GeoDataFrame containing the positionfixes.
+
+    Examples
+    --------
+    >>> pfs = ti.io.read_postifionfixes("SELECT * FROM postionfixes", con, geom_col="geom")
     """
-    pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, con, geom_col=geom_col, *args, **kwargs)
-    # assert validity of positionfixes
-    pfs.as_positionfixes
-    return pfs
+    pfs = gpd.GeoDataFrame.from_postgis(sql, con, geom_col, *args, **kwargs)
+    return ti.io.read_positionfixes_gpd(pfs, geom=geom_col)
 
 
 @_handle_con_string
@@ -97,35 +104,37 @@ def write_positionfixes_postgis(positionfixes, con, table_name, schema=None, sql
     --------
     >>> pfs.as_positionfixes.to_postgis(conn_string, table_name)
     """
-    positionfixes.to_postgis(table_name, con, if_exists=if_exists, index=True, chunksize=sql_chunksize)
+    positionfixes.to_postgis(table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize)
 
 
 @_handle_con_string
-def read_triplegs_postgis(con, table_name, geom_col="geom", *args, **kwargs):
+def read_triplegs_postgis(sql, con, geom_col="geom", *args, **kwargs):
     """Reads triplegs from a PostGIS database.
 
     Parameters
     ----------
+    sql : str
+        SQL query e.g. "SELECT * FROM triplegs"
+
     con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
         Connection string or active connection to PostGIS database.
 
-    table_name : str
-        The table to read the triplegs from.
-
     geom_col : str, default 'geom'
         The geometry column of the table.
+
+    *args
+        Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
+
+    **kwargs
+        Further keyword arguments as available in GeoPanda's GeoDataFrame.from_postgis().
 
     Returns
     -------
     GeoDataFrame
         A GeoDataFrame containing the triplegs.
     """
-    pfs = gpd.GeoDataFrame.from_postgis(
-        "SELECT * FROM %s" % table_name, con, geom_col=geom_col, index_col="id", *args, **kwargs
-    )
-    # assert validity of triplegs
-    pfs.as_triplegs
-    return pfs
+    tpls = gpd.GeoDataFrame.from_postgis(sql, con, geom_col=geom_col, index_col="id", *args, **kwargs)
+    return ti.io.read_triplegs_gpd(tpls, geom=geom_col)
 
 
 @_handle_con_string
@@ -163,36 +172,39 @@ def write_triplegs_postgis(
     --------
     >>> tpls.as_triplegs.to_postgis(conn_string, table_name)
     """
-    triplegs.to_postgis(table_name, con, if_exists=if_exists, index=True, chunksize=sql_chunksize)
+    triplegs.to_postgis(table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize)
 
 
 @_handle_con_string
-def read_staypoints_postgis(con, table_name, geom_col="geom", *args, **kwargs):
+def read_staypoints_postgis(sql, con, geom_col="geom", *args, **kwargs):
     """Read staypoints from a PostGIS database.
 
     Parameters
     ----------
+    sql : str
+        SQL query e.g. "SELECT * FROM staypoints"
+
     con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
         Connection string or active connection to PostGIS database.
 
-    table_name : str
-        The table to read the staypoints from.
-
     geom_col : str, default 'geom'
         The geometry column of the table.
+
+    *args
+        Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
+
+    **kwargs
+        Further keyword arguments as available in GeoPanda's GeoDataFrame.from_postgis().
+
 
     Returns
     -------
     GeoDataFrame
         A GeoDataFrame containing the staypoints.
     """
-    stps = gpd.GeoDataFrame.from_postgis(
-        "SELECT * FROM %s" % table_name, con, geom_col=geom_col, index_col="id", *args, **kwargs
-    )
+    spts = gpd.GeoDataFrame.from_postgis(sql, con, geom_col=geom_col, index_col="id", *args, **kwargs)
 
-    # assert validity of staypoints
-    stps.as_staypoints
-    return stps
+    return ti.io.read_staypoints_gpd(spts, geom=geom_col)
 
 
 @_handle_con_string
@@ -235,36 +247,38 @@ def write_staypoints_postgis(staypoints, con, table_name, schema=None, sql_chunk
     # thereby the index column is lost
 
     # make a copy in order to avoid changing the geometry of the original array
-    staypoints.to_postgis(table_name, con, if_exists=if_exists, index=True, chunksize=sql_chunksize)
+    staypoints.to_postgis(table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize)
 
 
 @_handle_con_string
-def read_locations_postgis(con, table_name, geom_col="geom", *args, **kwargs):
+def read_locations_postgis(sql, con, geom_col="geom", *args, **kwargs):
     """Reads locations from a PostGIS database.
 
     Parameters
     ----------
+    sql : str
+        SQL query e.g. "SELECT * FROM locations"
+
     con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
         Connection string or active connection to PostGIS database.
 
-    table_name : str
-        The table to read the locations from.
-
     geom_col : str, default 'geom'
-        The geometry column of the table.
+        The geometry column of the table. For the center of the location.
+
+    *args
+        Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
+
+    **kwargs
+        Further keyword arguments as available in GeoPanda's GeoDataFrame.from_postgis().
 
     Returns
     -------
     GeoDataFrame
         A GeoDataFrame containing the locations.
     """
-    locs = gpd.GeoDataFrame.from_postgis(
-        "SELECT * FROM %s" % table_name, con, geom_col=geom_col, index_col="id", *args, **kwargs
-    )
+    locs = gpd.GeoDataFrame.from_postgis(sql, con, geom_col=geom_col, index_col="id", *args, **kwargs)
 
-    # assert validity of locations
-    locs.as_locations
-    return locs
+    return ti.io.read_locations_gpd(locs, center=geom_col)
 
 
 @_handle_con_string
@@ -299,7 +313,8 @@ def write_locations_postgis(locations, con, table_name, schema=None, sql_chunksi
     --------
     >>> locs.as_locations.to_postgis(conn_string, table_name)
     """
-
+    # Assums that "extent" is not geometry column but center is.
+    # May build additional check for that.
     if "extent" in locations.columns:
         # geopandas.to_postgis can only handle one geometry column -> do it manually
         if locations.crs is not None:
@@ -313,31 +328,38 @@ def write_locations_postgis(locations, con, table_name, schema=None, sql_chunksi
     else:
         dtype = None
 
-    locations.to_postgis(table_name, con, if_exists=if_exists, index=True, chunksize=sql_chunksize, dtype=dtype)
+    locations.to_postgis(
+        table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize, dtype=dtype
+    )
 
 
 @_handle_con_string
-def read_trips_postgis(con, table_name, *args, **kwargs):
+def read_trips_postgis(sql, con, *args, **kwargs):
     """Read trips from a PostGIS database.
 
     Parameters
     ----------
+    sql : str
+        SQL query e.g. "SELECT * FROM trips"
+
     con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
         Connection string or active connection to PostGIS database.
 
-    table_name : str
-        The table to read the trips from.
+    *args
+        Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
+
+    **kwargs
+        Further keyword arguments as available in GeoPanda's GeoDataFrame.from_postgis().
+
 
     Returns
     -------
     DataFrame
         A DataFrame containing the trips.
     """
-    trips = pd.read_sql("SELECT * FROM %s" % table_name, con, index_col="id", *args, **kwargs)
+    trips = pd.read_sql(sql, con, index_col="id", *args, **kwargs)
 
-    # assert validity of trips
-    trips.as_trips
-    return trips
+    return ti.io.read_trips_gpd(trips)
 
 
 @_handle_con_string
@@ -373,6 +395,4 @@ def write_trips_postgis(trips, con, table_name, schema=None, sql_chunksize=None,
     --------
     >>> trips.as_trips.to_postgis(conn_string, table_name)
     """
-
-    # make a copy in order to avoid changing the geometry of the original array
-    trips.to_sql(table_name, con, if_exists=if_exists, index=True, chunksize=sql_chunksize)
+    trips.to_sql(table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize)
