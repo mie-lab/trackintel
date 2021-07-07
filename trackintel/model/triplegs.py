@@ -85,7 +85,9 @@ class TriplegsAccessor(object):
 
         See :func:`trackintel.io.postgis.store_positionfixes_postgis`.
         """
-        ti.io.postgis.write_triplegs_postgis(self._obj, conn_string, table_name, schema=schema, sql_chunksize=sql_chunksize, if_exists=if_exists)
+        ti.io.postgis.write_triplegs_postgis(
+            self._obj, conn_string, table_name, schema=schema, sql_chunksize=sql_chunksize, if_exists=if_exists
+        )
 
     def calculate_distance_matrix(self, *args, **kwargs):
         """

@@ -6,11 +6,11 @@ import trackintel as ti
 @pd.api.extensions.register_dataframe_accessor("as_trips")
 class TripsAccessor(object):
     """A pandas accessor to treat (Geo)DataFrames as collections of trips.
-    
+
     This will define certain methods and accessors, as well as make sure that the DataFrame
     adheres to some requirements.
 
-    Requires at least the following columns: 
+    Requires at least the following columns:
     ['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'destination_staypoint_id']
 
     The 'index' of the GeoDataFrame will be treated as unique identifier of the `Trips`
@@ -24,13 +24,13 @@ class TripsAccessor(object):
     (e.g., waiting) between two relevant activities.
 
     The following assumptions are implemented
-    
+
         - All movement before the first and after the last activity is omitted
         - If we do not record a person for more than `gap_threshold` minutes, we assume that the person performed an \
             activity in the recording gap and split the trip at the gap.
         - Trips that start/end in a recording gap can have an unknown origin/destination.
         - There are no trips without a (recored) tripleg.
-        
+
     'started_at' and 'finished_at' are timezone aware pandas datetime objects.
 
     Examples
