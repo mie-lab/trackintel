@@ -17,7 +17,7 @@ class TestFromGeopandas:
 
         pfs_file = os.path.join("tests", "data", "positionfixes.csv")
         pfs_from_csv = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id")
-        pfs_from_csv = pfs_from_csv.rename(columns={"geom":"geometry"})
+        pfs_from_csv = pfs_from_csv.rename(columns={"geom": "geometry"})
 
         pd.testing.assert_frame_equal(pfs_from_gpd, pfs_from_csv, check_exact=False)
 
@@ -29,7 +29,7 @@ class TestFromGeopandas:
 
         tpls_file = os.path.join("tests", "data", "triplegs.csv")
         tpls_from_csv = ti.read_triplegs_csv(tpls_file, sep=";", tz="utc", index_col="id")
-        tpls_from_csv = tpls_from_csv.rename(columns={"geom":"geometry"})
+        tpls_from_csv = tpls_from_csv.rename(columns={"geom": "geometry"})
 
         pd.testing.assert_frame_equal(tpls_from_gpd, tpls_from_csv, check_exact=False)
 
