@@ -65,10 +65,10 @@ def read_positionfixes_postgis(sql, con, geom_col="geom", *args, **kwargs):
 
     Examples
     --------
-    >>> pfs = ti.io.postgis.read_postifionfixes("SELECT * FROM postionfixes", con, geom_col="geom")
+    >>> pfs = ti.io.read_postifionfixes_postgis("SELECT * FROM postionfixes", con, geom_col="geom")
     """
     pfs = gpd.GeoDataFrame.from_postgis(sql, con, geom_col, *args, **kwargs)
-    return ti.io.read_positionfixes_gpd(pfs, geom=geom_col)
+    return ti.io.read_positionfixes_gpd(pfs, geom_col=geom_col)
 
 
 @_handle_con_string
@@ -133,9 +133,13 @@ def read_triplegs_postgis(sql, con, geom_col="geom", *args, **kwargs):
     -------
     GeoDataFrame
         A GeoDataFrame containing the triplegs.
+
+    Examples
+    --------
+    >>> tpls = ti.io.read_triplegs_postgis("SELECT * FROM triplegs", con, geom_col="geom")
     """
     tpls = gpd.GeoDataFrame.from_postgis(sql, con, geom_col=geom_col, index_col="id", *args, **kwargs)
-    return ti.io.read_triplegs_gpd(tpls, geom=geom_col)
+    return ti.io.read_triplegs_gpd(tpls, geom_col=geom_col)
 
 
 @_handle_con_string
@@ -203,10 +207,15 @@ def read_staypoints_postgis(sql, con, geom_col="geom", *args, **kwargs):
     -------
     GeoDataFrame
         A GeoDataFrame containing the staypoints.
+
+    Examples
+    --------
+    >>> spts = ti.io.read_staypoints_postgis("SELECT * FROM staypoints", con, geom_col="geom")
+
     """
     spts = gpd.GeoDataFrame.from_postgis(sql, con, geom_col=geom_col, index_col="id", *args, **kwargs)
 
-    return ti.io.read_staypoints_gpd(spts, geom=geom_col)
+    return ti.io.read_staypoints_gpd(spts, geom_col=geom_col)
 
 
 @_handle_con_string
@@ -241,7 +250,7 @@ def write_staypoints_postgis(staypoints, con, table_name, schema=None, sql_chunk
     Examples
     --------
     >>> spts.as_staypoints.to_postgis(conn_string, table_name)
-    >>> ti.io.postgis.write_staypoints_postgis(spts, conn_string, table_name)
+    >>> ti.io.write_staypoints_postgis(spts, conn_string, table_name)
     """
 
     # todo: Think about a concept for the indices. At the moment, an index
@@ -249,7 +258,6 @@ def write_staypoints_postgis(staypoints, con, table_name, schema=None, sql_chunk
     # taken as pandas index. When uploading the default is "no index" and
     # thereby the index column is lost
 
-    # make a copy in order to avoid changing the geometry of the original array
     staypoints.to_postgis(table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize)
 
 
@@ -278,6 +286,10 @@ def read_locations_postgis(sql, con, geom_col="geom", *args, **kwargs):
     -------
     GeoDataFrame
         A GeoDataFrame containing the locations.
+
+    Examples
+    --------
+    >>> locs = ti.io.read_locations_postgis("SELECT * FROM locations", con, geom_col="geom")
     """
     locs = gpd.GeoDataFrame.from_postgis(sql, con, geom_col=geom_col, index_col="id", *args, **kwargs)
 
@@ -315,7 +327,7 @@ def write_locations_postgis(locations, con, table_name, schema=None, sql_chunksi
     Examples
     --------
     >>> locs.as_locations.to_postgis(conn_string, table_name)
-    >>> ti.io.postgis.write_locations_postgis(locs, conn_string, table_name)
+    >>> ti.io.write_locations_postgis(locs, conn_string, table_name)
     """
     # Assums that "extent" is not geometry column but center is.
     # May build additional check for that.
@@ -360,6 +372,11 @@ def read_trips_postgis(sql, con, *args, **kwargs):
     -------
     DataFrame
         A DataFrame containing the trips.
+
+    Examples
+    --------
+    >>> trips = ti.io.read_trips_postgis("SELECT * FROM trips", con, geom_col="geom")
+
     """
     trips = pd.read_sql(sql, con, index_col="id", *args, **kwargs)
 
@@ -398,6 +415,6 @@ def write_trips_postgis(trips, con, table_name, schema=None, sql_chunksize=None,
     Examples
     --------
     >>> trips.as_trips.to_postgis(conn_string, table_name)
-    >>> ti.io.postgis.write_trips_postgis(trips, conn_string, table_name)
+    >>> ti.io.write_trips_postgis(trips, conn_string, table_name)
     """
     trips.to_sql(table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize)

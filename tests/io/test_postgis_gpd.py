@@ -502,7 +502,7 @@ class Test_Handle_Con_String:
 
     def test_conn(self, conn_postgis):
         """Test handeling of connection input"""
-        _ , conn = conn_postgis
+        _, conn = conn_postgis
 
         @ti.io.postgis._handle_con_string
         def wrapped(con):
