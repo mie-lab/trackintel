@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from geopandas.testing import assert_geodataframe_equal
 from pandas.testing import assert_frame_equal
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString, Point, Polygon
 import trackintel as ti
 
 
@@ -410,6 +410,28 @@ class TestLocations:
             locs.as_locations.to_postgis(conn_string, table)
             locs_db = ti.io.read_locations_postgis(conn_string, table, geom_col)
             assert_geodataframe_equal(locs, locs_db)
+        finally:
+            del_table(conn, table)
+
+    def test_write_extent(self, example_locations, conn_postgis):
+        """Test if extent geometry is handled correctly."""
+        conn_string, conn = conn_postgis
+        table = "locations"
+        coords = [[8.45, 47.6], [8.45, 47.4], [8.55, 47.4], [8.55, 47.6], [8.45, 47.6]]
+        extent = Polygon(coords)
+        example_locations["extent"] = extent
+        example_locations["extent"] = gpd.GeoSeries(example_locations["extent"])
+        try:
+            example_locations.as_locations.to_postgis(conn_string, table)
+            columns_db, dtypes = get_table_schema(conn, table)
+            columns = example_locations.columns.tolist() + [example_locations.index.name]
+            assert len(columns_db) == len(columns)
+            assert set(columns_db) == set(columns)
+            srid = _get_srid(example_locations)
+            geom_schema_center = f"geometry(Point,{srid})"
+            geom_schema_extent = f"geometry(Polygon,{srid})"
+            assert geom_schema_center in dtypes
+            assert geom_schema_extent in dtypes
         finally:
             del_table(conn, table)
 
