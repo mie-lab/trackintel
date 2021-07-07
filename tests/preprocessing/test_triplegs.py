@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
+from geopandas.testing import assert_geodataframe_equal
 from shapely.geometry import LineString, Point
 
 import trackintel as ti
@@ -64,6 +65,54 @@ class TestGenerate_trips:
         stps, tpls, trips = generate_trips(stps, tpls, gap_threshold=15)
         # test if generated trips are equal
         assert_frame_equal(trips_loaded, trips)
+
+    def test_accessor(self):
+        """Test if the accessor leads to the same results as the explicit function."""
+        # load pregenerated trips
+        trips_loaded = ti.read_trips_csv(os.path.join("tests", "data", "geolife_long", "trips.csv"), index_col="id")
+
+        # prepare data
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
+
+        # generate trips using the explicit function import
+        stps_expl, tpls_expl, trips_expl = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
+
+        # generate trips using the accessor
+        stps_acc, tpls_acc, trips_acc = tpls.as_triplegs.generate_trips(stps, gap_threshold=15)
+
+        # test if generated trips are equal
+        pd.testing.assert_frame_equal(trips_expl, trips_acc)
+        assert_geodataframe_equal(stps_expl, stps_acc)
+        assert_geodataframe_equal(tpls_expl, tpls_acc)
+
+    def test_accessor_arguments(self):
+        """Test if the accessor is robust to different ways to receive arguments"""
+        # load pregenerated trips
+        trips_loaded = ti.read_trips_csv(os.path.join("tests", "data", "geolife_long", "trips.csv"), index_col="id")
+
+        # prepare data
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
+
+        # accessor with only arguments (not allowed)
+        with pytest.raises(AssertionError):
+            _, _, _ = tpls.as_triplegs.generate_trips(stps, 15)
+
+        # accessor with only keywords
+        stps_1, tpls_1, trips_1 = tpls.as_triplegs.generate_trips(stps_input=stps, gap_threshold=15)
+
+        # accessor with mixed arguments/keywords
+        stps_2, tpls_2, trips_2 = tpls.as_triplegs.generate_trips(stps, gap_threshold=15)
+
+        # test if generated trips are equal (1,2)
+        assert_geodataframe_equal(stps_1, stps_2)
+        assert_geodataframe_equal(tpls_1, tpls_2)
+        pd.testing.assert_frame_equal(trips_1, trips_2)
 
     def test_generate_trips_missing_link(self):
         """Test nan is assigned for missing link between stps and trips, and tpls and trips."""
