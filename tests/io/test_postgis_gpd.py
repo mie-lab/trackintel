@@ -487,6 +487,7 @@ class Test_Handle_Con_String:
             assert isinstance(con, sqlalchemy.engine.Connection)
             assert not con.closed
             return con
+
         assert wrapped(conn_string).closed
 
     def test_conn(self, conn_postgis):
@@ -497,5 +498,7 @@ class Test_Handle_Con_String:
         def wrapped(con):
             assert con is conn
             return
+
         wrapped(conn)
+
     pass
