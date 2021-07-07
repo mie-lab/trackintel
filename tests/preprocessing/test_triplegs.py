@@ -5,8 +5,8 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.testing import assert_frame_equal
 from geopandas.testing import assert_geodataframe_equal
+from pandas.testing import assert_frame_equal
 from shapely.geometry import LineString, Point
 
 import trackintel as ti
@@ -95,22 +95,22 @@ class TestGenerate_trips:
 
         # prepare data
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
-        pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
-        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
-        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
+        pfs, spts = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+        spts = spts.as_staypoints.create_activity_flag(time_threshold=15)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts)
 
         # accessor with only arguments (not allowed)
         with pytest.raises(AssertionError):
-            _, _, _ = tpls.as_triplegs.generate_trips(stps, 15)
+            _, _, _ = tpls.as_triplegs.generate_trips(spts, 15)
 
         # accessor with only keywords
-        stps_1, tpls_1, trips_1 = tpls.as_triplegs.generate_trips(stps_input=stps, gap_threshold=15)
+        spts_1, tpls_1, trips_1 = tpls.as_triplegs.generate_trips(spts=spts, gap_threshold=15)
 
         # accessor with mixed arguments/keywords
-        stps_2, tpls_2, trips_2 = tpls.as_triplegs.generate_trips(stps, gap_threshold=15)
+        spts_2, tpls_2, trips_2 = tpls.as_triplegs.generate_trips(spts, gap_threshold=15)
 
         # test if generated trips are equal (1,2)
-        assert_geodataframe_equal(stps_1, stps_2)
+        assert_geodataframe_equal(spts_1, spts_2)
         assert_geodataframe_equal(tpls_1, tpls_2)
         pd.testing.assert_frame_equal(trips_1, trips_2)
 
