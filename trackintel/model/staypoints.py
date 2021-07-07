@@ -117,7 +117,9 @@ class StaypointsAccessor(object):
 
         See :func:`trackintel.io.postgis.write_staypoints_postgis`.
         """
-        ti.io.postgis.write_staypoints_postgis(self._obj, conn_string, table_name, schema=schema, sql_chunksize=sql_chunksize, if_exists=if_exists)
+        ti.io.postgis.write_staypoints_postgis(
+            self._obj, conn_string, table_name, schema=schema, sql_chunksize=sql_chunksize, if_exists=if_exists
+        )
 
     def temporal_tracking_quality(self, *args, **kwargs):
         """
