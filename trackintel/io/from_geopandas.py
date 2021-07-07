@@ -3,7 +3,7 @@ import pandas as pd
 from trackintel.io.file import _localize_timestamp
 
 
-def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom="geom", tz=None, mapper={}):
+def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom_col="geom", tz=None, mapper={}):
     """
     Read positionfixes from GeoDataFrames.
 
@@ -20,7 +20,7 @@ def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom
     user_id : str, default 'user_id'
         name of the column storing the user_id.
 
-    geom : str, default 'geom'
+    geom_col : str, default 'geom'
         name of the column storing the geometry.
 
     tz : str, optional
@@ -36,13 +36,13 @@ def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom
 
     Examples
     --------
-    >>> trackintel.read_positionfixes_gpd(gdf, user_id='User', geom='geometry', tz='utc')
+    >>> trackintel.read_positionfixes_gpd(gdf, user_id='User', geom_col='geom', tz='utc')
     """
-    columns = {tracked_at: "tracked_at", user_id: "user_id", geom: "geom"}
+    columns = {tracked_at: "tracked_at", user_id: "user_id"}
     columns.update(mapper)
 
     pfs = gdf.rename(columns=columns)
-    pfs = pfs.set_geometry("geom")
+    pfs = pfs.set_geometry(geom_col)
 
     # check and/or set timezone
     for col in ["tracked_at"]:
@@ -55,7 +55,7 @@ def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom
 
 
 def read_staypoints_gpd(
-    gdf, started_at="started_at", finished_at="finished_at", user_id="user_id", geom="geom", tz=None, mapper={}
+    gdf, started_at="started_at", finished_at="finished_at", user_id="user_id", geom_col="geom", tz=None, mapper={}
 ):
     """
     Read staypoints from GeoDataFrames.
@@ -76,7 +76,7 @@ def read_staypoints_gpd(
     user_id : str, default 'user_id'
         name of the column storing the user_id.
 
-    geom : str, default 'geom'
+    geom_col : str, default 'geom'
         name of the column storing the geometry.
 
     tz : str, optional
@@ -94,11 +94,11 @@ def read_staypoints_gpd(
     --------
     >>> trackintel.read_staypoints_gpd(gdf, started_at='start_time', finished_at='end_time', tz='utc')
     """
-    columns = {started_at: "started_at", finished_at: "finished_at", user_id: "user_id", geom: "geom"}
+    columns = {started_at: "started_at", finished_at: "finished_at", user_id: "user_id"}
     columns.update(mapper)
 
     stps = gdf.rename(columns=columns)
-    stps = stps.set_geometry("geom")
+    stps = stps.set_geometry(geom_col)
 
     # check and/or set timezone
     for col in ["started_at", "finished_at"]:
@@ -111,7 +111,7 @@ def read_staypoints_gpd(
 
 
 def read_triplegs_gpd(
-    gdf, started_at="started_at", finished_at="finished_at", user_id="user_id", geom="geometry", tz=None, mapper={}
+    gdf, started_at="started_at", finished_at="finished_at", user_id="user_id", geom_col="geom", tz=None, mapper={}
 ):
     """
     Read triplegs from GeoDataFrames.
@@ -132,7 +132,7 @@ def read_triplegs_gpd(
     user_id : str, default 'user_id'
         name of the column storing the user_id.
 
-    geom : str, default 'geom'
+    geom_col : str, default 'geom'
         name of the column storing the geometry.
 
     tz : str, optional
@@ -148,13 +148,13 @@ def read_triplegs_gpd(
 
     Examples
     --------
-    >>> trackintel.read_triplegs_gpd(gdf, user_id='User', geom='geometry', tz='utc')
+    >>> trackintel.read_triplegs_gpd(gdf, user_id='User', geom_col='geom', tz='utc')
     """
-    columns = {started_at: "started_at", finished_at: "finished_at", user_id: "user_id", geom: "geom"}
+    columns = {started_at: "started_at", finished_at: "finished_at", user_id: "user_id"}
     columns.update(mapper)
 
     tpls = gdf.rename(columns=columns)
-    tpls = tpls.set_geometry("geom")
+    tpls = tpls.set_geometry(geom_col)
 
     # check and/or set timezone
     for col in ["started_at", "finished_at"]:
