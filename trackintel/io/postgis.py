@@ -300,6 +300,18 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None, sql
     finally:
         conn.close()
 
+    if "extent" in locations.columns:
+        # geopandas.to_postgis can only handle one geometry column -> do it manually
+        if locations.crs is not None:
+            srid = locations.crs.to_epsg()
+        else:
+            srid = -1
+        extent_schema = Geometry("POLYGON", srid)
+        dtype = {"extent": extent_schema}
+        locations = locations.copy()
+        locations["extent"] = locations["extent"].apply(lambda x: WKTElement(x.wkt, srid=srid))
+    else:
+        dtype = None
 
 def read_trips_postgis(conn_string, table_name, *args, **kwargs):
     """Read trips from a PostGIS database.
