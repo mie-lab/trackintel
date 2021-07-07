@@ -1,25 +1,54 @@
+from functools import wraps
+from inspect import signature
+
 import geopandas as gpd
 import pandas as pd
+from geoalchemy2 import Geometry, WKTElement
 from sqlalchemy import create_engine
 
 
-def read_positionfixes_postgis(conn_string, table_name, geom_col="geom", *args, **kwargs):
+def _handle_con_string(func):
+    """Handle connection string input."""
+
+    @wraps(func)  # copy all metadata
+    def wrapper(*args, **kwargs):
+        # bind to name for easy access of both kwargs and args
+        bound_values = signature(func).bind(*args, **kwargs)
+        con = bound_values.arguments["con"]
+        # only do something if string
+        if not isinstance(con, str):
+            return func(*args, **kwargs)
+
+        engine = create_engine(con)
+        con = engine.connect()
+
+        # overwrite con argument with open connection
+        bound_values.arguments["con"] = con
+        args = bound_values.args
+        kwargs = bound_values.kwargs
+        try:
+            result = func(*args, **kwargs)
+        finally:
+            con.close()
+        return result
+
+    return wrapper
+
+
+@_handle_con_string
+def read_positionfixes_postgis(con, table_name, geom_col="geom", *args, **kwargs):
     """Reads positionfixes from a PostGIS database.
 
     Parameters
     ----------
-    conn_string : str
-        A connection string to connect to a database, e.g.,
-        ``postgresql://username:password@host:socket/database``.
+    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Connection string or active connection to PostGIS database.
 
     table_name : str
-        The table to read the positionfixes from.
+        The table from PostGIS database to read the positionfixes from.
 
     geom_col : str, default 'geom'
         The geometry column of the table.
-
-    *args
-        Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
 
     **kwargs
         Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
@@ -29,21 +58,14 @@ def read_positionfixes_postgis(conn_string, table_name, geom_col="geom", *args, 
     GeoDataFrame
         A GeoDataFrame containing the positionfixes.
     """
-    engine = create_engine(conn_string)
-    conn = engine.connect()
-    try:
-        pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, conn, geom_col=geom_col, *args, **kwargs)
-    finally:
-        conn.close()
-
+    pfs = gpd.GeoDataFrame.from_postgis("SELECT * FROM %s" % table_name, con, geom_col=geom_col, *args, **kwargs)
     # assert validity of positionfixes
     pfs.as_positionfixes
     return pfs
 
 
-def write_positionfixes_postgis(
-    positionfixes, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail"
-):
+@_handle_con_string
+def write_positionfixes_postgis(positionfixes, con, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
     """Stores positionfixes to PostGIS. Usually, this is directly called on a positionfixes
     DataFrame (see example below).
 
@@ -52,9 +74,8 @@ def write_positionfixes_postgis(
     positionfixes : GeoDataFrame
         The positionfixes to store to the database.
 
-    conn_string : str
-        A connection string to connect to a database, e.g.,
-        ``postgresql://username:password@host:socket/database``.
+    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Connection string or active connection to PostGIS database.
 
     table_name : str
         The name of the table to write to.
@@ -66,28 +87,27 @@ def write_positionfixes_postgis(
         How many entries should be written at the same time.
 
     if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
-        What should happen if the table already exists.
+        How to behave if the table already exists.
+
+        - fail: Raise a ValueError.
+        - replace: Drop the table before inserting new values.
+        - append: Insert new values to the existing table.
 
     Examples
     --------
-    >>> df.as_positionfixes.to_postgis(conn_string, table_name)
+    >>> pfs.as_positionfixes.to_postgis(conn_string, table_name)
     """
-    engine = create_engine(conn_string)
-    conn = engine.connect()
-    try:
-        positionfixes.to_postgis(table_name, conn, if_exists=if_exists, index=True, chunksize=sql_chunksize)
-    finally:
-        conn.close()
+    positionfixes.to_postgis(table_name, con, if_exists=if_exists, index=True, chunksize=sql_chunksize)
 
 
-def read_triplegs_postgis(conn_string, table_name, geom_col="geom", *args, **kwargs):
+@_handle_con_string
+def read_triplegs_postgis(con, table_name, geom_col="geom", *args, **kwargs):
     """Reads triplegs from a PostGIS database.
 
     Parameters
     ----------
-    conn_string : str
-        A connection string to connect to a database, e.g.,
-        ``postgresql://username:password@host:socket/database``.
+    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Connection string or active connection to PostGIS database.
 
     table_name : str
         The table to read the triplegs from.
@@ -100,22 +120,17 @@ def read_triplegs_postgis(conn_string, table_name, geom_col="geom", *args, **kwa
     GeoDataFrame
         A GeoDataFrame containing the triplegs.
     """
-    engine = create_engine(conn_string)
-    conn = engine.connect()
-    try:
-        pfs = gpd.GeoDataFrame.from_postgis(
-            "SELECT * FROM %s" % table_name, conn, geom_col=geom_col, index_col="id", *args, **kwargs
-        )
-    finally:
-        conn.close()
-
+    pfs = gpd.GeoDataFrame.from_postgis(
+        "SELECT * FROM %s" % table_name, con, geom_col=geom_col, index_col="id", *args, **kwargs
+    )
     # assert validity of triplegs
     pfs.as_triplegs
     return pfs
 
 
+@_handle_con_string
 def write_triplegs_postgis(
-    triplegs, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail", *args, **kwargs
+    triplegs, con, table_name, schema=None, sql_chunksize=None, if_exists="fail", *args, **kwargs
 ):
     """Stores triplegs to PostGIS. Usually, this is directly called on a triplegs
     DataFrame (see example below).
@@ -125,9 +140,8 @@ def write_triplegs_postgis(
     triplegs : GeoDataFrame
         The triplegs to store to the database.
 
-    conn_string : str
-        A connection string to connect to a database, e.g.,
-        ``postgresql://username:password@host:socket/database``.
+    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Connection string or active connection to PostGIS database.
 
     table_name : str
         The name of the table to write to.
@@ -139,28 +153,27 @@ def write_triplegs_postgis(
         How many entries should be written at the same time.
 
     if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
-        What should happen if the table already exists.
+        How to behave if the table already exists.
+
+        - fail: Raise a ValueError.
+        - replace: Drop the table before inserting new values.
+        - append: Insert new values to the existing table.
 
     Examples
     --------
-    >>> df.as_triplegs.to_postgis(conn_string, table_name)
+    >>> tpls.as_triplegs.to_postgis(conn_string, table_name)
     """
-    engine = create_engine(conn_string)
-    conn = engine.connect()
-    try:
-        triplegs.to_postgis(table_name, conn, if_exists=if_exists, index=True, chunksize=sql_chunksize)
-    finally:
-        conn.close()
+    triplegs.to_postgis(table_name, con, if_exists=if_exists, index=True, chunksize=sql_chunksize)
 
 
-def read_staypoints_postgis(conn_string, table_name, geom_col="geom", *args, **kwargs):
+@_handle_con_string
+def read_staypoints_postgis(con, table_name, geom_col="geom", *args, **kwargs):
     """Read staypoints from a PostGIS database.
 
     Parameters
     ----------
-    conn_string : str
-        A connection string to connect to a database, e.g.,
-        ``postgresql://username:password@host:socket/database``.
+    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Connection string or active connection to PostGIS database.
 
     table_name : str
         The table to read the staypoints from.
@@ -173,21 +186,17 @@ def read_staypoints_postgis(conn_string, table_name, geom_col="geom", *args, **k
     GeoDataFrame
         A GeoDataFrame containing the staypoints.
     """
-    engine = create_engine(conn_string)
-    conn = engine.connect()
-    try:
-        stps = gpd.GeoDataFrame.from_postgis(
-            "SELECT * FROM %s" % table_name, conn, geom_col=geom_col, index_col="id", *args, **kwargs
-        )
-    finally:
-        conn.close()
+    stps = gpd.GeoDataFrame.from_postgis(
+        "SELECT * FROM %s" % table_name, con, geom_col=geom_col, index_col="id", *args, **kwargs
+    )
 
     # assert validity of staypoints
     stps.as_staypoints
     return stps
 
 
-def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
+@_handle_con_string
+def write_staypoints_postgis(staypoints, con, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
     """Stores staypoints to PostGIS. Usually, this is directly called on a staypoints
     DataFrame (see example below).
 
@@ -196,9 +205,8 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, s
     staypoints : GeoDataFrame
         The staypoints to store to the database.
 
-    conn_string : str
-        A connection string to connect to a database, e.g.,
-        ``postgresql://username:password@host:socket/database``.
+    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Connection string or active connection to PostGIS database.
 
     table_name : str
         The name of the table to write to.
@@ -210,11 +218,15 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, s
         How many entries should be written at the same time.
 
     if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
-        What should happen if the table already exists.
+        How to behave if the table already exists.
+
+        - fail: Raise a ValueError.
+        - replace: Drop the table before inserting new values.
+        - append: Insert new values to the existing table.
 
     Examples
     --------
-    >>> df.as_staypoints.to_postgis(conn_string, table_name)
+    >>> spts.as_staypoints.to_postgis(conn_string, table_name)
     """
 
     # todo: Think about a concept for the indices. At the moment, an index
@@ -223,22 +235,17 @@ def write_staypoints_postgis(staypoints, conn_string, table_name, schema=None, s
     # thereby the index column is lost
 
     # make a copy in order to avoid changing the geometry of the original array
-    engine = create_engine(conn_string)
-    conn = engine.connect()
-    try:
-        staypoints.to_postgis(table_name, conn, if_exists=if_exists, index=True, chunksize=sql_chunksize)
-    finally:
-        conn.close()
+    staypoints.to_postgis(table_name, con, if_exists=if_exists, index=True, chunksize=sql_chunksize)
 
 
-def read_locations_postgis(conn_string, table_name, geom_col="geom", *args, **kwargs):
+@_handle_con_string
+def read_locations_postgis(con, table_name, geom_col="geom", *args, **kwargs):
     """Reads locations from a PostGIS database.
 
     Parameters
     ----------
-    conn_string : str
-        A connection string to connect to a database, e.g.,
-        ``postgresql://username:password@host:socket/database``.
+    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Connection string or active connection to PostGIS database.
 
     table_name : str
         The table to read the locations from.
@@ -251,21 +258,17 @@ def read_locations_postgis(conn_string, table_name, geom_col="geom", *args, **kw
     GeoDataFrame
         A GeoDataFrame containing the locations.
     """
-    engine = create_engine(conn_string)
-    conn = engine.connect()
-    try:
-        locs = gpd.GeoDataFrame.from_postgis(
-            "SELECT * FROM %s" % table_name, conn, geom_col=geom_col, index_col="id", *args, **kwargs
-        )
-    finally:
-        conn.close()
+    locs = gpd.GeoDataFrame.from_postgis(
+        "SELECT * FROM %s" % table_name, con, geom_col=geom_col, index_col="id", *args, **kwargs
+    )
 
     # assert validity of locations
     locs.as_locations
     return locs
 
 
-def write_locations_postgis(locations, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
+@_handle_con_string
+def write_locations_postgis(locations, con, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
     """Store locations to PostGIS. Usually, this is directly called on a locations GeoDataFrame (see example below).
 
     Parameters
@@ -273,9 +276,8 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None, sql
     locations : GeoDataFrame
         The locations to store to the database.
 
-    conn_string : str
-        A connection string to connect to a database, e.g.,
-        ``postgresql://username:password@host:socket/database``.
+    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Connection string or active connection to PostGIS database.
 
     table_name : str
         The name of the table to write to.
@@ -287,18 +289,16 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None, sql
         How many entries should be written at the same time.
 
     if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
-        What should happen if the table already exists.
+        How to behave if the table already exists.
+
+        - fail: Raise a ValueError.
+        - replace: Drop the table before inserting new values.
+        - append: Insert new values to the existing table.
 
     Examples
     --------
-    >>> df.as_locations.to_postgis(conn_string, table_name)
+    >>> locs.as_locations.to_postgis(conn_string, table_name)
     """
-    engine = create_engine(conn_string)
-    conn = engine.connect()
-    try:
-        locations.to_postgis(table_name, conn, if_exists=if_exists, index=True, chunksize=sql_chunksize)
-    finally:
-        conn.close()
 
     if "extent" in locations.columns:
         # geopandas.to_postgis can only handle one geometry column -> do it manually
@@ -313,14 +313,17 @@ def write_locations_postgis(locations, conn_string, table_name, schema=None, sql
     else:
         dtype = None
 
-def read_trips_postgis(conn_string, table_name, *args, **kwargs):
+    locations.to_postgis(table_name, con, if_exists=if_exists, index=True, chunksize=sql_chunksize, dtype=dtype)
+
+
+@_handle_con_string
+def read_trips_postgis(con, table_name, *args, **kwargs):
     """Read trips from a PostGIS database.
 
     Parameters
     ----------
-    conn_string : str
-        A connection string to connect to a database, e.g.,
-        ``postgresql://username:password@host:socket/database``.
+    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Connection string or active connection to PostGIS database.
 
     table_name : str
         The table to read the trips from.
@@ -330,19 +333,15 @@ def read_trips_postgis(conn_string, table_name, *args, **kwargs):
     DataFrame
         A DataFrame containing the trips.
     """
-    engine = create_engine(conn_string)
-    conn = engine.connect()
-    try:
-        trips = pd.read_sql("SELECT * FROM %s" % table_name, conn, index_col="id", *args, **kwargs)
-    finally:
-        conn.close()
+    trips = pd.read_sql("SELECT * FROM %s" % table_name, con, index_col="id", *args, **kwargs)
 
     # assert validity of trips
     trips.as_trips
     return trips
 
 
-def write_trips_postgis(trips, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
+@_handle_con_string
+def write_trips_postgis(trips, con, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
     """Stores trips to PostGIS. Usually, this is directly called on a trips
     DataFrame (see example below).
 
@@ -351,9 +350,8 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None, sql_chunksi
     trips : DataFrame
         The trips to store to the database.
 
-    conn_string : str
-        A connection string to connect to a database, e.g.,
-        ``postgresql://username:password@host:socket/database``.
+    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Connection string or active connection to PostGIS database.
 
     table_name : str
         The name of the table to write to.
@@ -365,17 +363,16 @@ def write_trips_postgis(trips, conn_string, table_name, schema=None, sql_chunksi
         How many entries should be written at the same time.
 
     if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
-        What should happen if the table already exists.
+        How to behave if the table already exists.
+
+        - fail: Raise a ValueError.
+        - replace: Drop the table before inserting new values.
+        - append: Insert new values to the existing table.
 
     Examples
     --------
-    >>> df.as_trips.to_postgis(conn_string, table_name)
+    >>> trips.as_trips.to_postgis(conn_string, table_name)
     """
 
     # make a copy in order to avoid changing the geometry of the original array
-    engine = create_engine(conn_string)
-    conn = engine.connect()
-    try:
-        trips.to_sql(table_name, conn, if_exists=if_exists, index=True, chunksize=sql_chunksize)
-    finally:
-        conn.close()
+    trips.to_sql(table_name, con, if_exists=if_exists, index=True, chunksize=sql_chunksize)
