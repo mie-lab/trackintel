@@ -8,6 +8,7 @@ import pytest
 from geopandas.testing import assert_geodataframe_equal
 from pandas.testing import assert_frame_equal
 from shapely.geometry import LineString, Point, Polygon
+import sqlalchemy
 import trackintel as ti
 
 
@@ -474,3 +475,27 @@ class TestGetSrid:
         srid = 3857
         gdf.set_crs(f"epsg:{srid}", inplace=True)
         assert _get_srid(gdf) == srid
+
+
+class Test_Handle_Con_String:
+    def test_conn_string(self, conn_postgis):
+        """Test if decorator opens a connection with connection string and closes it."""
+        conn_string, conn = conn_postgis
+
+        @ti.io.postgis._handle_con_string
+        def wrapped(con):
+            assert isinstance(con, sqlalchemy.engine.Connection)
+            assert not con.closed
+            return con
+        assert wrapped(conn_string).closed
+
+    def test_conn(self, conn_postgis):
+        """Test handeling of connection input"""
+        conn_string, conn = conn_postgis
+
+        @ti.io.postgis._handle_con_string
+        def wrapped(con):
+            assert con is conn
+            return
+        wrapped(conn)
+    pass
