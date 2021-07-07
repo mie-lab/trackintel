@@ -58,11 +58,11 @@ def example_positionfixes():
     t3 = pd.Timestamp("1971-01-02 07:00:00", tz="utc")
 
     list_dict = [
-        {"user_id": 0, "tracked_at": t1, "geometry": p1},
-        {"user_id": 0, "tracked_at": t2, "geometry": p2},
-        {"user_id": 1, "tracked_at": t3, "geometry": p3},
+        {"user_id": 0, "tracked_at": t1, "geom": p1},
+        {"user_id": 0, "tracked_at": t2, "geom": p2},
+        {"user_id": 1, "tracked_at": t3, "geom": p3},
     ]
-    pfs = gpd.GeoDataFrame(data=list_dict, geometry="geometry", crs="EPSG:4326")
+    pfs = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     pfs.index.name = "id"
     assert pfs.as_positionfixes
     return pfs
@@ -81,11 +81,11 @@ def example_staypoints():
     one_hour = datetime.timedelta(hours=1)
 
     list_dict = [
-        {"user_id": 0, "started_at": t1, "finished_at": t2, "geometry": p1},
-        {"user_id": 0, "started_at": t2, "finished_at": t3, "geometry": p2},
-        {"user_id": 1, "started_at": t3, "finished_at": t3 + one_hour, "geometry": p3},
+        {"user_id": 0, "started_at": t1, "finished_at": t2, "geom": p1},
+        {"user_id": 0, "started_at": t2, "finished_at": t3, "geom": p2},
+        {"user_id": 1, "started_at": t3, "finished_at": t3 + one_hour, "geom": p3},
     ]
-    stps = gpd.GeoDataFrame(data=list_dict, geometry="geometry", crs="EPSG:4326")
+    stps = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     stps.index.name = "id"
     assert stps.as_staypoints
     return stps
@@ -105,12 +105,12 @@ def example_triplegs():
     one_hour = datetime.timedelta(hours=1)
 
     list_dict = [
-        {"id": 0, "user_id": 0, "started_at": t1, "finished_at": t2, "geometry": g1},
-        {"id": 1, "user_id": 0, "started_at": t2, "finished_at": t3, "geometry": g2},
-        {"id": 2, "user_id": 1, "started_at": t3, "finished_at": t3 + one_hour, "geometry": g3},
+        {"id": 0, "user_id": 0, "started_at": t1, "finished_at": t2, "geom": g1},
+        {"id": 1, "user_id": 0, "started_at": t2, "finished_at": t3, "geom": g2},
+        {"id": 2, "user_id": 1, "started_at": t3, "finished_at": t3 + one_hour, "geom": g3},
     ]
 
-    tpls = gpd.GeoDataFrame(data=list_dict, geometry="geometry", crs="EPSG:4326")
+    tpls = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     tpls.set_index("id", inplace=True)
 
     assert tpls.as_triplegs
@@ -247,12 +247,14 @@ class TestPositionfixes:
         pfs = example_positionfixes.copy()
         conn_string, conn = conn_postgis
         table = "positionfixes"
+        sql = f"SELECT * FROM {table}"
         geom_col = pfs.geometry.name
 
         try:
             pfs.as_positionfixes.to_postgis(conn_string, table)
-            pfs_db = ti.io.read_positionfixes_postgis(conn_string, table, geom_col)
+            pfs_db = ti.io.read_positionfixes_postgis(sql, conn_string, geom_col)
             pfs_db = pfs_db.set_index("id")
+            print(pfs_db)
             assert_geodataframe_equal(pfs, pfs_db)
         finally:
             del_table(conn, table)
@@ -262,11 +264,12 @@ class TestPositionfixes:
         pfs = example_positionfixes.copy()
         conn_string, conn = conn_postgis
         table = "positionfixes"
+        sql = f"SELECT * FROM {table}"
         geom_col = pfs.geometry.name
         pfs.crs = None
         try:
             pfs.as_positionfixes.to_postgis(conn_string, table)
-            pfs_db = ti.io.read_positionfixes_postgis(conn_string, table, geom_col)
+            pfs_db = ti.io.read_positionfixes_postgis(sql, conn_string, geom_col)
             pfs_db = pfs_db.set_index("id")
             assert_geodataframe_equal(pfs, pfs_db)
         finally:
@@ -296,11 +299,12 @@ class TestStaypoints:
         spts = example_staypoints.copy()
         conn_string, conn = conn_postgis
         table = "staypoints"
+        sql = f"SELECT * FROM {table}"
         geom_col = spts.geometry.name
 
         try:
             spts.as_staypoints.to_postgis(conn_string, table)
-            spts_db = ti.io.read_staypoints_postgis(conn_string, table, geom_col)
+            spts_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col)
             assert_geodataframe_equal(spts, spts_db)
         finally:
             del_table(conn, table)
@@ -310,11 +314,12 @@ class TestStaypoints:
         spts = example_staypoints.copy()
         conn_string, conn = conn_postgis
         table = "staypoints"
+        sql = f"SELECT * FROM {table}"
         geom_col = example_staypoints.geometry.name
         spts.crs = None
         try:
             spts.as_staypoints.to_postgis(conn_string, table)
-            spts_db = ti.io.read_staypoints_postgis(conn_string, table, geom_col)
+            spts_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col)
             assert_geodataframe_equal(spts, spts_db)
         finally:
             del_table(conn, table)
@@ -343,11 +348,12 @@ class TestTriplegs:
         tpls = example_triplegs.copy()
         conn_string, conn = conn_postgis
         table = "triplegs"
+        sql = f"SELECT * FROM {table}"
         geom_col = tpls.geometry.name
 
         try:
             tpls.as_triplegs.to_postgis(conn_string, table)
-            tpls_db = ti.io.read_triplegs_postgis(conn_string, table, geom_col)
+            tpls_db = ti.io.read_triplegs_postgis(sql, conn_string, geom_col)
             assert_geodataframe_equal(tpls, tpls_db)
         finally:
             del_table(conn, table)
@@ -357,12 +363,13 @@ class TestTriplegs:
         tpls = example_triplegs.copy()
         conn_string, conn = conn_postgis
         table = "triplegs"
+        sql = f"SELECT * FROM {table}"
         geom_col = tpls.geometry.name
         tpls.crs = None
 
         try:
             tpls.as_triplegs.to_postgis(conn_string, table)
-            tpls_db = ti.io.read_triplegs_postgis(conn_string, table, geom_col)
+            tpls_db = ti.io.read_triplegs_postgis(sql, conn_string, geom_col)
             assert_geodataframe_equal(tpls, tpls_db)
         finally:
             del_table(conn, table)
@@ -391,11 +398,12 @@ class TestLocations:
         locs = example_locations.copy()
         conn_string, conn = conn_postgis
         table = "locations"
+        sql = f"SELECT * FROM {table}"
         geom_col = locs.geometry.name
 
         try:
             locs.as_locations.to_postgis(conn_string, table)
-            locs_db = ti.io.read_locations_postgis(conn_string, table, geom_col)
+            locs_db = ti.io.read_locations_postgis(sql, conn_string, geom_col)
             assert_geodataframe_equal(locs, locs_db)
         finally:
             del_table(conn, table)
@@ -405,11 +413,12 @@ class TestLocations:
         locs = example_locations.copy()
         conn_string, conn = conn_postgis
         table = "locations"
+        sql = f"SELECT * FROM {table}"
         geom_col = locs.geometry.name
         locs.crs = None
         try:
             locs.as_locations.to_postgis(conn_string, table)
-            locs_db = ti.io.read_locations_postgis(conn_string, table, geom_col)
+            locs_db = ti.io.read_locations_postgis(sql, conn_string, geom_col)
             assert_geodataframe_equal(locs, locs_db)
         finally:
             del_table(conn, table)
@@ -420,8 +429,8 @@ class TestLocations:
         table = "locations"
         coords = [[8.45, 47.6], [8.45, 47.4], [8.55, 47.4], [8.55, 47.6], [8.45, 47.6]]
         extent = Polygon(coords)
-        example_locations["extent"] = extent
-        example_locations["extent"] = gpd.GeoSeries(example_locations["extent"])
+        example_locations["extent"] = extent  # broadcasting
+        example_locations["extent"] = gpd.GeoSeries(example_locations["extent"])  # dtype
         try:
             example_locations.as_locations.to_postgis(conn_string, table)
             columns_db, dtypes = get_table_schema(conn, table)
@@ -457,10 +466,11 @@ class TestTrips:
         trips = example_trips.copy()
         conn_string, conn = conn_postgis
         table = "trips"
+        sql = f"SELECT * FROM {table}"
 
         try:
             trips.as_trips.to_postgis(conn_string, table)
-            trips_db = ti.io.read_trips_postgis(conn_string, table)
+            trips_db = ti.io.read_trips_postgis(sql, conn_string)
             assert_frame_equal(trips, trips_db)
         finally:
             del_table(conn, table)
