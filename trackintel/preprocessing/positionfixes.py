@@ -387,23 +387,7 @@ def generate_triplegs(
         tpls.crs = pfs.crs
 
         # check the correctness of the generated triplegs
-        invalid_tpls = tpls[~tpls.geometry.is_valid]
-        if invalid_tpls.shape[0] > 0:
-            # identify invalid tripleg ids
-            invalid_tpls_ids = invalid_tpls.index.to_list()
-
-            # reset tpls id in pfs
-            invalid_pfs_ixs = pfs[pfs.tripleg_id.isin(invalid_tpls_ids)].index
-            pfs.loc[invalid_pfs_ixs, "tripleg_id"] = pd.NA
-            warn_string = (
-                f"The positionfixes with ids {invalid_pfs_ixs.values} lead to invalid tripleg geometries. The "
-                f"resulting triplegs were omitted and the tripleg id of the positionfixes was set to nan"
-            )
-            warnings.warn(warn_string)
-
-            # drop triplegs
-            tpls = tpls[tpls.geometry.is_valid]
-
+        pfs, tpls = _drop_invalid_triplegs(tpls, pfs)
         assert tpls.as_triplegs
 
         if case == 2:
@@ -500,3 +484,41 @@ def __create_new_staypoints(start, end, pfs, idx, elevation_flag, geo_col, last_
     new_stps["pfs_id"] = [idx[k] for k in range(start, end)]
 
     return new_stps
+
+
+def _drop_invalid_triplegs(tpls, pfs):
+    """ Remove triplegs with invalid geometries from dataframe
+    Invalid tripleg ids are removed from the corresponding positionfixes
+
+    Parameters
+    ----------
+    tpls : GeoDataFrame (as trackintel staypoints)
+    pfs : GeoDataFrame (as trackintel triplegs)
+
+    Returns
+    -------
+    triplegs, positionfixes
+
+    Notes
+    ------
+    Valid is defined using shapely (https://shapely.readthedocs.io/en/stable/manual.html#object.is_valid) via
+    the geopandas accessor
+    """
+
+    invalid_tpls = tpls[~tpls.geometry.is_valid]
+    if invalid_tpls.shape[0] > 0:
+        # identify invalid tripleg ids
+        invalid_tpls_ids = invalid_tpls.index.to_list()
+
+        # reset tpls id in pfs
+        invalid_pfs_ixs = pfs[pfs.tripleg_id.isin(invalid_tpls_ids)].index
+        pfs.loc[invalid_pfs_ixs, "tripleg_id"] = pd.NA
+        warn_string = (
+            f"The positionfixes with ids {invalid_pfs_ixs.values} lead to invalid tripleg geometries. The "
+            f"resulting triplegs were omitted and the tripleg id of the positionfixes was set to nan"
+        )
+        warnings.warn(warn_string)
+
+        # return valid triplegs
+        tpls = tpls[tpls.geometry.is_valid]
+    return pfs, tpls
