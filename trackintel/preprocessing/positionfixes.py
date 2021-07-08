@@ -387,8 +387,8 @@ def generate_triplegs(
         tpls.crs = pfs.crs
 
         # assert validity of triplegs
-        tpls.as_triplegs
         pfs, tpls = _drop_invalid_triplegs(tpls, pfs)
+        tpls.as_triplegs
 
         if case == 2:
             pfs.drop(columns="staypoint_id", inplace=True)
