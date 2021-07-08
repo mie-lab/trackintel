@@ -487,7 +487,7 @@ def __create_new_staypoints(start, end, pfs, idx, elevation_flag, geo_col, last_
 
 
 def _drop_invalid_triplegs(tpls, pfs):
-    """ Remove triplegs with invalid geometries from dataframe
+    """Remove triplegs with invalid geometries from dataframe
     Invalid tripleg ids are removed from the corresponding positionfixes
 
     Parameters
