@@ -11,15 +11,15 @@ from trackintel.geogr.distances import haversine_dist
 
 
 def generate_staypoints(
-        pfs_input,
-        method="sliding",
-        distance_metric="haversine",
-        dist_threshold=100,
-        time_threshold=5.0,
-        gap_threshold=1e6,
-        include_last=False,
-        print_progress=False,
-        exclude_duplicate_pfs=True,
+    pfs_input,
+    method="sliding",
+    distance_metric="haversine",
+    dist_threshold=100,
+    time_threshold=5.0,
+    gap_threshold=1e6,
+    include_last=False,
+    print_progress=False,
+    exclude_duplicate_pfs=True,
 ):
     """
     Generate staypoints from positionfixes.
@@ -97,8 +97,8 @@ def generate_staypoints(
         nb_dropped = len_org - pfs.shape[0]
         if nb_dropped > 0:
             warn_str = (
-                    f"{nb_dropped} duplicates were dropped from your positionfixes. Dropping duplicates is"
-                    + " recommended but can be prevented using the 'exclude_duplicate_pfs' flag."
+                f"{nb_dropped} duplicates were dropped from your positionfixes. Dropping duplicates is"
+                + " recommended but can be prevented using the 'exclude_duplicate_pfs' flag."
             )
             warnings.warn(warn_str)
 
@@ -187,10 +187,10 @@ def generate_staypoints(
 
 
 def generate_triplegs(
-        pfs_input,
-        stps_input,
-        method="between_staypoints",
-        gap_threshold=15,
+    pfs_input,
+    stps_input,
+    method="between_staypoints",
+    gap_threshold=15,
 ):
     """Generate triplegs from positionfixes.
 
@@ -386,25 +386,9 @@ def generate_triplegs(
         tpls = tpls.set_geometry("geom")
         tpls.crs = pfs.crs
 
-        # check the correctness of the generated triplegs
-        invalid_tpls = tpls[~tpls.geometry.is_valid]
-        if invalid_tpls.shape[0] > 0:
-            # identify invalid tripleg ids
-            invalid_tpls_ids = invalid_tpls.index.to_list()
-
-            # reset tpls id in pfs
-            invalid_pfs_ixs = pfs[pfs.tripleg_id.isin(invalid_tpls_ids)].index
-            pfs.loc[invalid_pfs_ixs, "tripleg_id"] = pd.NA
-            warn_string = (
-                f"The positionfixes with ids {invalid_pfs_ixs.values} lead to invalid tripleg geometries. The "
-                f"resulting triplegs were omitted and the tripleg id of the positionfixes was set to nan"
-            )
-            warnings.warn(warn_string)
-
-            # drop triplegs
-            tpls = tpls[tpls.geometry.is_valid]
-
-        assert tpls.as_triplegs
+        # assert validity of triplegs
+        pfs, tpls = _drop_invalid_triplegs(tpls, pfs)
+        tpls.as_triplegs
 
         if case == 2:
             pfs.drop(columns="staypoint_id", inplace=True)
@@ -500,3 +484,41 @@ def __create_new_staypoints(start, end, pfs, idx, elevation_flag, geo_col, last_
     new_stps["pfs_id"] = [idx[k] for k in range(start, end)]
 
     return new_stps
+
+
+def _drop_invalid_triplegs(tpls, pfs):
+    """Remove triplegs with invalid geometries from dataframe
+    Invalid tripleg ids are removed from the corresponding positionfixes
+
+    Parameters
+    ----------
+    tpls : GeoDataFrame (as trackintel staypoints)
+    pfs : GeoDataFrame (as trackintel triplegs)
+
+    Returns
+    -------
+    triplegs, positionfixes
+
+    Notes
+    ------
+    Valid is defined using shapely (https://shapely.readthedocs.io/en/stable/manual.html#object.is_valid) via
+    the geopandas accessor
+    """
+
+    invalid_tpls = tpls[~tpls.geometry.is_valid]
+    if invalid_tpls.shape[0] > 0:
+        # identify invalid tripleg ids
+        invalid_tpls_ids = invalid_tpls.index.to_list()
+
+        # reset tpls id in pfs
+        invalid_pfs_ixs = pfs[pfs.tripleg_id.isin(invalid_tpls_ids)].index
+        pfs.loc[invalid_pfs_ixs, "tripleg_id"] = pd.NA
+        warn_string = (
+            f"The positionfixes with ids {invalid_pfs_ixs.values} lead to invalid tripleg geometries. The "
+            f"resulting triplegs were omitted and the tripleg id of the positionfixes was set to nan"
+        )
+        warnings.warn(warn_string)
+
+        # return valid triplegs
+        tpls = tpls[tpls.geometry.is_valid]
+    return pfs, tpls
