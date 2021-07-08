@@ -22,7 +22,7 @@ def geolife_pfs_stps_long():
 
 @pytest.fixture
 def example_positionfixes():
-    """Positionfixes for tests"""
+    """Positionfixes for tests."""
     p1 = Point(8.5067847, 47.4)
     p2 = Point(8.5067847, 47.5)
     p3 = Point(8.5067847, 47.6)
@@ -38,13 +38,15 @@ def example_positionfixes():
     ]
     pfs = gpd.GeoDataFrame(data=list_dict, geometry="geometry", crs="EPSG:4326")
     pfs.index.name = "id"
-    assert pfs.as_positionfixes
+
+    # assert validity of positionfixes.
+    pfs.as_positionfixes
     return pfs
 
 
 @pytest.fixture
 def isolated_positionfixes():
-    """positionfixes with two isolated positionfixes that have the same geometry but different timestamps."""
+    """Positionfixes with two isolated positionfixes that have the same geometry but different timestamps."""
     p1 = Point(8.5067847, 47.4)
     p2 = Point(8.5067847, 47.5)
     p3 = Point(8.5067847, 47.6)
@@ -67,7 +69,9 @@ def isolated_positionfixes():
     ]
     pfs = gpd.GeoDataFrame(data=list_dict, geometry="geometry", crs="EPSG:4326")
     pfs.index.name = "id"
-    assert pfs.as_positionfixes
+
+    # assert validity of positionfixes.
+    pfs.as_positionfixes
     return pfs
 
 
@@ -75,38 +79,42 @@ class TestGenerate_staypoints:
     """Tests for generate_staypoints() method."""
 
     def test_duplicate_pfs_warning(self, example_positionfixes):
-        "Calling generate_staypoints with duplicate staypoint should raise a warning"
-        pfs = example_positionfixes.copy()
-        pfs_duplicate_loc = pfs.copy()
+        """Calling generate_staypoints with duplicate positionfixes should raise a warning."""
+        pfs_duplicate_loc = example_positionfixes.copy()
         pfs_duplicate_loc.loc[0, "geometry"] = pfs_duplicate_loc.loc[1, "geometry"]
 
-        pfs_duplicate_t = pfs.copy()
+        pfs_duplicate_t = example_positionfixes.copy()
         pfs_duplicate_t.loc[0, "tracked_at"] = pfs_duplicate_t.loc[1, "tracked_at"]
 
-        pfs_duplicate = pfs_duplicate_loc.copy()
-        pfs_duplicate.loc[0, "tracked_at"] = pfs_duplicate.loc[1, "tracked_at"]
+        # 0 and 1 pfs are now identical
+        pfs_duplicate_all = pfs_duplicate_loc.copy()
+        pfs_duplicate_all.loc[0, "tracked_at"] = pfs_duplicate_all.loc[1, "tracked_at"]
 
         with pytest.warns(None) as record:
-            pfs.as_positionfixes.generate_staypoints()
+            example_positionfixes.as_positionfixes.generate_staypoints()
             pfs_duplicate_loc.as_positionfixes.generate_staypoints()
             pfs_duplicate_t.as_positionfixes.generate_staypoints()
 
             # assert that no warning is raised
             assert len(record) == 0
 
-        with pytest.warns(None) as record:
-            pfs_duplicate.as_positionfixes.generate_staypoints()
-            assert len(record) == 1
+        warn_string = ".* duplicates were dropped from your positionfixes."
+        with pytest.warns(UserWarning, match=warn_string):
+            pfs_duplicate_all.as_positionfixes.generate_staypoints()
 
     def test_duplicate_pfs_filtering(self, example_positionfixes):
-        """Generate_locations should filter duplicate positionfixes"""
-        pfs = example_positionfixes.copy()
+        """Test that duplicate positionfixes are filtered in generate_staypoints."""
+        pfs = example_positionfixes
+
+        # set 0 and 1 pfs identical
         pfs.loc[0, "geometry"] = pfs.loc[1, "geometry"]
         pfs.loc[0, "tracked_at"] = pfs.loc[1, "tracked_at"]
-        pfs_out, spts = pfs.as_positionfixes.generate_staypoints()
 
-        # ignore last column of pfs_out (staypoint_id) and ensure that the second duplicate (id=1) is filtered
-        assert_geodataframe_equal(pfs_out.iloc[:, :-1], pfs.iloc[[0, 2]])
+        with pytest.warns(UserWarning):
+            pfs_out, _ = pfs.as_positionfixes.generate_staypoints()
+
+        # drop staypoint_id column of pfs_out and ensure that the second duplicate (id=1) is filtered
+        assert_geodataframe_equal(pfs_out.drop(columns="staypoint_id"), pfs.iloc[[0, 2]])
 
     def test_duplicate_columns(self):
         """Test if running the function twice, the generated column does not yield exception in join statement"""
@@ -223,10 +231,14 @@ class TestGenerate_triplegs:
     """Tests for generate_triplegs() method."""
 
     def test_invalid_isolates(self, isolated_positionfixes):
-        """Triplegs generated from isolated duplicates are droped"""
-
+        """Triplegs generated from isolated duplicates are dropped."""
         pfs = isolated_positionfixes
-        pfs, tpls = pfs.as_positionfixes.generate_triplegs()
+
+        # a warning shall raise due to the duplicated positionfixes
+        warn_string = "The positionfixes with ids .* lead to invalid tripleg geometries."
+        with pytest.warns(UserWarning, match=warn_string):
+            pfs, tpls = pfs.as_positionfixes.generate_triplegs()
+
         # tripleg of user 0 is dropped. Tripleg of user 1 is available.
         assert len(tpls) == 1
         assert tpls.user_id.iloc[0] == 1

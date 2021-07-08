@@ -387,7 +387,7 @@ def generate_triplegs(
         tpls.crs = pfs.crs
 
         # assert validity of triplegs
-        pfs, tpls = _drop_invalid_triplegs(tpls, pfs)
+        tpls, pfs = _drop_invalid_triplegs(tpls, pfs)
         tpls.as_triplegs
 
         if case == 2:
@@ -487,24 +487,26 @@ def __create_new_staypoints(start, end, pfs, idx, elevation_flag, geo_col, last_
 
 
 def _drop_invalid_triplegs(tpls, pfs):
-    """Remove triplegs with invalid geometries from dataframe
-    Invalid tripleg ids are removed from the corresponding positionfixes
+    """Remove triplegs with invalid geometries. Also remove the corresponding invalid tripleg ids from positionfixes.
 
     Parameters
     ----------
-    tpls : GeoDataFrame (as trackintel staypoints)
-    pfs : GeoDataFrame (as trackintel triplegs)
+    tpls : GeoDataFrame (as trackintel triplegs)
+    pfs : GeoDataFrame (as trackintel positionfixes)
 
     Returns
     -------
-    triplegs, positionfixes
+    tpls: GeoDataFrame (as trackintel triplegs)
+        original tpls with invalid geometries removed.
+
+    pfs: GeoDataFrame (as trackintel positionfixes)
+        original pfs with invalid tripleg id set to pd.NA.
 
     Notes
-    ------
+    -----
     Valid is defined using shapely (https://shapely.readthedocs.io/en/stable/manual.html#object.is_valid) via
-    the geopandas accessor
+    the geopandas accessor.
     """
-
     invalid_tpls = tpls[~tpls.geometry.is_valid]
     if invalid_tpls.shape[0] > 0:
         # identify invalid tripleg ids
@@ -521,4 +523,4 @@ def _drop_invalid_triplegs(tpls, pfs):
 
         # return valid triplegs
         tpls = tpls[tpls.geometry.is_valid]
-    return pfs, tpls
+    return tpls, pfs
