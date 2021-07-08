@@ -11,15 +11,15 @@ from trackintel.geogr.distances import haversine_dist
 
 
 def generate_staypoints(
-        pfs_input,
-        method="sliding",
-        distance_metric="haversine",
-        dist_threshold=100,
-        time_threshold=5.0,
-        gap_threshold=1e6,
-        include_last=False,
-        print_progress=False,
-        exclude_duplicate_pfs=True,
+    pfs_input,
+    method="sliding",
+    distance_metric="haversine",
+    dist_threshold=100,
+    time_threshold=5.0,
+    gap_threshold=1e6,
+    include_last=False,
+    print_progress=False,
+    exclude_duplicate_pfs=True,
 ):
     """
     Generate staypoints from positionfixes.
@@ -97,8 +97,8 @@ def generate_staypoints(
         nb_dropped = len_org - pfs.shape[0]
         if nb_dropped > 0:
             warn_str = (
-                    f"{nb_dropped} duplicates were dropped from your positionfixes. Dropping duplicates is"
-                    + " recommended but can be prevented using the 'exclude_duplicate_pfs' flag."
+                f"{nb_dropped} duplicates were dropped from your positionfixes. Dropping duplicates is"
+                + " recommended but can be prevented using the 'exclude_duplicate_pfs' flag."
             )
             warnings.warn(warn_str)
 
@@ -187,10 +187,10 @@ def generate_staypoints(
 
 
 def generate_triplegs(
-        pfs_input,
-        stps_input,
-        method="between_staypoints",
-        gap_threshold=15,
+    pfs_input,
+    stps_input,
+    method="between_staypoints",
+    gap_threshold=15,
 ):
     """Generate triplegs from positionfixes.
 
