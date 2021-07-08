@@ -8,6 +8,5 @@ pint
 geoalchemy2 
 osmnx 
 psycopg2
-imageio
 tqdm
 similaritymeasures

@@ -1,19 +1,20 @@
 import datetime
 
 import geopandas as gpd
-from geopandas.testing import assert_geodataframe_equal
 import numpy as np
 import pandas as pd
 import pytest
-from shapely.geometry import Point
-
 import trackintel as ti
+from geopandas.testing import assert_geodataframe_equal
+from shapely.geometry import Point
 from trackintel.analysis.location_identification import (
-    pre_filter_locations,
+    _freq_assign,
     _freq_transform,
     freq_method,
-    _freq_assign,
     location_identifier,
+    pre_filter_locations,
+    osna_method,
+    _osna_label_timeframes,
 )
 
 
@@ -230,3 +231,166 @@ class TestLocation_Identifier:
         li = location_identifier(example_freq, method="FREQ", pre_filter=False)
         fr = freq_method(example_freq)
         assert_geodataframe_equal(li, fr)
+
+    def test_osna_method(self, example_osna):
+        """Test if function calls osna method correctly."""
+        li = location_identifier(example_osna, method="OSNA", pre_filter=False)
+        osna = osna_method(example_osna)
+        assert_geodataframe_equal(li, osna)
+
+
+@pytest.fixture
+def example_osna():
+    """Generate example staypoints with 3 location for 1 user within 3 different timeframes."""
+    weekday = "2021-05-19 "
+    t_rest = pd.Timestamp(weekday + "07:00:00", tz="utc")
+    t_work = pd.Timestamp(weekday + "18:00:00", tz="utc")
+    t_leisure = pd.Timestamp(weekday + "01:00:00", tz="utc")
+    h = pd.Timedelta("1h")
+
+    list_dict = [
+        {"user_id": 0, "location_id": 0, "started_at": t_rest},
+        {"user_id": 0, "location_id": 0, "started_at": t_leisure},
+        {"user_id": 0, "location_id": 0, "started_at": t_work},
+        {"user_id": 0, "location_id": 1, "started_at": t_rest},
+        {"user_id": 0, "location_id": 1, "started_at": t_work},
+        {"user_id": 0, "location_id": 1, "started_at": t_work},
+        {"user_id": 0, "location_id": 2, "started_at": t_leisure},
+    ]
+
+    p = Point(8.0, 47.0)  # geometry isn't used
+    for d in list_dict:
+        d["finished_at"] = d["started_at"] + h
+        d["geom"] = p
+
+    spts = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+    spts.index.name = "id"
+    assert "location_id" in spts.columns
+    assert spts.as_staypoints
+    return spts
+
+
+class TestOsna_Method:
+    """Test for the osna_method() function."""
+
+    def test_default(self, example_osna):
+        """Test with no changes to test data."""
+        osna = osna_method(example_osna)
+        example_osna.loc[example_osna["location_id"] == 0, "activity_label"] = "home"
+        example_osna.loc[example_osna["location_id"] == 1, "activity_label"] = "work"
+        assert_geodataframe_equal(example_osna, osna)
+
+    def test_overlap(self, example_osna):
+        """Test if overlap of home and work location the 2nd location is taken as work location."""
+        # add 2 work times to location 0,
+        # location 0 would be the most stayed location for both home and work
+        t = pd.Timestamp("2021-05-19 12:00:00", tz="utc")
+        h = pd.to_timedelta("1h")
+        p = Point(0.0, 0.0)
+        list_dict = [
+            {"user_id": 0, "location_id": 0, "started_at": t, "finished_at": t + h, "geom": p},
+            {"user_id": 0, "location_id": 0, "started_at": t, "finished_at": t + h, "geom": p},
+        ]
+        spts = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+        spts.index.name = "id"
+        spts = example_osna.append(spts)
+
+        result = osna_method(spts).iloc[:-2]
+        example_osna.loc[example_osna["location_id"] == 0, "activity_label"] = "home"
+        example_osna.loc[example_osna["location_id"] == 1, "activity_label"] = "work"
+        assert_geodataframe_equal(result, example_osna)
+
+    def test_only_weekends(self, example_osna):
+        """Test if an "empty df" warning rises if only weekends are included."""
+        weekend = "2021-05-22"  # a saturday
+
+        def _insert_weekend(dt, day=weekend):
+            """Take datetime and return new datetime with same time but new day."""
+            time = dt.time().strftime("%H:%M:%S")
+            new_dt = " ".join((day, time))
+            return pd.Timestamp(new_dt, tz=dt.tz)
+
+        # replace all days with weekends --> no label in data.
+        example_osna["started_at"] = example_osna["started_at"].apply(_insert_weekend)
+        example_osna["finished_at"] = example_osna["finished_at"].apply(_insert_weekend)
+
+        # check if warning is raised if all points are excluded (weekend)
+        with pytest.warns(UserWarning):
+            result = osna_method(example_osna)
+
+        # activity_label column is all pd.NA
+        example_osna["activity_label"] = pd.NA
+        assert_geodataframe_equal(result, example_osna)
+
+    def test_two_users(self, example_osna):
+        """Test if two users are handled correctly."""
+        two_user = example_osna.append(example_osna)
+        two_user.iloc[len(example_osna) :, 0] = 1  # second user gets id 1
+        result = osna_method(two_user)
+        two_user.loc[two_user["location_id"] == 0, "activity_label"] = "home"
+        two_user.loc[two_user["location_id"] == 1, "activity_label"] = "work"
+        assert_geodataframe_equal(result, two_user)
+
+    def test_leisure_weighting(self):
+        """Test if leisure has the weight given in the paper."""
+        weight_rest = 0.739
+        weight_leis = 0.358
+        ratio = weight_rest / weight_leis
+        ratio += 0.01  # tip the scale in favour of leisure
+        weekday = "2021-05-19 "
+        t_rest = pd.Timestamp(weekday + "07:00:00", tz="utc")
+        t_work = pd.Timestamp(weekday + "18:00:00", tz="utc")
+        t_leis = pd.Timestamp(weekday + "01:00:00", tz="utc")
+        h = pd.Timedelta("1h")
+
+        list_dict = [
+            {"user_id": 0, "location_id": 0, "started_at": t_rest, "finished_at": t_rest + h},
+            {"user_id": 0, "location_id": 1, "started_at": t_leis, "finished_at": t_leis + ratio * h},
+            {"user_id": 0, "location_id": 2, "started_at": t_work, "finished_at": t_work + h},
+        ]
+        p = Point(8.0, 47.0)  # geometry isn't used
+        for d in list_dict:
+            d["geom"] = p
+        spts = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+        spts.index.name = "id"
+        result = osna_method(spts)
+        spts.loc[spts["location_id"] == 1, "activity_label"] = "home"
+        spts.loc[spts["location_id"] == 2, "activity_label"] = "work"
+        assert_geodataframe_equal(spts, result)
+
+    def test_prior_activity_label(self, example_osna):
+        """Test that prior activity_label column does not corrupt output."""
+        example_osna["activity_label"] = np.arange(len(example_osna))
+        result = osna_method(example_osna)
+        del example_osna["activity_label"]
+        example_osna.loc[example_osna["location_id"] == 0, "activity_label"] = "home"
+        example_osna.loc[example_osna["location_id"] == 1, "activity_label"] = "work"
+        assert_geodataframe_equal(example_osna, result)
+
+
+class Test_osna_label_timeframes:
+    """Test for the _osna_label_timeframes() function."""
+
+    def test_weekend(self):
+        """Test if weekend only depends on day and not time."""
+        t1 = pd.Timestamp("2021-05-22 01:00:00")
+        t2 = pd.Timestamp("2021-05-22 07:00:00")
+        t3 = pd.Timestamp("2021-05-22 08:00:00")
+        t4 = pd.Timestamp("2021-05-22 20:00:00")
+        assert _osna_label_timeframes(t1) == "weekend"
+        assert _osna_label_timeframes(t2) == "weekend"
+        assert _osna_label_timeframes(t3) == "weekend"
+        assert _osna_label_timeframes(t4) == "weekend"
+
+    def test_weekday(self):
+        """Test the different labels on a weekday."""
+        t1 = pd.Timestamp("2021-05-20 01:00:00")
+        t2 = pd.Timestamp("2021-05-20 02:00:00")
+        t3 = pd.Timestamp("2021-05-20 08:00:00")
+        t4 = pd.Timestamp("2021-05-20 19:00:00")
+        t5 = pd.Timestamp("2021-05-20 18:59:59")
+        assert _osna_label_timeframes(t1) == "leisure"
+        assert _osna_label_timeframes(t2) == "rest"
+        assert _osna_label_timeframes(t3) == "work"
+        assert _osna_label_timeframes(t4) == "leisure"
+        assert _osna_label_timeframes(t5) == "work"

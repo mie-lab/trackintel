@@ -15,7 +15,6 @@ dependencies:
 - geoalchemy2
 - osmnx
 - psycopg2
-- imageio
 - sphinx
 - sphinx_rtd_theme
 - tqdm

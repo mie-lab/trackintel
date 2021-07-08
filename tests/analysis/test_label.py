@@ -1,10 +1,11 @@
 import os
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 import pytest
 
 import trackintel as ti
-from trackintel.analysis.label import _check_categories
+from trackintel.analysis.labelling import _check_categories
 
 
 class TestCreate_activity_flag:
@@ -18,7 +19,7 @@ class TestCreate_activity_flag:
         activity_true = stps_test["activity"].copy()
         stps_test["activity"] = False
 
-        stps_test = stps_test.as_staypoints.create_activity_flag()
+        stps_test = stps_test.as_staypoints.create_activity_flag(method="time_threshold", time_threshold=5.0)
 
         pd.testing.assert_series_equal(stps_test["activity"], activity_true)
 

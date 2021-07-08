@@ -1,4 +1,3 @@
-import copy
 import datetime
 
 import numpy as np
@@ -53,6 +52,9 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, print_progress=Fals
         Maximum allowed temporal gap size in minutes. If tracking data is missing for more than 
         `gap_threshold` minutes, then a new trip begins after the gap.
 
+    print_progress : bool, default False
+        If print_progress is True, the progress bar is displayed
+
     Returns
     -------
     staypoints: GeoDataFrame (as trackintel staypoints)
@@ -80,7 +82,12 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, print_progress=Fals
 
     Examples
     --------
+    >>> from trackintel.preprocessing.triplegs import generate_trips
     >>> staypoints, triplegs, trips = generate_trips(staypoints, triplegs)
+
+    trips can also be directly generated using the tripleg accessor
+    >>> staypoints, triplegs, trips = triplegs.as_triplegs.generate_trips(staypoints)
+
     """
     assert (
         "activity" in stps_input.columns
