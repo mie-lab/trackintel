@@ -63,7 +63,7 @@ def isolated_positionfixes():
         {"user_id": 1, "tracked_at": t1, "geometry": p1, "staypoint_id": 2},
         {"user_id": 1, "tracked_at": t2, "geometry": p2, "staypoint_id": pd.NA},
         {"user_id": 1, "tracked_at": t3, "geometry": p3, "staypoint_id": pd.NA},
-        {"user_id": 1, "tracked_at": t4, "geometry": p4, "staypoint_id": 3}
+        {"user_id": 1, "tracked_at": t4, "geometry": p4, "staypoint_id": 3},
     ]
     pfs = gpd.GeoDataFrame(data=list_dict, geometry="geometry", crs="EPSG:4326")
     pfs.index.name = "id"
@@ -78,13 +78,13 @@ class TestGenerate_staypoints:
         "Calling generate_staypoints with duplicate staypoint should raise a warning"
         pfs = example_positionfixes.copy()
         pfs_duplicate_loc = pfs.copy()
-        pfs_duplicate_loc.loc[0, 'geometry'] = pfs_duplicate_loc.loc[1, 'geometry']
+        pfs_duplicate_loc.loc[0, "geometry"] = pfs_duplicate_loc.loc[1, "geometry"]
 
         pfs_duplicate_t = pfs.copy()
-        pfs_duplicate_t.loc[0, 'tracked_at'] = pfs_duplicate_t.loc[1, 'tracked_at']
+        pfs_duplicate_t.loc[0, "tracked_at"] = pfs_duplicate_t.loc[1, "tracked_at"]
 
         pfs_duplicate = pfs_duplicate_loc.copy()
-        pfs_duplicate.loc[0, 'tracked_at'] = pfs_duplicate.loc[1, 'tracked_at']
+        pfs_duplicate.loc[0, "tracked_at"] = pfs_duplicate.loc[1, "tracked_at"]
 
         with pytest.warns(None) as record:
             pfs.as_positionfixes.generate_staypoints()
@@ -101,8 +101,8 @@ class TestGenerate_staypoints:
     def test_duplicate_pfs_filtering(self, example_positionfixes):
         """Generate_locations should filter duplicate positionfixes"""
         pfs = example_positionfixes.copy()
-        pfs.loc[0, 'geometry'] = pfs.loc[1, 'geometry']
-        pfs.loc[0, 'tracked_at'] = pfs.loc[1, 'tracked_at']
+        pfs.loc[0, "geometry"] = pfs.loc[1, "geometry"]
+        pfs.loc[0, "tracked_at"] = pfs.loc[1, "tracked_at"]
         pfs_out, spts = pfs.as_positionfixes.generate_staypoints()
 
         # ignore last column of pfs_out (staypoint_id) and ensure that the second duplicate (id=1) is filtered
