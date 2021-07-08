@@ -42,8 +42,8 @@ def read_geolife(geolife_path, print_progress=False):
 
     Notes
     -----
-    The geopandas dataframe has the following columns and datatype: 'lat': float64, Latitude WGS84;
-    'lon': float64, Longitude WGS84; 'elevation': float64, in meters; 'tracked_at': datetime64[ns];
+    The geopandas dataframe has the following columns and datatype: 'latitude': float64, Latitude WGS84;
+    'longitude': float64, Longitude WGS84; 'elevation': float64, in meters; 'tracked_at': datetime64[ns];
     'user_id': int64; 'geom': geopandas/shapely geometry; 'accuracy': None;
 
     For some users, travel mode labels are provided as .txt file. These labels are read and returned as label dictionary.
@@ -138,7 +138,7 @@ def read_geolife(geolife_path, print_progress=False):
                 input_file_this,
                 skiprows=6,
                 header=None,
-                names=["lat", "lon", "zeros", "elevation", "date days", "date", "time"],
+                names=["latitude", "longitude", "zeros", "elevation", "date days", "date", "time"],
             )
 
             data_this["tracked_at"] = pd.to_datetime(
@@ -149,7 +149,7 @@ def read_geolife(geolife_path, print_progress=False):
             data_this["user_id"] = user_id
             data_this["elevation"] = data_this["elevation"] * FEET2METER
 
-            data_this["geom"] = list(zip(data_this["lon"], data_this["lat"]))
+            data_this["geom"] = list(zip(data_this["longitude"], data_this["latitude"]))
             data_this["geom"] = data_this["geom"].apply(Point)
 
             df_list_days.append(data_this)

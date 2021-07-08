@@ -386,9 +386,9 @@ def generate_triplegs(
         tpls = tpls.set_geometry("geom")
         tpls.crs = pfs.crs
 
-        # check the correctness of the generated triplegs
+        # assert validity of triplegs
+        tpls.as_triplegs
         pfs, tpls = _drop_invalid_triplegs(tpls, pfs)
-        assert tpls.as_triplegs
 
         if case == 2:
             pfs.drop(columns="staypoint_id", inplace=True)

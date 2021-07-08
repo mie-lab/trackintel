@@ -1,14 +1,23 @@
 from math import radians
 
 import numpy as np
+import geopandas as gpd
+import pandas as pd
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
+from tqdm import tqdm
 
 from trackintel.geogr.distances import meters_to_decimal_degrees
 
 
 def generate_locations(
-    staypoints, method="dbscan", epsilon=100, num_samples=1, distance_metric="haversine", agg_level="user"
+    staypoints,
+    method="dbscan",
+    epsilon=100,
+    num_samples=1,
+    distance_metric="haversine",
+    agg_level="user",
+    print_progress=False,
 ):
     """
     Generate locations from the staypoints.
@@ -36,9 +45,11 @@ def generate_locations(
 
     agg_level: {'user','dataset'}
         The level of aggregation when generating locations:
-
         - 'user'      : locations are generated independently per-user.
         - 'dataset'   : shared locations are generated for all users.
+
+    print_progress : bool, default False
+        If print_progress is True, the progress bar is displayed
 
     Returns
     -------
@@ -59,6 +70,8 @@ def generate_locations(
 
     # initialize the return GeoDataFrames
     ret_stps = staypoints.copy()
+    ret_stps = ret_stps.sort_values(["user_id", "started_at"])
+    geo_col = ret_stps.geometry.name
 
     if method == "dbscan":
 
@@ -72,27 +85,44 @@ def generate_locations(
             db = DBSCAN(eps=epsilon, min_samples=num_samples, algorithm="ball_tree", metric=distance_metric)
 
         if agg_level == "user":
-            location_id_counter = 0
-            # TODO: change into groupby
-            for user_id_this in ret_stps["user_id"].unique():
-                # Slice staypoints array by user. This is not a copy!
-                user_staypoints = ret_stps[ret_stps["user_id"] == user_id_this]
+            if print_progress:
+                tqdm.pandas(desc="User location generation")
+                ret_stps = ret_stps.groupby("user_id", as_index=False).progress_apply(
+                    _generate_locations_per_user,
+                    geo_col=geo_col,
+                    distance_metric=distance_metric,
+                    db=db,
+                )
+            else:
+                ret_stps = ret_stps.groupby("user_id", as_index=False).apply(
+                    _generate_locations_per_user,
+                    geo_col=geo_col,
+                    distance_metric=distance_metric,
+                    db=db,
+                )
 
-                if distance_metric == "haversine":
-                    # the input is converted to list of (lat, lon) tuples in radians unit
-                    p = np.array([[radians(g.y), radians(g.x)] for g in user_staypoints.geometry])
-                else:
-                    p = np.array([[g.x, g.y] for g in user_staypoints.geometry])
-                labels = db.fit_predict(p)
+            # keeping track of noise labels
+            ret_stps_non_noise_labels = ret_stps[ret_stps["location_id"] != -1]
+            ret_stps_noise_labels = ret_stps[ret_stps["location_id"] == -1]
 
-                # enforce unique lables across all users without changing noise labels
-                max_label = np.max(labels)
-                labels[labels != -1] = labels[labels != -1] + location_id_counter
-                if max_label > -1:
-                    location_id_counter = location_id_counter + max_label + 1
+            # sort so that the last location id of a user = max(location id)
+            ret_stps_non_noise_labels = ret_stps_non_noise_labels.sort_values(["user_id", "location_id"])
 
-                # add staypoint - location matching to original staypoints
-                ret_stps.loc[user_staypoints.index, "location_id"] = labels
+            # identify start positions of new user_ids
+            start_of_user_id = ret_stps_non_noise_labels["user_id"] != ret_stps_non_noise_labels["user_id"].shift(1)
+
+            # calculate the offset (= last location id of the previous user)
+            # multiplication is to mask all positions where no new user starts and addition is to have a +1 when a
+            # new user starts
+            loc_id_offset = ret_stps_non_noise_labels["location_id"].shift(1) * start_of_user_id + start_of_user_id
+
+            # fill first nan with 0 and create the cumulative sum
+            loc_id_offset = loc_id_offset.fillna(0).cumsum()
+
+            ret_stps_non_noise_labels["location_id"] = ret_stps["location_id"] + loc_id_offset
+            ret_stps = gpd.GeoDataFrame(pd.concat([ret_stps_non_noise_labels, ret_stps_noise_labels]), geometry=geo_col)
+            ret_stps.sort_values(["user_id", "started_at"], inplace=True)
+
         else:
             if distance_metric == "haversine":
                 # the input is converted to list of (lat, lon) tuples in radians unit
@@ -171,3 +201,21 @@ def generate_locations(
     ret_loc["user_id"] = ret_loc["user_id"].astype(ret_stps["user_id"].dtype)
 
     return ret_stps, ret_loc
+
+
+def _generate_locations_per_user(user_staypoints, distance_metric, db, geo_col):
+    """function called after groupby: should only contain records of one user;
+    see generate_locations() function for parameter meaning."""
+
+    if distance_metric == "haversine":
+        # the input is converted to list of (lat, lon) tuples in radians unit
+        p = np.array([[radians(q.y), radians(q.x)] for q in (user_staypoints[geo_col])])
+    else:
+        p = np.array([[q.x, q.y] for q in (user_staypoints[geo_col])])
+    labels = db.fit_predict(p)
+
+    # add staypoint - location matching to original staypoints
+    user_staypoints["location_id"] = labels
+    user_staypoints = gpd.GeoDataFrame(user_staypoints, geometry=geo_col)
+
+    return user_staypoints

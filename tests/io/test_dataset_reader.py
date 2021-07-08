@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from geopandas.testing import assert_geoseries_equal
+
 import trackintel as ti
 from trackintel.io.dataset_reader import read_geolife, geolife_add_modes_to_triplegs
 
@@ -82,29 +84,30 @@ class TestReadGeolife:
     def test_loop_read(self):
         """Use read_geolife reader, store posfix as .csv, load them again."""
         pfs, _ = read_geolife(os.path.join("tests", "data", "geolife"), print_progress=True)
-        tmp_file = os.path.join("tests", "data", "positionfixes_test.csv")
-        pfs.as_positionfixes.to_csv(tmp_file)
-        pfs2 = ti.read_positionfixes_csv(tmp_file, index_col="id")[pfs.columns]
-        os.remove(tmp_file)
-        assert np.isclose(0, (pfs.lat - pfs2.lat).abs().sum())
+
+        saved_file = os.path.join("tests", "data", "positionfixes_test.csv")
+        pfs.as_positionfixes.to_csv(saved_file)
+        pfs_reRead = ti.read_positionfixes_csv(saved_file, index_col="id", crs="epsg:4326")
+        os.remove(saved_file)
+
+        assert_geoseries_equal(pfs.geometry, pfs_reRead.geometry)
 
     def test_print_progress_flag(self, capsys):
-        """Test if the print_progress par controls the printing behavior"""
+        """Test if the print_progress bar controls the printing behavior."""
         g_path = os.path.join("tests", "data", "geolife")
-        pfs, _ = read_geolife(g_path, print_progress=True)
+        read_geolife(g_path, print_progress=True)
         captured_print = capsys.readouterr()
         assert captured_print.err != ""
 
-        pfs, _ = read_geolife(g_path, print_progress=False)
+        read_geolife(g_path, print_progress=False)
         captured_noprint = capsys.readouterr()
         assert captured_noprint.err == ""
 
         assert True
 
     def test_label_reading(self):
-        """test data types of the labels returned by read_geolife"""
-
-        pfs, labels = read_geolife(os.path.join("tests", "data", "geolife_modes"))
+        """Test data types of the labels returned by read_geolife."""
+        _, labels = read_geolife(os.path.join("tests", "data", "geolife_modes"))
         # the output is a dictionary
         assert isinstance(labels, dict)
 
@@ -114,9 +117,8 @@ class TestReadGeolife:
             assert isinstance(value, pd.DataFrame)
 
     def test_unavailable_label_reading(self):
-        """test data types of the labels returned by read_geolife from a dictionary without label files"""
-
-        pfs, labels = read_geolife(os.path.join("tests", "data", "geolife_long"))
+        """Test data types of the labels returned by read_geolife from a dictionary without label files."""
+        _, labels = read_geolife(os.path.join("tests", "data", "geolife_long"))
 
         # the output is a dictionary
         assert isinstance(labels, dict)
@@ -126,7 +128,7 @@ class TestReadGeolife:
             assert isinstance(value, pd.DataFrame)
 
     def test_wrong_folder_name(self):
-        """Check if invalid folder names raise an exception"""
+        """Check if invalid folder names raise an exception."""
         geolife_path = os.path.join("tests", "data", "geolife")
         temp_dir = os.path.join(geolife_path, "123 - invalid folder ()%")
         os.mkdir(temp_dir)

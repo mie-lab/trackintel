@@ -6,7 +6,7 @@ dependencies:
 - python=3.9
 - matplotlib
 - numpy
-- pandas
+- pandas<=1.2.5
 - geopandas
 - scikit-learn
 - networkx 

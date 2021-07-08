@@ -3,7 +3,7 @@ import pandas as pd
 from trackintel.io.file import _localize_timestamp
 
 
-def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom="geom", tz=None, mapper={}):
+def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom_col="geom", tz=None, mapper={}):
     """
     Read positionfixes from GeoDataFrames.
 
@@ -20,7 +20,7 @@ def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom
     user_id : str, default 'user_id'
         name of the column storing the user_id.
 
-    geom : str, default 'geom'
+    geom_col : str, default 'geom'
         name of the column storing the geometry.
 
     tz : str, optional
@@ -36,25 +36,26 @@ def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom
 
     Examples
     --------
-    >>> trackintel.read_positionfixes_gpd(gdf, user_id='User', geom='geometry', tz='utc')
+    >>> trackintel.read_positionfixes_gpd(gdf, user_id='User', geom_col='geom', tz='utc')
     """
-    columns = {tracked_at: "tracked_at", user_id: "user_id", geom: "geom"}
+    columns = {tracked_at: "tracked_at", user_id: "user_id"}
     columns.update(mapper)
 
     pfs = gdf.rename(columns=columns)
-    pfs = pfs.set_geometry("geom")
+    pfs = pfs.set_geometry(geom_col)
 
     # check and/or set timezone
     for col in ["tracked_at"]:
         if not pd.api.types.is_datetime64tz_dtype(pfs[col]):
             pfs[col] = _localize_timestamp(dt_series=pfs[col], pytz_tzinfo=tz, col_name=col)
 
-    assert pfs.as_positionfixes
+    # assert validity of positionfixes
+    pfs.as_positionfixes
     return pfs
 
 
 def read_staypoints_gpd(
-    gdf, started_at="started_at", finished_at="finished_at", user_id="user_id", geom="geom", tz=None, mapper={}
+    gdf, started_at="started_at", finished_at="finished_at", user_id="user_id", geom_col="geom", tz=None, mapper={}
 ):
     """
     Read staypoints from GeoDataFrames.
@@ -75,7 +76,7 @@ def read_staypoints_gpd(
     user_id : str, default 'user_id'
         name of the column storing the user_id.
 
-    geom : str, default 'geom'
+    geom_col : str, default 'geom'
         name of the column storing the geometry.
 
     tz : str, optional
@@ -93,23 +94,24 @@ def read_staypoints_gpd(
     --------
     >>> trackintel.read_staypoints_gpd(gdf, started_at='start_time', finished_at='end_time', tz='utc')
     """
-    columns = {started_at: "started_at", finished_at: "finished_at", user_id: "user_id", geom: "geom"}
+    columns = {started_at: "started_at", finished_at: "finished_at", user_id: "user_id"}
     columns.update(mapper)
 
     stps = gdf.rename(columns=columns)
-    stps = stps.set_geometry("geom")
+    stps = stps.set_geometry(geom_col)
 
     # check and/or set timezone
     for col in ["started_at", "finished_at"]:
         if not pd.api.types.is_datetime64tz_dtype(stps[col]):
             stps[col] = _localize_timestamp(dt_series=stps[col], pytz_tzinfo=tz, col_name=col)
 
-    assert stps.as_staypoints
+    # assert validity of staypoints
+    stps.as_staypoints
     return stps
 
 
 def read_triplegs_gpd(
-    gdf, started_at="started_at", finished_at="finished_at", user_id="user_id", geom="geometry", tz=None, mapper={}
+    gdf, started_at="started_at", finished_at="finished_at", user_id="user_id", geom_col="geom", tz=None, mapper={}
 ):
     """
     Read triplegs from GeoDataFrames.
@@ -130,7 +132,7 @@ def read_triplegs_gpd(
     user_id : str, default 'user_id'
         name of the column storing the user_id.
 
-    geom : str, default 'geom'
+    geom_col : str, default 'geom'
         name of the column storing the geometry.
 
     tz : str, optional
@@ -146,20 +148,21 @@ def read_triplegs_gpd(
 
     Examples
     --------
-    >>> trackintel.read_triplegs_gpd(gdf, user_id='User', geom='geometry', tz='utc')
+    >>> trackintel.read_triplegs_gpd(gdf, user_id='User', geom_col='geom', tz='utc')
     """
-    columns = {started_at: "started_at", finished_at: "finished_at", user_id: "user_id", geom: "geom"}
+    columns = {started_at: "started_at", finished_at: "finished_at", user_id: "user_id"}
     columns.update(mapper)
 
     tpls = gdf.rename(columns=columns)
-    tpls = tpls.set_geometry("geom")
+    tpls = tpls.set_geometry(geom_col)
 
     # check and/or set timezone
     for col in ["started_at", "finished_at"]:
         if not pd.api.types.is_datetime64tz_dtype(tpls[col]):
             tpls[col] = _localize_timestamp(dt_series=tpls[col], pytz_tzinfo=tz, col_name=col)
 
-    assert tpls.as_triplegs
+    # assert validity of triplegs
+    tpls.as_triplegs
     return tpls
 
 
@@ -229,7 +232,8 @@ def read_trips_gpd(
         if not pd.api.types.is_datetime64tz_dtype(trips[col]):
             trips[col] = _localize_timestamp(dt_series=trips[col], pytz_tzinfo=tz, col_name=col)
 
-    assert trips.as_trips
+    # assert validity of trips
+    trips.as_trips
     return trips
 
 
@@ -271,7 +275,8 @@ def read_locations_gpd(gdf, user_id="user_id", center="center", mapper={}):
     locs = gdf.rename(columns=columns)
     locs = locs.set_geometry("center")
 
-    assert locs.as_locations
+    # assert validity of locations
+    locs.as_locations
     return locs
 
 
@@ -332,6 +337,6 @@ def read_tours_gpd(
     #     if not pd.api.types.is_datetime64tz_dtype(trs[col]):
     #         trs[col] = localize_timestamp(dt_series=trs[col], pytz_tzinfo=tz, col_name=col)
 
-    # assert trs.as_tours
+    # trs.as_tours
     # return trs
     pass
