@@ -1,5 +1,5 @@
-import warnings
 import copy
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -97,7 +97,7 @@ def generate_trips(spts, tpls, gap_threshold=15):
     # If the triplegs already have a column "trip_id", we drop it
     if "trip_id" in tpls:
         tpls.drop(columns="trip_id", inplace=True)
-        warnings.warn("Deleted column 'trip_id' from tpls.")
+        warnings.warn("Deleted existing column 'trip_id' from tpls.")
 
     # if the staypoints already have any of the columns "trip_id", "prev_trip_id", "next_trip_id", we drop them
     for col in ["trip_id", "prev_trip_id", "next_trip_id"]:
