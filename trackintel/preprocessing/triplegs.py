@@ -170,19 +170,18 @@ def generate_trips(spts, tpls, gap_threshold=15):
     # add gaps as activities, to simplify id assignment.
     gaps = pd.DataFrame(spts_tpls.loc[gap, "user_id"])
     gaps["started_at"] = spts_tpls.loc[gap, "finished_at"] + gap_threshold / 2
-    gaps[["type", "activity"]] = ["gap", True]
+    gaps[["type", "activity"]] = ["gap", True]  # nicer for debugging
 
     # same for user changes
     user_change = pd.DataFrame(spts_tpls.loc[condition_new_user, "user_id"])
     user_change["started_at"] = spts_tpls.loc[condition_new_user, "started_at"] - gap_threshold / 2
-    user_change[["type", "activity"]] = ["user_change", True]
+    user_change[["type", "activity"]] = ["user_change", True]  # nicer for debugging
 
     # merge trips with (filler) activities
     trips.drop(columns=["type", "spts_tpls_id"], inplace=True)  # make space so no overlap with activity "spts_tpls_id"
-
-    trips_with_act = pd.concat((trips, spts_tpls_only_act, gaps, user_change), axis=0, ignore_index=True)
     # Inserting `gaps` and `user_change` into the dataframe creates buffers that catch shifted
     # "staypoint_id" and "trip_id" from corrupting staypoints/trips.
+    trips_with_act = pd.concat((trips, spts_tpls_only_act, gaps, user_change), axis=0, ignore_index=True)
     trips_with_act.sort_values(["user_id", "started_at"], inplace=True)
 
     # ID assignment #
@@ -203,16 +202,7 @@ def generate_trips(spts, tpls, gap_threshold=15):
     trips = trips_with_act[~trips_with_act["activity"]].copy()
 
     trips.drop(
-        [
-            "type",
-            "spts_tpls_id",
-            "activity",
-            "temp_trip_id",
-            "prev_trip_id",
-            "next_trip_id",
-        ],
-        inplace=True,
-        axis=1,
+        ["type", "spts_tpls_id", "activity", "temp_trip_id", "prev_trip_id", "next_trip_id",], inplace=True, axis=1,
     )
 
     # now handle the data that is aggregated in the trips
