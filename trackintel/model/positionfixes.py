@@ -1,3 +1,5 @@
+from functools import wraps
+
 import pandas as pd
 
 import trackintel as ti
@@ -100,6 +102,7 @@ class PositionfixesAccessor(object):
         """
         ti.io.file.write_positionfixes_csv(self._obj, filename, *args, **kwargs)
 
+    @wraps(ti.io.postgis.write_positionfixes_postgis)
     def to_postgis(self, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
         """
         Store this collection of positionfixes to PostGIS.
