@@ -122,34 +122,24 @@ def generate_trips(spts, tpls, gap_threshold=15):
     spts_tpls["spts_tpls_id"] = spts_tpls.index
 
     spts_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
-    spts_tpls.reset_index(inplace=True, drop=True)
-
-    # delete intermediate activities
-    # intermediate activities are activities that are surrounded by other activities
-    # therefore they are neither at the end, at the start, nor within a trip
-    _, inter_activities, last_activities = _get_activity_masks(spts_tpls)
-    spts_tpls["last_activity"] = last_activities  # trip may start here
-    spts_tpls = spts_tpls[~inter_activities]  # no trip interaction
-    spts_tpls["started_at_next"] = spts_tpls["started_at"].shift(-1)
 
     # conditions for new trip
     # start new trip if the user changes
     condition_new_user = spts_tpls["user_id"] != spts_tpls["user_id"].shift(1)
 
-    # start new trip if there is a new activity
-    condition_new_activity = spts_tpls["last_activity"]
+    # start new trip if there is a new activity (last activity in group)
+    _, _, condition_new_activity = _get_activity_masks(spts_tpls)
 
     # gap conditions
-    # start new trip after a gap
-    gap = (spts_tpls["started_at_next"] - spts_tpls["finished_at"]) > gap_threshold
+    # start new trip after a gap, difference of started next with finish of current.
+    gap = (spts_tpls["started_at"].shift(-1) - spts_tpls["finished_at"]) > gap_threshold
     condition_time_gap = gap.shift(1, fill_value=False)  # trip starts on next entry
 
-    cond_all = condition_new_user | condition_new_activity | condition_time_gap
-    spts_tpls["new_trip"] = cond_all
+    new_trip = condition_new_user | condition_new_activity | condition_time_gap
 
     # assign an incrementing id to all triplegs that start a trip
     # temporary as empty trips are not filtered out yet.
-    spts_tpls.loc[cond_all, "temp_trip_id"] = np.arange(cond_all.sum())
+    spts_tpls.loc[new_trip, "temp_trip_id"] = np.arange(new_trip.sum())
     spts_tpls["temp_trip_id"].fillna(method="ffill", inplace=True)
 
     # exclude activities to aggregate trips together.
@@ -168,7 +158,7 @@ def generate_trips(spts, tpls, gap_threshold=15):
         row_id = np.array(row["spts_tpls_id"])
         t = row_type == "tripleg"
         tpls_ids = row_id[t]
-        spts_ids = row_id[np.logical_not(t)]
+        spts_ids = row_id[~t]
         return [spts_ids, tpls_ids]
 
     trips[["spts", "tpls"]] = trips.apply(_seperate_ids, axis=1, result_type="expand")
@@ -180,12 +170,12 @@ def generate_trips(spts, tpls, gap_threshold=15):
     # add gaps as activities, to simplify id assignment.
     gaps = pd.DataFrame(spts_tpls.loc[gap, "user_id"])
     gaps["started_at"] = spts_tpls.loc[gap, "finished_at"] + gap_threshold / 2
-    gaps[["type", "activity", "new_trip"]] = ["gap", True, True]
+    gaps[["type", "activity"]] = ["gap", True]
 
     # same for user changes
     user_change = pd.DataFrame(spts_tpls.loc[condition_new_user, "user_id"])
     user_change["started_at"] = spts_tpls.loc[condition_new_user, "started_at"] - gap_threshold / 2
-    user_change[["type", "activity", "new_trip"]] = ["user_change", True, True]
+    user_change[["type", "activity"]] = ["user_change", True]
 
     # merge trips with (filler) activities
     trips.drop(columns=["type", "spts_tpls_id"], inplace=True)  # make space so no overlap with activity "spts_tpls_id"
@@ -217,9 +207,6 @@ def generate_trips(spts, tpls, gap_threshold=15):
             "type",
             "spts_tpls_id",
             "activity",
-            "started_at_next",
-            "last_activity",
-            "new_trip",
             "temp_trip_id",
             "prev_trip_id",
             "next_trip_id",
