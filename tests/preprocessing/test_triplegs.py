@@ -530,13 +530,7 @@ def _generate_trips_user(df, gap_threshold):
     # if user ends generate last trip with unknown destination
     if (len(temp_trip_stack) > 0) and (_check_trip_stack_has_tripleg(temp_trip_stack)):
         destination_activity = unknown_activity
-        trip_ls.append(
-            _create_trip_from_stack(
-                temp_trip_stack,
-                origin_activity,
-                destination_activity,
-            )
-        )
+        trip_ls.append(_create_trip_from_stack(temp_trip_stack, origin_activity, destination_activity,))
 
     # print(trip_ls)
     trips = pd.DataFrame(trip_ls)
