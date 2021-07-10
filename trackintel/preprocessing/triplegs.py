@@ -202,7 +202,16 @@ def generate_trips(spts, tpls, gap_threshold=15):
     trips = trips_with_act[~trips_with_act["activity"]].copy()
 
     trips.drop(
-        ["type", "spts_tpls_id", "activity", "temp_trip_id", "prev_trip_id", "next_trip_id",], inplace=True, axis=1,
+        [
+            "type",
+            "spts_tpls_id",
+            "activity",
+            "temp_trip_id",
+            "prev_trip_id",
+            "next_trip_id",
+        ],
+        inplace=True,
+        axis=1,
     )
 
     # now handle the data that is aggregated in the trips
