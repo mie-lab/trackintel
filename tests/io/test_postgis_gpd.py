@@ -231,7 +231,7 @@ class TestPositionfixes:
         conn_string, conn = conn_postgis
         table = "positionfixes"
         try:
-            pfs.as_positionfixes.to_postgis(conn_string, table)
+            pfs.as_positionfixes.to_postgis(table, conn_string)
             columns_db, dtypes = get_table_schema(conn, table)
             columns = pfs.columns.tolist() + [pfs.index.name]
             assert len(columns_db) == len(columns)
@@ -251,7 +251,7 @@ class TestPositionfixes:
         geom_col = pfs.geometry.name
 
         try:
-            pfs.as_positionfixes.to_postgis(conn_string, table)
+            pfs.as_positionfixes.to_postgis(table, conn_string)
             pfs_db = ti.io.read_positionfixes_postgis(sql, conn_string, geom_col)
             pfs_db = pfs_db.set_index("id")
             print(pfs_db)
@@ -268,59 +268,10 @@ class TestPositionfixes:
         geom_col = pfs.geometry.name
         pfs.crs = None
         try:
-            pfs.as_positionfixes.to_postgis(conn_string, table)
+            pfs.as_positionfixes.to_postgis(table, conn_string)
             pfs_db = ti.io.read_positionfixes_postgis(sql, conn_string, geom_col)
             pfs_db = pfs_db.set_index("id")
             assert_geodataframe_equal(pfs, pfs_db)
-        finally:
-            del_table(conn, table)
-
-
-class TestStaypoints:
-    def test_write(self, example_staypoints, conn_postgis):
-        """Test if write of staypoints create correct schema in database."""
-        spts = example_staypoints.copy()
-        conn_string, conn = conn_postgis
-        table = "staypoints"
-        try:
-            spts.as_staypoints.to_postgis(conn_string, table)
-            columns_db, dtypes = get_table_schema(conn, table)
-            columns = spts.columns.tolist() + [spts.index.name]
-            assert len(columns_db) == len(columns)
-            assert set(columns_db) == set(columns)
-            srid = _get_srid(spts)
-            geom_schema = f"geometry(Point,{srid})"
-            assert geom_schema in dtypes
-        finally:
-            del_table(conn, table)
-
-    def test_read(self, example_staypoints, conn_postgis):
-        """Test if staypoints written to and read back from database are the same."""
-        spts = example_staypoints.copy()
-        conn_string, conn = conn_postgis
-        table = "staypoints"
-        sql = f"SELECT * FROM {table}"
-        geom_col = spts.geometry.name
-
-        try:
-            spts.as_staypoints.to_postgis(conn_string, table)
-            spts_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col)
-            assert_geodataframe_equal(spts, spts_db)
-        finally:
-            del_table(conn, table)
-
-    def test_no_crs(self, example_staypoints, conn_postgis):
-        """Test if writing reading to postgis also works correctly without CRS."""
-        spts = example_staypoints.copy()
-        conn_string, conn = conn_postgis
-        table = "staypoints"
-        sql = f"SELECT * FROM {table}"
-        geom_col = example_staypoints.geometry.name
-        spts.crs = None
-        try:
-            spts.as_staypoints.to_postgis(conn_string, table)
-            spts_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col)
-            assert_geodataframe_equal(spts, spts_db)
         finally:
             del_table(conn, table)
 
@@ -332,7 +283,7 @@ class TestTriplegs:
         conn_string, conn = conn_postgis
         table = "triplegs"
         try:
-            tpls.as_triplegs.to_postgis(conn_string, table)
+            tpls.as_triplegs.to_postgis(table, conn_string)
             columns_db, dtypes = get_table_schema(conn, table)
             columns = tpls.columns.tolist() + [tpls.index.name]
             assert len(columns_db) == len(columns)
@@ -352,7 +303,7 @@ class TestTriplegs:
         geom_col = tpls.geometry.name
 
         try:
-            tpls.as_triplegs.to_postgis(conn_string, table)
+            tpls.as_triplegs.to_postgis(table, conn_string)
             tpls_db = ti.io.read_triplegs_postgis(sql, conn_string, geom_col)
             assert_geodataframe_equal(tpls, tpls_db)
         finally:
@@ -368,9 +319,58 @@ class TestTriplegs:
         tpls.crs = None
 
         try:
-            tpls.as_triplegs.to_postgis(conn_string, table)
+            tpls.as_triplegs.to_postgis(table, conn_string)
             tpls_db = ti.io.read_triplegs_postgis(sql, conn_string, geom_col)
             assert_geodataframe_equal(tpls, tpls_db)
+        finally:
+            del_table(conn, table)
+
+
+class TestStaypoints:
+    def test_write(self, example_staypoints, conn_postgis):
+        """Test if write of staypoints create correct schema in database."""
+        spts = example_staypoints.copy()
+        conn_string, conn = conn_postgis
+        table = "staypoints"
+        try:
+            spts.as_staypoints.to_postgis(table, conn_string)
+            columns_db, dtypes = get_table_schema(conn, table)
+            columns = spts.columns.tolist() + [spts.index.name]
+            assert len(columns_db) == len(columns)
+            assert set(columns_db) == set(columns)
+            srid = _get_srid(spts)
+            geom_schema = f"geometry(Point,{srid})"
+            assert geom_schema in dtypes
+        finally:
+            del_table(conn, table)
+
+    def test_read(self, example_staypoints, conn_postgis):
+        """Test if staypoints written to and read back from database are the same."""
+        spts = example_staypoints.copy()
+        conn_string, conn = conn_postgis
+        table = "staypoints"
+        sql = f"SELECT * FROM {table}"
+        geom_col = spts.geometry.name
+
+        try:
+            spts.as_staypoints.to_postgis(table, conn_string)
+            spts_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col)
+            assert_geodataframe_equal(spts, spts_db)
+        finally:
+            del_table(conn, table)
+
+    def test_no_crs(self, example_staypoints, conn_postgis):
+        """Test if writing reading to postgis also works correctly without CRS."""
+        spts = example_staypoints.copy()
+        conn_string, conn = conn_postgis
+        table = "staypoints"
+        sql = f"SELECT * FROM {table}"
+        geom_col = example_staypoints.geometry.name
+        spts.crs = None
+        try:
+            spts.as_staypoints.to_postgis(table, conn_string)
+            spts_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col)
+            assert_geodataframe_equal(spts, spts_db)
         finally:
             del_table(conn, table)
 
@@ -382,7 +382,7 @@ class TestLocations:
         conn_string, conn = conn_postgis
         table = "locations"
         try:
-            locs.as_locations.to_postgis(conn_string, table)
+            locs.as_locations.to_postgis(table, conn_string)
             columns_db, dtypes = get_table_schema(conn, table)
             columns = locs.columns.tolist() + [locs.index.name]
             assert len(columns_db) == len(columns)
@@ -402,7 +402,7 @@ class TestLocations:
         geom_col = locs.geometry.name
 
         try:
-            locs.as_locations.to_postgis(conn_string, table)
+            locs.as_locations.to_postgis(table, conn_string)
             locs_db = ti.io.read_locations_postgis(sql, conn_string, geom_col)
             assert_geodataframe_equal(locs, locs_db)
         finally:
@@ -417,7 +417,7 @@ class TestLocations:
         geom_col = locs.geometry.name
         locs.crs = None
         try:
-            locs.as_locations.to_postgis(conn_string, table)
+            locs.as_locations.to_postgis(table, conn_string)
             locs_db = ti.io.read_locations_postgis(sql, conn_string, geom_col)
             assert_geodataframe_equal(locs, locs_db)
         finally:
@@ -432,7 +432,7 @@ class TestLocations:
         example_locations["extent"] = extent  # broadcasting
         example_locations["extent"] = gpd.GeoSeries(example_locations["extent"])  # dtype
         try:
-            example_locations.as_locations.to_postgis(conn_string, table)
+            example_locations.as_locations.to_postgis(table, conn_string)
             columns_db, dtypes = get_table_schema(conn, table)
             columns = example_locations.columns.tolist() + [example_locations.index.name]
             assert len(columns_db) == len(columns)
@@ -453,7 +453,7 @@ class TestTrips:
         conn_string, conn = conn_postgis
         table = "trips"
         try:
-            trips.as_trips.to_postgis(conn_string, table)
+            trips.as_trips.to_postgis(table, conn_string)
             columns_db, dtypes = get_table_schema(conn, table)
             columns = trips.columns.tolist() + [trips.index.name]
             assert len(columns_db) == len(columns)
@@ -469,7 +469,7 @@ class TestTrips:
         sql = f"SELECT * FROM {table}"
 
         try:
-            trips.as_trips.to_postgis(conn_string, table)
+            trips.as_trips.to_postgis(table, conn_string)
             trips_db = ti.io.read_trips_postgis(sql, conn_string)
             assert_frame_equal(trips, trips_db)
         finally:
@@ -507,8 +507,5 @@ class Test_Handle_Con_String:
         @ti.io.postgis._handle_con_string
         def wrapped(con):
             assert con is conn
-            return
 
         wrapped(conn)
-
-    pass

@@ -77,13 +77,15 @@ class TripsAccessor(object):
         """
         ti.io.file.write_trips_csv(self._obj, filename, *args, **kwargs)
 
-    def to_postgis(self, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
+    def to_postgis(
+        self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
+    ):
         """
         Store this collection of trips to PostGIS.
 
         See :func:`trackintel.io.postgis.write_trips_postgis`.
         """
-        ti.io.postgis.write_trips_postgis(self._obj, conn_string, table_name, schema, sql_chunksize, if_exists)
+        ti.io.postgis.write_trips_postgis(self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
     def temporal_tracking_quality(self, *args, **kwargs):
         """

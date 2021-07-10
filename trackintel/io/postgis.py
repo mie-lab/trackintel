@@ -72,40 +72,10 @@ def read_positionfixes_postgis(sql, con, geom_col="geom", *args, **kwargs):
 
 
 @_handle_con_string
-def write_positionfixes_postgis(positionfixes, con, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
-    """Stores positionfixes to PostGIS. Usually, this is directly called on a positionfixes
-    DataFrame (see example below).
-
-    Parameters
-    ----------
-    positionfixes : GeoDataFrame
-        The positionfixes to store to the database.
-
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
-
-    table_name : str
-        The name of the table to write to.
-
-    schema : str, optional
-        The schema (if the database supports this) where the table resides.
-
-    sql_chunksize : int, optional
-        How many entries should be written at the same time.
-
-    if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
-        How to behave if the table already exists.
-
-        - fail: Raise a ValueError.
-        - replace: Drop the table before inserting new values.
-        - append: Insert new values to the existing table.
-
-    Examples
-    --------
-    >>> pfs.as_positionfixes.to_postgis(conn_string, table_name)
-    >>> ti.io.postgis.write_positionfixes_postgis(pfs, conn_string, table_name)
-    """
-    positionfixes.to_postgis(table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize)
+def write_positionfixes_postgis(
+    positionfixes, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
+):
+    positionfixes.to_postgis(name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
 
 @_handle_con_string
@@ -144,41 +114,9 @@ def read_triplegs_postgis(sql, con, geom_col="geom", *args, **kwargs):
 
 @_handle_con_string
 def write_triplegs_postgis(
-    triplegs, con, table_name, schema=None, sql_chunksize=None, if_exists="fail", *args, **kwargs
+    triplegs, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
-    """Stores triplegs to PostGIS. Usually, this is directly called on a triplegs
-    DataFrame (see example below).
-
-    Parameters
-    ----------
-    triplegs : GeoDataFrame
-        The triplegs to store to the database.
-
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
-
-    table_name : str
-        The name of the table to write to.
-
-    schema : str, optional
-        The schema (if the database supports this) where the table resides.
-
-    sql_chunksize : int, optional
-        How many entries should be written at the same time.
-
-    if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
-        How to behave if the table already exists.
-
-        - fail: Raise a ValueError.
-        - replace: Drop the table before inserting new values.
-        - append: Insert new values to the existing table.
-
-    Examples
-    --------
-    >>> tpls.as_triplegs.to_postgis(conn_string, table_name)
-    >>> ti.io.postgis.write_triplegs_postgis(tpls, conn_string, table_name)
-    """
-    triplegs.to_postgis(table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize)
+    triplegs.to_postgis(name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
 
 @_handle_con_string
@@ -219,46 +157,10 @@ def read_staypoints_postgis(sql, con, geom_col="geom", *args, **kwargs):
 
 
 @_handle_con_string
-def write_staypoints_postgis(staypoints, con, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
-    """Stores staypoints to PostGIS. Usually, this is directly called on a staypoints
-    DataFrame (see example below).
-
-    Parameters
-    ----------
-    staypoints : GeoDataFrame
-        The staypoints to store to the database.
-
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
-
-    table_name : str
-        The name of the table to write to.
-
-    schema : str, optional
-        The schema (if the database supports this) where the table resides.
-
-    sql_chunksize : int, optional
-        How many entries should be written at the same time.
-
-    if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
-        How to behave if the table already exists.
-
-        - fail: Raise a ValueError.
-        - replace: Drop the table before inserting new values.
-        - append: Insert new values to the existing table.
-
-    Examples
-    --------
-    >>> spts.as_staypoints.to_postgis(conn_string, table_name)
-    >>> ti.io.write_staypoints_postgis(spts, conn_string, table_name)
-    """
-
-    # todo: Think about a concept for the indices. At the moment, an index
-    # column is required when downloading. This means, that the ID column is
-    # taken as pandas index. When uploading the default is "no index" and
-    # thereby the index column is lost
-
-    staypoints.to_postgis(table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize)
+def write_staypoints_postgis(
+    staypoints, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
+):
+    staypoints.to_postgis(name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
 
 @_handle_con_string
@@ -297,38 +199,9 @@ def read_locations_postgis(sql, con, geom_col="geom", *args, **kwargs):
 
 
 @_handle_con_string
-def write_locations_postgis(locations, con, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
-    """Store locations to PostGIS. Usually, this is directly called on a locations GeoDataFrame (see example below).
-
-    Parameters
-    ----------
-    locations : GeoDataFrame
-        The locations to store to the database.
-
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
-
-    table_name : str
-        The name of the table to write to.
-
-    schema : str, optional
-        The schema (if the database supports this) where the table resides.
-
-    sql_chunksize : int, optional
-        How many entries should be written at the same time.
-
-    if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
-        How to behave if the table already exists.
-
-        - fail: Raise a ValueError.
-        - replace: Drop the table before inserting new values.
-        - append: Insert new values to the existing table.
-
-    Examples
-    --------
-    >>> locs.as_locations.to_postgis(conn_string, table_name)
-    >>> ti.io.write_locations_postgis(locs, conn_string, table_name)
-    """
+def write_locations_postgis(
+    locations, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
+):
     # Assums that "extent" is not geometry column but center is.
     # May build additional check for that.
     if "extent" in locations.columns:
@@ -338,15 +211,15 @@ def write_locations_postgis(locations, con, table_name, schema=None, sql_chunksi
         else:
             srid = -1
         extent_schema = Geometry("POLYGON", srid)
-        dtype = {"extent": extent_schema}
+
+        if dtype is None:
+            dtype = {"extent": extent_schema}
+        else:
+            dtype["extent"] = extent_schema
         locations = locations.copy()
         locations["extent"] = locations["extent"].apply(lambda x: WKTElement(x.wkt, srid=srid))
-    else:
-        dtype = None
 
-    locations.to_postgis(
-        table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize, dtype=dtype
-    )
+    locations.to_postgis(name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
 
 @_handle_con_string
@@ -384,37 +257,58 @@ def read_trips_postgis(sql, con, *args, **kwargs):
 
 
 @_handle_con_string
-def write_trips_postgis(trips, con, table_name, schema=None, sql_chunksize=None, if_exists="fail"):
-    """Stores trips to PostGIS. Usually, this is directly called on a trips
+def write_trips_postgis(
+    trips, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
+):
+    trips.to_sql(name, con, schema, if_exists, index, index_label, chunksize, dtype)
+
+
+# helper docstring to change __doc__ of all write functions conveniently in one place
+__doc = """Stores {long} to PostGIS. Usually, this is directly called on a {long}
     DataFrame (see example below).
 
     Parameters
     ----------
-    trips : DataFrame
-        The trips to store to the database.
+    {long} : GeoDataFrame (as trackintel {long})
+        The {long} to store to the database.
+
+    name : str
+        The name of the table to write to.
 
     con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
         Connection string or active connection to PostGIS database.
 
-    table_name : str
-        The name of the table to write to.
-
     schema : str, optional
         The schema (if the database supports this) where the table resides.
 
-    sql_chunksize : int, optional
-        How many entries should be written at the same time.
-
-    if_exists : str, {'fail', 'replace', 'append'}, default 'fail'
+    if_exists : str, {{'fail', 'replace', 'append'}}, default 'fail'
         How to behave if the table already exists.
 
         - fail: Raise a ValueError.
         - replace: Drop the table before inserting new values.
         - append: Insert new values to the existing table.
 
+    index : bool, default True
+        Write DataFrame index as a column. Uses index_label as the column name in the table.
+
+    index_label : str or sequence, default None
+        Column label for index column(s). If None is given (default) and index is True, then the index names are used.
+
+    chunksize : int, optional
+        How many entries should be written at the same time.
+
+    dtype: dict of column name to SQL type, default None
+        Specifying the datatype for columns.
+        The keys should be the column names and the values should be the SQLAlchemy types.
+
     Examples
     --------
-    >>> trips.as_trips.to_postgis(conn_string, table_name)
-    >>> ti.io.write_trips_postgis(trips, conn_string, table_name)
-    """
-    trips.to_sql(table_name, con, if_exists=if_exists, schema=schema, index=True, chunksize=sql_chunksize)
+    >>> {short}.as_{long}.to_postgis(conn_string, table_name)
+    >>> ti.io.postgis.write_{long}_postgis(pfs, conn_string, table_name)
+"""
+
+write_positionfixes_postgis.__doc__ = __doc.format(long="positionfixes", short="pfs")
+write_triplegs_postgis.__doc__ = __doc.format(long="triplegs", short="tpls")
+write_staypoints_postgis.__doc__ = __doc.format(long="staypoints", short="spts")
+write_locations_postgis.__doc__ = __doc.format(long="locations", short="locs")
+write_trips_postgis.__doc__ = __doc.format(long="trips", short="trips")
