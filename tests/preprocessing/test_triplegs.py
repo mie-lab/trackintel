@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from geopandas.testing import assert_geodataframe_equal
-from pandas.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 from shapely.geometry import LineString, Point
 
 import trackintel as ti
@@ -263,6 +263,32 @@ class TestGenerate_trips:
 
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
         assert_frame_equal(stps_tpls_loaded, stps_tpls, check_dtype=False)
+
+    def test_only_staypoints_in_trip(self):
+        """Test that trips with only staypoints (non-activities) are deleted."""
+        start = pd.Timestamp("2021-07-11 8:00:00")
+        h = pd.to_timedelta("1h")
+        spts_tpls = [
+            {"activity": True, "type": "staypoint"},
+            {"activity": False, "type": "staypoint"},
+            {"activity": True, "type": "staypoint"},
+            {"activity": False, "type": "tripleg"},
+            {"activity": False, "type": "staypoint"},
+            {"activity": True, "type": "staypoint"},
+        ]
+        for n, d in enumerate(spts_tpls):
+            d["user_id"] = 0
+            d["started_at"] = start + n*h
+            d["finished_at"] = d["started_at"] + h
+        spts_tpls = pd.DataFrame(spts_tpls)
+        spts = spts_tpls[spts_tpls["type"] == "staypoint"]
+        tpls = spts_tpls[spts_tpls["type"] == "tripleg"]
+        spts_, tpls_, trips = generate_trips(spts, tpls)
+        trip_id_truth = pd.Series([None, None, None, 0, None], dtype="Int64")
+        trip_id_truth.index = spts_.index  # don't check index
+        assert_series_equal(spts_["trip_id"], trip_id_truth, check_names=False)
+        assert (tpls_["trip_id"] == 0).all()
+        assert len(trips) == 1
 
 
 def _create_debug_stps_tpls_data(stps, tpls, gap_threshold):

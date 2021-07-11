@@ -1,4 +1,3 @@
-import copy
 import warnings
 
 import numpy as np
@@ -159,9 +158,14 @@ def generate_trips(spts, tpls, gap_threshold=15):
         t = row_type == "tripleg"
         tpls_ids = row_id[t]
         spts_ids = row_id[~t]
+        # for dropping trips that don't have triplegs
+        tpls_ids = tpls_ids if len(tpls_ids) > 0 else None
         return [spts_ids, tpls_ids]
 
     trips[["spts", "tpls"]] = trips.apply(_seperate_ids, axis=1, result_type="expand")
+
+    # drop all trips that don't contain any triplegs
+    trips.dropna(subset=["tpls"], inplace=True)
 
     # recount trips ignoring empty trips and save trip_id as for id assignment.
     trips.reset_index(inplace=True, drop=True)
