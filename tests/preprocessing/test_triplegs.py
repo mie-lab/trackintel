@@ -278,7 +278,7 @@ class TestGenerate_trips:
         ]
         for n, d in enumerate(spts_tpls):
             d["user_id"] = 0
-            d["started_at"] = start + n*h
+            d["started_at"] = start + n * h
             d["finished_at"] = d["started_at"] + h
         spts_tpls = pd.DataFrame(spts_tpls)
         spts = spts_tpls[spts_tpls["type"] == "staypoint"]
