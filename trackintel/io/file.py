@@ -472,6 +472,10 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
         if not pd.api.types.is_datetime64tz_dtype(trips[col]):
             trips[col] = _localize_timestamp(dt_series=trips[col], pytz_tzinfo=tz, col_name=col)
 
+    # convert to geodataframe
+    trips["geom"] = trips["geom"].apply(wkt.loads)
+    trips = gpd.GeoDataFrame(trips, geometry="geom")
+
     # assert validity of trips
     trips.as_trips
     return trips
@@ -492,6 +496,7 @@ def write_trips_csv(trips, filename, *args, **kwargs):
         The file to write to.
     """
     df = trips.copy()
+    df["geom"] = df["geom"].apply(wkt.dumps)
     df.to_csv(filename, index=True, *args, **kwargs)
 
 

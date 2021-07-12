@@ -2,7 +2,10 @@ import datetime
 
 import numpy as np
 import pandas as pd
+from shapely import geometry
 from tqdm import tqdm
+from shapely.geometry import MultiPoint, Point
+import geopandas as gpd
 
 
 def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
@@ -111,8 +114,8 @@ def generate_trips(stps_input, tpls_input, gap_threshold=15, print_progress=Fals
     stps["type"] = "staypoint"
 
     # create table with relevant information from triplegs and staypoints.
-    stps_tpls = stps[["started_at", "finished_at", "user_id", "type", "activity"]].append(
-        tpls[["started_at", "finished_at", "user_id", "type"]]
+    stps_tpls = stps[["started_at", "finished_at", "user_id", "type", "activity", "geom"]].append(
+        tpls[["started_at", "finished_at", "user_id", "type", "geom"]]
     )
 
     # create ID field from index
@@ -201,7 +204,7 @@ def _generate_trips_user(df, gap_threshold):
     assert len(user_id) == 1
     user_id = user_id[0]
 
-    unknown_activity = {"user_id": user_id, "activity": True, "id": np.nan}
+    unknown_activity = {"user_id": user_id, "activity": True, "id": np.nan, "geom": None}
     origin_activity = unknown_activity
     temp_trip_stack = []
     in_trip = False
@@ -228,6 +231,10 @@ def _generate_trips_user(df, gap_threshold):
 
         if in_trip is True:
             # during trip generation/recording
+
+            # if the origin activity is unknown, fill origin coordinates with coordinates of first tripleg
+            if origin_activity["geom"] is None:
+                origin_activity["geom"] = row["geom"].coords[0]
 
             # check if trip ends regularly
             if row["activity"] is True:
@@ -276,6 +283,8 @@ def _generate_trips_user(df, gap_threshold):
                 else:
                     # add tripleg to trip, generate trip, start new trip with unknown origin
                     destination_activity = unknown_activity
+                    # for unkown activity, use the last point of the tripleg as the destination coordinates
+                    destination_activity["geom"] = row["geom"].coords[-1]
 
                     trip_ls.append(_create_trip_from_stack(temp_trip_stack, origin_activity, destination_activity))
                     origin_activity = unknown_activity
@@ -289,6 +298,8 @@ def _generate_trips_user(df, gap_threshold):
     # if user ends generate last trip with unknown destination
     if (len(temp_trip_stack) > 0) and (_check_trip_stack_has_tripleg(temp_trip_stack)):
         destination_activity = unknown_activity
+        # for unkown activity, use the last point of the tripleg as the destination coordinates
+        destination_activity["geom"] = row["geom"].coords[-1]
         trip_ls.append(
             _create_trip_from_stack(
                 temp_trip_stack,
@@ -297,8 +308,7 @@ def _generate_trips_user(df, gap_threshold):
             )
         )
 
-    # print(trip_ls)
-    trips = pd.DataFrame(trip_ls)
+    trips = gpd.GeoDataFrame(trip_ls, geometry="geom")
     return trips
 
 
@@ -364,6 +374,7 @@ def _create_trip_from_stack(temp_trip_stack, origin_activity, destination_activi
         "finished_at": last_trip_element["finished_at"],
         "origin_staypoint_id": origin_activity["id"],
         "destination_staypoint_id": destination_activity["id"],
+        "geom": MultiPoint((origin_activity["geom"], destination_activity["geom"])),
         "tpls": [tripleg["id"] for tripleg in temp_trip_stack if tripleg["type"] == "tripleg"],
         "stps": [tripleg["id"] for tripleg in temp_trip_stack if tripleg["type"] == "staypoint"],
     }
