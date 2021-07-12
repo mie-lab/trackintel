@@ -73,6 +73,12 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# VS Code
+*.code-workspace
+
+# OSX specific
+.DS_Store
+
 # pyenv
 .python-version
 
