@@ -434,8 +434,8 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
 
     Returns
     -------
-    trips : DataFrame (as trackintel trips)
-        A DataFrame containing the trips.
+    trips : GeoDataFrame (as trackintel trips)
+        A GeoDataFrame containing the trips.
 
     Notes
     -----
@@ -489,7 +489,7 @@ def write_trips_csv(trips, filename, *args, **kwargs):
 
     Parameters
     ----------
-    trips : DataFrame (as trackintel trips)
+    trips : GeoDataFrame (as trackintel trips)
         The trips to store to the CSV file.
 
     filename : str
