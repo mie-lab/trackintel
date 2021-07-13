@@ -65,7 +65,7 @@ class TestGenerate_trips:
         # generate trips and a joint staypoint/triplegs dataframe
         stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
         # test if generated trips are equal
-        pd.testing.assert_frame_equal(trips_loaded, trips)
+        assert_geodataframe_equal(trips_loaded, trips)
 
     def test_accessor(self):
         """Test if the accessor leads to the same results as the explicit function."""
@@ -85,7 +85,7 @@ class TestGenerate_trips:
         stps_acc, tpls_acc, trips_acc = tpls.as_triplegs.generate_trips(stps, gap_threshold=15)
 
         # test if generated trips are equal
-        pd.testing.assert_frame_equal(trips_expl, trips_acc)
+        assert_geodataframe_equal(trips_expl, trips_acc)
         assert_geodataframe_equal(stps_expl, stps_acc)
         assert_geodataframe_equal(tpls_expl, tpls_acc)
 
@@ -113,7 +113,7 @@ class TestGenerate_trips:
         # test if generated trips are equal (1,2)
         assert_geodataframe_equal(stps_1, stps_2)
         assert_geodataframe_equal(tpls_1, tpls_2)
-        pd.testing.assert_frame_equal(trips_1, trips_2)
+        assert_geodataframe_equal(trips_1, trips_2)
 
     def test_generate_trips_missing_link(self):
         """Test nan is assigned for missing link between stps and trips, and tpls and trips."""
@@ -205,7 +205,7 @@ class TestGenerate_trips:
         assert tpls_in.as_triplegs
 
         # load ground truth data
-        trips_loaded = pd.read_csv(os.path.join("tests", "data", "trips", "trips_gaps.csv"), index_col="id")
+        trips_loaded = ti.read_trips_csv(os.path.join("tests", "data", "trips", "trips_gaps.csv"), index_col="id")
         trips_loaded["started_at"] = pd.to_datetime(trips_loaded["started_at"], utc=True)
         trips_loaded["finished_at"] = pd.to_datetime(trips_loaded["finished_at"], utc=True)
 
@@ -219,7 +219,7 @@ class TestGenerate_trips:
         stps_tpls = _create_debug_stps_tpls_data(stps_proc, tpls_proc, gap_threshold=gap_threshold)
 
         # test if generated trips are equal
-        pd.testing.assert_frame_equal(trips_loaded, trips)
+        assert_geodataframe_equal(trips_loaded, trips)
 
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
         pd.testing.assert_frame_equal(stps_tpls_loaded, stps_tpls, check_dtype=False)
