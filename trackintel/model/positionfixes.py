@@ -4,8 +4,7 @@ from trackintel.geogr.distances import calculate_distance_matrix
 from trackintel.io.file import write_positionfixes_csv
 from trackintel.io.postgis import write_positionfixes_postgis
 from trackintel.model.util import copy_docstring
-from trackintel.preprocessing.positionfixes import (generate_staypoints,
-                                                    generate_triplegs)
+from trackintel.preprocessing.positionfixes import generate_staypoints, generate_triplegs
 from trackintel.visualization.positionfixes import plot_positionfixes
 
 
