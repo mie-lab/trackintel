@@ -240,7 +240,7 @@ def _freq_assign(duration, *labels):
     """
     kth = (-duration).argsort()[: len(labels)]  # if inefficient use partial sort.
     label_array = np.full(len(duration), fill_value=None)
-    labels = labels[:len(kth)]  # if provided with more labels than entries.
+    labels = labels[: len(kth)]  # if provided with more labels than entries.
     label_array[kth] = labels
     return label_array
 

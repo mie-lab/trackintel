@@ -332,7 +332,7 @@ class TestOsna_Method:
     def test_two_users(self, example_osna):
         """Test if two users are handled correctly."""
         two_user = example_osna.append(example_osna)
-        two_user.iloc[len(example_osna):, 0] = 1  # second user gets id 1
+        two_user.iloc[len(example_osna) :, 0] = 1  # second user gets id 1
         result = osna_method(two_user)
         two_user.loc[two_user["location_id"] == 0, "activity_label"] = "home"
         two_user.loc[two_user["location_id"] == 1, "activity_label"] = "work"
@@ -368,7 +368,7 @@ class TestOsna_Method:
     def test_only_one_work_location(self):
         t_work = pd.Timestamp("2021-07-14 18:00:00", tz="utc")
         h = pd.Timedelta("1h")
-        p = Point(0., 0.)  # not used
+        p = Point(0.0, 0.0)  # not used
         list_dict = [{"user_id": 0, "location_id": 0, "started_at": t_work, "finished_at": t_work + h, "g": p}]
         spts = gpd.GeoDataFrame(data=list_dict, geometry="g")
         spts.index.name = "id"
@@ -379,7 +379,7 @@ class TestOsna_Method:
     def test_only_one_rest_location(self):
         t_rest = pd.Timestamp("2021-07-14 07:00:00", tz="utc")
         h = pd.Timedelta("1h")
-        p = Point(0., 0.)  # not used
+        p = Point(0.0, 0.0)  # not used
         list_dict = [{"user_id": 0, "location_id": 0, "started_at": t_rest, "finished_at": t_rest + h, "g": p}]
         spts = gpd.GeoDataFrame(data=list_dict, geometry="g")
         spts.index.name = "id"
@@ -390,7 +390,7 @@ class TestOsna_Method:
     def test_only_one_leisure_location(self):
         t_leis = pd.Timestamp("2021-07-14 01:00:00", tz="utc")
         h = pd.Timedelta("1h")
-        p = Point(0., 0.)  # not used
+        p = Point(0.0, 0.0)  # not used
         list_dict = [{"user_id": 0, "location_id": 0, "started_at": t_leis, "finished_at": t_leis + h, "g": p}]
         spts = gpd.GeoDataFrame(data=list_dict, geometry="g")
         spts.index.name = "id"
