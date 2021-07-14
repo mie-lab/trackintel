@@ -38,7 +38,7 @@ def _handle_con_string(func):
 
 
 @_handle_con_string
-def read_positionfixes_postgis(sql, con, geom_col="geom", *args, **kwargs):
+def read_positionfixes_postgis(sql, con, geom_col="geom", **kwargs):
     """Reads positionfixes from a PostGIS database.
 
     Parameters
@@ -52,9 +52,6 @@ def read_positionfixes_postgis(sql, con, geom_col="geom", *args, **kwargs):
     geom_col : str, default 'geom'
         The geometry column of the table.
 
-    *args
-        Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
-
     **kwargs
         Further keyword arguments as available in GeoPanda's GeoDataFrame.from_postgis().
 
@@ -67,7 +64,7 @@ def read_positionfixes_postgis(sql, con, geom_col="geom", *args, **kwargs):
     --------
     >>> pfs = ti.io.read_postifionfixes_postgis("SELECT * FROM postionfixes", con, geom_col="geom")
     """
-    pfs = gpd.GeoDataFrame.from_postgis(sql, con, geom_col, *args, **kwargs)
+    pfs = gpd.GeoDataFrame.from_postgis(sql, con, geom_col, **kwargs)
     return ti.io.read_positionfixes_gpd(pfs, geom_col=geom_col)
 
 
@@ -75,11 +72,20 @@ def read_positionfixes_postgis(sql, con, geom_col="geom", *args, **kwargs):
 def write_positionfixes_postgis(
     positionfixes, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
-    positionfixes.to_postgis(name, con, schema, if_exists, index, index_label, chunksize, dtype)
+    positionfixes.to_postgis(
+        name,
+        con,
+        schema=schema,
+        if_exists=if_exists,
+        index=index,
+        index_label=index_label,
+        chunksize=chunksize,
+        dtype=dtype,
+    )
 
 
 @_handle_con_string
-def read_triplegs_postgis(sql, con, geom_col="geom", *args, **kwargs):
+def read_triplegs_postgis(sql, con, geom_col="geom", **kwargs):
     """Reads triplegs from a PostGIS database.
 
     Parameters
@@ -93,9 +99,6 @@ def read_triplegs_postgis(sql, con, geom_col="geom", *args, **kwargs):
     geom_col : str, default 'geom'
         The geometry column of the table.
 
-    *args
-        Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
-
     **kwargs
         Further keyword arguments as available in GeoPanda's GeoDataFrame.from_postgis().
 
@@ -108,7 +111,7 @@ def read_triplegs_postgis(sql, con, geom_col="geom", *args, **kwargs):
     --------
     >>> tpls = ti.io.read_triplegs_postgis("SELECT * FROM triplegs", con, geom_col="geom")
     """
-    tpls = gpd.GeoDataFrame.from_postgis(sql, con, geom_col=geom_col, index_col="id", *args, **kwargs)
+    tpls = gpd.GeoDataFrame.from_postgis(sql, con, geom_col=geom_col, index_col="id", **kwargs)
     return ti.io.read_triplegs_gpd(tpls, geom_col=geom_col)
 
 
@@ -116,11 +119,20 @@ def read_triplegs_postgis(sql, con, geom_col="geom", *args, **kwargs):
 def write_triplegs_postgis(
     triplegs, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
-    triplegs.to_postgis(name, con, schema, if_exists, index, index_label, chunksize, dtype)
+    triplegs.to_postgis(
+        name,
+        con,
+        schema=schema,
+        if_exists=if_exists,
+        index=index,
+        index_label=index_label,
+        chunksize=chunksize,
+        dtype=dtype,
+    )
 
 
 @_handle_con_string
-def read_staypoints_postgis(sql, con, geom_col="geom", *args, **kwargs):
+def read_staypoints_postgis(sql, con, geom_col="geom", **kwargs):
     """Read staypoints from a PostGIS database.
 
     Parameters
@@ -133,9 +145,6 @@ def read_staypoints_postgis(sql, con, geom_col="geom", *args, **kwargs):
 
     geom_col : str, default 'geom'
         The geometry column of the table.
-
-    *args
-        Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
 
     **kwargs
         Further keyword arguments as available in GeoPanda's GeoDataFrame.from_postgis().
@@ -151,7 +160,7 @@ def read_staypoints_postgis(sql, con, geom_col="geom", *args, **kwargs):
     >>> spts = ti.io.read_staypoints_postgis("SELECT * FROM staypoints", con, geom_col="geom")
 
     """
-    spts = gpd.GeoDataFrame.from_postgis(sql, con, geom_col=geom_col, index_col="id", *args, **kwargs)
+    spts = gpd.GeoDataFrame.from_postgis(sql, con, geom_col=geom_col, index_col="id", **kwargs)
 
     return ti.io.read_staypoints_gpd(spts, geom_col=geom_col)
 
@@ -160,11 +169,20 @@ def read_staypoints_postgis(sql, con, geom_col="geom", *args, **kwargs):
 def write_staypoints_postgis(
     staypoints, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
-    staypoints.to_postgis(name, con, schema, if_exists, index, index_label, chunksize, dtype)
+    staypoints.to_postgis(
+        name,
+        con,
+        schema=schema,
+        if_exists=if_exists,
+        index=index,
+        index_label=index_label,
+        chunksize=chunksize,
+        dtype=dtype,
+    )
 
 
 @_handle_con_string
-def read_locations_postgis(sql, con, geom_col="geom", *args, **kwargs):
+def read_locations_postgis(sql, con, geom_col="geom", **kwargs):
     """Reads locations from a PostGIS database.
 
     Parameters
@@ -193,7 +211,7 @@ def read_locations_postgis(sql, con, geom_col="geom", *args, **kwargs):
     --------
     >>> locs = ti.io.read_locations_postgis("SELECT * FROM locations", con, geom_col="geom")
     """
-    locs = gpd.GeoDataFrame.from_postgis(sql, con, geom_col=geom_col, index_col="id", *args, **kwargs)
+    locs = gpd.GeoDataFrame.from_postgis(sql, con, geom_col=geom_col, index_col="id", **kwargs)
 
     return ti.io.read_locations_gpd(locs, center=geom_col)
 
@@ -219,11 +237,20 @@ def write_locations_postgis(
         locations = locations.copy()
         locations["extent"] = locations["extent"].apply(lambda x: WKTElement(x.wkt, srid=srid))
 
-    locations.to_postgis(name, con, schema, if_exists, index, index_label, chunksize, dtype)
+    locations.to_postgis(
+        name,
+        con,
+        schema=schema,
+        if_exists=if_exists,
+        index=index,
+        index_label=index_label,
+        chunksize=chunksize,
+        dtype=dtype,
+    )
 
 
 @_handle_con_string
-def read_trips_postgis(sql, con, *args, **kwargs):
+def read_trips_postgis(sql, con, **kwargs):
     """Read trips from a PostGIS database.
 
     Parameters
@@ -233,9 +260,6 @@ def read_trips_postgis(sql, con, *args, **kwargs):
 
     con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
         Connection string or active connection to PostGIS database.
-
-    *args
-        Further arguments as available in GeoPanda's GeoDataFrame.from_postgis().
 
     **kwargs
         Further keyword arguments as available in GeoPanda's GeoDataFrame.from_postgis().
@@ -251,7 +275,7 @@ def read_trips_postgis(sql, con, *args, **kwargs):
     >>> trips = ti.io.read_trips_postgis("SELECT * FROM trips", con, geom_col="geom")
 
     """
-    trips = pd.read_sql(sql, con, index_col="id", *args, **kwargs)
+    trips = pd.read_sql(sql, con, index_col="id", **kwargs)
 
     return ti.io.read_trips_gpd(trips)
 
@@ -260,7 +284,16 @@ def read_trips_postgis(sql, con, *args, **kwargs):
 def write_trips_postgis(
     trips, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
-    trips.to_sql(name, con, schema, if_exists, index, index_label, chunksize, dtype)
+    trips.to_sql(
+        name,
+        con,
+        schema=schema,
+        if_exists=if_exists,
+        index=index,
+        index_label=index_label,
+        chunksize=chunksize,
+        dtype=dtype,
+    )
 
 
 # helper docstring to change __doc__ of all write functions conveniently in one place
