@@ -4,7 +4,6 @@ import geopandas as gpd
 import pandas as pd
 
 import trackintel as ti
-from geopandas.testing import assert_geodataframe_equal
 from shapely import wkt
 
 
@@ -67,13 +66,11 @@ class TestFromGeopandas:
         """Test if the results of reading from gpd and csv agrees."""
         df = pd.read_csv(os.path.join("tests", "data", "trips.csv"), sep=";")
         df.set_index("id", inplace=True)
-        df["geom"] = df["geom"].apply(wkt.loads)
-        df = gpd.GeoDataFrame(df, geometry="geom")
         trips_from_gpd = ti.io.from_geopandas.read_trips_gpd(df, tz="utc")
 
         trips_file = os.path.join("tests", "data", "trips.csv")
         trips_from_csv = ti.read_trips_csv(trips_file, sep=";", tz="utc", index_col="id")
-        assert_geodataframe_equal(trips_from_gpd, trips_from_csv)
+        pd.testing.assert_frame_equal(trips_from_gpd, trips_from_csv, check_exact=False)
 
     def test_read_tours_gpd(self):
         # TODO: implement tests for reading tours from Geopandas

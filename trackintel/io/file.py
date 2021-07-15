@@ -424,6 +424,7 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
         The required columns for this function include: "user_id", "started_at",
         "finished_at", "origin_staypoint_id" and "destination_staypoint_id".
+        An optional column is "geom" (geometry column with start and destination location)
 
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
@@ -434,8 +435,8 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
 
     Returns
     -------
-    trips : GeoDataFrame (as trackintel trips)
-        A GeoDataFrame containing the trips.
+    trips : GeoDataFrame / DataFrame (as trackintel trips)
+        A GeoDataFrame / DataFRame containing the trips.
 
     Notes
     -----
@@ -473,8 +474,9 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
             trips[col] = _localize_timestamp(dt_series=trips[col], pytz_tzinfo=tz, col_name=col)
 
     # convert to geodataframe
-    trips["geom"] = trips["geom"].apply(wkt.loads)
-    trips = gpd.GeoDataFrame(trips, geometry="geom")
+    if "geom" in trips.columns:
+        trips["geom"] = trips["geom"].apply(wkt.loads)
+        trips = gpd.GeoDataFrame(trips, geometry="geom")
 
     # assert validity of trips
     trips.as_trips
@@ -489,14 +491,15 @@ def write_trips_csv(trips, filename, *args, **kwargs):
 
     Parameters
     ----------
-    trips : GeoDataFrame (as trackintel trips)
+    trips : DataFrame / GeoDataFrame (as trackintel trips)
         The trips to store to the CSV file.
 
     filename : str
         The file to write to.
     """
     df = trips.copy()
-    df["geom"] = df["geom"].apply(wkt.dumps)
+    if "geom" in trips.columns:
+        df["geom"] = df["geom"].apply(wkt.dumps)
     df.to_csv(filename, index=True, *args, **kwargs)
 
 

@@ -12,8 +12,11 @@ class TripsAccessor(object):
 
     Requires at least the following columns: 
     ['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'destination_staypoint_id']
+    Optional column:
+    ['geom'] 
+    Trips is treated as a GeoDataFrame if a geometry column is provided (containing start and destination points)
 
-    The 'index' of the GeoDataFrame will be treated as unique identifier of the `Trips`
+    The 'index' of the (Geo)DataFrame will be treated as unique identifier of the `Trips`
 
     For several usecases, the following additional columns are required:
     ['context', 'origin_activity', 'destination_activity', 'modes', 'primary_mode', 'tour_id']
@@ -25,10 +28,11 @@ class TripsAccessor(object):
 
     The following assumptions are implemented
     
-        - All movement before the first and after the last activity is omitted
         - If we do not record a person for more than `gap_threshold` minutes, we assume that the person performed an \
             activity in the recording gap and split the trip at the gap.
-        - Trips that start/end in a recording gap can have an unknown origin/destination.
+        - Trips that start/end in a recording gap can have an unknown origin/destination staypoint.
+        - If the origin (or destination) staypoint is unkown (and a geometry column exists), the origin/destination
+            geometry is set as the first coordinate of the first tripleg (or the last coordinate of the last tripleg)
         - There are no trips without a (recored) tripleg.
         
     'started_at' and 'finished_at' are timezone aware pandas datetime objects.
@@ -60,6 +64,15 @@ class TripsAccessor(object):
         assert pd.api.types.is_datetime64tz_dtype(
             obj["finished_at"]
         ), "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj["finished_at"].dtype)
+
+        # Check geometry if Trips is a GeoDataFrame
+        if "geom" in obj.columns:
+            # check geometry
+            assert obj.geometry.is_valid.all(), (
+                "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
+            )
+            if obj.geometry.iloc[0].geom_type != "MultiPoint":
+                raise AttributeError("The geometry must be a MultiPoint (only first checked).")
 
     def plot(self, *args, **kwargs):
         """
