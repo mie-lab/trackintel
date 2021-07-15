@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 import trackintel as ti
 from geopandas.testing import assert_geodataframe_equal
+from pandas.testing import assert_frame_equal
 from shapely.geometry import Point
 from trackintel.analysis.location_identification import (
     _freq_assign,
@@ -406,6 +407,22 @@ class TestOsna_Method:
         example_osna.loc[example_osna["location_id"] == 0, "activity_label"] = "home"
         example_osna.loc[example_osna["location_id"] == 1, "activity_label"] = "work"
         assert_geodataframe_equal(example_osna, result)
+
+    def test_multiple_users_with_only_one_location(self):
+        t_leis = pd.Timestamp("2021-07-14 01:00:00", tz="utc")
+        t_work = pd.Timestamp("2021-07-14 18:00:00", tz="utc")
+        h = pd.Timedelta("1h")
+        list_dict = [
+            {"user_id": 0, "location_id": 0, "started_at": t_leis, "finished_at": t_leis + h},
+            {"user_id": 0, "location_id": 1, "started_at": t_work, "finished_at": t_work + h},
+            {"user_id": 1, "location_id": 0, "started_at": t_leis, "finished_at": t_leis + h},
+            {"user_id": 2, "location_id": 0, "started_at": t_work, "finished_at": t_work + h},
+        ]
+        spts = pd.DataFrame(list_dict)
+        spts.index.name = "id"
+        result = osna_method(spts)
+        spts["activity_label"] = ["home", "work", "home", "work"]
+        assert_frame_equal(spts, result)
 
 
 class Test_osna_label_timeframes:

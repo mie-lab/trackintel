@@ -309,7 +309,7 @@ def osna_method(spts):
     spts_idxmax = spts_pivot.groupby(["user_id"]).idxmax()
     # first assign labels
     for col in spts_idxmax.columns:
-        spts_pivot.loc[spts_idxmax[col], "activity_label"] = col
+        spts_pivot.loc[spts_idxmax[col].dropna(), "activity_label"] = col
 
     # The "home" label could overlap with the "work" label
     # we set the rows where "home" is maximum to zero (pd.NaT) and recalculate index of work maximum.
@@ -318,7 +318,7 @@ def osna_method(spts):
         spts_pivot.loc[redo_work["work"], "activity_label"] = "home"
         spts_pivot.loc[redo_work["work"], "work"] = pd.NaT
         spts_idxmax_work = spts_pivot.groupby(["user_id"])["work"].idxmax()
-        spts_pivot.loc[spts_idxmax_work, "activity_label"] = "work"
+        spts_pivot.loc[spts_idxmax_work.dropna(), "activity_label"] = "work"
 
     # now join it back together
     sel = spts_in.columns != "activity_label"  # no overlap with older "activity_label"
