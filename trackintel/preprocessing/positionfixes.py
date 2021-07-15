@@ -1,4 +1,5 @@
 import datetime
+import warnings
 
 import geopandas as gpd
 import numpy as np
@@ -15,9 +16,10 @@ def generate_staypoints(
     distance_metric="haversine",
     dist_threshold=100,
     time_threshold=5.0,
-    gap_threshold=1e6,
+    gap_threshold=15.0,
     include_last=False,
     print_progress=False,
+    exclude_duplicate_pfs=True,
 ):
     """
     Generate staypoints from positionfixes.
@@ -41,17 +43,22 @@ def generate_staypoints(
     time_threshold : float, default 5.0 (minutes)
         The time threshold for the 'sliding' method in minutes.
 
-    gap_threshold : float, default 1e6 (minutes)
-        The time threshold of determine whether a gap exists between consecutive pfs. Staypoints
-        will not be generated between gaps. Only valid in 'sliding' method.
+    gap_threshold : float, default 15.0 (minutes)
+        The time threshold of determine whether a gap exists between consecutive pfs. Consecutive pfs with
+        temporal gaps larger than 'gap_threshold' will be excluded from staypoints generation.
+        Only valid in 'sliding' method.
 
     include_last: boolen, default False
-        The original algorithm (see Li et al. (2008)) only detects staypoint if the user steps out
+        The algorithm in Li et al. (2008) only detects staypoint if the user steps out
         of that staypoint. This will omit the last staypoint (if any). Set 'include_last'
         to True to include this last staypoint.
 
     print_progress: boolen, default False
         Show per-user progress if set to True.
+
+    exclude_duplicate_pfs: boolean, default True
+        Filters duplicate positionfixes before generating staypoints. Duplicates can lead to problems in later
+        processing steps (e.g., when generating triplegs). It is not recommended to set this to False.
 
     Returns
     -------
@@ -65,9 +72,9 @@ def generate_staypoints(
     -----
     The 'sliding' method is adapted from Li et al. (2008). In the original algorithm, the 'finished_at'
     time for the current staypoint lasts until the 'tracked_at' time of the first positionfix outside
-    this staypoint. This implies potential tracking gaps may be included in staypoints, and users
-    are assumed to be stationary during this missing period. To avoid including too large gaps, set
-    'gap_threshold' parameter to a small value, e.g., 15 min.
+    this staypoint. Users are assumed to be stationary during this missing period and potential tracking
+    gaps may be included in staypoints. To avoid including too large missing signal gaps, set 'gap_threshold'
+    to a small value, e.g., 15 min.
 
     Examples
     --------
@@ -84,6 +91,17 @@ def generate_staypoints(
     """
     # copy the original pfs for adding 'staypoint_id' column
     pfs = pfs_input.copy()
+
+    if exclude_duplicate_pfs:
+        len_org = pfs.shape[0]
+        pfs = pfs.drop_duplicates()
+        nb_dropped = len_org - pfs.shape[0]
+        if nb_dropped > 0:
+            warn_str = (
+                f"{nb_dropped} duplicates were dropped from your positionfixes. Dropping duplicates is"
+                + " recommended but can be prevented using the 'exclude_duplicate_pfs' flag."
+            )
+            warnings.warn(warn_str)
 
     # if the positionfixes already have a column "staypoint_id", we drop it
     if "staypoint_id" in pfs:
@@ -169,7 +187,12 @@ def generate_staypoints(
     return pfs, stps
 
 
-def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_threshold=15):
+def generate_triplegs(
+    pfs_input,
+    stps_input,
+    method="between_staypoints",
+    gap_threshold=15,
+):
     """Generate triplegs from positionfixes.
 
     Parameters
@@ -365,6 +388,7 @@ def generate_triplegs(pfs_input, stps_input, method="between_staypoints", gap_th
         tpls.crs = pfs.crs
 
         # assert validity of triplegs
+        tpls, pfs = _drop_invalid_triplegs(tpls, pfs)
         tpls.as_triplegs
 
         if case == 2:
@@ -393,7 +417,7 @@ def _generate_staypoints_sliding_user(
     else:
         raise AttributeError("distance_metric unknown. We only support ['haversine']. " f"You passed {distance_metric}")
 
-    df.sort_values("tracked_at", inplace=True)
+    df = df.sort_index(kind="mergesort").sort_values(by=["tracked_at"], kind="mergesort")
     # pfs id should be in index, create separate idx for storing the matching
     pfs = df.to_dict("records")
     idx = df.index.to_list()
@@ -413,7 +437,8 @@ def _generate_staypoints_sliding_user(
             # the duration of gap in the last two pfs
             gap_t = (pfs[curr]["tracked_at"] - pfs[curr - 1]["tracked_at"]).total_seconds()
 
-            # we want the spt to have long duration, but the gap of missing signal should not be too long
+            # we want the staypoint to have long duration,
+            # but the gap of two consecutive positionfixes should not be too long
             if (delta_t >= (time_threshold * 60)) and (gap_t < gap_threshold * 60):
                 new_stps = __create_new_staypoints(start, curr, pfs, idx, elevation_flag, geo_col)
                 # add staypoint
@@ -461,3 +486,43 @@ def __create_new_staypoints(start, end, pfs, idx, elevation_flag, geo_col, last_
     new_stps["pfs_id"] = [idx[k] for k in range(start, end)]
 
     return new_stps
+
+
+def _drop_invalid_triplegs(tpls, pfs):
+    """Remove triplegs with invalid geometries. Also remove the corresponding invalid tripleg ids from positionfixes.
+
+    Parameters
+    ----------
+    tpls : GeoDataFrame (as trackintel triplegs)
+    pfs : GeoDataFrame (as trackintel positionfixes)
+
+    Returns
+    -------
+    tpls: GeoDataFrame (as trackintel triplegs)
+        original tpls with invalid geometries removed.
+
+    pfs: GeoDataFrame (as trackintel positionfixes)
+        original pfs with invalid tripleg id set to pd.NA.
+
+    Notes
+    -----
+    Valid is defined using shapely (https://shapely.readthedocs.io/en/stable/manual.html#object.is_valid) via
+    the geopandas accessor.
+    """
+    invalid_tpls = tpls[~tpls.geometry.is_valid]
+    if invalid_tpls.shape[0] > 0:
+        # identify invalid tripleg ids
+        invalid_tpls_ids = invalid_tpls.index.to_list()
+
+        # reset tpls id in pfs
+        invalid_pfs_ixs = pfs[pfs.tripleg_id.isin(invalid_tpls_ids)].index
+        pfs.loc[invalid_pfs_ixs, "tripleg_id"] = pd.NA
+        warn_string = (
+            f"The positionfixes with ids {invalid_pfs_ixs.values} lead to invalid tripleg geometries. The "
+            f"resulting triplegs were omitted and the tripleg id of the positionfixes was set to nan"
+        )
+        warnings.warn(warn_string)
+
+        # return valid triplegs
+        tpls = tpls[tpls.geometry.is_valid]
+    return tpls, pfs
