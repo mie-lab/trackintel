@@ -4,7 +4,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pytest
-from geopandas.testing import assert_geodataframe_equal
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from shapely.geometry import Point, LineString
 
 import trackintel as ti
@@ -66,6 +66,20 @@ class TestGenerate_trips:
         stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
         # test if generated trips are equal
         assert_geodataframe_equal(trips_loaded, trips)
+
+        # test if coordinates of start and destination are correct
+        for i, row in trips.iterrows():
+            if not pd.isna(row["origin_staypoint_id"]):
+                start_point_trips = row["geom"][0]  # get origin Point in generated trips
+                corresponding_stp = stps.loc[row["origin_staypoint_id"], "geom"]
+                # compare to the Point in the staypoints
+                assert corresponding_stp == start_point_trips
+
+            if not pd.isna(row["destination_staypoint_id"]):
+                dest_point_trips = row["geom"][1]  # get origin Point in generated trips
+                corresponding_stp = stps.loc[row["destination_staypoint_id"], "geom"]
+                # compare to the Point in the staypoints
+                assert corresponding_stp == dest_point_trips
 
     def test_accessor(self):
         """Test if the accessor leads to the same results as the explicit function."""
@@ -219,7 +233,8 @@ class TestGenerate_trips:
         stps_tpls = _create_debug_stps_tpls_data(stps_proc, tpls_proc, gap_threshold=gap_threshold)
 
         # test if generated trips are equal
-        assert_geodataframe_equal(trips_loaded, trips)
+        trips_wo_geom = pd.DataFrame(trips.drop(columns=["geom"]))  # no geom column in loaded stps or tpls or trips
+        pd.testing.assert_frame_equal(trips_loaded, trips_wo_geom)
 
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
         pd.testing.assert_frame_equal(stps_tpls_loaded, stps_tpls, check_dtype=False)

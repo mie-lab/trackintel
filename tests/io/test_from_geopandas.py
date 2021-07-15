@@ -4,7 +4,6 @@ import geopandas as gpd
 import pandas as pd
 
 import trackintel as ti
-from shapely import wkt
 
 
 class TestFromGeopandas:
@@ -70,6 +69,7 @@ class TestFromGeopandas:
 
         trips_file = os.path.join("tests", "data", "trips.csv")
         trips_from_csv = ti.read_trips_csv(trips_file, sep=";", tz="utc", index_col="id")
+
         pd.testing.assert_frame_equal(trips_from_gpd, trips_from_csv, check_exact=False)
 
     def test_read_tours_gpd(self):
