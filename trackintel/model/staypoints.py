@@ -124,13 +124,17 @@ class StaypointsAccessor(object):
         ti.io.file.write_staypoints_csv(self._obj, filename, *args, **kwargs)
 
     @copy_docstring(write_staypoints_postgis)
-    def to_postgis(self, conn_string, table_name):
+    def to_postgis(
+        self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
+    ):
         """
         Store this collection of staypoints to PostGIS.
 
         See :func:`trackintel.io.postgis.write_staypoints_postgis`.
         """
-        ti.io.postgis.write_staypoints_postgis(self._obj, conn_string, table_name)
+        ti.io.postgis.write_staypoints_postgis(
+            self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype
+        )
 
     @copy_docstring(temporal_tracking_quality)
     def temporal_tracking_quality(self, *args, **kwargs):

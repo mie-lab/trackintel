@@ -110,13 +110,17 @@ class PositionfixesAccessor(object):
         ti.io.file.write_positionfixes_csv(self._obj, filename, *args, **kwargs)
 
     @copy_docstring(write_positionfixes_postgis)
-    def to_postgis(self, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
+    def to_postgis(
+        self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
+    ):
         """
         Store this collection of positionfixes to PostGIS.
 
         See :func:`trackintel.io.postgis.write_positionfixes_postgis`.
         """
-        ti.io.postgis.write_positionfixes_postgis(self._obj, conn_string, table_name, schema, sql_chunksize, if_exists)
+        ti.io.postgis.write_positionfixes_postgis(
+            self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype
+        )
 
     @copy_docstring(calculate_distance_matrix)
     def calculate_distance_matrix(self, *args, **kwargs):
