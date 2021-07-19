@@ -424,7 +424,7 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
         The required columns for this function include: "user_id", "started_at",
         "finished_at", "origin_staypoint_id" and "destination_staypoint_id".
-        An optional column is "geom" (geometry column with start and destination location)
+        An optional column is "geom" of type MultiPoint, containing start and destination points of the trip
 
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
@@ -446,10 +446,14 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
     --------
     >>> trackintel.read_trips_csv('data.csv')
     >>> trackintel.read_trips_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
-        user_id                started_at               finished_at  origin_staypoint_id  destination_staypoint_id
+        user_id                started_at               finished_at  origin_staypoint_id  destination_staypoint_id\
     id
     0         1 2015-11-27 08:00:00+00:00 2015-11-27 08:15:00+00:00                    2                         5
     1         1 2015-11-27 08:20:22+00:00 2015-11-27 08:35:22+00:00                    5                         3
+                                geom  
+    id                                                     
+    0   MULTIPOINT (116.31842 39.98470, 116.29873 39.999729)
+    1   MULTIPOINT (116.29873 39.98402, 116.32480 40.009269)
     """
     columns = {} if columns is None else columns
 

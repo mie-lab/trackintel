@@ -12,14 +12,13 @@ class TripsAccessor(object):
 
     Requires at least the following columns: 
     ['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'destination_staypoint_id']
-    Optional column:
-    ['geom'] 
-    Trips is treated as a GeoDataFrame if a geometry column is provided (containing start and destination points)
 
     The 'index' of the (Geo)DataFrame will be treated as unique identifier of the `Trips`
 
+    Trips have an optional geometry ('geom') of type MultiPoint which describes the start and the end point of the trip
+
     For several usecases, the following additional columns are required:
-    ['context', 'origin_activity', 'destination_activity', 'modes', 'primary_mode', 'tour_id']
+    ['geom', 'context', 'origin_activity', 'destination_activity', 'modes', 'primary_mode', 'tour_id']
 
     Notes
     -----
