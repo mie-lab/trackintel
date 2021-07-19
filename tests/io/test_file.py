@@ -286,7 +286,7 @@ class TestTrips:
         trips["started_at"] = trips["started_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
         trips["finished_at"] = trips["finished_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
         columns = ["user_id", "started_at", "finished_at", "origin_staypoint_id", "destination_staypoint_id"]
-        ti.io.write_trips_csv(trips, tmp_file, sep=";", columns=columns)
+        trips.as_trips.to_csv(tmp_file, sep=";", columns=columns)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 

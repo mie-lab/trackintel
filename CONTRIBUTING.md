@@ -66,7 +66,7 @@ See [issue 117](https://github.com/mie-lab/trackintel/issues/117)
   - Staypoints: `GeoDataFrame (as trackintel staypoints)`
   - Triplegs: `GeoDataFrame (as trackintel triplegs)`
   - Locations: `GeoDataFrame (as trackintel locations)`  
-  - Trips: `(Geo)DataFrame (as trackintel trips)`
+  - Trips: `GeoDataFrame (as trackintel trips)`
   - Tours: `DataFrame (as trackintel tours)` 
 
 ### Others

@@ -67,19 +67,46 @@ class TestGenerate_trips:
         # test if generated trips are equal
         assert_geodataframe_equal(trips_loaded, trips)
 
-        # test if coordinates of start and destination are correct
-        for i, row in trips.iterrows():
-            if not pd.isna(row["origin_staypoint_id"]):
-                start_point_trips = row["geom"][0]  # get origin Point in generated trips
-                corresponding_stp = stps.loc[row["origin_staypoint_id"], "geom"]
-                # compare to the Point in the staypoints
-                assert corresponding_stp == start_point_trips
+    def test_trip_coordinates(self):
+        """Test if coordinates of start and destination are correct"""
+        # create trips from geolife (based on positionfixes)
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(
+            method="sliding", dist_threshold=25, time_threshold=5, gap_threshold=1e6
+        )
+        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 
-            if not pd.isna(row["destination_staypoint_id"]):
-                dest_point_trips = row["geom"][1]  # get origin Point in generated trips
-                corresponding_stp = stps.loc[row["destination_staypoint_id"], "geom"]
+        # generate trips and a joint staypoint/triplegs dataframe
+        stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
+
+        # Check start and destination points of all rows
+        for i, row in trips.iterrows():
+            start_point_trips = row["geom"][0]  # get origin Point in generated trips
+            if not pd.isna(row["origin_staypoint_id"]):
                 # compare to the Point in the staypoints
-                assert corresponding_stp == dest_point_trips
+                correct_start_point = stps.loc[row["origin_staypoint_id"], "geom"]
+            else:
+                # check if it is the first point of the tripleg
+                # get all triplegs on this trip
+                tpls_on_trip = tpls[tpls["trip_id"] == row.name]
+                # correct point is the first point on the tripleg
+                correct_start_point, _ = tpls_on_trip.iloc[0]["geom"].boundary
+
+            assert correct_start_point == start_point_trips
+
+            dest_point_trips = row["geom"][1]  # get destination Point in generated trips
+            if not pd.isna(row["destination_staypoint_id"]):
+                correct_dest_point = stps.loc[row["destination_staypoint_id"], "geom"]
+                # compare to the Point in the staypoints
+            else:
+                # check if it is the last point of the tripleg
+                # get all triplegs on this trip
+                tpls_on_trip = tpls[tpls["trip_id"] == row.name]
+                # correct point is the first point on the tripleg
+                _, correct_dest_point = tpls_on_trip.iloc[-1]["geom"].boundary
+
+            assert correct_dest_point == dest_point_trips
 
     def test_accessor(self):
         """Test if the accessor leads to the same results as the explicit function."""

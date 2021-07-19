@@ -69,6 +69,7 @@ class TestFromGeopandas:
 
         trips_file = os.path.join("tests", "data", "trips.csv")
         trips_from_csv = ti.read_trips_csv(trips_file, sep=";", tz="utc", index_col="id")
+        trips_from_csv = pd.DataFrame(trips_from_csv)
 
         pd.testing.assert_frame_equal(trips_from_gpd, trips_from_csv, check_exact=False)
 

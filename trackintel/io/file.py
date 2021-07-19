@@ -435,8 +435,8 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
 
     Returns
     -------
-    trips : GeoDataFrame / DataFrame (as trackintel trips)
-        A GeoDataFrame / DataFRame containing the trips.
+    trips : GeoDataFrame (as trackintel trips)
+        A GeoDataFrame containing the trips.
 
     Notes
     -----
@@ -473,10 +473,12 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
         if not pd.api.types.is_datetime64tz_dtype(trips[col]):
             trips[col] = _localize_timestamp(dt_series=trips[col], pytz_tzinfo=tz, col_name=col)
 
+    trips = gpd.GeoDataFrame(trips)
+
     # convert to geodataframe
     if "geom" in trips.columns:
         trips["geom"] = trips["geom"].apply(wkt.loads)
-        trips = gpd.GeoDataFrame(trips, geometry="geom")
+        trips.set_geometry("geom", inplace=True)
 
     # assert validity of trips
     trips.as_trips
@@ -491,7 +493,7 @@ def write_trips_csv(trips, filename, *args, **kwargs):
 
     Parameters
     ----------
-    trips : DataFrame / GeoDataFrame (as trackintel trips)
+    trips : GeoDataFrame (as trackintel trips)
         The trips to store to the CSV file.
 
     filename : str

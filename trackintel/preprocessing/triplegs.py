@@ -283,7 +283,7 @@ def _generate_trips_user(df, gap_threshold):
                 else:
                     # add tripleg to trip, generate trip, start new trip with unknown origin
                     destination_activity = unknown_activity
-                    # for unkown activity, use the last point of the tripleg as the destination coordinates
+                    # for unknown activity, use the last point of the tripleg as the destination coordinates
                     destination_activity["geom"] = row["geom"].coords[-1]
 
                     trip_ls.append(_create_trip_from_stack(temp_trip_stack, origin_activity, destination_activity))
@@ -298,7 +298,7 @@ def _generate_trips_user(df, gap_threshold):
     # if user ends generate last trip with unknown destination
     if (len(temp_trip_stack) > 0) and (_check_trip_stack_has_tripleg(temp_trip_stack)):
         destination_activity = unknown_activity
-        # for unkown activity, use the last point of the tripleg as the destination coordinates
+        # for unknown activity, use the last point of the tripleg as the destination coordinates
         destination_activity["geom"] = row["geom"].coords[-1]
         trip_ls.append(
             _create_trip_from_stack(

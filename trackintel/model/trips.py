@@ -31,7 +31,7 @@ class TripsAccessor(object):
         - If we do not record a person for more than `gap_threshold` minutes, we assume that the person performed an \
             activity in the recording gap and split the trip at the gap.
         - Trips that start/end in a recording gap can have an unknown origin/destination staypoint.
-        - If the origin (or destination) staypoint is unkown (and a geometry column exists), the origin/destination
+        - If the origin (or destination) staypoint is unknown (and a geometry column exists), the origin/destination
             geometry is set as the first coordinate of the first tripleg (or the last coordinate of the last tripleg)
         - There are no trips without a (recored) tripleg.
         
