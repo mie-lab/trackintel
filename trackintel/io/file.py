@@ -510,7 +510,7 @@ def write_trips_csv(trips, filename, *args, **kwargs):
     df.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_tours_csv(*args, columns=None, tz=None, **kwargs):
+def read_tours_csv(*args, columns=None, index_col=object(), tz=None, **kwargs):
     """
     Read tours from csv file.
 
@@ -531,17 +531,31 @@ def read_tours_csv(*args, columns=None, tz=None, **kwargs):
     tours : DataFrame (as trackintel tours)
         A DataFrame containing the tours.
     """
-    # TODO: implement the reading function for tours
+    columns = {} if columns is None else columns
 
-    # # check and/or set timezone
-    # for col in ['started_at', 'finished_at']:
-    #     if not pd.api.types.is_datetime64tz_dtype(df[col]):
-    #         df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=kwargs.pop('tz', None), col_name=col)
-    #         else:
-    #             # dateutil parser timezones are sometimes not compatible with pandas (e.g., in asserts)
-    #             tz = df[col].iloc[0].tzinfo.tzname(df[col].iloc[0])
-    #             df[col] = df[col].dt.tz_convert(tz)
-    pass
+    if type(index_col) == object:
+        warnings.warn(
+            "Assuming default index as unique identifier. Pass 'index_col=None' as explicit"
+            + "argument to avoid a warning when reading csv files."
+        )
+    elif index_col is not None:
+        kwargs["index_col"] = index_col
+
+    tours = pd.read_csv(*args, **kwargs)
+    tours = tours.rename(columns=columns)
+
+    # transform to datatime
+    tours["started_at"] = pd.to_datetime(tours["started_at"])
+    tours["finished_at"] = pd.to_datetime(tours["finished_at"])
+
+    # check and/or set timezone
+    for col in ["started_at", "finished_at"]:
+        if not pd.api.types.is_datetime64tz_dtype(tours[col]):
+            tours[col] = _localize_timestamp(dt_series=tours[col], pytz_tzinfo=tz, col_name=col)
+
+    # assert validity of tours
+    tours.as_tours
+    return tours
 
 
 def write_tours_csv(tours, filename, *args, **kwargs):
@@ -558,8 +572,7 @@ def write_tours_csv(tours, filename, *args, **kwargs):
     filename : str
         The file to write to.
     """
-    # TODO: implement the writing function for tours
-    pass
+    tours.to_csv(filename, index=True, *args, **kwargs)
 
 
 def _localize_timestamp(dt_series, pytz_tzinfo, col_name):

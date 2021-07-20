@@ -315,4 +315,25 @@ class TestTrips:
 class TestTours:
     """Test for 'read_tours_csv' and 'write_tours_csv' functions."""
 
-    pass
+    def test_from_to_csv(self):
+        """Test basic reading and writing functions."""
+        orig_file = os.path.join("tests", "data", "geolife_long", "tours.csv")
+        tmp_file = os.path.join("tests", "data", "tours_test.csv")
+        tours = ti.read_tours_csv(orig_file, index_col="id")
+
+        columns = [
+            "user_id",
+            "started_at",
+            "finished_at",
+            "origin_staypoint_id",
+            "destination_staypoint_id",
+            "origin_destination_location_id",
+            "journey",
+        ]
+        ti.io.write_tours_csv(tours, tmp_file, columns=columns)
+        assert filecmp.cmp(orig_file, tmp_file, shallow=True)
+        os.remove(tmp_file)
+
+    def test_from_to_postgis(self):
+        # TODO Implement some tests for reading and writing tours.
+        pass
