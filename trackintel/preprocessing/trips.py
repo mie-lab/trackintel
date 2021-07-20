@@ -32,14 +32,14 @@ def generate_tours(
         The staypoints have to follow the standard definition for staypoints DataFrames. The location ID column
         is necessary to connect trips via locations to a tour. If None, trips will be connected based only on a
         distance threshold `max_dist`.
-                
+
     max_dist: float, default 100 (meters)
         Maximum distance between the end point of one trip and the start point of the next trip on a tour.
         Note: If `max_gap_size > 0` (see below), a tour can contain gaps
 
     min_trips_on_tour: int, default 2
         Minimum number of trips to form a tour
-        
+
     max_time: Timedelta, default 1 day
         Maximum time that a tour is allowed to take
 
@@ -47,9 +47,9 @@ def generate_tours(
         It is possible to allow gaps to occur on the tour, which might be useful to deal with missing data.
         For example, home-work, supermarket-home would still be detected as a tour when max_gap_size >= 1, although
         the work-supermarket trip is missing.
-                
+
     gap_threshold : float, default 15 (minutes)
-        Maximum allowed temporal gap size in minutes. If tracking data is missing for more than 
+        Maximum allowed temporal gap size in minutes. If tracking data is missing for more than
         `gap_threshold` minutes, then a new trip begins after the gap.
 
     print_progress : bool, default False
@@ -60,7 +60,7 @@ def generate_tours(
     -------
     trips: GeoDataFrame (as trackintel trips)
         Same as `trips_inp`, but with additional column `tour_id`
-    
+
     tours: GeoDataFrame (as trackintel tours)
         The generated tours
 
@@ -326,8 +326,8 @@ def _create_tour_from_stack(temp_tour_stack, stps_w_locs, max_dist, max_time):
         "user_id": first_trip["user_id"],
         "started_at": first_trip["started_at"],
         "finished_at": last_trip["finished_at"],
-        "origin_staypoint_id": first_trip.name,
-        "destination_staypoint_id": last_trip.name,
+        "origin_staypoint_id": first_trip["origin_staypoint_id"],
+        "destination_staypoint_id": last_trip["destination_staypoint_id"],
         "trips": list(temp_tour_stack.index),
         "origin_destination_location_id": start_loc,
         "journey": pd.NA,

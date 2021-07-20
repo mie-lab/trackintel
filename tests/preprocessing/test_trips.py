@@ -70,6 +70,18 @@ class TestGenerate_tours:
         _, tours_one_gap_allowed = trips.as_trips.generate_tours(max_dist=30, max_gap_size=1)
         assert len(tours_one_gap_allowed) == 1
 
-    def test_tour_valid(self):
-        """TODO: test whether all trips end at the same location / not far from the start of the next trip"""
-        pass
+    def test_trips_on_tour(self):
+        trips = ti.io.file.read_trips_csv(os.path.join("tests", "data", "geolife_long", "trips.csv"), index_col="id")
+        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_dist=100)
+
+        # check datatype
+        assert trips_out["tour_id"].dtype == "Int64"
+        # check correct
+        trips_on_tour = trips_out[~pd.isna(trips_out["tour_id"])]
+        for tour_id, df in trips_on_tour.groupby("tour_id"):
+            # start and end staypoints must correspond
+            assert tours.loc[tour_id, "origin_staypoint_id"] == df.iloc[0]["origin_staypoint_id"]
+            assert tours.loc[tour_id, "destination_staypoint_id"] == df.iloc[-1]["destination_staypoint_id"]
+            # start and end times must correspont
+            assert tours.loc[tour_id, "started_at"] == df.iloc[0]["started_at"]
+            assert tours.loc[tour_id, "finished_at"] == df.iloc[-1]["finished_at"]
