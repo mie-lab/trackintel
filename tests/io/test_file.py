@@ -331,7 +331,7 @@ class TestTours:
             "journey",
         ]
         ti.io.write_tours_csv(tours, tmp_file, columns=columns)
-        assert filecmp.cmp(orig_file, tmp_file, shallow=True)
+        assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
     def test_from_to_postgis(self):
