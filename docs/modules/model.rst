@@ -57,23 +57,44 @@ Available Accessors
 
 The following accessors are available within *trackintel*.
 
+UsersAccessor
+-------------
+
 .. autoclass:: trackintel.model.users.UsersAccessor
 	:members:
+
+PositionfixesAccessor
+---------------------
 
 .. autoclass:: trackintel.model.positionfixes.PositionfixesAccessor
 	:members:
 
+StaypointsAccessor
+------------------
+
 .. autoclass:: trackintel.model.staypoints.StaypointsAccessor
 	:members:
+
+TriplegsAccessor
+----------------
 
 .. autoclass:: trackintel.model.triplegs.TriplegsAccessor
 	:members:
 
+LocationsAccessor
+-----------------
+
 .. autoclass:: trackintel.model.locations.LocationsAccessor
 	:members:
 
+TripsAccessor
+-------------
+
 .. autoclass:: trackintel.model.trips.TripsAccessor
 	:members:
+
+ToursAccessor
+-------------
 
 .. autoclass:: trackintel.model.tours.ToursAccessor
 	:members:
@@ -87,7 +108,7 @@ Data Model (SQL)
 
 For a general description of the data model, please refer to the 
 :doc:`/modules/model`. You can download the 
-complete SQL script `here <https://github.com/mie-lab/trackintel/blob/master/sql/create_tables_pg.sql>`_ 
+complete SQL script `here <https://github.com/mie-lab/trackintel/blob/master/sql/create_tables_pg.sql>`__
 in case you want to quickly set up a database. Also take a look at the `example on github 
 <https://github.com/mie-lab/trackintel/blob/master/examples/setup_example_database.py>`_.
 

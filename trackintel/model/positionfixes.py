@@ -1,6 +1,11 @@
 import pandas as pd
-
 import trackintel as ti
+from trackintel.geogr.distances import calculate_distance_matrix
+from trackintel.io.file import write_positionfixes_csv
+from trackintel.io.postgis import write_positionfixes_postgis
+from trackintel.model.util import copy_docstring
+from trackintel.preprocessing.positionfixes import generate_staypoints, generate_triplegs
+from trackintel.visualization.positionfixes import plot_positionfixes
 
 
 @pd.api.extensions.register_dataframe_accessor("as_positionfixes")
@@ -68,6 +73,7 @@ class PositionfixesAccessor(object):
         lon = self._obj.geometry.x
         return (float(lon.mean()), float(lat.mean()))
 
+    @copy_docstring(generate_staypoints)
     def generate_staypoints(self, *args, **kwargs):
         """
         Generate staypoints from this collection of positionfixes.
@@ -76,6 +82,7 @@ class PositionfixesAccessor(object):
         """
         return ti.preprocessing.positionfixes.generate_staypoints(self._obj, *args, **kwargs)
 
+    @copy_docstring(generate_triplegs)
     def generate_triplegs(self, stps_input=None, *args, **kwargs):
         """
         Generate triplegs from this collection of positionfixes.
@@ -84,6 +91,7 @@ class PositionfixesAccessor(object):
         """
         return ti.preprocessing.positionfixes.generate_triplegs(self._obj, stps_input, *args, **kwargs)
 
+    @copy_docstring(plot_positionfixes)
     def plot(self, *args, **kwargs):
         """
         Plot this collection of positionfixes.
@@ -92,6 +100,7 @@ class PositionfixesAccessor(object):
         """
         ti.visualization.positionfixes.plot_positionfixes(self._obj, *args, **kwargs)
 
+    @copy_docstring(write_positionfixes_csv)
     def to_csv(self, filename, *args, **kwargs):
         """
         Store this collection of trackpoints as a CSV file.
@@ -100,6 +109,7 @@ class PositionfixesAccessor(object):
         """
         ti.io.file.write_positionfixes_csv(self._obj, filename, *args, **kwargs)
 
+    @copy_docstring(write_positionfixes_postgis)
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
@@ -112,6 +122,7 @@ class PositionfixesAccessor(object):
             self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype
         )
 
+    @copy_docstring(calculate_distance_matrix)
     def calculate_distance_matrix(self, *args, **kwargs):
         """
         Calculate pair-wise distance among positionfixes or to other positionfixes.
