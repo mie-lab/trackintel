@@ -1,0 +1,3 @@
+id,user_id,started_at,finished_at,origin_staypoint_id,destination_staypoint_id,origin_destination_location_id,journey
+0,1,2008-10-23 10:32:53+00:00,2008-10-24 00:23:03+00:00,6,8,4,
+1,1,2008-10-24 01:45:41+00:00,2008-10-24 04:12:50+00:00,9,11,4,

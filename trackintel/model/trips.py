@@ -92,3 +92,12 @@ class TripsAccessor(object):
         See :func:`trackintel.analysis.tracking_quality.temporal_tracking_quality`.
         """
         return ti.analysis.tracking_quality.temporal_tracking_quality(self._obj, *args, **kwargs)
+
+    def generate_tours(self, *args, **kwargs):
+        """
+        Generate tours based on trips (and optionally staypoint locations).
+
+        See :func:`trackintel.preprocessing.trips.generate_tours`.
+        """
+        assert len(args) == 0, "all arguments must be keyword arguments"
+        return ti.preprocessing.trips.generate_tours(trips_inp=self._obj, **kwargs)
