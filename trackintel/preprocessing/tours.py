@@ -10,12 +10,13 @@ import trackintel as ti
 
 def generate_tours(
     trips_inp,
-    max_dist,
+    stps_w_locs=None,
+    max_dist=100,
+    min_trips_on_tour=2,
+    max_time=timedelta(days=1),
+    max_gap_size=0,
     geom_col="geom",
     print_progress=False,
-    min_tour_length=2,
-    max_gap_size=0,
-    max_time=timedelta(days=1),
 ):
     """
     Generate trackintel-tours from trips
@@ -24,38 +25,79 @@ def generate_tours(
 
     Parameters
     ----------
-    trips_inp : GeoDataFrame
+    trips_inp : GeoDataFrame (as trackintel trips)
+        The trips have to follow the standard definition for trips DataFrames
+
+    stps_w_locs : GeoDataFrame (as trackintel staypoints, preprocessed to contain location IDs), default None
+        The staypoints have to follow the standard definition for staypoints DataFrames. The location ID column
+        is necessary to connect trips via locations to a tour. If None, trips will be connected based only on a
+        distance threshold `max_dist`.
+                
+    max_dist: float, default 100 (meters)
+        Maximum distance between the end point of one trip and the start point of the next trip on a tour.
+        Note: If `max_gap_size > 0` (see below), a tour can contain gaps
+
+    min_trips_on_tour: int, default 2
+        Minimum number of trips to form a tour
+        
+    max_time: Timedelta, default 1 day
+        Maximum time that a tour is allowed to take
+
+    max_gap_size: int, default 0
+        It is possible to allow gaps to occur on the tour, which might be useful to deal with missing data.
+        For example, home-work, supermarket-home would still be detected as a tour when max_gap_size >= 1, although
+        the work-supermarket trip is missing.
+                
+    gap_threshold : float, default 15 (minutes)
+        Maximum allowed temporal gap size in minutes. If tracking data is missing for more than 
+        `gap_threshold` minutes, then a new trip begins after the gap.
+
+    print_progress : bool, default False
+        If print_progress is True, the progress bar is displayed
+
 
     Returns
     -------
-    tour_dict_entry: dictionary
+    trips: GeoDataFrame (as trackintel trips)
+        Same as `trips_inp`, but with additional column `tour_id`
+    
+    tours: GeoDataFrame (as trackintel tours)
+        The generated tours
 
     """
-    assert geom_col in trips_inp.columns, "Trips table must be a GeoDataFrame and requires a geomentry column"
+    # Two options: either the location IDs for staypoints on the trips are provided, or a maximum distance threshold
+    # between end and start of trips is used
+    if stps_w_locs is not None:
+        assert (
+            "location_id" in stps_w_locs.columns
+        ), "Staypoints with location ID is required, otherwise tours are generated wo location from maximum distance"
+        print("Using locations to connect trips to tours")
+    else:
+        print("Locations not provided (parameter stps_w_locs) - using distance threshold to connect trips")
 
+    # rename geom column if necessary
+    assert geom_col in trips_inp.columns, "Trips table must be a GeoDataFrame and requires a geomentry column"
+    trips = trips_inp.copy()
+    trips = trips.rename(columns={geom_col: "geom"})
+
+    kwargs = {
+        "max_dist": max_dist,
+        "min_trips_on_tour": min_trips_on_tour,
+        "max_gap_size": max_gap_size,
+        "max_time": max_time,
+        "stps_w_locs": stps_w_locs,
+    }
     if print_progress:
         tqdm.pandas(desc="User trip generation")
         tours = (
-            trips_inp.groupby(["user_id"], group_keys=False, as_index=False)
-            .progress_apply(
-                _generate_tours_user,
-                max_dist=max_dist,
-                min_tour_length=min_tour_length,
-                max_gap_size=max_gap_size,
-                max_time=max_time,
-            )
+            trips.groupby(["user_id"], group_keys=False, as_index=False)
+            .progress_apply(_generate_tours_user, **kwargs)
             .reset_index(drop=True)
         )
     else:
         tours = (
-            trips_inp.groupby(["user_id"], group_keys=False, as_index=False)
-            .apply(
-                _generate_tours_user,
-                max_dist=max_dist,
-                min_tour_length=min_tour_length,
-                max_gap_size=max_gap_size,
-                max_time=max_time,
-            )
+            trips.groupby(["user_id"], group_keys=False, as_index=False)
+            .apply(_generate_tours_user, **kwargs)
             .reset_index(drop=True)
         )
 
@@ -69,8 +111,8 @@ def generate_tours(
     for key, values in tour2trip_map.items():
         for value in values:
             ls.append([value, key])
-    temp = pd.DataFrame(ls, columns=[trips_inp.index.name, "tour_id"]).set_index(trips_inp.index.name)
-    trips_inp = trips_inp.join(temp, how="left")
+    temp = pd.DataFrame(ls, columns=[trips.index.name, "tour_id"]).set_index(trips.index.name)
+    trips = trips.join(temp, how="left")
 
     # TODO: assign tour id to trips
 
@@ -79,13 +121,15 @@ def generate_tours(
     ## dtype consistency
     # trips id (generated by this function) should be int64
     tours.index = tours.index.astype("int64")
-    # trips_inp["tour_id"] = trips_inp["tour_id"].astype("Int64")
+    # trips["tour_id"] = trips["tour_id"].astype("Int64")
 
-    return trips_inp, tours
+    return trips, tours
 
 
-def _generate_tours_user(user_trip_df, max_dist=100, min_tour_length=2, max_gap_size=0, max_time=timedelta(days=1)):
-    assert min_tour_length >= 2, "Tour must consist of at least 2 trips!"
+def _generate_tours_user(
+    user_trip_df, stps_w_locs=None, max_dist=100, min_trips_on_tour=2, max_gap_size=0, max_time=timedelta(days=1)
+):
+    assert min_trips_on_tour >= 2, "Tour must consist of at least 2 trips!"
     user_id = user_trip_df["user_id"].unique()
     assert len(user_id) == 1
     user_id = user_id[0]
@@ -102,8 +146,6 @@ def _generate_tours_user(user_trip_df, max_dist=100, min_tour_length=2, max_gap_
     for i, row in user_trip_df.iterrows():
         trip_id = row.name  # trip id
         end_time = row["finished_at"]
-        start_point = row["geom"][0]
-        end_point = row["geom"][1]
         # print()
         # print("current point:", trip_id, start_point, end_point)
         # print("current candidates", start_candidates)
@@ -111,8 +153,20 @@ def _generate_tours_user(user_trip_df, max_dist=100, min_tour_length=2, max_gap_
         # check if there is a gap between last and this trip
         if len(start_candidates) > 0:
             # compare end of last to start of new
-            dist_to_last = _get_point_dist(user_trip_df.loc[start_candidates[-1], "geom"][1], start_point)
-            if dist_to_last > max_dist:
+            if stps_w_locs is not None:
+                end_start_at_same_loc = _check_same_loc(
+                    user_trip_df.loc[start_candidates[-1], "destination_staypoint_id"],  # dest. stp of previous trip
+                    row["origin_staypoint_id"],  # start stp of current trip
+                    stps_w_locs,
+                )
+            else:
+                # check distance between point 1: end point of previous trip, point 2: start of current trip
+                end_start_at_same_loc = _check_max_dist(
+                    user_trip_df.loc[start_candidates[-1], "geom"][1], row["geom"][0], max_dist
+                )
+
+            # if the current trip does not start at the end of the previous trip, there is a gap
+            if not end_start_at_same_loc:
                 # option 1: no gaps allowed - start search again
                 if max_gap_size == 0:
                     start_candidates = [row.name]
@@ -125,7 +179,7 @@ def _generate_tours_user(user_trip_df, max_dist=100, min_tour_length=2, max_gap_
         start_candidates.append(row.name)
 
         # Check if tour would be long enough
-        if len(start_candidates) < min_tour_length:
+        if len(start_candidates) < min_trips_on_tour:
             continue
 
         # Check whether endpoint would be an unkown activity
@@ -136,7 +190,7 @@ def _generate_tours_user(user_trip_df, max_dist=100, min_tour_length=2, max_gap_
         new_list_start = 0
 
         # check distance to all candidates (except the ones that are too close)
-        for j, cand in enumerate(start_candidates[: -min_tour_length + 1]):
+        for j, cand in enumerate(start_candidates[: -min_trips_on_tour + 1]):
             #             print("------", j, cand)
             # gap
             if np.isnan(cand):
@@ -154,19 +208,25 @@ def _generate_tours_user(user_trip_df, max_dist=100, min_tour_length=2, max_gap_
             if pd.isna(user_trip_df.loc[cand, "origin_staypoint_id"]):
                 continue
 
-            cand_start_point = user_trip_df.loc[cand, "geom"][0]
-
             # TODO: compute length of triplegs and sum - must be larger than minthresh
-
             # check if endpoint of trip = start location of cand
-            point_dist = _get_point_dist(end_point, cand_start_point)
+            if stps_w_locs is not None:
+                end_start_at_same_loc = _check_same_loc(
+                    user_trip_df.loc[cand, "origin_staypoint_id"],  # start stp of first trip
+                    row["destination_staypoint_id"],  # destination stp of current trip
+                    stps_w_locs,
+                )
+            else:
+                # check distance between point 1: end point of current trip, point 2: start of first trip on tour
+                end_start_at_same_loc = _check_max_dist(row["geom"][1], user_trip_df.loc[cand, "geom"][0], max_dist)
+
             # print("Check distance to start", cand, end_point, cand_start_point, point_dist)
-            if point_dist < max_dist:
+            if end_start_at_same_loc:
                 # Tour found!
                 # collect the trips on the tour in a list
                 non_gap_trip_idxs = [c for c in start_candidates[j:] if ~np.isnan(c)]
                 tour_candidate = user_trip_df[user_trip_df.index.isin(non_gap_trip_idxs)]
-                tours.append(_create_tour_from_stack(tour_candidate, max_dist, max_time))
+                tours.append(_create_tour_from_stack(tour_candidate, stps_w_locs, max_dist, max_time))
 
                 nr_gaps = np.sum(np.isnan(np.array(start_candidates[j:])))
 
@@ -206,17 +266,33 @@ def _visualize_tour(tour_table):
     plt.show()
 
 
-def _get_point_dist(p1, p2):
+def _check_same_loc(stp1, stp2, stps_w_locs):
+    if pd.isna(stp1) or pd.isna(stp2):
+        return False
+    return stps_w_locs.loc[stp1, "location_id"] == stps_w_locs.loc[stp2, "location_id"]
+
+
+def _check_max_dist(p1, p2, max_dist):
     """
-    p1, p2: gdp Point objects
-    Returns: Distance of points
+    Check whether two points p1, p2 are less or equal than max_dist apart
+
+    Parameters
+    --------
+    p1, p2: shapely Point objects
+    max_dist: int
+
+    Returns
+    ------
+    dist_below_thresh: bool
+        indicating whether p1 and p2 are less than max_dist apart
     """
     geod = Geod(ellps="CPM")  # other guy used WGS84
     dist = geod.inv(p1.x, p1.y, p2.x, p2.y)[2]
-    return dist
+    dist_below_thresh = dist <= max_dist
+    return dist_below_thresh
 
 
-def _create_tour_from_stack(temp_tour_stack, max_dist, max_time):
+def _create_tour_from_stack(temp_tour_stack, stps_w_locs, max_dist, max_time):
     """
     Aggregate information of tour elements in a structured dictionary.
 
@@ -235,14 +311,23 @@ def _create_tour_from_stack(temp_tour_stack, max_dist, max_time):
     first_trip = temp_tour_stack.iloc[0]
     last_trip = temp_tour_stack.iloc[-1]
 
+    # get location ID if available:
+    if stps_w_locs is not None:
+        start_loc = stps_w_locs.loc[first_trip["origin_staypoint_id"], "location_id"]
+        # double check whether start and end location are the same
+        end_loc = stps_w_locs.loc[last_trip["destination_staypoint_id"], "location_id"]
+        assert start_loc == end_loc
+    else:
+        # double check distance between start and end point
+        assert _check_max_dist(last_trip["geom"][1], first_trip["geom"][0], max_dist)
+        # set location to NaN since not available
+        start_loc = pd.NA
+
     # all data has to be from the same user
     assert len(temp_tour_stack["user_id"].unique()) == 1
 
     # double check if tour requirements are fulfilled
     assert last_trip["finished_at"] - first_trip["started_at"] < max_time
-    assert _get_point_dist(last_trip["geom"][1], first_trip["geom"][0]) < max_dist
-
-    # TODO: get unique staypoints along the tour
 
     tour_dict_entry = {
         "user_id": first_trip["user_id"],
@@ -251,6 +336,8 @@ def _create_tour_from_stack(temp_tour_stack, max_dist, max_time):
         "origin_staypoint_id": first_trip.name,
         "destination_staypoint_id": last_trip.name,
         "trips": list(temp_tour_stack.index),
+        "origin_destination_location_id": start_loc,
+        "journey": pd.NA,
     }
 
     return tour_dict_entry
@@ -260,16 +347,21 @@ if __name__ == "__main__":
     import os
 
     # create trips from geolife (based on positionfixes)
-    # pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
-    # pfs, stps = pfs.as_positionfixes.generate_staypoints(
-    #     method="sliding", dist_threshold=25, time_threshold=5, gap_threshold=1e6
-    # )
-    # stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
-    # pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
+    pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+    pfs, stps = pfs.as_positionfixes.generate_staypoints(
+        method="sliding", dist_threshold=25, time_threshold=5, gap_threshold=1e6
+    )
+    stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
+    pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 
-    # # generate trips and a joint staypoint/triplegs dataframe
-    # stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
-    trips = ti.io.file.read_trips_csv(os.path.join("tests", "data", "geolife_long", "trips.csv"), index_col="id")
+    # generate trips and a joint staypoint/triplegs dataframe
+    stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
+    stps, locs = stps.as_staypoints.generate_locations(method="dbscan", epsilon=100, num_samples=1)
+
+    # trips = ti.io.file.read_trips_csv(os.path.join("tests", "data", "geolife_long", "trips.csv"), index_col="id")
 
     # trips_user = trips[trips["user_id"] == 1]
-    tours = generate_tours(trips, 30)
+    trips, tours = generate_tours(trips, max_dist=30, max_gap_size=1)  # stps_w_locs=stps,
+    print(tours)
+
+    # Tests: with max dist 100 same results as with locations
