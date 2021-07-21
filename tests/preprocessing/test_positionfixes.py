@@ -242,7 +242,7 @@ class TestGenerate_triplegs:
         assert tpls.user_id.iloc[0] == 1
 
     def test_duplicate_columns(self, geolife_pfs_stps_long):
-        """Test if running the function twice, the generated column does not yield exception in join statement"""
+        """Test if running the function twice, the generated column does not yield exception in join statement."""
 
         # we run generate_triplegs twice in order to check that the extra column (tripleg_id) does
         # not cause any problems in the second run
@@ -255,15 +255,16 @@ class TestGenerate_triplegs:
     def test_user_without_stps(self, geolife_pfs_stps_long):
         """Check if it is safe to have users that have pfs but no stps."""
         pfs, stps = geolife_pfs_stps_long
-        # test for case 1
         # manually change the first pfs' user_id, which has no stp correspondence
         pfs.loc[0, "user_id"] = 5000
+
+        ## test for case 1
         _, tpls_1 = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
         # result should be the same ommiting the first row
         _, tpls_2 = pfs.iloc[1:].as_positionfixes.generate_triplegs(stps, method="between_staypoints")
         assert_geodataframe_equal(tpls_1, tpls_2)
 
-        # test for case 2
+        ## test for case 2
         pfs.drop(columns="staypoint_id", inplace=True)
         # manually change the first pfs' user_id, which has no stp correspondence
         _, tpls_1 = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
@@ -278,7 +279,6 @@ class TestGenerate_triplegs:
         _, tpls_case1 = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
         # only keep pfs where staypoint id is nan
         pfs_nostps = pfs[pd.isna(pfs["staypoint_id"])].drop(columns="staypoint_id")
-        print(pfs_nostps)
         _, tpls_case2 = pfs_nostps.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
 
         assert_geodataframe_equal(tpls_case1, tpls_case2)
