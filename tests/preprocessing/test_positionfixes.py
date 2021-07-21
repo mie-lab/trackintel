@@ -45,8 +45,14 @@ def example_positionfixes():
 
 
 @pytest.fixture
-def isolated_positionfixes():
-    """Positionfixes with two isolated positionfixes that have the same geometry but different timestamps."""
+def example_positionfixes_isolated():
+    """
+    Positionfixes with isolated positionfixes.
+
+    User1 have the same geometry but different timestamps.
+    User2 have different geometry and timestamps.
+    User3 have only one isolated positionfixes.
+    """
     p1 = Point(8.5067847, 47.4)
     p2 = Point(8.5067847, 47.5)
     p3 = Point(8.5067847, 47.6)
@@ -66,6 +72,9 @@ def isolated_positionfixes():
         {"user_id": 1, "tracked_at": t2, "geometry": p2, "staypoint_id": pd.NA},
         {"user_id": 1, "tracked_at": t3, "geometry": p3, "staypoint_id": pd.NA},
         {"user_id": 1, "tracked_at": t4, "geometry": p4, "staypoint_id": 3},
+        {"user_id": 2, "tracked_at": t1, "geometry": p1, "staypoint_id": 4},
+        {"user_id": 2, "tracked_at": t2, "geometry": p2, "staypoint_id": pd.NA},
+        {"user_id": 2, "tracked_at": t4, "geometry": p4, "staypoint_id": 5},
     ]
     pfs = gpd.GeoDataFrame(data=list_dict, geometry="geometry", crs="EPSG:4326")
     pfs.index.name = "id"
@@ -228,9 +237,31 @@ class TestGenerate_staypoints:
 class TestGenerate_triplegs:
     """Tests for generate_triplegs() method."""
 
-    def test_invalid_isolates(self, isolated_positionfixes):
+    def test_noncontinuous_unordered_index(self, example_positionfixes_isolated):
+        """The unordered and noncontinuous index of pfs shall not affect the generate_triplegs() result."""
+        pfs = example_positionfixes_isolated
+
+        # regenerate noncontinuous index
+        pfs.index = range(0, pfs.shape[0] * 2, 2)
+        pfs.index.name = "id"
+        # unorder index
+        pfs = pfs.sample(frac=1)
+
+        # a warning shall raise due to the duplicated positionfixes
+        warn_string = "The positionfixes with ids .* lead to invalid tripleg geometries."
+        with pytest.warns(UserWarning, match=warn_string):
+            pfs, tpls = pfs.as_positionfixes.generate_triplegs()
+
+        # the index shall be reordered
+        assert np.all(pfs.index == range(0, pfs.shape[0] * 2, 2))
+
+        # only user 1 has generated a tripleg.
+        # user 0 and 2 tripleg has invalid geometry (two identical points and only one point respectively)
+        assert (tpls["user_id"].unique()[0] == 1) and (len(tpls) == 1)
+
+    def test_invalid_isolates(self, example_positionfixes_isolated):
         """Triplegs generated from isolated duplicates are dropped."""
-        pfs = isolated_positionfixes
+        pfs = example_positionfixes_isolated
 
         # a warning shall raise due to the duplicated positionfixes
         warn_string = "The positionfixes with ids .* lead to invalid tripleg geometries."

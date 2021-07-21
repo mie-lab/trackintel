@@ -189,7 +189,7 @@ def generate_staypoints(
 
 def generate_triplegs(
     pfs_input,
-    stps_input,
+    stps_input=None,
     method="between_staypoints",
     gap_threshold=15,
 ):
