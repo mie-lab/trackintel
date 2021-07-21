@@ -362,6 +362,7 @@ def generate_triplegs(
         # a valid linestring needs 2 points
         cond_to_remove = np.take(tpls_starts, np.where(tpls_lengths < 2)[0])
         cond_all.iloc[cond_to_remove] = False
+        # Note: cond_to_remove is the array index of pfs.index and not pfs.index itself
         pfs.loc[pfs.index[cond_to_remove], "tripleg_id"] = -1
 
         # assign an incrementing id to all positionfixes that start a tripleg
