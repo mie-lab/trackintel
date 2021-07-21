@@ -161,7 +161,8 @@ def pre_filter_locations(
     loc_period = loc["period"] >= thresh_loc_period
     loc_filter_agg = loc_sp & loc_time & loc_period
     loc_filter_agg.rename("loc_filter", inplace=True)  # rename for merging
-    loc_filter = pd.merge(spts[groupby_loc], loc_filter_agg.reset_index(), on=groupby_loc, how="left")["loc_filter"]
+    loc_filter = pd.merge(spts[groupby_loc], loc_filter_agg, how="left", left_on=groupby_loc, right_index=True)
+    loc_filter = loc_filter["loc_filter"]
 
     total_filter = user_filter & loc_filter
 
