@@ -213,12 +213,17 @@ def generate_trips(spts, tpls, gap_threshold=15):
     def geom_by_tripleg(trips, tpls, is_origin):
         point_idx = 0 if is_origin else -1
         col = "origin_staypoint_id" if is_origin else "destination_staypoint_id"
+        # filter the rows where the origin / dest staypoint is NaN
         nan_geom_cols = trips[pd.isna(trips[col])].copy()
+        # get the first / last tripleg on the corresponding trip
         nan_geom_cols.loc[:, "tpls_id"] = nan_geom_cols.tpls.map(lambda x: x[point_idx])
+        # join with the triplegs table
         nan_geom_cols = nan_geom_cols.join(tpls, on="tpls_id", how="left", lsuffix="_l", rsuffix="_r")
+        # get the first / last point on the tripleg
         nan_geom_cols["geom_point"] = nan_geom_cols.geom_r.apply(lambda x: x.boundary[point_idx])
         return nan_geom_cols["geom_point"]
 
+    # fill the missing points and convert to multipoint
     trips.loc[pd.isna(trips["origin_staypoint_id"]), "geom_origin"] = geom_by_tripleg(trips, tpls, True)
     trips.loc[pd.isna(trips["destination_staypoint_id"]), "geom_destination"] = geom_by_tripleg(trips, tpls, False)
     trips["geom"] = [MultiPoint([x, y]) for x, y in zip(trips.geom_origin, trips.geom_destination)]
