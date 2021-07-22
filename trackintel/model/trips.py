@@ -1,3 +1,7 @@
+from trackintel.analysis.tracking_quality import temporal_tracking_quality
+from trackintel.io.postgis import write_trips_postgis
+from trackintel.io.file import write_trips_csv
+from trackintel.model.util import copy_docstring
 import pandas as pd
 
 import trackintel as ti
@@ -80,6 +84,7 @@ class TripsAccessor(object):
         """
         raise NotImplementedError
 
+    @copy_docstring(write_trips_csv)
     def to_csv(self, filename, *args, **kwargs):
         """
         Store this collection of trips as a CSV file.
@@ -88,6 +93,7 @@ class TripsAccessor(object):
         """
         ti.io.file.write_trips_csv(self._obj, filename, *args, **kwargs)
 
+    @copy_docstring(write_trips_postgis)
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
@@ -98,6 +104,7 @@ class TripsAccessor(object):
         """
         ti.io.postgis.write_trips_postgis(self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
+    @copy_docstring(temporal_tracking_quality)
     def temporal_tracking_quality(self, *args, **kwargs):
         """
         Calculate per-user temporal tracking quality (temporal coverage).

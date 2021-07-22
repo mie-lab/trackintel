@@ -1,13 +1,57 @@
+import datetime
 import os
 
-import numpy as np
 import geopandas as gpd
+import numpy as np
 import pandas as pd
+import pytest
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
 
 import trackintel as ti
 from trackintel.geogr.distances import calculate_distance_matrix
+
+
+@pytest.fixture
+def example_staypoints():
+    """Staypoints for location generation.
+    Staypoints have non-continous ids and should result in noise and several locations per user.
+    The following staypoint ids should form a location (1, 15), (5,6), (80, 3)
+    The following staypoint ids should be noise (2, 7)
+
+    for agg_level="dataset"
+    The following staypoint ids should form a location (1, 15), (5,6, 80, 3),
+    The following staypoint ids should be noise (2, 7)
+    """
+    p1 = Point(8.5067847, 47.4)
+    p2 = Point(8.5067847, 47.5)
+    p3 = Point(8.5067847, 47.6)
+    p4 = Point(8.5067847, 47.7)
+
+    t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+    t2 = pd.Timestamp("1971-01-01 05:00:00", tz="utc")
+    t3 = pd.Timestamp("1971-01-02 07:00:00", tz="utc")
+    t4 = pd.Timestamp("1971-01-02 08:00:00", tz="utc")
+    t5 = pd.Timestamp("1971-01-02 09:00:00", tz="utc")
+    t6 = pd.Timestamp("1971-01-02 10:00:00", tz="utc")
+    t6 = pd.Timestamp("1971-01-02 10:00:00", tz="utc")
+    t6 = pd.Timestamp("1971-01-02 10:00:00", tz="utc")
+    one_hour = datetime.timedelta(hours=1)
+
+    list_dict = [
+        {"id": 1, "user_id": 0, "started_at": t1, "finished_at": t2, "geom": p1},
+        {"id": 5, "user_id": 0, "started_at": t2, "finished_at": t3, "geom": p2},
+        {"id": 2, "user_id": 0, "started_at": t3, "finished_at": t4, "geom": p3},
+        {"id": 6, "user_id": 0, "started_at": t4, "finished_at": t5, "geom": p2},
+        {"id": 15, "user_id": 0, "started_at": t5, "finished_at": t6, "geom": p1},
+        {"id": 7, "user_id": 1, "started_at": t3, "finished_at": t4, "geom": p4},
+        {"id": 80, "user_id": 1, "started_at": t4, "finished_at": t5, "geom": p2},
+        {"id": 3, "user_id": 1, "started_at": t5, "finished_at": t6, "geom": p2},
+    ]
+    sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+    sp = sp.set_index("id")
+    assert sp.as_staypoints
+    return sp
 
 
 class TestGenerate_locations:
@@ -216,3 +260,40 @@ class TestGenerate_locations:
         staypoints.as_staypoints.generate_locations(print_progress=False)
         captured_print = capsys.readouterr()
         assert captured_print.err == ""
+
+    def test_index_stability(self, example_staypoints):
+        """Test if the index of the staypoints remains stable"""
+        sp = example_staypoints
+        sp2, locs = sp.as_staypoints.generate_locations(
+            method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user"
+        )
+        assert sp.index.equals(sp2.index)
+
+    def test_location_ids_and_noise(self, example_staypoints):
+        """Test if all test cases in the example_staypoints dataset get identified correctly.
+        See docstring of example_staypoints for more information"""
+        sp = example_staypoints
+        sp2, locs = sp.as_staypoints.generate_locations(
+            method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user"
+        )
+        assert sp2.loc[1, "location_id"] == sp2.loc[15, "location_id"]
+        assert sp2.loc[5, "location_id"] == sp2.loc[6, "location_id"]
+        assert sp2.loc[80, "location_id"] == sp2.loc[3, "location_id"]
+        assert sp2.loc[1, "location_id"] != sp2.loc[6, "location_id"]
+        assert sp2.loc[1, "location_id"] != sp2.loc[80, "location_id"]
+
+        assert sp2.loc[[2, 7], "location_id"].isnull().all()
+
+    def test_location_ids_and_noise_dataset(self, example_staypoints):
+        """Test if all test cases in the example_staypoints dataset get identified correctly.
+        See docstring of example_staypoints for more information"""
+        sp = example_staypoints
+        sp2, locs = sp.as_staypoints.generate_locations(
+            method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="dataset"
+        )
+
+        assert (sp2.loc[[5, 6, 80, 3], "location_id"] == sp2.loc[5, "location_id"]).all()
+        assert sp2.loc[1, "location_id"] == sp2.loc[15, "location_id"]
+        assert sp2.loc[1, "location_id"] != sp2.loc[5, "location_id"]
+
+        assert sp2.loc[[2, 7], "location_id"].isnull().all()

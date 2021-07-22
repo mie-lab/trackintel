@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 import trackintel as ti
 from geopandas.testing import assert_geodataframe_equal
+from pandas.testing import assert_index_equal
 from shapely.geometry import Point
 from trackintel.analysis.location_identification import (
     _freq_assign,
@@ -105,6 +106,13 @@ class TestPre_Filter:
         default_kwargs["agg_level"] = "unknown"
         with pytest.raises(ValueError):
             pre_filter_locations(example_staypoints, **default_kwargs)
+
+    def test_non_continous_index(self, example_staypoints, default_kwargs):
+        """Test if function works with non-continous index."""
+        # issue-#247
+        example_staypoints.index = [0, 999, 1, 15]
+        f = pre_filter_locations(example_staypoints, **default_kwargs)
+        assert_index_equal(f.index, example_staypoints.index)
 
 
 @pytest.fixture

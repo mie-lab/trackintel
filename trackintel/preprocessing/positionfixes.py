@@ -189,7 +189,7 @@ def generate_staypoints(
 
 def generate_triplegs(
     pfs_input,
-    stps_input,
+    stps_input=None,
     method="between_staypoints",
     gap_threshold=15,
 ):
@@ -238,12 +238,15 @@ def generate_triplegs(
     --------
     >>> pfs.as_positionfixes.generate_triplegs('between_staypoints', gap_threshold=15)
     """
-    # copy the original pfs for adding 'staypoint_id' column
+    # copy the original pfs for adding 'tripleg_id' column
     pfs = pfs_input.copy()
 
     # if the positionfixes already have a column "tripleg_id", we drop it
     if "tripleg_id" in pfs:
         pfs.drop(columns="tripleg_id", inplace=True)
+
+    # we need to ensure pfs is properly ordered
+    pfs.sort_values(by=["user_id", "tracked_at"], inplace=True)
 
     if method == "between_staypoints":
 
@@ -295,8 +298,6 @@ def generate_triplegs(
         pfs["tripleg_id"] = pd.NA
         pfs.loc[~pd.isna(pfs["staypoint_id"]), "tripleg_id"] = -1
 
-        # we need to ensure pfs is properly ordered
-        pfs.sort_values(by=["user_id", "tracked_at"], inplace=True)
         # get all conditions that trigger a new tripleg.
         # condition 1: a positionfix belongs to a new tripleg if the user changes. For this we need to sort pfs.
         # The first positionfix of the new user is the start of a new tripleg (if it is no staypoint)
@@ -321,7 +322,6 @@ def generate_triplegs(
         cond_all = cond_new_user | cond_gap | cond_stp
         # make sure not to create triplegs within staypoints:
         cond_all = cond_all & pd.isna(pfs["staypoint_id"])
-        cond_all.sort_index(inplace=True)
 
         # get the start position of tpls
         tpls_starts = np.where(cond_all)[0]
@@ -362,7 +362,8 @@ def generate_triplegs(
         # a valid linestring needs 2 points
         cond_to_remove = np.take(tpls_starts, np.where(tpls_lengths < 2)[0])
         cond_all.iloc[cond_to_remove] = False
-        pfs.loc[pfs.index.isin(cond_to_remove), "tripleg_id"] = -1
+        # Note: cond_to_remove is the array index of pfs.index and not pfs.index itself
+        pfs.loc[pfs.index[cond_to_remove], "tripleg_id"] = -1
 
         # assign an incrementing id to all positionfixes that start a tripleg
         # create triplegs

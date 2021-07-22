@@ -119,7 +119,7 @@ def generate_locations(
             # fill first nan with 0 and create the cumulative sum
             loc_id_offset = loc_id_offset.fillna(0).cumsum()
 
-            ret_stps_non_noise_labels["location_id"] = ret_stps["location_id"] + loc_id_offset
+            ret_stps_non_noise_labels["location_id"] = ret_stps_non_noise_labels["location_id"] + loc_id_offset
             ret_stps = gpd.GeoDataFrame(pd.concat([ret_stps_non_noise_labels, ret_stps_noise_labels]), geometry=geo_col)
             ret_stps.sort_values(["user_id", "started_at"], inplace=True)
 
