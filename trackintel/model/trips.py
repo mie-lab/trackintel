@@ -1,3 +1,7 @@
+from trackintel.analysis.tracking_quality import temporal_tracking_quality
+from trackintel.io.postgis import write_trips_postgis
+from trackintel.io.file import write_trips_csv
+from trackintel.model.util import copy_docstring
 import pandas as pd
 
 import trackintel as ti
@@ -6,11 +10,11 @@ import trackintel as ti
 @pd.api.extensions.register_dataframe_accessor("as_trips")
 class TripsAccessor(object):
     """A pandas accessor to treat (Geo)DataFrames as collections of trips.
-    
+
     This will define certain methods and accessors, as well as make sure that the DataFrame
     adheres to some requirements.
 
-    Requires at least the following columns: 
+    Requires at least the following columns:
     ['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'destination_staypoint_id']
 
     The 'index' of the GeoDataFrame will be treated as unique identifier of the `Trips`
@@ -24,13 +28,13 @@ class TripsAccessor(object):
     (e.g., waiting) between two relevant activities.
 
     The following assumptions are implemented
-    
+
         - All movement before the first and after the last activity is omitted
         - If we do not record a person for more than `gap_threshold` minutes, we assume that the person performed an \
             activity in the recording gap and split the trip at the gap.
         - Trips that start/end in a recording gap can have an unknown origin/destination.
         - There are no trips without a (recored) tripleg.
-        
+
     'started_at' and 'finished_at' are timezone aware pandas datetime objects.
 
     Examples
@@ -69,6 +73,7 @@ class TripsAccessor(object):
         """
         raise NotImplementedError
 
+    @copy_docstring(write_trips_csv)
     def to_csv(self, filename, *args, **kwargs):
         """
         Store this collection of trips as a CSV file.
@@ -77,14 +82,18 @@ class TripsAccessor(object):
         """
         ti.io.file.write_trips_csv(self._obj, filename, *args, **kwargs)
 
-    def to_postgis(self, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
+    @copy_docstring(write_trips_postgis)
+    def to_postgis(
+        self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
+    ):
         """
         Store this collection of trips to PostGIS.
 
         See :func:`trackintel.io.postgis.write_trips_postgis`.
         """
-        ti.io.postgis.write_trips_postgis(self._obj, conn_string, table_name, schema, sql_chunksize, if_exists)
+        ti.io.postgis.write_trips_postgis(self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
+    @copy_docstring(temporal_tracking_quality)
     def temporal_tracking_quality(self, *args, **kwargs):
         """
         Calculate per-user temporal tracking quality (temporal coverage).

@@ -1,9 +1,11 @@
 import pandas as pd
-
 import trackintel as ti
-import trackintel.preprocessing.filter
-import trackintel.visualization.locations
-import trackintel.visualization.staypoints
+import trackintel.io
+from trackintel.io.file import write_locations_csv
+from trackintel.io.postgis import write_locations_postgis
+from trackintel.model.util import copy_docstring
+from trackintel.preprocessing.filter import spatial_filter
+from trackintel.visualization.locations import plot_locations
 
 
 @pd.api.extensions.register_dataframe_accessor("as_locations")
@@ -48,6 +50,7 @@ class LocationsAccessor(object):
             # One for extend and one for the center
             raise AttributeError("The center geometry must be a Point (only first checked).")
 
+    @copy_docstring(plot_locations)
     def plot(self, *args, **kwargs):
         """
         Plot this collection of locations.
@@ -56,6 +59,7 @@ class LocationsAccessor(object):
         """
         ti.visualization.locations.plot_locations(self._obj, *args, **kwargs)
 
+    @copy_docstring(write_locations_csv)
     def to_csv(self, filename, *args, **kwargs):
         """
         Store this collection of locations as a CSV file.
@@ -64,14 +68,20 @@ class LocationsAccessor(object):
         """
         ti.io.file.write_locations_csv(self._obj, filename, *args, **kwargs)
 
-    def to_postgis(self, conn_string, table_name, schema=None, sql_chunksize=None, if_exists="replace"):
+    @copy_docstring(write_locations_postgis)
+    def to_postgis(
+        self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
+    ):
         """
         Store this collection of locations to PostGIS.
 
         See :func:`trackintel.io.postgis.write_locations_postgis`.
         """
-        ti.io.postgis.write_locations_postgis(self._obj, conn_string, table_name, schema, sql_chunksize, if_exists)
+        ti.io.postgis.write_locations_postgis(
+            self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype
+        )
 
+    @copy_docstring(spatial_filter)
     def spatial_filter(self, *args, **kwargs):
         """
         Filter locations with a geo extent.

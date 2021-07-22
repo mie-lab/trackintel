@@ -57,7 +57,9 @@ class TestGenerate_trips:
 
         # create trips from geolife (based on positionfixes)
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
-        pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(
+            method="sliding", dist_threshold=25, time_threshold=5, gap_threshold=1e6
+        )
         stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 
@@ -252,7 +254,9 @@ class TestGenerate_trips:
 
         # create trips from geolife (based on positionfixes)
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
-        pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(
+            method="sliding", dist_threshold=25, time_threshold=5, gap_threshold=1e6
+        )
         stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
 

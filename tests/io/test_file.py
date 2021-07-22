@@ -74,10 +74,6 @@ class TestPositionfixes:
         pfs = ti.read_positionfixes_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
-    def test_from_to_postgis(self):
-        # TODO Implement some tests for PostGIS.
-        pass
-
 
 class TestTriplegs:
     """Test for 'read_triplegs_csv' and 'write_triplegs_csv' functions."""
@@ -148,10 +144,6 @@ class TestTriplegs:
         pfs = ti.read_triplegs_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
-    def test_from_to_postgis(self):
-        # TODO Implement some tests for PostGIS.
-        pass
-
 
 class TestStaypoints:
     """Test for 'read_staypoints_csv' and 'write_staypoints_csv' functions."""
@@ -219,10 +211,6 @@ class TestStaypoints:
         pfs = ti.read_staypoints_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
-    def test_from_to_postgis(self):
-        # TODO Implement some tests for PostGIS.
-        pass
-
 
 class TestLocations:
     """Test for 'read_locations_csv' and 'write_locations_csv' functions."""
@@ -263,10 +251,6 @@ class TestLocations:
         assert pfs.index.name == ind_name
         pfs = ti.read_locations_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
-
-    def test_from_to_postgis(self):
-        # TODO Implement some tests for PostGIS.
-        pass
 
 
 class TestTrips:
@@ -326,14 +310,8 @@ class TestTrips:
         gdf = ti.read_trips_csv(file, sep=";", index_col=None)
         assert gdf.index.name is None
 
-    def test_from_to_postgis(self):
-        # TODO Implement some tests for PostGIS.
-        pass
-
 
 class TestTours:
     """Test for 'read_tours_csv' and 'write_tours_csv' functions."""
 
-    def test_from_to_postgis(self):
-        # TODO Implement some tests for reading and writing tours.
-        pass
+    pass
