@@ -1,5 +1,6 @@
 import pandas as pd
 import trackintel as ti
+
 from trackintel.analysis.labelling import predict_transport_mode
 from trackintel.analysis.modal_split import calculate_modal_split
 from trackintel.analysis.tracking_quality import temporal_tracking_quality
@@ -127,15 +128,15 @@ class TriplegsAccessor(object):
         See :func:`trackintel.preprocessing.triplegs.generate_trips`.
         """
         # if spts in kwargs: 'spts' can not be in args as it would be the first argument
-        if "stps_input" in kwargs:
-            return ti.preprocessing.triplegs.generate_trips(tpls_input=self._obj, **kwargs)
+        if "spts" in kwargs:
+            return ti.preprocessing.triplegs.generate_trips(tpls=self._obj, **kwargs)
         # if 'spts' no in kwargs it has to be the first argument in 'args'
         else:
             assert len(args) <= 1, (
                 "All arguments except 'stps_input' have to be given as keyword arguments. You gave"
                 f" {args[1:]} as positional arguments."
             )
-            return ti.preprocessing.triplegs.generate_trips(stps_input=args[0], tpls_input=self._obj, **kwargs)
+            return ti.preprocessing.triplegs.generate_trips(spts=args[0], tpls=self._obj, **kwargs)
 
     @copy_docstring(predict_transport_mode)
     def predict_transport_mode(self, *args, **kwargs):
