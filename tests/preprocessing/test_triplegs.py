@@ -65,6 +65,9 @@ class TestGenerate_trips:
 
         # generate trips and a joint staypoint/triplegs dataframe
         stps, tpls, trips = generate_trips(stps, tpls, gap_threshold=15)
+        trips = trips[
+            ["user_id", "started_at", "finished_at", "origin_staypoint_id", "destination_staypoint_id", "geom"]
+        ]
         # test if generated trips are equal
         assert_geodataframe_equal(trips_loaded, trips)
 
@@ -203,6 +206,7 @@ class TestGenerate_trips:
         # generate trips and a joint staypoint/triplegs dataframe
         stps, tpls, trips = generate_trips(stps, tpls, gap_threshold=15)
         stps_, tpls_, trips_ = _generate_trips_old(stps, tpls, gap_threshold=15)
+        trips.drop(columns=["geom"], inplace=True)
 
         # test if generated trips are equal
         # ignore column order and index dtype
@@ -326,6 +330,7 @@ class TestGenerate_trips:
             d["user_id"] = 0
             d["started_at"] = start + n * h
             d["finished_at"] = d["started_at"] + h
+            d["geom"] = Point(116.298725, 39.98401)
         spts_tpls = pd.DataFrame(spts_tpls)
         spts = spts_tpls[spts_tpls["type"] == "staypoint"]
         tpls = spts_tpls[spts_tpls["type"] == "tripleg"]
@@ -602,7 +607,13 @@ def _generate_trips_user(df, gap_threshold):
     # if user ends generate last trip with unknown destination
     if (len(temp_trip_stack) > 0) and (_check_trip_stack_has_tripleg(temp_trip_stack)):
         destination_activity = unknown_activity
-        trip_ls.append(_create_trip_from_stack(temp_trip_stack, origin_activity, destination_activity,))
+        trip_ls.append(
+            _create_trip_from_stack(
+                temp_trip_stack,
+                origin_activity,
+                destination_activity,
+            )
+        )
 
     # print(trip_ls)
     trips = pd.DataFrame(trip_ls)
