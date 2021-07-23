@@ -3,6 +3,7 @@ from trackintel.io.postgis import write_trips_postgis
 from trackintel.io.file import write_trips_csv
 from trackintel.model.util import copy_docstring
 import pandas as pd
+import geopandas as gpd
 
 import trackintel as ti
 
@@ -19,10 +20,10 @@ class TripsAccessor(object):
 
     The 'index' of the (Geo)DataFrame will be treated as unique identifier of the `Trips`
 
-    Trips have an optional geometry ('geom') of type MultiPoint which describes the start and the end point of the trip
+    Trips have an optional geometry of type MultiPoint which describes the start and the end point of the trip
 
     For several usecases, the following additional columns are required:
-    ['geom', 'context', 'origin_activity', 'destination_activity', 'modes', 'primary_mode', 'tour_id']
+    ['context', 'origin_activity', 'destination_activity', 'modes', 'primary_mode', 'tour_id']
 
     Notes
     -----
@@ -68,7 +69,7 @@ class TripsAccessor(object):
         ), "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj["finished_at"].dtype)
 
         # Check geometry if Trips is a GeoDataFrame
-        if "geom" in obj.columns:
+        if isinstance(obj, gpd.GeoDataFrame):
             # check geometry
             assert obj.geometry.is_valid.all(), (
                 "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"

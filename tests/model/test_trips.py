@@ -1,6 +1,6 @@
 import os
 import pytest
-from shapely.geometry import Point
+from shapely.geometry import Point, MultiPoint
 
 import trackintel as ti
 
@@ -8,7 +8,7 @@ import trackintel as ti
 @pytest.fixture
 def testdata_trips():
     """Read location test data from files."""
-    trips = ti.read_trips_csv(os.path.join("tests", "data", "geolife_long", "trips.csv"), index_col="id")
+    trips = ti.read_trips_csv(os.path.join("tests", "data", "geolife_long", "trips.csv"), index_col="id").iloc[:3]
     return trips
 
 
@@ -32,3 +32,15 @@ class TestTrips:
         with pytest.raises(AttributeError, match="The geometry must be a MultiPoint"):
             trips_wrong_geom["geom"] = Point([(13.476808430, 48.573711823)])
             trips_wrong_geom.as_trips
+
+    def test_accessor_geometry(self, testdata_trips):
+        """Test that it also works with a different geometry column name"""
+        trips_other_geom_name = testdata_trips.copy()
+
+        trips_other_geom_name["other_geom"] = Point(13.476808430, 48.573711823)
+        trips_other_geom_name.set_geometry("other_geom", inplace=True)
+        trips_other_geom_name.drop(columns=["geom"], inplace=True)
+
+        # check that it works with other geometry name
+        with pytest.raises(AttributeError, match="The geometry must be a MultiPoint"):
+            trips_other_geom_name.as_trips

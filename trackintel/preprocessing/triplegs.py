@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from shapely import geometry
 from tqdm import tqdm
 from shapely.geometry import MultiPoint, Point
 import geopandas as gpd
@@ -39,7 +40,7 @@ def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
     return ret_tpls
 
 
-def generate_trips(spts, tpls, gap_threshold=15):
+def generate_trips(spts, tpls, gap_threshold=15, add_geometry=True):
     """Generate trips based on staypoints and triplegs.
 
     Parameters
@@ -52,6 +53,10 @@ def generate_trips(spts, tpls, gap_threshold=15):
         Maximum allowed temporal gap size in minutes. If tracking data is missing for more than
         `gap_threshold` minutes, then a new trip begins after the gap.
 
+    add_geometry : bool default True
+        If true, the start and and coordinates of each trip are added to the output table in a geometry column "geom"
+        of type MultiPoint
+
     print_progress : bool, default False
         If print_progress is True, the progress bar is displayed
 
@@ -63,7 +68,7 @@ def generate_trips(spts, tpls, gap_threshold=15):
     triplegs: GeoDataFrame (as trackintel triplegs)
         The original triplegs with a new column ``[`trip_id`]``.
 
-    trips: GeoDataFrame (as trackintel trips)
+    trips: (Geo)DataFrame (as trackintel trips)
         The generated trips.
 
     Notes
@@ -77,7 +82,12 @@ def generate_trips(spts, tpls, gap_threshold=15):
         - If we do not record a person for more than `gap_threshold` minutes,
           we assume that the person performed an activity in the recording gap and split the trip at the gap.
         - Trips that start/end in a recording gap can have an unknown origin/destination
-        - There are no trips without a (recored) tripleg
+        - There are no trips without a (recorded) tripleg
+        - Trips optionally have their start and end point as geometry of type MultiPoint, if `add_geometry==True`
+        - If the origin (or destination) staypoint is unknown, and `add_geometry==True`, the origin (and destination)
+            geometry is set as the first coordinate of the first tripleg (or the last coordinate of the last tripleg),
+            respectively. Trips with missing values can still be identified via col `origin_staypoint_id`.
+
 
     Examples
     --------
@@ -111,9 +121,15 @@ def generate_trips(spts, tpls, gap_threshold=15):
     spts["type"] = "staypoint"
 
     # create table with relevant information from triplegs and staypoints.
-    spts_tpls = spts[["started_at", "finished_at", "user_id", "type", "activity", "geom"]].append(
-        tpls[["started_at", "finished_at", "user_id", "type", "geom"]]
+    spts_tpls = pd.concat(
+        [
+            spts[["started_at", "finished_at", "user_id", "type", "activity"]],
+            tpls[["started_at", "finished_at", "user_id", "type"]],
+        ]
     )
+    if add_geometry:
+        spts_tpls["geom"] = pd.concat([spts.geometry, tpls.geometry])
+
     # transform nan to bool
     spts_tpls["activity"].fillna(False, inplace=True)
 
@@ -194,8 +210,9 @@ def generate_trips(spts, tpls, gap_threshold=15):
     trips_with_act["destination_staypoint_id"] = trips_with_act["spts_tpls_id"].shift(-1)
 
     # add geometry for start and end points
-    trips_with_act["geom_origin"] = trips_with_act["geom"].shift(1)
-    trips_with_act["geom_destination"] = trips_with_act["geom"].shift(-1)
+    if add_geometry:
+        trips_with_act["origin_geom"] = trips_with_act["geom"].shift(1)
+        trips_with_act["destination_geom"] = trips_with_act["geom"].shift(-1)
 
     # add prev_trip_id and next_trip_id for activity staypoints
     trips_with_act["prev_trip_id"] = trips_with_act["trip_id"].shift(1)
@@ -209,40 +226,31 @@ def generate_trips(spts, tpls, gap_threshold=15):
     # delete activities
     trips = trips_with_act[~trips_with_act["activity"]].copy()
 
-    # fill NaN start and end points with start of first tripleg (or end of last tripleg) on the trip
-    def geom_by_tripleg(trips, tpls, is_origin):
-        point_idx = 0 if is_origin else -1
-        col = "origin_staypoint_id" if is_origin else "destination_staypoint_id"
-        # filter the rows where the origin / dest staypoint is NaN
-        nan_geom_cols = trips[pd.isna(trips[col])].copy()
-        # get the first / last tripleg on the corresponding trip
-        nan_geom_cols.loc[:, "tpls_id"] = nan_geom_cols.tpls.map(lambda x: x[point_idx])
-        # join with the triplegs table
-        nan_geom_cols = nan_geom_cols.join(tpls, on="tpls_id", how="left", lsuffix="_l", rsuffix="_r")
-        # get the first / last point on the tripleg
-        nan_geom_cols["geom_point"] = nan_geom_cols.geom_r.apply(lambda x: x.boundary[point_idx])
-        return nan_geom_cols["geom_point"]
-
-    # fill the missing points and convert to multipoint
-    trips.loc[pd.isna(trips["origin_staypoint_id"]), "geom_origin"] = geom_by_tripleg(trips, tpls, True)
-    trips.loc[pd.isna(trips["destination_staypoint_id"]), "geom_destination"] = geom_by_tripleg(trips, tpls, False)
-    trips["geom"] = [MultiPoint([x, y]) for x, y in zip(trips.geom_origin, trips.geom_destination)]
-    trips = gpd.GeoDataFrame(trips, geometry="geom")
-
     trips.drop(
-        [
-            "type",
-            "spts_tpls_id",
-            "activity",
-            "temp_trip_id",
-            "prev_trip_id",
-            "next_trip_id",
-            "geom_origin",
-            "geom_destination",
-        ],
+        ["type", "spts_tpls_id", "activity", "temp_trip_id", "prev_trip_id", "next_trip_id"],
         inplace=True,
         axis=1,
     )
+
+    # fill the missing points and convert to multipoint
+    if add_geometry:
+        # fill coordinates for origin staypoints that are NaN
+        origin_nan_rows = trips[pd.isna(trips["origin_staypoint_id"])].copy()
+        trips.loc[pd.isna(trips["origin_staypoint_id"]), "origin_geom"] = origin_nan_rows.tpls.map(
+            # from tpls table, get the first point of the first tripleg for the trip
+            lambda x: tpls.loc[x[0], tpls.geometry.name].boundary[0]
+        )
+        # fill coordinates for destionations staypoints that are NaN
+        destination_nan_rows = trips[pd.isna(trips["destination_staypoint_id"])].copy()
+        trips.loc[pd.isna(trips["destination_staypoint_id"]), "destination_geom"] = destination_nan_rows.tpls.map(
+            # from tpls table, get the last point of the last tripleg on the trip
+            lambda x: tpls.loc[x[-1], tpls.geometry.name].boundary[1]
+        )
+        # convert to GeoDataFrame with MultiPoint column
+        trips["geom"] = [MultiPoint([x, y]) for x, y in zip(trips.origin_geom, trips.destination_geom)]
+        trips = gpd.GeoDataFrame(trips, geometry="geom")
+        # cleanup
+        trips.drop(["origin_geom", "destination_geom"], inplace=True, axis=1)
 
     # now handle the data that is aggregated in the trips
     # assign trip_id to tpls

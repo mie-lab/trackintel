@@ -1,4 +1,5 @@
 import warnings
+from geopandas.geodataframe import GeoDataFrame
 
 import numpy as np
 import dateutil
@@ -8,6 +9,7 @@ import pandas as pd
 import pytz
 import warnings
 from shapely import wkt
+from shapely import geometry
 from shapely.geometry import Point
 
 
@@ -435,8 +437,8 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
 
     Returns
     -------
-    trips : GeoDataFrame (as trackintel trips)
-        A GeoDataFrame containing the trips.
+    trips : (Geo)DataFrame (as trackintel trips)
+        A DataFrame containing the trips. GeoDataFrame if geometry column exists.
 
     Notes
     -----
@@ -477,12 +479,10 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
         if not pd.api.types.is_datetime64tz_dtype(trips[col]):
             trips[col] = _localize_timestamp(dt_series=trips[col], pytz_tzinfo=tz, col_name=col)
 
-    trips = gpd.GeoDataFrame(trips)
-
     # convert to geodataframe
     if "geom" in trips.columns:
         trips["geom"] = trips["geom"].apply(wkt.loads)
-        trips.set_geometry("geom", inplace=True)
+        trips = gpd.GeoDataFrame(trips, geometry="geom")
 
     # assert validity of trips
     trips.as_trips
@@ -497,15 +497,16 @@ def write_trips_csv(trips, filename, *args, **kwargs):
 
     Parameters
     ----------
-    trips : GeoDataFrame (as trackintel trips)
+    trips : (Geo)DataFrame (as trackintel trips)
         The trips to store to the CSV file.
 
     filename : str
         The file to write to.
     """
     df = trips.copy()
-    if "geom" in trips.columns:
-        df["geom"] = df["geom"].apply(wkt.dumps)
+    if isinstance(df, GeoDataFrame):
+        geom_col_name = df.geometry.name
+        df[geom_col_name] = df[geom_col_name].apply(wkt.dumps)
     df.to_csv(filename, index=True, *args, **kwargs)
 
 
