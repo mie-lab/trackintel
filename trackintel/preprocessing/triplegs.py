@@ -227,7 +227,14 @@ def generate_trips(spts, tpls, gap_threshold=15, add_geometry=True):
     trips = trips_with_act[~trips_with_act["activity"]].copy()
 
     trips.drop(
-        ["type", "spts_tpls_id", "activity", "temp_trip_id", "prev_trip_id", "next_trip_id"],
+        [
+            "type",
+            "spts_tpls_id",
+            "activity",
+            "temp_trip_id",
+            "prev_trip_id",
+            "next_trip_id",
+        ],
         inplace=True,
         axis=1,
     )

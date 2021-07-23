@@ -350,11 +350,10 @@ class TestGenerate_trips:
             d["user_id"] = 0
             d["started_at"] = start + n * h
             d["finished_at"] = d["started_at"] + h
-            d["geom"] = Point(116.298725, 39.98401)
-        spts_tpls = gpd.GeoDataFrame(spts_tpls, geometry="geom")
+        spts_tpls = pd.DataFrame(spts_tpls)
         spts = spts_tpls[spts_tpls["type"] == "staypoint"]
         tpls = spts_tpls[spts_tpls["type"] == "tripleg"]
-        spts_, tpls_, trips = generate_trips(spts, tpls)
+        spts_, tpls_, trips = generate_trips(spts, tpls, add_geometry=False)
         trip_id_truth = pd.Series([None, None, None, 0, None], dtype="Int64")
         trip_id_truth.index = spts_.index  # don't check index
         assert_series_equal(spts_["trip_id"], trip_id_truth, check_names=False)

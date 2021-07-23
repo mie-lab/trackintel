@@ -33,7 +33,7 @@ class TestTrips:
             trips_wrong_geom["geom"] = Point([(13.476808430, 48.573711823)])
             trips_wrong_geom.as_trips
 
-    def test_accessor_geometry(self, testdata_trips):
+    def test_accessor_geometry_name(self, testdata_trips):
         """Test that it also works with a different geometry column name"""
         trips_other_geom_name = testdata_trips.copy()
 
