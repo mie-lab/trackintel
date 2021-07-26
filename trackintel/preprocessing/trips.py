@@ -245,20 +245,6 @@ def _generate_tours_user(
     return tours_df
 
 
-def _visualize_tour(tour_table):
-    import matplotlib.pyplot as plt
-
-    plot_tour = []
-    for i, row in tour_table.iterrows():
-        plot_tour.append([row["geom"][0].x, row["geom"][0].y])
-        plot_tour.append([row["geom"][1].x, row["geom"][1].y])
-    plot_tour = np.array(plot_tour)
-    print(plot_tour)
-    plt.figure(figsize=(8, 2))
-    plt.plot(plot_tour[:, 0], plot_tour[:, 1])
-    plt.show()
-
-
 def _check_same_loc(stp1, stp2, stps_w_locs):
     if pd.isna(stp1) or pd.isna(stp2):
         return False
@@ -334,28 +320,3 @@ def _create_tour_from_stack(temp_tour_stack, stps_w_locs, max_dist, max_time):
     }
 
     return tour_dict_entry
-
-
-if __name__ == "__main__":
-    import os
-
-    # create trips from geolife (based on positionfixes)
-    pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
-    pfs, stps = pfs.as_positionfixes.generate_staypoints(
-        method="sliding", dist_threshold=25, time_threshold=5, gap_threshold=1e6
-    )
-    stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
-    pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
-
-    # generate trips and a joint staypoint/triplegs dataframe
-    stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
-    stps, locs = stps.as_staypoints.generate_locations(method="dbscan", epsilon=100, num_samples=1)
-
-    # trips = ti.io.file.read_trips_csv(os.path.join("tests", "data", "geolife_long", "trips.csv"), index_col="id")
-
-    # trips = trips.drop(10)
-    trips, tours = generate_tours(trips, stps_w_locs=stps, max_dist=10, max_gap_size=0)  #
-    tours.to_csv("tests/data/geolife_long/tours.csv")
-    print(tours)
-
-    # Tests: with max dist 100 same results as with locations
