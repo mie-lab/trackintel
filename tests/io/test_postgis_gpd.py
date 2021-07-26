@@ -154,7 +154,7 @@ def example_trips():
             "destination_staypoint_id": 1,
         },
     ]
-    trips = gpd.GeoDataFrame(data=list_dict)
+    trips = pd.DataFrame(data=list_dict)
     trips.index.name = "id"
     assert trips.as_trips
     return trips

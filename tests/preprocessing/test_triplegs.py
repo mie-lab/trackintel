@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 from geopandas.testing import assert_geodataframe_equal
 from pandas.testing import assert_frame_equal, assert_series_equal
+from shapely import geometry
 from shapely.geometry import LineString, Point
 
 import trackintel as ti
@@ -65,8 +66,72 @@ class TestGenerate_trips:
 
         # generate trips and a joint staypoint/triplegs dataframe
         stps, tpls, trips = generate_trips(stps, tpls, gap_threshold=15)
+        trips = trips[
+            ["user_id", "started_at", "finished_at", "origin_staypoint_id", "destination_staypoint_id", "geom"]
+        ]
         # test if generated trips are equal
-        assert_frame_equal(trips_loaded, trips)
+        assert_geodataframe_equal(trips_loaded, trips)
+
+    def test_trip_wo_geom(self):
+        """Test if the add_geometry parameter shows correct behavior"""
+        # create trips from geolife (based on positionfixes)
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(
+            method="sliding", dist_threshold=25, time_threshold=5, gap_threshold=1e6
+        )
+        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
+
+        # generate trips dataframe with geometry
+        _, _, trips = generate_trips(stps, tpls, gap_threshold=15)
+        trips = pd.DataFrame(trips.drop(["geom"], axis=1))
+
+        # generate trips without geometry
+        _, _, trips_wo_geom = generate_trips(stps, tpls, gap_threshold=15, add_geometry=False)
+
+        # test if generated trips are equal
+        assert_frame_equal(trips_wo_geom, trips)
+
+    def test_trip_coordinates(self):
+        """Test if coordinates of start and destination are correct"""
+        # create trips from geolife (based on positionfixes)
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(
+            method="sliding", dist_threshold=25, time_threshold=5, gap_threshold=1e6
+        )
+        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
+
+        # generate trips and a joint staypoint/triplegs dataframe
+        stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
+
+        # Check start and destination points of all rows
+        for i, row in trips.iterrows():
+            start_point_trips = row["geom"][0]  # get origin Point in generated trips
+            if not pd.isna(row["origin_staypoint_id"]):
+                # compare to the Point in the staypoints
+                correct_start_point = stps.loc[row["origin_staypoint_id"], "geom"]
+            else:
+                # check if it is the first point of the tripleg
+                # get all triplegs on this trip
+                tpls_on_trip = tpls[tpls["trip_id"] == row.name]
+                # correct point is the first point on the tripleg
+                correct_start_point, _ = tpls_on_trip.iloc[0]["geom"].boundary
+
+            assert correct_start_point == start_point_trips
+
+            dest_point_trips = row["geom"][1]  # get destination Point in generated trips
+            if not pd.isna(row["destination_staypoint_id"]):
+                correct_dest_point = stps.loc[row["destination_staypoint_id"], "geom"]
+                # compare to the Point in the staypoints
+            else:
+                # check if it is the last point of the tripleg
+                # get all triplegs on this trip
+                tpls_on_trip = tpls[tpls["trip_id"] == row.name]
+                # correct point is the first point on the tripleg
+                _, correct_dest_point = tpls_on_trip.iloc[-1]["geom"].boundary
+
+            assert correct_dest_point == dest_point_trips
 
     def test_accessor(self):
         """Test if the accessor leads to the same results as the explicit function."""
@@ -86,7 +151,7 @@ class TestGenerate_trips:
         stps_acc, tpls_acc, trips_acc = tpls.as_triplegs.generate_trips(stps, gap_threshold=15)
 
         # test if generated trips are equal
-        pd.testing.assert_frame_equal(trips_expl, trips_acc)
+        assert_geodataframe_equal(trips_expl, trips_acc)
         assert_geodataframe_equal(stps_expl, stps_acc)
         assert_geodataframe_equal(tpls_expl, tpls_acc)
 
@@ -114,7 +179,7 @@ class TestGenerate_trips:
         # test if generated trips are equal (1,2)
         assert_geodataframe_equal(spts_1, spts_2)
         assert_geodataframe_equal(tpls_1, tpls_2)
-        pd.testing.assert_frame_equal(trips_1, trips_2)
+        assert_geodataframe_equal(trips_1, trips_2)
 
     def test_generate_trips_missing_link(self):
         """Test nan is assigned for missing link between stps and trips, and tpls and trips."""
@@ -162,6 +227,7 @@ class TestGenerate_trips:
         # generate trips and a joint staypoint/triplegs dataframe
         stps, tpls, trips = generate_trips(stps, tpls, gap_threshold=15)
         stps_, tpls_, trips_ = _generate_trips_old(stps, tpls, gap_threshold=15)
+        trips.drop(columns=["geom"], inplace=True)
 
         # test if generated trips are equal
         # ignore column order and index dtype
@@ -226,7 +292,7 @@ class TestGenerate_trips:
         assert tpls_in.as_triplegs
 
         # load ground truth data
-        trips_loaded = pd.read_csv(os.path.join("tests", "data", "trips", "trips_gaps.csv"), index_col="id")
+        trips_loaded = ti.read_trips_csv(os.path.join("tests", "data", "trips", "trips_gaps.csv"), index_col="id")
         trips_loaded["started_at"] = pd.to_datetime(trips_loaded["started_at"], utc=True)
         trips_loaded["finished_at"] = pd.to_datetime(trips_loaded["finished_at"], utc=True)
 
@@ -236,11 +302,11 @@ class TestGenerate_trips:
         stps_tpls_loaded["finished_at"] = pd.to_datetime(stps_tpls_loaded["finished_at"], utc=True)
 
         # generate trips and a joint staypoint/triplegs dataframe
-        stps_proc, tpls_proc, trips = generate_trips(stps_in, tpls_in, gap_threshold=gap_threshold)
+        stps_proc, tpls_proc, trips = generate_trips(stps_in, tpls_in, gap_threshold=gap_threshold, add_geometry=False)
         stps_tpls = _create_debug_stps_tpls_data(stps_proc, tpls_proc, gap_threshold=gap_threshold)
 
         # test if generated trips are equal
-        assert_frame_equal(trips_loaded, trips)
+        pd.testing.assert_frame_equal(trips_loaded, trips)
 
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
         assert_frame_equal(stps_tpls_loaded, stps_tpls, check_dtype=False)
@@ -287,7 +353,7 @@ class TestGenerate_trips:
         spts_tpls = pd.DataFrame(spts_tpls)
         spts = spts_tpls[spts_tpls["type"] == "staypoint"]
         tpls = spts_tpls[spts_tpls["type"] == "tripleg"]
-        spts_, tpls_, trips = generate_trips(spts, tpls)
+        spts_, tpls_, trips = generate_trips(spts, tpls, add_geometry=False)
         trip_id_truth = pd.Series([None, None, None, 0, None], dtype="Int64")
         trip_id_truth.index = spts_.index  # don't check index
         assert_series_equal(spts_["trip_id"], trip_id_truth, check_names=False)

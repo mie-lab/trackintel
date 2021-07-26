@@ -264,7 +264,8 @@ class TestTrips:
         trips = ti.read_trips_csv(orig_file, sep=";", index_col="id")
         column_mapping = {"orig_stp": "origin_staypoint_id", "dest_stp": "destination_staypoint_id"}
         mod_trips = ti.read_trips_csv(mod_file, columns=column_mapping, sep=";", index_col="id")
-        assert mod_trips.equals(trips)
+        mod_trips_wo_geom = pd.DataFrame(mod_trips.drop(columns=["geom"]))
+        assert mod_trips_wo_geom.equals(trips)
 
         trips["started_at"] = trips["started_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
         trips["finished_at"] = trips["finished_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
