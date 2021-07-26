@@ -28,15 +28,13 @@ class TripsAccessor(object):
     Notes
     -----
     `Trips` are an aggregation level in transport planning that summarize all movement and all non-essential actions
-    (e.g., waiting) between two relevant activities.
-
-    The following assumptions are implemented
+    (e.g., waiting) between two relevant activities. The following assumptions are implemented
         - If we do not record a person for more than `gap_threshold` minutes, we assume that the person performed an \
-            activity in the recording gap and split the trip at the gap.
-        - Trips that start/end in a recording gap can have an unknown origin/destination staypoint.
+          activity in the recording gap and split the trip at the gap.
+        - Trips that start/end in a recording gap can have an unknown origin/destination staypoint id.
         - If the origin (or destination) staypoint is unknown (and a geometry column exists), the origin/destination
-            geometry is set as the first coordinate of the first tripleg (or the last coordinate of the last tripleg)
-        - There are no trips without a (recored) tripleg.
+          geometry is set as the first coordinate of the first tripleg (or the last coordinate of the last tripleg)
+        - There are no trips without a (recorded) tripleg.
 
     'started_at' and 'finished_at' are timezone aware pandas datetime objects.
 
