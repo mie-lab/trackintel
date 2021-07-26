@@ -1,4 +1,5 @@
 import warnings
+from geopandas.geodataframe import GeoDataFrame
 
 import numpy as np
 import dateutil
@@ -8,6 +9,7 @@ import pandas as pd
 import pytz
 import warnings
 from shapely import wkt
+from shapely import geometry
 from shapely.geometry import Point
 
 
@@ -424,6 +426,7 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
         The required columns for this function include: "user_id", "started_at",
         "finished_at", "origin_staypoint_id" and "destination_staypoint_id".
+        An optional column is "geom" of type MultiPoint, containing start and destination points of the trip
 
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
@@ -434,8 +437,8 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
 
     Returns
     -------
-    trips : GeoDataFrame (as trackintel trips)
-        A GeoDataFrame containing the trips.
+    trips : (Geo)DataFrame (as trackintel trips)
+        A DataFrame containing the trips. GeoDataFrame if geometry column exists.
 
     Notes
     -----
@@ -445,10 +448,14 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
     --------
     >>> trackintel.read_trips_csv('data.csv')
     >>> trackintel.read_trips_csv('data.csv', columns={'start_time':'started_at', 'User':'user_id'})
-        user_id                started_at               finished_at  origin_staypoint_id  destination_staypoint_id
+        user_id                started_at               finished_at  origin_staypoint_id  destination_staypoint_id\
     id
     0         1 2015-11-27 08:00:00+00:00 2015-11-27 08:15:00+00:00                    2                         5
     1         1 2015-11-27 08:20:22+00:00 2015-11-27 08:35:22+00:00                    5                         3
+                                geom  
+    id                                                     
+    0   MULTIPOINT (116.31842 39.98470, 116.29873 39.999729)
+    1   MULTIPOINT (116.29873 39.98402, 116.32480 40.009269)
     """
     columns = {} if columns is None else columns
 
@@ -473,8 +480,9 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), **kwargs):
             trips[col] = _localize_timestamp(dt_series=trips[col], pytz_tzinfo=tz, col_name=col)
 
     # convert to geodataframe
-    trips["geom"] = trips["geom"].apply(wkt.loads)
-    trips = gpd.GeoDataFrame(trips, geometry="geom")
+    if "geom" in trips.columns:
+        trips["geom"] = trips["geom"].apply(wkt.loads)
+        trips = gpd.GeoDataFrame(trips, geometry="geom")
 
     # assert validity of trips
     trips.as_trips
@@ -489,14 +497,16 @@ def write_trips_csv(trips, filename, *args, **kwargs):
 
     Parameters
     ----------
-    trips : GeoDataFrame (as trackintel trips)
+    trips : (Geo)DataFrame (as trackintel trips)
         The trips to store to the CSV file.
 
     filename : str
         The file to write to.
     """
     df = trips.copy()
-    df["geom"] = df["geom"].apply(wkt.dumps)
+    if isinstance(df, GeoDataFrame):
+        geom_col_name = df.geometry.name
+        df[geom_col_name] = df[geom_col_name].apply(wkt.dumps)
     df.to_csv(filename, index=True, *args, **kwargs)
 
 

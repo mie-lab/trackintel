@@ -39,7 +39,7 @@ You can import one of these by executing the following steps::
     conn_string = 'postgresql://test:1234@localhost:5432/' + database_name
 
     pfs = ti.read_positionfixes_csv('examples/data/posmo_trajectory_2.csv', sep=';')
-    pfs.as_positionfixes.to_postgis(conn_string, 'positionfixes', if_exists='append')
+    pfs.as_positionfixes.to_postgis('positionfixes', conn_string, if_exists='append')
 
 This will fill the positionfixes of ``posmo_trajectory_2.csv`` into the table
 ``positionfixes`` of the database ``trackintel-tests``. Make sure that you update the
