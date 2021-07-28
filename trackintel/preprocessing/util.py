@@ -1,3 +1,8 @@
+import pandas as pd
+from joblib import Parallel, delayed
+from tqdm import tqdm
+
+
 def calc_temp_overlap(start_1, end_1, start_2, end_2):
     """
     Calculate the portion of the first time span that overlaps with the second
@@ -59,3 +64,11 @@ def calc_temp_overlap(start_1, end_1, start_2, end_2):
         overlap_ratio = temp_overlap / dur.total_seconds()
 
     return overlap_ratio
+
+
+def applyParallel(dfGrouped, func, n_jobs, print_progress, **kwargs):
+    # tqdm.pandas(desc="User staypoint generation")
+    df_ls = Parallel(n_jobs=n_jobs)(
+        delayed(func)(group, **kwargs) for _, group in tqdm(dfGrouped, disable=not print_progress)
+    )
+    return pd.concat(df_ls)

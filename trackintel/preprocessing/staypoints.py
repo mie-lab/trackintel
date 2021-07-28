@@ -5,9 +5,9 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
-from tqdm import tqdm
 
 from trackintel.geogr.distances import meters_to_decimal_degrees
+from trackintel.preprocessing.util import applyParallel
 
 
 def generate_locations(
@@ -18,6 +18,7 @@ def generate_locations(
     distance_metric="haversine",
     agg_level="user",
     print_progress=False,
+    n_jobs=1,
 ):
     """
     Generate locations from the staypoints.
@@ -85,21 +86,15 @@ def generate_locations(
             db = DBSCAN(eps=epsilon, min_samples=num_samples, algorithm="ball_tree", metric=distance_metric)
 
         if agg_level == "user":
-            if print_progress:
-                tqdm.pandas(desc="User location generation")
-                ret_stps = ret_stps.groupby("user_id", as_index=False).progress_apply(
-                    _generate_locations_per_user,
-                    geo_col=geo_col,
-                    distance_metric=distance_metric,
-                    db=db,
-                )
-            else:
-                ret_stps = ret_stps.groupby("user_id", as_index=False).apply(
-                    _generate_locations_per_user,
-                    geo_col=geo_col,
-                    distance_metric=distance_metric,
-                    db=db,
-                )
+            ret_stps = applyParallel(
+                ret_stps.groupby("user_id", as_index=False),
+                _generate_locations_per_user,
+                n_jobs=n_jobs,
+                print_progress=print_progress,
+                geo_col=geo_col,
+                distance_metric=distance_metric,
+                db=db,
+            )
 
             # keeping track of noise labels
             ret_stps_non_noise_labels = ret_stps[ret_stps["location_id"] != -1]

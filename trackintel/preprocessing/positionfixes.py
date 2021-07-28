@@ -5,9 +5,9 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from shapely.geometry import LineString, Point
-from tqdm import tqdm
 
 from trackintel.geogr.distances import haversine_dist
+from trackintel.preprocessing.util import applyParallel
 
 
 def generate_staypoints(
@@ -20,6 +20,7 @@ def generate_staypoints(
     include_last=False,
     print_progress=False,
     exclude_duplicate_pfs=True,
+    n_jobs=1,
 ):
     """
     Generate staypoints from positionfixes.
@@ -59,6 +60,12 @@ def generate_staypoints(
     exclude_duplicate_pfs: boolean, default True
         Filters duplicate positionfixes before generating staypoints. Duplicates can lead to problems in later
         processing steps (e.g., when generating triplegs). It is not recommended to set this to False.
+
+    n_jobs: int, default 1
+        The maximum number of concurrently running jobs. If -1 all CPUs are used. If 1 is given, no parallel
+        computing code is used at all, which is useful for debugging. See
+        https://joblib.readthedocs.io/en/latest/parallel.html#parallel-reference-documentation
+        for a detailed description
 
     Returns
     -------
@@ -118,37 +125,20 @@ def generate_staypoints(
     # TODO: tests using a different distance function, e.g., L2 distance
     if method == "sliding":
         # Algorithm from Li et al. (2008). For details, please refer to the paper.
-        if print_progress:
-            tqdm.pandas(desc="User staypoint generation")
-            stps = (
-                pfs.groupby("user_id", as_index=False)
-                .progress_apply(
-                    _generate_staypoints_sliding_user,
-                    geo_col=geo_col,
-                    elevation_flag=elevation_flag,
-                    dist_threshold=dist_threshold,
-                    time_threshold=time_threshold,
-                    gap_threshold=gap_threshold,
-                    distance_metric=distance_metric,
-                    include_last=include_last,
-                )
-                .reset_index(drop=True)
-            )
-        else:
-            stps = (
-                pfs.groupby("user_id", as_index=False)
-                .apply(
-                    _generate_staypoints_sliding_user,
-                    geo_col=geo_col,
-                    elevation_flag=elevation_flag,
-                    dist_threshold=dist_threshold,
-                    time_threshold=time_threshold,
-                    gap_threshold=gap_threshold,
-                    distance_metric=distance_metric,
-                    include_last=include_last,
-                )
-                .reset_index(drop=True)
-            )
+        stps = applyParallel(
+            pfs.groupby("user_id", as_index=False),
+            _generate_staypoints_sliding_user,
+            n_jobs=n_jobs,
+            print_progress=print_progress,
+            geo_col=geo_col,
+            elevation_flag=elevation_flag,
+            dist_threshold=dist_threshold,
+            time_threshold=time_threshold,
+            gap_threshold=gap_threshold,
+            distance_metric=distance_metric,
+            include_last=include_last,
+        ).reset_index(drop=True)
+
         # index management
         stps["id"] = np.arange(len(stps))
         stps.set_index("id", inplace=True)
