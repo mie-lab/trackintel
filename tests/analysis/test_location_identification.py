@@ -6,17 +6,16 @@ import pandas as pd
 import pytest
 import trackintel as ti
 from geopandas.testing import assert_geodataframe_equal
-from pandas.testing import assert_frame_equal
-from pandas.testing import assert_index_equal
+from pandas.testing import assert_frame_equal, assert_index_equal
 from shapely.geometry import Point
 from trackintel.analysis.location_identification import (
     _freq_assign,
     _freq_transform,
+    _osna_label_timeframes,
     freq_method,
     location_identifier,
-    pre_filter_locations,
     osna_method,
-    _osna_label_timeframes,
+    pre_filter_locations,
 )
 
 
