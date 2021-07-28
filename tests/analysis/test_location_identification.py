@@ -367,6 +367,7 @@ class TestOsna_Method:
         assert_geodataframe_equal(spts, result)
 
     def test_only_one_work_location(self):
+        """Test if only one work location of a user can be handled."""
         t_work = pd.Timestamp("2021-07-14 18:00:00", tz="utc")
         h = pd.Timedelta("1h")
         p = Point(0.0, 0.0)  # not used
@@ -378,6 +379,7 @@ class TestOsna_Method:
         assert_geodataframe_equal(result, spts)
 
     def test_only_one_rest_location(self):
+        """Test if only one rest location of a user can be handled."""
         t_rest = pd.Timestamp("2021-07-14 07:00:00", tz="utc")
         h = pd.Timedelta("1h")
         p = Point(0.0, 0.0)  # not used
@@ -389,6 +391,7 @@ class TestOsna_Method:
         assert_geodataframe_equal(result, spts)
 
     def test_only_one_leisure_location(self):
+        """Test if only one leisure location of a user can be handled."""
         t_leis = pd.Timestamp("2021-07-14 01:00:00", tz="utc")
         h = pd.Timedelta("1h")
         p = Point(0.0, 0.0)  # not used
@@ -409,6 +412,7 @@ class TestOsna_Method:
         assert_geodataframe_equal(example_osna, result)
 
     def test_multiple_users_with_only_one_location(self):
+        """Test that function can handle multiple users with only one location."""
         t_leis = pd.Timestamp("2021-07-14 01:00:00", tz="utc")
         t_work = pd.Timestamp("2021-07-14 18:00:00", tz="utc")
         h = pd.Timedelta("1h")
