@@ -52,6 +52,12 @@ def generate_locations(
     print_progress : bool, default False
         If print_progress is True, the progress bar is displayed
 
+    n_jobs: int, default 1
+        The maximum number of concurrently running jobs. If -1 all CPUs are used. If 1 is given, no parallel
+        computing code is used at all, which is useful for debugging. See
+        https://joblib.readthedocs.io/en/latest/parallel.html#parallel-reference-documentation
+        for a detailed description
+
     Returns
     -------
     ret_sp: GeoDataFrame (as trackintel staypoints)

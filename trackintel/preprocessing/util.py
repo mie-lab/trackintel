@@ -67,7 +67,31 @@ def calc_temp_overlap(start_1, end_1, start_2, end_2):
 
 
 def applyParallel(dfGrouped, func, n_jobs, print_progress, **kwargs):
-    # tqdm.pandas(desc="User staypoint generation")
+    """
+    Funtion warpper to parallize funtions after .groupby().
+
+    Parameters
+    ----------
+    dfGrouped: pd.DataFrameGroupBy
+        The groupby object after calling df.groupby("user_id").
+
+    func: function
+        Function to apply to the dfGrouped object, i.e., dfGrouped.apply(func).
+
+    n_jobs: int
+        The maximum number of concurrently running jobs.
+
+    print_progress: boolen
+        If set to True print the progress of apply.
+
+    **kwargs:
+        Other arguments passed to func.
+
+    Returns
+    -------
+    pd.DataFrame:
+        The result of dfGrouped.apply(func)
+    """
     df_ls = Parallel(n_jobs=n_jobs)(
         delayed(func)(group, **kwargs) for _, group in tqdm(dfGrouped, disable=not print_progress)
     )
