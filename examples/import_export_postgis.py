@@ -17,8 +17,8 @@ conn_string = "postgresql://test:1234@localhost:5432/trackintel-tests"
 
 # Geolife trajectory to PostGIS.
 pfs = ti.read_positionfixes_csv("examples/data/geolife_trajectory.csv", sep=";")
-# pfs.as_positionfixes.to_postgis(conn_string, 'positionfixes')
+# pfs.as_positionfixes.to_postgis('positionfixes', conn_string)
 
 # Geolife trajectory from PostGIS.
-# pfs = ti.read_positionfixes_postgis(conn_string, 'positionfixes')
+# pfs = ti.io.read_positionfixes_postgis('positionfixes', conn_string)
 pfs.as_positionfixes.plot()

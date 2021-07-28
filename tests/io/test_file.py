@@ -74,10 +74,6 @@ class TestPositionfixes:
         pfs = ti.read_positionfixes_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
-    def test_from_to_postgis(self):
-        # TODO Implement some tests for PostGIS.
-        pass
-
 
 class TestTriplegs:
     """Test for 'read_triplegs_csv' and 'write_triplegs_csv' functions."""
@@ -148,10 +144,6 @@ class TestTriplegs:
         pfs = ti.read_triplegs_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
-    def test_from_to_postgis(self):
-        # TODO Implement some tests for PostGIS.
-        pass
-
 
 class TestStaypoints:
     """Test for 'read_staypoints_csv' and 'write_staypoints_csv' functions."""
@@ -219,10 +211,6 @@ class TestStaypoints:
         pfs = ti.read_staypoints_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
-    def test_from_to_postgis(self):
-        # TODO Implement some tests for PostGIS.
-        pass
-
 
 class TestLocations:
     """Test for 'read_locations_csv' and 'write_locations_csv' functions."""
@@ -264,10 +252,6 @@ class TestLocations:
         pfs = ti.read_locations_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
-    def test_from_to_postgis(self):
-        # TODO Implement some tests for PostGIS.
-        pass
-
 
 class TestTrips:
     """Test for 'read_trips_csv' and 'write_trips_csv' functions."""
@@ -280,7 +264,8 @@ class TestTrips:
         trips = ti.read_trips_csv(orig_file, sep=";", index_col="id")
         column_mapping = {"orig_stp": "origin_staypoint_id", "dest_stp": "destination_staypoint_id"}
         mod_trips = ti.read_trips_csv(mod_file, columns=column_mapping, sep=";", index_col="id")
-        assert mod_trips.equals(trips)
+        mod_trips_wo_geom = pd.DataFrame(mod_trips.drop(columns=["geom"]))
+        assert mod_trips_wo_geom.equals(trips)
 
         trips["started_at"] = trips["started_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
         trips["finished_at"] = trips["finished_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
@@ -326,14 +311,8 @@ class TestTrips:
         gdf = ti.read_trips_csv(file, sep=";", index_col=None)
         assert gdf.index.name is None
 
-    def test_from_to_postgis(self):
-        # TODO Implement some tests for PostGIS.
-        pass
-
 
 class TestTours:
     """Test for 'read_tours_csv' and 'write_tours_csv' functions."""
 
-    def test_from_to_postgis(self):
-        # TODO Implement some tests for reading and writing tours.
-        pass
+    pass
