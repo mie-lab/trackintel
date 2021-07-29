@@ -115,7 +115,7 @@ def generate_trips(spts, tpls, gap_threshold=15, add_geometry=True):
     for col in ["trip_id", "prev_trip_id", "next_trip_id"]:
         if col in spts:
             spts.drop(columns=col, inplace=True)
-            warnings.warn(f"Deleted column '{col}' from spts.")
+            warnings.warn(f"Deleted column '{col}' from tpls.")
 
     tpls["type"] = "tripleg"
     spts["type"] = "staypoint"
