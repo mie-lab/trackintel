@@ -219,3 +219,74 @@ def _generate_locations_per_user(user_staypoints, distance_metric, db, geo_col):
     user_staypoints = gpd.GeoDataFrame(user_staypoints, geometry=geo_col)
 
     return user_staypoints
+
+
+def merge_staypoints(stps, max_time_gap="10min"):
+    """
+    Aggregate staypoints horizontally via time threshold
+
+    Parameters
+    ----------
+    stps : GeoDataFrame (as trackintel staypoints)
+        The staypoints have to follow the standard definition for staypoints DataFrames.
+
+    max_time_gap : str or pd.Timedelta, default "1h"
+        Maximum duration between staypoints to still be merged.
+        If str must be parsable by pd.to_timedelta.
+    """
+
+    if isinstance(max_time_gap, str):
+        max_time_gap = pd.to_timedelta(max_time_gap)
+
+    stps_merge = stps.copy()
+    assert stps_merge.index.name == "id", "expected index name to be 'id'"
+
+    stps_merge = stps_merge.reset_index()
+    # copy index to use it in the end (id is modified)
+    stps_merge["index"] = stps_merge["id"]
+    stps_merge.sort_values(inplace=True, by=["user_id", "started_at"])
+    stps_merge[["next_user_id", "next_started_at", "next_location_id"]] = stps_merge[
+        ["user_id", "started_at", "location_id"]
+    ].shift(-1)
+    # Conditions to keep on merging
+    cond = pd.Series(data=False, index=stps_merge.index)
+    cond_old = pd.Series(data=True, index=stps_merge.index)
+    cond_diff = cond != cond_old
+
+    while np.sum(cond_diff) >= 1:
+        # .values is important otherwise the "=" would imply a join via the new index
+        stps_merge["next_id"] = stps_merge["index"].shift(-1).values
+
+        # identify rows to merge
+        cond0 = stps_merge["next_user_id"] == stps_merge["user_id"]
+        cond1 = stps_merge["next_started_at"] - stps_merge["finished_at"] <= max_time_gap
+        cond2 = stps_merge["location_id"] == stps_merge["next_location_id"]
+        cond3 = stps_merge["index"] != stps_merge["next_id"]  # already merged
+        cond = cond0 & cond1 & cond2 & cond3
+
+        # assign index to next row
+        stps_merge.loc[cond, "index"] = stps_merge.loc[cond, "next_id"]
+        # check whether anything was changed
+        cond_diff = cond != cond_old
+        cond_old = cond.copy()
+
+    # set all to first by default to aggregate the optional columns as well
+    agg_dict = {col: "first" for col in stps_merge.columns}
+    agg_dict["finished_at"] = "last"
+
+    # helper function: get first element from list that is not NaN
+    first_notnan = lambda x: pd.NA if all(pd.isna(x)) else np.array(x)[~pd.isna(x)][0]
+    if "trip_id" in stps_merge.columns:
+        agg_dict["trip_id"] = list
+        agg_dict["next_trip_id"] = "last"
+    if "activity" in stps_merge.columns:
+        # use first non nan activity
+        agg_dict["activity"] = first_notnan
+
+    # aggregate values
+    stps_merged = stps_merge.groupby(by="index").agg(agg_dict)
+
+    # clean
+    stps_merged.drop(columns=["index", "next_id", "next_user_id", "next_location_id", "next_started_at"], inplace=True)
+    stps_merged = stps_merged.set_index("id")
+    return stps_merged

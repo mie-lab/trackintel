@@ -34,8 +34,6 @@ def example_staypoints():
     t4 = pd.Timestamp("1971-01-02 08:00:00", tz="utc")
     t5 = pd.Timestamp("1971-01-02 09:00:00", tz="utc")
     t6 = pd.Timestamp("1971-01-02 10:00:00", tz="utc")
-    t6 = pd.Timestamp("1971-01-02 10:00:00", tz="utc")
-    t6 = pd.Timestamp("1971-01-02 10:00:00", tz="utc")
     one_hour = datetime.timedelta(hours=1)
 
     list_dict = [
@@ -47,6 +45,42 @@ def example_staypoints():
         {"id": 7, "user_id": 1, "started_at": t3, "finished_at": t4, "geom": p4},
         {"id": 80, "user_id": 1, "started_at": t4, "finished_at": t5, "geom": p2},
         {"id": 3, "user_id": 1, "started_at": t5, "finished_at": t6, "geom": p2},
+    ]
+    sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+    sp = sp.set_index("id")
+    assert sp.as_staypoints
+    return sp
+
+
+@pytest.fixture
+def example_staypoints_merge():
+    """
+    Staypoints for merge operation
+
+    The following staypoints should be merged: id 2,6,15 for user 0 and 7, 80 for user 1
+    Note: id 5 and 2 should not be merged because of time gap
+    It must be ensured that 15 and 7 are not merged (different user)
+    """
+    p1 = Point(8.5067847, 47.4)
+
+    t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+    t2 = pd.Timestamp("1971-01-02 05:00:00", tz="utc")
+    t3 = pd.Timestamp("1971-01-02 06:45:00", tz="utc")
+    t4 = pd.Timestamp("1971-01-02 08:55:00", tz="utc")
+    t45 = pd.Timestamp("1971-01-02 08:57:00", tz="utc")
+    t5 = pd.Timestamp("1971-01-02 09:00:00", tz="utc")
+    t6 = pd.Timestamp("1971-01-02 09:20:00", tz="utc")
+    one_hour = datetime.timedelta(hours=1)
+
+    list_dict = [
+        {"id": 1, "user_id": 0, "started_at": t1, "finished_at": t2, "geom": p1, "location_id": 1},
+        {"id": 5, "user_id": 0, "started_at": t2, "finished_at": t2, "geom": p1, "location_id": 2},
+        {"id": 2, "user_id": 0, "started_at": t3, "finished_at": t4, "geom": p1, "location_id": 2},
+        {"id": 6, "user_id": 0, "started_at": t4, "finished_at": t45, "geom": p1, "location_id": 2},
+        {"id": 15, "user_id": 0, "started_at": t5, "finished_at": t6, "geom": p1, "location_id": 2},
+        {"id": 7, "user_id": 1, "started_at": t3, "finished_at": t4, "geom": p1, "location_id": 2},
+        {"id": 80, "user_id": 1, "started_at": t45, "finished_at": t5, "geom": p1, "location_id": 2},
+        {"id": 3, "user_id": 1, "started_at": t5, "finished_at": t6, "geom": p1, "location_id": 4},
     ]
     sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     sp = sp.set_index("id")
@@ -297,3 +331,35 @@ class TestGenerate_locations:
         assert sp2.loc[1, "location_id"] != sp2.loc[5, "location_id"]
 
         assert sp2.loc[[2, 7], "location_id"].isnull().all()
+
+
+class TestMergeStaypoints:
+    def test_merge_staypoints(self, example_staypoints_merge):
+        """Test staypoint merging"""
+        stps = example_staypoints_merge.copy()
+        merged_stps = stps.as_staypoints.merge_staypoints()
+        assert len(merged_stps) == len(stps) - 3
+        # some staypoints stay the same (not merged)
+        assert (merged_stps.loc[1] == stps.loc[1]).all()
+        assert (merged_stps.loc[5] == stps.loc[5]).all()
+        assert (merged_stps.loc[3] == stps.loc[3]).all()
+
+    def test_merge_staypoints_time(self, example_staypoints_merge):
+        """Test if all merged staypoints have the correct start and end time"""
+        stps = example_staypoints_merge.copy()
+        merged_stps = stps.as_staypoints.merge_staypoints()
+        # user 1 - id 7 and 80 merged
+        assert stps.loc[7, "started_at"] == merged_stps.loc[7, "started_at"]
+        assert stps.loc[80, "finished_at"] == merged_stps.loc[7, "finished_at"]
+        # user 0 - id 2,6, and 15 merged
+        assert stps.loc[2, "started_at"] == merged_stps.loc[2, "started_at"]
+        assert stps.loc[15, "finished_at"] == merged_stps.loc[2, "finished_at"]
+
+    def test_merge_staypoints_max_time_gap(self, example_staypoints_merge):
+        """Test it the max_time_gap argument works correctly"""
+        stps = example_staypoints_merge.copy()
+        merged_stps = stps.as_staypoints.merge_staypoints(max_time_gap="2h")
+        assert len(merged_stps) == len(stps) - 4
+        # user 0 - id 5, 2,6, and 15 merged
+        assert stps.loc[5, "started_at"] == merged_stps.loc[5, "started_at"]
+        assert stps.loc[15, "finished_at"] == merged_stps.loc[5, "finished_at"]
