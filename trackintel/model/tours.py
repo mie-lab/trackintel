@@ -7,12 +7,12 @@ class ToursAccessor(object):
     """A pandas accessor to treat DataFrames as collections of `Tours`.
 
     Requires at least the following columns:
-    ['user_id', 'started_at', 'finished_at', 'origin_destination_location_id', 'journey']
+    ['user_id', 'started_at', 'finished_at']
 
     The 'index' of the DataFrame will be treated as unique identifier of the `Tours`
 
     For several usecases, the following additional columns are required:
-    ['context', 'origin_staypoint_id', 'destination_staypoint_id']
+    ['location_id', 'journey', 'context', 'origin_staypoint_id', 'destination_staypoint_id']
 
     Notes
     -----
@@ -26,7 +26,7 @@ class ToursAccessor(object):
     >>> df.as_tours.plot()
     """
 
-    required_columns = ["user_id", "started_at", "finished_at", "origin_destination_location_id", "journey"]
+    required_columns = ["user_id", "started_at", "finished_at"]
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)

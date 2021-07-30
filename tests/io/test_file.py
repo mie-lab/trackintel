@@ -327,8 +327,7 @@ class TestTours:
             "finished_at",
             "origin_staypoint_id",
             "destination_staypoint_id",
-            "origin_destination_location_id",
-            "journey",
+            "location_id",
         ]
         ti.io.write_tours_csv(tours, tmp_file, columns=columns)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
