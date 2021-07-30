@@ -68,20 +68,23 @@ def calc_temp_overlap(start_1, end_1, start_2, end_2):
 
 def applyParallel(dfGrouped, func, n_jobs, print_progress, **kwargs):
     """
-    Funtion warpper to parallize funtions after .groupby().
+    Funtion warpper to parallelize funtions after .groupby().
 
     Parameters
     ----------
     dfGrouped: pd.DataFrameGroupBy
-        The groupby object after calling df.groupby("user_id").
+        The groupby object after calling df.groupby(COLUMN).
 
     func: function
         Function to apply to the dfGrouped object, i.e., dfGrouped.apply(func).
 
     n_jobs: int
-        The maximum number of concurrently running jobs.
+        The maximum number of concurrently running jobs. If -1 all CPUs are used. If 1 is given, no parallel
+        computing code is used at all, which is useful for debugging. See
+        https://joblib.readthedocs.io/en/latest/parallel.html#parallel-reference-documentation
+        for a detailed description
 
-    print_progress: boolen
+    print_progress: boolean
         If set to True print the progress of apply.
 
     **kwargs:

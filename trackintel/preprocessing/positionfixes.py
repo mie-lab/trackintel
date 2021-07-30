@@ -49,12 +49,12 @@ def generate_staypoints(
         temporal gaps larger than 'gap_threshold' will be excluded from staypoints generation.
         Only valid in 'sliding' method.
 
-    include_last: boolen, default False
+    include_last: boolean, default False
         The algorithm in Li et al. (2008) only detects staypoint if the user steps out
         of that staypoint. This will omit the last staypoint (if any). Set 'include_last'
         to True to include this last staypoint.
 
-    print_progress: boolen, default False
+    print_progress: boolean, default False
         Show per-user progress if set to True.
 
     exclude_duplicate_pfs: boolean, default True
@@ -318,7 +318,7 @@ def generate_triplegs(
         tpls_diff = np.diff(tpls_starts)
 
         # get the start position of stps
-        # pd.NA causes error in boolen comparision, replace to -1
+        # pd.NA causes error in boolean comparision, replace to -1
         stps_id = pfs["staypoint_id"].copy().fillna(-1)
         unique_stps, stps_starts = np.unique(stps_id, return_index=True)
         # get the index of where the tpls_starts belong in stps_starts
