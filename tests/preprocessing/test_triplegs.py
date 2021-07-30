@@ -275,8 +275,6 @@ class TestGenerate_trips:
         stps_in = gpd.GeoDataFrame(stps_in, geometry="geom")
         stps_in = ti.io.read_staypoints_gpd(stps_in, tz="utc")
 
-        assert stps_in.as_staypoints
-
         tpls_in = pd.read_csv(
             os.path.join("tests", "data", "trips", "triplegs_gaps.csv"),
             sep=";",
@@ -289,12 +287,10 @@ class TestGenerate_trips:
         tpls_in = gpd.GeoDataFrame(tpls_in, geometry="geom")
         tpls_in = ti.io.read_triplegs_gpd(tpls_in, tz="utc")
 
-        assert tpls_in.as_triplegs
-
         # load ground truth data
-        trips_loaded = ti.read_trips_csv(os.path.join("tests", "data", "trips", "trips_gaps.csv"), index_col="id")
-        trips_loaded["started_at"] = pd.to_datetime(trips_loaded["started_at"], utc=True)
-        trips_loaded["finished_at"] = pd.to_datetime(trips_loaded["finished_at"], utc=True)
+        trips_loaded = ti.read_trips_csv(
+            os.path.join("tests", "data", "trips", "trips_gaps.csv"), index_col="id", tz="utc"
+        )
 
         stps_tpls_loaded = pd.read_csv(os.path.join("tests", "data", "trips", "stps_tpls_gaps.csv"), index_col="id")
         stps_tpls_loaded["started_at"] = pd.to_datetime(stps_tpls_loaded["started_at"], utc=True)
