@@ -18,8 +18,6 @@ def generate_tours(
 ):
     """
     Generate trackintel-tours from trips
-    - Tours are defined as a collection of trips in a certain time frame that start and end at the same point
-    - Nested tours are possible and will be regarded as two distinct tours
 
     Parameters
     ----------
@@ -39,12 +37,7 @@ def generate_tours(
         Maximum time that a tour is allowed to take
 
     max_nr_gaps: int, default 0
-        It is possible to allow gaps to occur on the tour, which might be useful to deal with missing data.
-        Example: home-work, supermarket-home would still be detected as a tour when max_nr_gaps >= 1, although
-        the work-supermarket trip is missing.
-        Warning: So far, neither temporal nor spatial distances of gaps are bounded (except by max_time)! Thus, this
-        parameter should be set with caution, because trips that are hours apart might still be connected to a tour if
-        `max_nr_gaps > 0`.
+        Maximum number of spatial gaps on the tour. Use with caution - see notes below.
 
     print_progress : bool, default False
         If print_progress is True, the progress bar is displayed
@@ -58,6 +51,16 @@ def generate_tours(
     tours: GeoDataFrame (as trackintel tours)
         The generated tours
 
+    Notes
+    -------
+    - Tours are defined as a collection of trips in a certain time frame that start and end at the same point
+    - Nested tours are possible and will be regarded as two distinct tours
+    - It is possible to allow spatial gaps to occur on the tour, which might be useful to deal with missing data.
+      Example: The two trips home-work, supermarket-home would still be detected as a tour when max_nr_gaps >= 1,
+      althoug the work-supermarket trip is missing.
+      Warning: So far, neither temporal nor spatial distances of gaps are bounded (except by max_time)! Thus, this
+      parameter should be set with caution, because trips that are hours apart might still be connected to a tour if
+      `max_nr_gaps > 0`.
     """
     # Two options: either the location IDs for staypoints on the trips are provided, or a maximum distance threshold
     # between end and start of trips is used
@@ -65,7 +68,7 @@ def generate_tours(
         assert (
             "location_id" in stps_w_locs.columns
         ), "Staypoints with location ID is required, otherwise tours are generated wo location from maximum distance"
-        geom_col = "none" # not used
+        geom_col = "none"  # not used
     else:
         # if no location is given, we need the trips table to have a geometry column
         assert isinstance(trips_inp, gpd.geodataframe.GeoDataFrame), "Trips table must be a GeoDataFrame"
@@ -142,9 +145,10 @@ def _generate_tours_user(
         end_time = row["finished_at"]
         # print("current candidates", start_candidates)
 
-        # check if there is a gap between the previous and current trip
+        # check if there is a spatial gap between the previous and current trip
         if len(start_candidates) > 0:
-            # compare end of last to start of new
+            # For spatial gaps, check whether two consecutive trips (the current one and the previous one) share the
+            # same location
             if stps_w_locs is not None:
                 end_start_at_same_loc = _check_same_loc(
                     user_trip_df.loc[start_candidates[-1], "destination_staypoint_id"],  # dest. stp of previous trip
@@ -236,9 +240,26 @@ def _generate_tours_user(
 
 
 def _check_same_loc(stp1, stp2, stps_w_locs):
+    """Check whether two staypoints are at the same location
+
+    Parameters
+    ----------
+    stp1 : int
+        First staypoint id
+    stp2 : int
+        Second staypoint id
+    stps_w_locs : Trackintel staypoints
+        GeoDataFrame with staypoints and also location ids
+
+    Returns
+    -------
+    share_location, bool
+        If True, stp1 and stp2 are at the same location
+    """
     if pd.isna(stp1) or pd.isna(stp2):
         return False
-    return stps_w_locs.loc[stp1, "location_id"] == stps_w_locs.loc[stp2, "location_id"]
+    share_location = stps_w_locs.loc[stp1, "location_id"] == stps_w_locs.loc[stp2, "location_id"]
+    return share_location
 
 
 def _check_max_dist(p1, p2, max_dist):
@@ -255,8 +276,7 @@ def _check_max_dist(p1, p2, max_dist):
     dist_below_thresh: bool
         indicating whether p1 and p2 are less than max_dist apart
     """
-    geod = Geod(ellps="CPM")  # other guy used WGS84
-    dist = geod.inv(p1.x, p1.y, p2.x, p2.y)[2]
+    dist = ti.geogr.point_distances.haversine_dist(p1.x, p1.y, p2.x, p2.y)
     dist_below_thresh = dist <= max_dist
     return dist_below_thresh
 

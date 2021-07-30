@@ -211,3 +211,14 @@ class TestGenerate_tours:
 
         pd.testing.assert_frame_equal(trips_expl, trips_acc)
         pd.testing.assert_frame_equal(tours_expl, tours_acc)
+
+    def test_print_progress_flag(self, example_trip_data, capsys):
+        """Test if the print_progress bar controls the printing behavior."""
+        trips, stps_locs = example_trip_data
+        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, print_progress=True)
+        captured_print = capsys.readouterr()
+        assert captured_print.err != ""
+
+        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, print_progress=False)
+        captured_noprint = capsys.readouterr()
+        assert captured_noprint.err == ""

@@ -321,15 +321,17 @@ class TestTours:
         tmp_file = os.path.join("tests", "data", "tours_test.csv")
         tours = ti.read_tours_csv(orig_file, index_col="id")
 
-        columns = [
-            "user_id",
-            "started_at",
-            "finished_at",
-            "origin_staypoint_id",
-            "destination_staypoint_id",
-            "location_id",
-        ]
-        ti.io.write_tours_csv(tours, tmp_file, columns=columns)
+        ti.io.write_tours_csv(tours, tmp_file)
+        assert filecmp.cmp(orig_file, tmp_file, shallow=False)
+        os.remove(tmp_file)
+
+    def test_to_csv_accessor(self):
+        """Test basic reading and writing functions."""
+        orig_file = os.path.join("tests", "data", "geolife_long", "tours.csv")
+        tmp_file = os.path.join("tests", "data", "tours_test.csv")
+        tours = ti.read_tours_csv(orig_file, index_col="id")
+
+        tours.as_tours.to_csv(tmp_file)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
