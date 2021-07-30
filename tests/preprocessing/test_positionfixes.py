@@ -86,6 +86,18 @@ def example_positionfixes_isolated():
 class TestGenerate_staypoints:
     """Tests for generate_staypoints() method."""
 
+    def test_parallel_computing(self):
+        """The result obtained with parallel computing should be identical."""
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        # without parallel computing code
+        pfs_ori, stps_ori = pfs.as_positionfixes.generate_staypoints(n_jobs=1)
+        # using two cores
+        pfs_para, stps_para = pfs.as_positionfixes.generate_staypoints(n_jobs=2)
+
+        # the result of parallel computing should be identical
+        assert_geodataframe_equal(pfs_ori, pfs_para)
+        assert_geodataframe_equal(stps_ori, stps_para)
+
     def test_duplicate_pfs_warning(self, example_positionfixes):
         """Calling generate_staypoints with duplicate positionfixes should raise a warning."""
         pfs_duplicate_loc = example_positionfixes.copy()

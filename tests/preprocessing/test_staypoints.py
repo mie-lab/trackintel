@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
+from geopandas.testing import assert_geodataframe_equal
 
 import trackintel as ti
 from trackintel.geogr.distances import calculate_distance_matrix
@@ -56,6 +57,23 @@ def example_staypoints():
 
 class TestGenerate_locations:
     """Tests for generate_locations() method."""
+
+    def test_parallel_computing(self, example_staypoints):
+        """The result obtained with parallel computing should be identical."""
+        stps = example_staypoints
+
+        # without parallel computing code
+        stps_ori, locs_ori = stps.as_staypoints.generate_locations(
+            method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user", n_jobs=1
+        )
+        # using two cores
+        stps_para, locs_para = stps.as_staypoints.generate_locations(
+            method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user", n_jobs=2
+        )
+
+        # the result of parallel computing should be identical
+        assert_geodataframe_equal(locs_ori, locs_para)
+        assert_geodataframe_equal(stps_ori, stps_para)
 
     def test_dbscan_hav_euc(self):
         """Test if using haversine and euclidean distances will generate the same location result."""
