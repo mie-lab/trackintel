@@ -2,6 +2,8 @@ from functools import wraps
 from inspect import signature
 
 import geopandas as gpd
+from geopandas.io.sql import _get_srid_from_crs
+from shapely.wkb import dumps
 import pandas as pd
 from geoalchemy2 import Geometry, WKTElement
 from sqlalchemy import create_engine
@@ -224,10 +226,7 @@ def write_locations_postgis(
     # May build additional check for that.
     if "extent" in locations.columns:
         # geopandas.to_postgis can only handle one geometry column -> do it manually
-        if locations.crs is not None:
-            srid = locations.crs.to_epsg()
-        else:
-            srid = -1
+        srid = _get_srid_from_crs(locations)
         extent_schema = Geometry("POLYGON", srid)
 
         if dtype is None:
@@ -235,7 +234,7 @@ def write_locations_postgis(
         else:
             dtype["extent"] = extent_schema
         locations = locations.copy()
-        locations["extent"] = locations["extent"].apply(lambda x: WKTElement(x.wkt, srid=srid))
+        locations["extent"] = locations["extent"].apply(lambda x: dumps(x, srid=srid, hex=True))
 
     locations.to_postgis(
         name,
