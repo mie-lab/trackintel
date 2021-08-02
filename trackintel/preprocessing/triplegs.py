@@ -1,11 +1,9 @@
 import warnings
 
+import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely import geometry
-from tqdm import tqdm
-from shapely.geometry import MultiPoint, Point
-import geopandas as gpd
+from shapely.geometry import MultiPoint
 
 
 def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
@@ -164,7 +162,7 @@ def generate_trips(spts, tpls, gap_threshold=15, add_geometry=True):
 
     trips_grouper = spts_tpls_no_act.groupby("temp_trip_id")
     trips = trips_grouper.agg(
-        {"user_id": "mean", "started_at": min, "finished_at": max, "type": list, "spts_tpls_id": list}
+        {"user_id": "first", "started_at": min, "finished_at": max, "type": list, "spts_tpls_id": list}
     )
 
     def _seperate_ids(row):
