@@ -336,9 +336,6 @@ def read_locations_gpd(gdf, user_id="user_id", center="center", extent=None, crs
         by pyproj.CRS.from_user_input(), such as an authority string
         (eg "EPSG:4326") or a WKT string.
 
-    tz : str, optional
-        pytz compatible timezone string. If None UTC is assumed.
-
     mapper : dict, optional
         Further columns that should be renamed.
 

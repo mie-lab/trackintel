@@ -4,8 +4,8 @@ import geopandas as gpd
 import pandas as pd
 import pytest
 import trackintel as ti
-from pandas.testing import assert_frame_equal
-from shapely.geometry import Point
+from pandas.testing import assert_frame_equal, assert_index_equal
+from shapely.geometry import Point, Polygon, MultiPoint
 from trackintel.io.from_geopandas import (
     _trackintel_model,
     read_locations_gpd,
@@ -19,7 +19,7 @@ from trackintel.io.from_geopandas import (
 
 @pytest.fixture()
 def example_positionfixes():
-    """Positionfixes to load into the database."""
+    """Model conform positionfixes to test with."""
     p1 = Point(8.5067847, 47.4)
     p2 = Point(8.5067847, 47.5)
     p3 = Point(8.5067847, 47.6)
@@ -62,8 +62,9 @@ class Test_Trackintel_Model:
     def test_set_crs(self, example_positionfixes):
         """Test if crs will be set."""
         pfs = example_positionfixes.copy()
+        example_positionfixes.crs = "EPSG:2056"
         pfs.crs = None
-        pfs = _trackintel_model(pfs, crs="EPSG:4326")
+        pfs = _trackintel_model(pfs, crs="EPSG:2056")
         assert_frame_equal(example_positionfixes, pfs)
 
     def test_already_set_geometry(self, example_positionfixes):
@@ -100,6 +101,14 @@ class TestRead_Positionfixes_Gpd:
 
         assert_frame_equal(pfs_from_gpd, pfs_from_csv, check_exact=False)
 
+    def test_mapper(self, example_positionfixes):
+        """Test if mapper argument allows for additional renaming."""
+        example_positionfixes["additional_col"] = [11, 22, 33]
+        mapper = {"additional_col": "additional_col_renamed"}
+        pfs = read_positionfixes_gpd(example_positionfixes, mapper=mapper)
+        example_positionfixes.rename(columns=mapper, inplace=True)
+        assert_frame_equal(example_positionfixes, pfs)
+
 
 class TestRead_Triplegs_Gpd:
     """Test `read_triplegs_gpd()` function."""
@@ -115,6 +124,16 @@ class TestRead_Triplegs_Gpd:
         tpls_from_csv = tpls_from_csv.rename(columns={"geom": "geometry"})
 
         assert_frame_equal(tpls_from_gpd, tpls_from_csv, check_exact=False)
+
+    def test_mapper(self):
+        """Test if mapper argument allows for additional renaming."""
+        gdf = gpd.read_file(os.path.join("tests", "data", "triplegs.geojson"))
+        gdf["additional_col"] = [11, 22]
+        gdf.rename(columns={"User": "user_id"}, inplace=True)
+        mapper = {"additional_col": "additional_col_renamed"}
+        tpls = read_triplegs_gpd(gdf, mapper=mapper, tz="utc")
+        gdf.rename(columns=mapper, inplace=True)
+        assert_index_equal(tpls.columns, gdf.columns)
 
 
 class TestRead_Staypoints_Gpd:
@@ -134,6 +153,38 @@ class TestRead_Staypoints_Gpd:
 
         assert_frame_equal(stps_from_gpd, stps_from_csv, check_exact=False)
 
+    def test_mapper(self):
+        """Test if mapper argument allows for additional renaming."""
+        gdf = gpd.read_file(os.path.join("tests", "data", "staypoints.geojson"))
+        gdf["additional_col"] = [11, 22]
+        gdf.rename(columns={"start_time": "started_at", "end_time": "finished_at"}, inplace=True)
+        mapper = {"additional_col": "additional_col_renamed"}
+        stps = read_staypoints_gpd(gdf, mapper=mapper, tz="utc")
+        gdf.rename(columns=mapper, inplace=True)
+        assert_index_equal(gdf.columns, stps.columns)
+
+
+@pytest.fixture()
+def example_locations():
+    """Model conform locations to test with."""
+    p1 = Point(8.5067847, 47.4)
+    p2 = Point(8.5067847, 47.5)
+
+    list_dict = [
+        {"user_id": 0, "center": p1},
+        {"user_id": 0, "center": p2},
+        {"user_id": 1, "center": p2},
+    ]
+    locs = gpd.GeoDataFrame(data=list_dict, geometry="center", crs="EPSG:4326")
+    locs.index.name = "id"
+
+    coords = [[8.45, 47.6], [8.45, 47.4], [8.55, 47.4], [8.55, 47.6], [8.45, 47.6]]
+    extent = Polygon(coords)
+    locs["extent"] = extent  # broadcasting
+    locs["extent"] = gpd.GeoSeries(locs["extent"])  # dtype
+    assert locs.as_locations
+    return locs
+
 
 class TestRead_Locations_Gpd:
     """Test `read_locations_gpd()` function."""
@@ -152,11 +203,53 @@ class TestRead_Locations_Gpd:
         locs_from_csv = locs_from_csv.drop(columns="extent")
         assert_frame_equal(locs_from_csv, locs_from_gpd, check_exact=False)
 
+    def test_extent_col(self, example_locations):
+        """Test function with optional geom-column "extent"."""
+        locs = example_locations.copy()
+        del locs["extent"]
+        coords = [[8.45, 47.6], [8.45, 47.4], [8.55, 47.4], [8.55, 47.6], [8.45, 47.6]]
+        poly = Polygon(coords)
+        locs["extent_wrongname"] = poly
+        locs = read_locations_gpd(locs, extent="extent_wrongname")
+        assert_frame_equal(locs, example_locations)
+
+    def test_mapper(self, example_locations):
+        """Test if mapper argument allows for additional renaming."""
+        example_locations["additional_col"] = [11, 22, 33]
+        mapper = {"additional_col": "additional_col_renamed"}
+        locs = read_locations_gpd(example_locations, mapper=mapper)
+        example_locations.rename(columns=mapper, inplace=True)
+        assert_frame_equal(locs, example_locations)
+
+
+@pytest.fixture
+def example_trips():
+    """Model conform trips to test with."""
+    start = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+    h = pd.Timedelta("1h")
+
+    mp1 = MultiPoint([(0.0, 0.0), (1.0, 1.0)])
+    mp2 = MultiPoint([(2.0, 2.0), (3.0, 3.0)])
+
+    list_dict = [
+        {"user_id": 0, "origin_staypoint_id": 0, "destination_staypoint_id": 1, "geom": mp1},
+        {"user_id": 0, "origin_staypoint_id": 1, "destination_staypoint_id": 2, "geom": mp2},
+        {"user_id": 1, "origin_staypoint_id": 0, "destination_staypoint_id": 1, "geom": mp2},
+    ]
+    for n, d in enumerate(list_dict):
+        d["started_at"] = start + 4 * n * h
+        d["finished_at"] = d["started_at"] + h
+    trips = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:2056")
+    trips.index.name = "id"
+    assert trips.as_trips
+    return trips
+
 
 class TestRead_Trips_Gpd:
     """Test `read_trips_gpd()` function."""
 
     def test_cvs(self):
+        """Test if the results of reading from gpd and csv agrees."""
         df = pd.read_csv(os.path.join("tests", "data", "trips.csv"), sep=";")
         df.set_index("id", inplace=True)
         trips_from_gpd = read_trips_gpd(df, tz="utc")
@@ -165,6 +258,32 @@ class TestRead_Trips_Gpd:
         trips_from_csv = ti.read_trips_csv(trips_file, sep=";", tz="utc", index_col="id")
 
         assert_frame_equal(trips_from_gpd, trips_from_csv, check_exact=False)
+
+    def test_with_geometry(self, example_trips):
+        """Test if optional geometry gets read."""
+        trips = example_trips.copy()
+        del trips["geom"]
+        mp1 = MultiPoint([(0.0, 0.0), (1.0, 1.0)])
+        mp2 = MultiPoint([(2.0, 2.0), (3.0, 3.0)])
+        trips["geom"] = [mp1, mp2, mp2]
+        trips = read_trips_gpd(trips, geom_col="geom", crs="EPSG:2056", tz="utc")
+        example_trips = example_trips[trips.columns]  # copy changed column order
+        assert_frame_equal(trips, example_trips)
+
+    def test_without_geometry(self, example_trips):
+        """Test if DataFrame without geometry stays the same."""
+        columns_without_geom = example_trips.columns.difference(["geom"])
+        trips = pd.DataFrame(example_trips[columns_without_geom], copy=True)
+        trips_after_function = read_trips_gpd(trips)
+        assert_frame_equal(trips, trips_after_function)
+
+    def test_mapper(self, example_trips):
+        """Test if mapper argument allows for additional renaming."""
+        example_trips["additional_col"] = [11, 22, 33]
+        mapper = {"additional_col": "additional_col_renamed"}
+        trips = read_trips_gpd(example_trips, mapper=mapper)
+        example_trips.rename(columns=mapper, inplace=True)
+        assert_frame_equal(trips, example_trips)
 
 
 class TestRead_Tours_Gpd:
