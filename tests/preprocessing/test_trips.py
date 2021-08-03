@@ -4,6 +4,7 @@ import pytest
 from shapely.geometry import MultiPoint, Point
 import datetime
 import geopandas as gpd
+from geopandas.testing import assert_geodataframe_equal
 
 import trackintel as ti
 
@@ -113,7 +114,8 @@ def example_trip_data():
 
     trips = gpd.GeoDataFrame(data=trips_list_dict, geometry="geom", crs="EPSG:4326")
     trips = trips.set_index("id")
-    assert trips.as_trips
+    # assert valid trips
+    trips.as_trips
     return trips, stps_locs
 
 
@@ -121,6 +123,7 @@ class TestGenerate_tours:
     """Tests for generate_tours() method."""
 
     def test_generate_tours(self, example_trip_data):
+        """Test general functionality of generate tours function"""
         trips, stps_locs = example_trip_data
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips)
         # check that nothing else than the new column has changed in trips df
@@ -135,6 +138,7 @@ class TestGenerate_tours:
         assert all(pd.isna(user_1_df["tour_id"]))
 
     def test_tours_with_gap(self, example_trip_data):
+        """Test functionality of max_nr_gaps parameter in tour generation"""
         trips, stps_locs = example_trip_data
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_nr_gaps=1)
         # new tour was found for user 1
@@ -143,6 +147,7 @@ class TestGenerate_tours:
         assert trips_out.loc[80, "tour_id"] == 2
 
     def test_tour_times(self, example_trip_data):
+        """Check whether the start and end times of generated tours are correct"""
         trips, stps_locs = example_trip_data
         max_time = datetime.timedelta(days=1)
         trips_out, tours = ti.preprocessing.trips.generate_tours(
@@ -160,6 +165,7 @@ class TestGenerate_tours:
             assert gt_end == tours.loc[tour_id, "finished_at"]
 
     def test_tour_geom(self, example_trip_data):
+        """Test whether tour generation is invariant to the name of the geometry column"""
         trips, stps_locs = example_trip_data
         trips.rename(columns={"geom": "other_geom_name"}, inplace=True)
         trips = trips.set_geometry("other_geom_name")
@@ -168,6 +174,7 @@ class TestGenerate_tours:
         assert all(trips_out.iloc[:, :6] == trips)
 
     def test_tour_max_time(self, example_trip_data):
+        """Test functionality of max time argument in tour generation"""
         trips, stps_locs = example_trip_data
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_time=datetime.timedelta(hours=2))
         assert len(tours) == 0
@@ -175,6 +182,7 @@ class TestGenerate_tours:
         assert len(tours) == 1
 
     def test_tours_locations(self, example_trip_data):
+        """Test whether tour generation with locations as input yields correct results as well"""
         trips, stps_locs = example_trip_data
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips, stps_w_locs=stps_locs, max_nr_gaps=1)
         assert all(tours["location_id"] == pd.Series([1, 2, 2]))
@@ -185,6 +193,21 @@ class TestGenerate_tours:
             assert gt_start == tours.loc[tour_id, "origin_staypoint_id"]
             assert gt_end == tours.loc[tour_id, "destination_staypoint_id"]
             assert gt_loc == tours.loc[tour_id, "location_id"]
+
+    def test_tours_crs(self, example_trip_data):
+        """Test if the tours generation works with projected coordinate system"""
+        trips, _ = example_trip_data
+        trips_crs = trips.copy()
+        # normal baseline
+        trips_out, tours = ti.preprocessing.trips.generate_tours(trips)
+        # set other crs
+        trips_crs.set_crs("WGS84", inplace=True)
+        trips_crs.to_crs("EPSG:2056", inplace=True)
+        trips_out_crs, tours_crs = ti.preprocessing.trips.generate_tours(trips_crs)
+        trips_out_crs.to_crs("WGS84", inplace=True)
+        # assert equal
+        assert_geodataframe_equal(trips_out, trips_out_crs, check_less_precise=True)
+        pd.testing.assert_frame_equal(tours, tours_crs)
 
     def test_generate_tours_geolife(self):
         """Test tour generation also on the geolife dataset"""
@@ -222,3 +245,10 @@ class TestGenerate_tours:
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips, print_progress=False)
         captured_noprint = capsys.readouterr()
         assert captured_noprint.err == ""
+
+    def test_index_stability(self, example_trip_data):
+        """Test if the index of the trips remains stable"""
+        trips, stps_locs = example_trip_data
+        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, print_progress=True)
+
+        assert trips.index.equals(trips_out.index)

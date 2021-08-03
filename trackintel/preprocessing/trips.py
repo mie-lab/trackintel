@@ -3,7 +3,6 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from pyproj import Geod
 
 import trackintel as ti
 
@@ -68,11 +67,15 @@ def generate_tours(
         assert (
             "location_id" in stps_w_locs.columns
         ), "Staypoints with location ID is required, otherwise tours are generated wo location from maximum distance"
-        geom_col = "none"  # not used
+        geom_col = None  # not used
+        crs_is_projected = False  # not used
     else:
         # if no location is given, we need the trips table to have a geometry column
         assert isinstance(trips_inp, gpd.geodataframe.GeoDataFrame), "Trips table must be a GeoDataFrame"
         geom_col = trips_inp.geometry.name
+        # get crs
+        crs_is_projected = ti.geogr.distances.check_gdf_crs(trips_inp.copy())
+
     trips = trips_inp.copy()
 
     kwargs = {
@@ -81,6 +84,7 @@ def generate_tours(
         "max_time": max_time,
         "stps_w_locs": stps_w_locs,
         "geom_col": geom_col,
+        "crs_is_projected": crs_is_projected,
     }
     if print_progress:
         tqdm.pandas(desc="User trip generation")
@@ -125,7 +129,13 @@ def generate_tours(
 
 
 def _generate_tours_user(
-    user_trip_df, stps_w_locs=None, max_dist=100, max_nr_gaps=0, max_time=timedelta(days=1), geom_col="geom"
+    user_trip_df,
+    stps_w_locs=None,
+    max_dist=100,
+    max_nr_gaps=0,
+    max_time=timedelta(days=1),
+    geom_col="geom",
+    crs_is_projected=False,
 ):
     user_id = user_trip_df["user_id"].unique()
     assert len(user_id) == 1
@@ -158,7 +168,7 @@ def _generate_tours_user(
             else:
                 # check distance between point 1: end point of previous trip, point 2: start of current trip
                 end_start_at_same_loc = _check_max_dist(
-                    user_trip_df.loc[start_candidates[-1], geom_col][1], row[geom_col][0], max_dist
+                    user_trip_df.loc[start_candidates[-1], geom_col][1], row[geom_col][0], max_dist, crs_is_projected
                 )
 
             # if the current trip does not start at the end of the previous trip, there is a gap
@@ -174,14 +184,14 @@ def _generate_tours_user(
         # Add this point as a candidate
         start_candidates.append(row.name)
 
-        # Check whether endpoint would be an unkown activity
+        # Check whether endpoint would be an unknown activity
         if pd.isna(row["destination_staypoint_id"]):
             continue
 
         # keep a list of which candidates to remove (because of time frame)
         new_list_start = 0
 
-        # check distance to all candidates (except the ones that are too close)
+        # check for all candidates whether they form a tour with the current trip
         for j, cand in enumerate(start_candidates):
             # gap
             if np.isnan(cand):
@@ -193,11 +203,10 @@ def _generate_tours_user(
                 new_list_start = j + 1
                 continue
 
-            # check whether the start-end candidate of a tour is an unkown activity
+            # check whether the start-end candidate of a tour is an unknown activity
             if pd.isna(user_trip_df.loc[cand, "origin_staypoint_id"]):
                 continue
 
-            # TODO: compute length of triplegs and sum - must be larger than minthresh
             # check if endpoint of trip = start location of cand
             if stps_w_locs is not None:
                 end_start_at_same_loc = _check_same_loc(
@@ -207,7 +216,9 @@ def _generate_tours_user(
                 )
             else:
                 # check distance between point 1: end point of current trip, point 2: start of first trip on tour
-                end_start_at_same_loc = _check_max_dist(row[geom_col][1], user_trip_df.loc[cand, geom_col][0], max_dist)
+                end_start_at_same_loc = _check_max_dist(
+                    row[geom_col][1], user_trip_df.loc[cand, geom_col][0], max_dist, crs_is_projected=crs_is_projected
+                )
 
             # print("Check distance to start", cand, end_point, cand_start_point, point_dist)
             if end_start_at_same_loc:
@@ -215,7 +226,7 @@ def _generate_tours_user(
                 # collect the trips on the tour in a list
                 non_gap_trip_idxs = [c for c in start_candidates[j:] if ~np.isnan(c)]
                 tour_candidate = user_trip_df[user_trip_df.index.isin(non_gap_trip_idxs)]
-                tours.append(_create_tour_from_stack(tour_candidate, stps_w_locs, max_dist, max_time, geom_col))
+                tours.append(_create_tour_from_stack(tour_candidate, stps_w_locs, max_dist, max_time))
 
                 nr_gaps = np.sum(np.isnan(np.array(start_candidates[j:])))
 
@@ -262,7 +273,7 @@ def _check_same_loc(stp1, stp2, stps_w_locs):
     return share_location
 
 
-def _check_max_dist(p1, p2, max_dist):
+def _check_max_dist(p1, p2, max_dist, crs_is_projected=False):
     """
     Check whether two points p1, p2 are less or equal than max_dist apart
 
@@ -276,12 +287,15 @@ def _check_max_dist(p1, p2, max_dist):
     dist_below_thresh: bool
         indicating whether p1 and p2 are less than max_dist apart
     """
-    dist = ti.geogr.point_distances.haversine_dist(p1.x, p1.y, p2.x, p2.y)
+    if crs_is_projected:
+        dist = p1.distance(p2)
+    else:
+        dist = ti.geogr.point_distances.haversine_dist(p1.x, p1.y, p2.x, p2.y)
     dist_below_thresh = dist <= max_dist
     return dist_below_thresh
 
 
-def _create_tour_from_stack(temp_tour_stack, stps_w_locs, max_dist, max_time, geom_col):
+def _create_tour_from_stack(temp_tour_stack, stps_w_locs, max_dist, max_time):
     """
     Aggregate information of tour elements in a structured dictionary.
 
@@ -307,8 +321,6 @@ def _create_tour_from_stack(temp_tour_stack, stps_w_locs, max_dist, max_time, ge
         end_loc = stps_w_locs.loc[last_trip["destination_staypoint_id"], "location_id"]
         assert start_loc == end_loc
     else:
-        # double check distance between start and end point
-        assert _check_max_dist(last_trip[geom_col][1], first_trip[geom_col][0], max_dist)
         # set location to NaN since not available
         start_loc = pd.NA
 
