@@ -4,52 +4,6 @@ import geopandas as gpd
 from trackintel.io.file import _localize_timestamp
 
 
-def _trackintel_model(gdf, set_names=None, geom_col=None, crs=None, tz_cols=None, tz=None):
-    """Helper function to assure the trackintel model on a GeoDataFrame.
-
-    Parameters
-    ----------
-    gdf : GeoDataFrame
-
-    set_names : dict, optional
-        Renaming dictionary for the columns of the GeoDataFrame.
-
-    set_geometry : str, optional
-        Set geometry of GeoDataFrame.
-
-    crs : pyproj.crs or str, optional
-        Set coordinate reference system. The value can be anything accepted
-        by pyproj.CRS.from_user_input(), such as an authority string
-        (eg "EPSG:4326") or a WKT string.
-
-    tz_cols : list, optional
-        List of timezone aware datetime columns.
-
-    tz : str, optional
-        pytz compatible timezone string. If None UTC will be assumed
-    """
-    if set_names is not None:
-        gdf = gdf.rename(columns=set_names)
-
-    if geom_col is not None:
-        gdf = gdf.set_geometry(geom_col)
-    else:
-        try:
-            gdf.geometry
-        except AttributeError:
-            raise AttributeError("GeoDataFrame has no geometry, set it with keyword argument.")
-
-    if crs is not None:
-        gdf = gdf.set_crs(crs)
-
-    if tz_cols is not None:
-        for col in tz_cols:
-            if not pd.api.types.is_datetime64tz_dtype(gdf[col]):
-                gdf[col] = _localize_timestamp(dt_series=gdf[col], pytz_tzinfo=tz, col_name=col)
-
-    return gdf
-
-
 def read_positionfixes_gpd(
     gdf, tracked_at="tracked_at", user_id="user_id", geom_col=None, crs=None, tz=None, mapper=None
 ):
@@ -424,3 +378,55 @@ def read_tours_gpd(
     # trs.as_tours
     # return trs
     pass
+
+
+def _trackintel_model(gdf, set_names=None, geom_col=None, crs=None, tz_cols=None, tz=None):
+    """Help function to assure the trackintel model on a GeoDataFrame.
+
+    Parameters
+    ----------
+    gdf : GeoDataFrame
+        Input GeoDataFrame
+
+    set_names : dict, optional
+        Renaming dictionary for the columns of the GeoDataFrame.
+
+    set_geometry : str, optional
+        Set geometry of GeoDataFrame.
+
+    crs : pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg "EPSG:4326") or a WKT string.
+
+    tz_cols : list, optional
+        List of timezone aware datetime columns.
+
+    tz : str, optional
+        pytz compatible timezone string. If None UTC will be assumed
+
+    Returns
+    -------
+    gdf : GeoDataFrame
+        The input GeoDataFrame transformed to match the trackintel format.
+    """
+    if set_names is not None:
+        gdf = gdf.rename(columns=set_names)
+
+    if geom_col is not None:
+        gdf = gdf.set_geometry(geom_col)
+    else:
+        try:
+            gdf.geometry
+        except AttributeError:
+            raise AttributeError("GeoDataFrame has no geometry, set it with keyword argument.")
+
+    if crs is not None:
+        gdf = gdf.set_crs(crs)
+
+    if tz_cols is not None:
+        for col in tz_cols:
+            if not pd.api.types.is_datetime64tz_dtype(gdf[col]):
+                gdf[col] = _localize_timestamp(dt_series=gdf[col], pytz_tzinfo=tz, col_name=col)
+
+    return gdf

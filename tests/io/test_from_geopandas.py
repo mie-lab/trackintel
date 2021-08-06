@@ -4,6 +4,7 @@ import geopandas as gpd
 import pandas as pd
 import pytest
 import trackintel as ti
+from geopandas.testing import assert_geodataframe_equal
 from pandas.testing import assert_frame_equal, assert_index_equal
 from shapely.geometry import Point, Polygon, MultiPoint
 from trackintel.io.from_geopandas import (
@@ -43,38 +44,43 @@ class Test_Trackintel_Model:
     """Test `_trackintel_model()` function."""
 
     def test_renaming(self, example_positionfixes):
-        """Test renaming of columns"""
+        """Test renaming of columns."""
         example_positionfixes["additional_col"] = [11, 22, 33]
         pfs = example_positionfixes.copy()
+        # create new column mapping and revert it
         columns = {"user_id": "_user_id", "tracked_at": "_tracked_at", "additional_col": "_additional_col"}
         columns_rev = {val: key for key, val in columns.items()}
+        # check if columns get renamed correctly
         pfs.rename(columns=columns, inplace=True)
         pfs = _trackintel_model(pfs, columns_rev)
-        assert_frame_equal(example_positionfixes, pfs)
+        assert_geodataframe_equal(example_positionfixes, pfs)
 
     def test_setting_geometry(self, example_positionfixes):
         """Test the setting of the geometry."""
+        # create pfs as dataframe
         pfs = pd.DataFrame(example_positionfixes[["user_id", "tracked_at"]], copy=True)
         pfs["geom"] = example_positionfixes.geometry
+        # check if geom column gets assigned to geometry
         pfs = _trackintel_model(pfs, geom_col="geom")
-        assert_frame_equal(example_positionfixes, pfs)
+        assert_geodataframe_equal(example_positionfixes, pfs)
 
     def test_set_crs(self, example_positionfixes):
         """Test if crs will be set."""
         pfs = example_positionfixes.copy()
         example_positionfixes.crs = "EPSG:2056"
+        # check if the crs is correctly set
         pfs.crs = None
         pfs = _trackintel_model(pfs, crs="EPSG:2056")
-        assert_frame_equal(example_positionfixes, pfs)
+        assert_geodataframe_equal(example_positionfixes, pfs)
 
     def test_already_set_geometry(self, example_positionfixes):
         """Test if default checks if GeoDataFrame already has a geometry."""
         pfs = _trackintel_model(example_positionfixes)
-        assert_frame_equal(pfs, example_positionfixes)
+        assert_geodataframe_equal(pfs, example_positionfixes)
 
     def test_error_no_set_geometry(self, example_positionfixes):
-        """Test if AttributeError is risen if no geom_col is provided and GeoDataFrame has no geometry."""
-        pfs = gpd.GeoDataFrame(example_positionfixes[["user_id", "tracked_at"]], copy=True)
+        """Test if AttributeError will be raised if no geom_col is provided and GeoDataFrame has no geometry."""
+        pfs = gpd.GeoDataFrame(example_positionfixes[["user_id", "tracked_at"]])
         with pytest.raises(AttributeError):
             _trackintel_model(pfs)
 
@@ -83,7 +89,7 @@ class Test_Trackintel_Model:
         pfs = example_positionfixes.copy()
         pfs["tracked_at"] = ["1971-01-01 04:00:00", "1971-01-01 05:00:00", "1971-01-02 07:00:00"]
         pfs = _trackintel_model(pfs, tz_cols=["tracked_at"], tz="UTC")
-        assert_frame_equal(pfs, example_positionfixes)
+        assert_geodataframe_equal(pfs, example_positionfixes)
 
 
 class TestRead_Positionfixes_Gpd:
@@ -91,12 +97,14 @@ class TestRead_Positionfixes_Gpd:
 
     def test_csv(self):
         """Test if the results of reading from gpd and csv agrees."""
+        # read from file and transform to trackintel format
         gdf = gpd.read_file(os.path.join("tests", "data", "positionfixes.geojson"))
         gdf.set_index("id", inplace=True)
         pfs_from_gpd = read_positionfixes_gpd(gdf, user_id="User", geom_col="geometry", crs="EPSG:4326", tz="utc")
 
+        # read from csv file
         pfs_file = os.path.join("tests", "data", "positionfixes.csv")
-        pfs_from_csv = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id")
+        pfs_from_csv = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id", crs="EPSG:4326")
         pfs_from_csv = pfs_from_csv.rename(columns={"geom": "geometry"})
 
         assert_frame_equal(pfs_from_gpd, pfs_from_csv, check_exact=False)
@@ -107,7 +115,7 @@ class TestRead_Positionfixes_Gpd:
         mapper = {"additional_col": "additional_col_renamed"}
         pfs = read_positionfixes_gpd(example_positionfixes, mapper=mapper)
         example_positionfixes.rename(columns=mapper, inplace=True)
-        assert_frame_equal(example_positionfixes, pfs)
+        assert_geodataframe_equal(example_positionfixes, pfs)
 
 
 class TestRead_Triplegs_Gpd:
@@ -115,10 +123,12 @@ class TestRead_Triplegs_Gpd:
 
     def test_csv(self):
         """Test if the results of reading from gpd and csv agrees."""
+        # read from file and transform to trackintel format
         gdf = gpd.read_file(os.path.join("tests", "data", "triplegs.geojson"))
         gdf.set_index("id", inplace=True)
         tpls_from_gpd = read_triplegs_gpd(gdf, user_id="User", geom_col="geometry", crs="EPSG:4326", tz="utc")
 
+        # read from csv file
         tpls_file = os.path.join("tests", "data", "triplegs.csv")
         tpls_from_csv = ti.read_triplegs_csv(tpls_file, sep=";", tz="utc", index_col="id")
         tpls_from_csv = tpls_from_csv.rename(columns={"geom": "geometry"})
@@ -133,6 +143,7 @@ class TestRead_Triplegs_Gpd:
         mapper = {"additional_col": "additional_col_renamed"}
         tpls = read_triplegs_gpd(gdf, mapper=mapper, tz="utc")
         gdf.rename(columns=mapper, inplace=True)
+
         assert_index_equal(tpls.columns, gdf.columns)
 
 
@@ -141,12 +152,14 @@ class TestRead_Staypoints_Gpd:
 
     def test_csv(self):
         """Test if the results of reading from gpd and csv agrees."""
+        # read from file and transform to trackintel format
         gdf = gpd.read_file(os.path.join("tests", "data", "staypoints.geojson"))
         gdf.set_index("id", inplace=True)
         stps_from_gpd = read_staypoints_gpd(
             gdf, "start_time", "end_time", geom_col="geometry", crs="EPSG:4326", tz="utc"
         )
 
+        # read from csv file
         stps_file = os.path.join("tests", "data", "staypoints.csv")
         stps_from_csv = ti.read_staypoints_csv(stps_file, sep=";", tz="utc", index_col="id")
         stps_from_csv = stps_from_csv.rename(columns={"geom": "geometry"})
@@ -161,6 +174,7 @@ class TestRead_Staypoints_Gpd:
         mapper = {"additional_col": "additional_col_renamed"}
         stps = read_staypoints_gpd(gdf, mapper=mapper, tz="utc")
         gdf.rename(columns=mapper, inplace=True)
+
         assert_index_equal(gdf.columns, stps.columns)
 
 
@@ -208,10 +222,9 @@ class TestRead_Locations_Gpd:
         locs = example_locations.copy()
         del locs["extent"]
         coords = [[8.45, 47.6], [8.45, 47.4], [8.55, 47.4], [8.55, 47.6], [8.45, 47.6]]
-        poly = Polygon(coords)
-        locs["extent_wrongname"] = poly
+        locs["extent_wrongname"] = Polygon(coords)
         locs = read_locations_gpd(locs, extent="extent_wrongname")
-        assert_frame_equal(locs, example_locations)
+        assert_geodataframe_equal(locs, example_locations)
 
     def test_mapper(self, example_locations):
         """Test if mapper argument allows for additional renaming."""
@@ -219,7 +232,7 @@ class TestRead_Locations_Gpd:
         mapper = {"additional_col": "additional_col_renamed"}
         locs = read_locations_gpd(example_locations, mapper=mapper)
         example_locations.rename(columns=mapper, inplace=True)
-        assert_frame_equal(locs, example_locations)
+        assert_geodataframe_equal(locs, example_locations)
 
 
 @pytest.fixture
@@ -268,7 +281,7 @@ class TestRead_Trips_Gpd:
         trips["geom"] = [mp1, mp2, mp2]
         trips = read_trips_gpd(trips, geom_col="geom", crs="EPSG:2056", tz="utc")
         example_trips = example_trips[trips.columns]  # copy changed column order
-        assert_frame_equal(trips, example_trips)
+        assert_geodataframe_equal(trips, example_trips)
 
     def test_without_geometry(self, example_trips):
         """Test if DataFrame without geometry stays the same."""
@@ -283,7 +296,7 @@ class TestRead_Trips_Gpd:
         mapper = {"additional_col": "additional_col_renamed"}
         trips = read_trips_gpd(example_trips, mapper=mapper)
         example_trips.rename(columns=mapper, inplace=True)
-        assert_frame_equal(trips, example_trips)
+        assert_geodataframe_equal(trips, example_trips)
 
 
 class TestRead_Tours_Gpd:
