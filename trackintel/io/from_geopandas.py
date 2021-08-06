@@ -1,9 +1,58 @@
 import pandas as pd
+import geopandas as gpd
 
 from trackintel.io.file import _localize_timestamp
 
 
-def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom_col="geom", tz=None, mapper={}):
+def _trackintel_model(gdf, set_names=None, geom_col=None, crs=None, tz_cols=None, tz=None):
+    """Helper function to assure the trackintel model on a GeoDataFrame.
+
+    Parameters
+    ----------
+    gdf : GeoDataFrame
+
+    set_names : dict, optional
+        Renaming dictionary for the columns of the GeoDataFrame.
+
+    set_geometry : str, optional
+        Set geometry of GeoDataFrame.
+
+    crs : pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg "EPSG:4326") or a WKT string.
+
+    tz_cols : list, optional
+        List of timezone aware datetime columns.
+
+    tz : str, optional
+        pytz compatible timezone string. If None UTC will be assumed
+    """
+    if set_names is not None:
+        gdf = gdf.rename(columns=set_names)
+
+    if geom_col is not None:
+        gdf = gdf.set_geometry(geom_col)
+    else:
+        try:
+            gdf.geometry
+        except AttributeError:
+            raise AttributeError("GeoDataFrame has no geometry, set it with keyword argument.")
+
+    if crs is not None:
+        gdf = gdf.set_crs(crs)
+
+    if tz_cols is not None:
+        for col in tz_cols:
+            if not pd.api.types.is_datetime64tz_dtype(gdf[col]):
+                gdf[col] = _localize_timestamp(dt_series=gdf[col], pytz_tzinfo=tz, col_name=col)
+
+    return gdf
+
+
+def read_positionfixes_gpd(
+    gdf, tracked_at="tracked_at", user_id="user_id", geom_col=None, crs=None, tz=None, mapper=None
+):
     """
     Read positionfixes from GeoDataFrames.
 
@@ -15,19 +64,24 @@ def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom
         GeoDataFrame with valid point geometry, containing the positionfixes to import
 
     tracked_at : str, default 'tracked_at'
-        name of the column storing the timestamps.
+        Name of the column storing the timestamps.
 
     user_id : str, default 'user_id'
-        name of the column storing the user_id.
+        Name of the column storing the user_id.
 
-    geom_col : str, default 'geom'
-        name of the column storing the geometry.
+    geom_col : str, optional
+        Name of the column storing the geometry. If None assumes geometry is already set.
+
+    crs : pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg "EPSG:4326") or a WKT string.
 
     tz : str, optional
         pytz compatible timezone string. If None UTC will be assumed
 
     mapper : dict, optional
-        further columns that should be renamed.
+        Further columns that should be renamed.
 
     Returns
     -------
@@ -39,23 +93,24 @@ def read_positionfixes_gpd(gdf, tracked_at="tracked_at", user_id="user_id", geom
     >>> trackintel.read_positionfixes_gpd(gdf, user_id='User', geom_col='geom', tz='utc')
     """
     columns = {tracked_at: "tracked_at", user_id: "user_id"}
-    columns.update(mapper)
+    if mapper is not None:
+        columns.update(mapper)
 
-    pfs = gdf.rename(columns=columns)
-    pfs = pfs.set_geometry(geom_col)
-
-    # check and/or set timezone
-    for col in ["tracked_at"]:
-        if not pd.api.types.is_datetime64tz_dtype(pfs[col]):
-            pfs[col] = _localize_timestamp(dt_series=pfs[col], pytz_tzinfo=tz, col_name=col)
-
+    pfs = _trackintel_model(gdf, columns, geom_col, crs, ["tracked_at"], tz)
     # assert validity of positionfixes
     pfs.as_positionfixes
     return pfs
 
 
 def read_staypoints_gpd(
-    gdf, started_at="started_at", finished_at="finished_at", user_id="user_id", geom_col="geom", tz=None, mapper={}
+    gdf,
+    started_at="started_at",
+    finished_at="finished_at",
+    user_id="user_id",
+    geom_col=None,
+    crs=None,
+    tz=None,
+    mapper=None,
 ):
     """
     Read staypoints from GeoDataFrames.
@@ -68,22 +123,27 @@ def read_staypoints_gpd(
         GeoDataFrame with valid point geometry, containing the staypoints to import
 
     started_at : str, default 'started_at'
-        name of the column storing the starttime of the staypoints.
+        Name of the column storing the starttime of the staypoints.
 
     finished_at : str, default 'finished_at'
-        name of the column storing the endtime of the staypoints.
+        Name of the column storing the endtime of the staypoints.
 
     user_id : str, default 'user_id'
-        name of the column storing the user_id.
+        Name of the column storing the user_id.
 
-    geom_col : str, default 'geom'
-        name of the column storing the geometry.
+    geom_col : str
+        Name of the column storing the geometry. If None assumes geometry is already set.
+
+    crs : pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg "EPSG:4326") or a WKT string.
 
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
 
     mapper : dict, optional
-        further columns that should be renamed.
+        Further columns that should be renamed.
 
     Returns
     -------
@@ -95,15 +155,10 @@ def read_staypoints_gpd(
     >>> trackintel.read_staypoints_gpd(gdf, started_at='start_time', finished_at='end_time', tz='utc')
     """
     columns = {started_at: "started_at", finished_at: "finished_at", user_id: "user_id"}
-    columns.update(mapper)
+    if mapper is not None:
+        columns.update(mapper)
 
-    stps = gdf.rename(columns=columns)
-    stps = stps.set_geometry(geom_col)
-
-    # check and/or set timezone
-    for col in ["started_at", "finished_at"]:
-        if not pd.api.types.is_datetime64tz_dtype(stps[col]):
-            stps[col] = _localize_timestamp(dt_series=stps[col], pytz_tzinfo=tz, col_name=col)
+    stps = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
 
     # assert validity of staypoints
     stps.as_staypoints
@@ -111,7 +166,14 @@ def read_staypoints_gpd(
 
 
 def read_triplegs_gpd(
-    gdf, started_at="started_at", finished_at="finished_at", user_id="user_id", geom_col="geom", tz=None, mapper={}
+    gdf,
+    started_at="started_at",
+    finished_at="finished_at",
+    user_id="user_id",
+    geom_col=None,
+    crs=None,
+    tz=None,
+    mapper=None,
 ):
     """
     Read triplegs from GeoDataFrames.
@@ -124,22 +186,27 @@ def read_triplegs_gpd(
         GeoDataFrame with valid line geometry, containing the triplegs to import.
 
     started_at : str, default 'started_at'
-        name of the column storing the starttime of the triplegs.
+        Name of the column storing the starttime of the triplegs.
 
     finished_at : str, default 'finished_at'
-        name of the column storing the endtime of the triplegs.
+        Name of the column storing the endtime of the triplegs.
 
     user_id : str, default 'user_id'
-        name of the column storing the user_id.
+        Name of the column storing the user_id.
 
-    geom_col : str, default 'geom'
-        name of the column storing the geometry.
+    geom_col : str, optional
+        Name of the column storing the geometry. If None assumes geometry is already set.
+
+    crs : pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg "EPSG:4326") or a WKT string.
 
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
 
     mapper : dict, optional
-        further columns that should be renamed.
+        Further columns that should be renamed.
 
     Returns
     -------
@@ -151,16 +218,10 @@ def read_triplegs_gpd(
     >>> trackintel.read_triplegs_gpd(gdf, user_id='User', geom_col='geom', tz='utc')
     """
     columns = {started_at: "started_at", finished_at: "finished_at", user_id: "user_id"}
-    columns.update(mapper)
+    if mapper is not None:
+        columns.update(mapper)
 
-    tpls = gdf.rename(columns=columns)
-    tpls = tpls.set_geometry(geom_col)
-
-    # check and/or set timezone
-    for col in ["started_at", "finished_at"]:
-        if not pd.api.types.is_datetime64tz_dtype(tpls[col]):
-            tpls[col] = _localize_timestamp(dt_series=tpls[col], pytz_tzinfo=tz, col_name=col)
-
+    tpls = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
     # assert validity of triplegs
     tpls.as_triplegs
     return tpls
@@ -173,8 +234,10 @@ def read_trips_gpd(
     user_id="user_id",
     origin_staypoint_id="origin_staypoint_id",
     destination_staypoint_id="destination_staypoint_id",
+    geom_col=None,
+    crs=None,
     tz=None,
-    mapper={},
+    mapper=None,
 ):
     """
     Read trips from GeoDataFrames/DataFrames.
@@ -184,33 +247,41 @@ def read_trips_gpd(
     Parameters
     ----------
     gdf : GeoDataFrame or DataFrame
-        GeoDataFrame/DataFrame containing the trips to import.
+        (Geo)DataFrame containing the trips to import.
 
     started_at : str, default 'started_at'
-        name of the column storing the starttime of the staypoints.
+        Name of the column storing the starttime of the staypoints.
 
     finished_at : str, default 'finished_at'
-        name of the column storing the endtime of the staypoints.
+        Name of the column storing the endtime of the staypoints.
 
     user_id : str, default 'user_id'
-        name of the column storing the user_id.
+        Name of the column storing the user_id.
 
     origin_staypoint_id : str, default 'origin_staypoint_id'
-        name of the column storing the staypoint_id of the start of the tripleg
+        Name of the column storing the staypoint_id of the start of the tripleg.
 
     destination_staypoint_id : str, default 'destination_staypoint_id'
-        name of the column storing the staypoint_id of the end of the tripleg
+        Name of the column storing the staypoint_id of the end of the tripleg
+
+    geom_col : str, optional
+        Name of the column storing the geometry. If None assumes has no geometry!
+
+    crs : pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg "EPSG:4326") or a WKT string. Ignored if "geom_col" is None.
 
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
 
     mapper : dict, optional
-        further columns that should be renamed.
+        Further columns that should be renamed.
 
     Returns
     -------
-    trips : GeoDataFrame/DataFrame (as trackintel trips)
-        A GeoDataFrame/DataFrame containing the trips.
+    trips : (Geo)DataFrame (as trackintel trips)
+        A (Geo)DataFrame containing the trips.
 
     Examples
     --------
@@ -223,21 +294,24 @@ def read_trips_gpd(
         origin_staypoint_id: "origin_staypoint_id",
         destination_staypoint_id: "destination_staypoint_id",
     }
-    columns.update(mapper)
+    if mapper is not None:
+        columns.update(mapper)
 
-    trips = gdf.rename(columns=columns)
-
-    # check and/or set timezone
-    for col in ["started_at", "finished_at"]:
-        if not pd.api.types.is_datetime64tz_dtype(trips[col]):
-            trips[col] = _localize_timestamp(dt_series=trips[col], pytz_tzinfo=tz, col_name=col)
+    if geom_col is not None:  # handle (Geo)DataFrame modes.
+        trips = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
+    else:
+        trips = gdf.rename(columns=columns)
+        # check and/or set timezone
+        for col in ["started_at", "finished_at"]:
+            if not pd.api.types.is_datetime64tz_dtype(trips[col]):
+                trips[col] = _localize_timestamp(dt_series=trips[col], pytz_tzinfo=tz, col_name=col)
 
     # assert validity of trips
     trips.as_trips
     return trips
 
 
-def read_locations_gpd(gdf, user_id="user_id", center="center", mapper={}):
+def read_locations_gpd(gdf, user_id="user_id", center="center", extent=None, crs=None, mapper=None):
     """
     Read locations from GeoDataFrames.
 
@@ -249,16 +323,21 @@ def read_locations_gpd(gdf, user_id="user_id", center="center", mapper={}):
         GeoDataFrame with valid point geometry, containing the locations to import.
 
     user_id : str, default 'user_id'
-        name of the column storing the user_id.
+        Name of the column storing the user_id.
 
     center : str, default 'center'
-        name of the column storing the geometry (Center of the location).
+        Name of the column storing the geometry (center of the location).
 
-    tz : str, optional
-        pytz compatible timezone string. If None UTC is assumed.
+    extent : str, optional
+        Name of the column storing the additionaly geometry (extent of location).
+
+    crs : pyproj.crs or str, optional
+        Set coordinate reference system. The value can be anything accepted
+        by pyproj.CRS.from_user_input(), such as an authority string
+        (eg "EPSG:4326") or a WKT string.
 
     mapper : dict, optional
-        further columns that should be renamed.
+        Further columns that should be renamed.
 
     Returns
     -------
@@ -270,10 +349,15 @@ def read_locations_gpd(gdf, user_id="user_id", center="center", mapper={}):
     >>> trackintel.read_locations_gpd(df, user_id='User', center='geometry')
     """
     columns = {user_id: "user_id", center: "center"}
-    columns.update(mapper)
+    if extent is not None:
+        columns[extent] = "extent"
+    if mapper is not None:
+        columns.update(mapper)
 
-    locs = gdf.rename(columns=columns)
-    locs = locs.set_geometry("center")
+    locs = _trackintel_model(gdf, columns, "center", crs)
+
+    if extent is not None:
+        locs["extent"] = gpd.GeoSeries(locs["extent"])
 
     # assert validity of locations
     locs.as_locations
