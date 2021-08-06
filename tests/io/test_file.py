@@ -13,7 +13,7 @@ class TestPositionfixes:
         """Test basic reading and writing functions."""
         orig_file = os.path.join("tests", "data", "positionfixes.csv")
         mod_file = os.path.join("tests", "data", "positionfixes_mod_columns.csv")
-        tmp_file = os.path.join("tests", "data", "positionfixes_test.csv")
+        tmp_file = os.path.join("tests", "data", "positionfixes_test_1.csv")
 
         pfs = ti.read_positionfixes_csv(orig_file, sep=";", index_col="id")
 
@@ -47,7 +47,7 @@ class TestPositionfixes:
         # check if a timezone will be set after manually deleting the timezone
         pfs["tracked_at"] = pfs["tracked_at"].dt.tz_localize(None)
         assert not pd.api.types.is_datetime64tz_dtype(pfs["tracked_at"])
-        tmp_file = os.path.join("tests", "data", "positionfixes_test.csv")
+        tmp_file = os.path.join("tests", "data", "positionfixes_test_2.csv")
         pfs.as_positionfixes.to_csv(tmp_file, sep=";")
         pfs = ti.read_positionfixes_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
@@ -82,7 +82,7 @@ class TestTriplegs:
         """Test basic reading and writing functions."""
         orig_file = os.path.join("tests", "data", "triplegs.csv")
         mod_file = os.path.join("tests", "data", "triplegs_mod_columns.csv")
-        tmp_file = os.path.join("tests", "data", "triplegs_test.csv")
+        tmp_file = os.path.join("tests", "data", "triplegs_test_1.csv")
         tpls = ti.read_triplegs_csv(orig_file, sep=";", tz="utc", index_col="id")
 
         column_mapping = {"start_time": "started_at", "end_time": "finished_at", "tripleg": "geom"}
@@ -117,7 +117,7 @@ class TestTriplegs:
         # check if a timezone will be set after manually deleting the timezone
         tpls["started_at"] = tpls["started_at"].dt.tz_localize(None)
         assert not pd.api.types.is_datetime64tz_dtype(tpls["started_at"])
-        tmp_file = os.path.join("tests", "data", "triplegs_test.csv")
+        tmp_file = os.path.join("tests", "data", "triplegs_test_2.csv")
         tpls.as_triplegs.to_csv(tmp_file, sep=";")
         tpls = ti.read_triplegs_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
@@ -152,7 +152,7 @@ class TestStaypoints:
         """Test basic reading and writing functions."""
         orig_file = os.path.join("tests", "data", "staypoints.csv")
         mod_file = os.path.join("tests", "data", "staypoints_mod_columns.csv")
-        tmp_file = os.path.join("tests", "data", "staypoints_test.csv")
+        tmp_file = os.path.join("tests", "data", "staypoints_test_1.csv")
         stps = ti.read_staypoints_csv(orig_file, sep=";", tz="utc", index_col="id")
         mod_stps = ti.read_staypoints_csv(mod_file, columns={"User": "user_id"}, sep=";", index_col="id")
         assert mod_stps.equals(stps)
@@ -184,7 +184,7 @@ class TestStaypoints:
         # check if a timezone will be set after manually deleting the timezone
         stps["started_at"] = stps["started_at"].dt.tz_localize(None)
         assert not pd.api.types.is_datetime64tz_dtype(stps["started_at"])
-        tmp_file = os.path.join("tests", "data", "staypoints_test.csv")
+        tmp_file = os.path.join("tests", "data", "staypoints_test_2.csv")
         stps.as_staypoints.to_csv(tmp_file, sep=";")
         stps = ti.read_staypoints_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
@@ -219,7 +219,7 @@ class TestLocations:
         """Test basic reading and writing functions."""
         orig_file = os.path.join("tests", "data", "locations.csv")
         mod_file = os.path.join("tests", "data", "locations_mod_columns.csv")
-        tmp_file = os.path.join("tests", "data", "locations_test.csv")
+        tmp_file = os.path.join("tests", "data", "locations_test_1.csv")
         mod_locs = ti.read_locations_csv(mod_file, columns={"geom": "center"}, sep=";", index_col="id")
         locs = ti.read_locations_csv(orig_file, sep=";", index_col="id")
         assert mod_locs.equals(locs)
@@ -260,7 +260,7 @@ class TestTrips:
         """Test basic reading and writing functions."""
         orig_file = os.path.join("tests", "data", "trips.csv")
         mod_file = os.path.join("tests", "data", "trips_mod_columns.csv")
-        tmp_file = os.path.join("tests", "data", "trips_test.csv")
+        tmp_file = os.path.join("tests", "data", "trips_test_1.csv")
         trips = ti.read_trips_csv(orig_file, sep=";", index_col="id")
         column_mapping = {"orig_stp": "origin_staypoint_id", "dest_stp": "destination_staypoint_id"}
         mod_trips = ti.read_trips_csv(mod_file, columns=column_mapping, sep=";", index_col="id")
@@ -284,7 +284,7 @@ class TestTrips:
         # check if a timezone will be set after manually deleting the timezone
         trips["started_at"] = trips["started_at"].dt.tz_localize(None)
         assert not pd.api.types.is_datetime64tz_dtype(trips["started_at"])
-        tmp_file = os.path.join("tests", "data", "trips_test.csv")
+        tmp_file = os.path.join("tests", "data", "trips_test_2.csv")
         trips.as_trips.to_csv(tmp_file, sep=";")
         trips = ti.read_trips_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
