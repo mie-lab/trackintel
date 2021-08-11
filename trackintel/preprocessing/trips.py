@@ -111,10 +111,16 @@ def generate_tours(
     # assign tour id to trips
     tour2trip_map = tours[["trips"]].to_dict()["trips"]
     ls = []
+    # Each trip is only assigned to one tour. If a trip belongs to multiple tours, we can find its smallest subtour
+    # by using the first one it is assigned to (nested tours are always found before big tours - have smaller tour_id)
+    already_assigned = []
     for key, values in tour2trip_map.items():
         for value in values:
-            ls.append([value, key])
+            if value not in already_assigned:
+                ls.append([value, key])
+                already_assigned.append(value)
     temp = pd.DataFrame(ls, columns=[trips.index.name, "tour_id"]).set_index(trips.index.name)
+    # temp_grouped = temp.groupby("id").agg({"tour_id": list}) # other version: provide list of tour ids
     trips = trips.join(temp, how="left")
 
     ## dtype consistency
@@ -123,7 +129,7 @@ def generate_tours(
     trips["tour_id"] = trips["tour_id"].astype("Int64")
 
     # cleaning
-    tours.drop(columns=["trips"], inplace=True)
+    # tours.drop(columns=["trips"], inplace=True)
 
     return trips, tours
 
@@ -191,17 +197,26 @@ def _generate_tours_user(
         # keep a list of which candidates to remove (because of time frame)
         new_list_start = 0
 
+        # keep track of how many gaps we encountered, if greater than max_nr_gaps then stop
+        gap_counter = 0
+
         # check for all candidates whether they form a tour with the current trip
-        for j, cand in enumerate(start_candidates):
+        for j, cand in enumerate(start_candidates[::-1]):
             # gap
             if np.isnan(cand):
-                continue
+                gap_counter += 1
+                if gap_counter > max_nr_gaps:
+                    # these gaps won't vanish, so we can crop the candidate list here
+                    new_list_start = j + 1
+                    break
+                else:
+                    continue
 
             # check time difference - if time too long, we can remove the candidate
             cand_start_time = user_trip_df.loc[cand, "started_at"]
             if end_time - cand_start_time > max_time:
-                new_list_start = j + 1
-                continue
+                new_list_start = len(start_candidates) - j - 1
+                break
 
             # check whether the start-end candidate of a tour is an unknown activity
             if pd.isna(user_trip_df.loc[cand, "origin_staypoint_id"]):
@@ -220,27 +235,14 @@ def _generate_tours_user(
                     row[geom_col][1], user_trip_df.loc[cand, geom_col][0], max_dist, crs_is_projected=crs_is_projected
                 )
 
-            # print("Check distance to start", cand, end_point, cand_start_point, point_dist)
             if end_start_at_same_loc:
                 # Tour found!
                 # collect the trips on the tour in a list
-                non_gap_trip_idxs = [c for c in start_candidates[j:] if ~np.isnan(c)]
+                non_gap_trip_idxs = [c for c in start_candidates[-j - 1 :] if ~np.isnan(c)]
                 tour_candidate = user_trip_df[user_trip_df.index.isin(non_gap_trip_idxs)]
                 tours.append(_create_tour_from_stack(tour_candidate, stps_w_locs, max_dist, max_time))
 
-                nr_gaps = np.sum(np.isnan(np.array(start_candidates[j:])))
-
-                if nr_gaps > max_nr_gaps:
-                    # No tour found, too many gaps inbetween
-                    continue
-                # print("Tour found!", tour_candidate.head())
-
-                # remove trips that were on the tour
-                start_candidates = start_candidates[:j]
-                # remove gap if there is a gap in the end
-                if len(start_candidates) > 0 and np.isnan(start_candidates[-1]):
-                    del start_candidates[-1]
-                # do not consider the other trips - one trip cannot close two tours at a time anyway
+                # do not consider the other trips - one trip cannot close two tours at a time
                 break
 
         # remove points because they are out of the time window

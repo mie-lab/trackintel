@@ -20,6 +20,7 @@ def example_trip_data():
         4: Point(8.5067847, 47.7),
         5: Point(8.5067847, 47.399),
         6: Point(8.5067847, 47.60001),
+        7: Point(9.5067847, 47.20001),
     }
 
     t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
@@ -28,9 +29,6 @@ def example_trip_data():
     t4 = pd.Timestamp("1971-01-02 08:00:00", tz="utc")
     t5 = pd.Timestamp("1971-01-02 09:00:00", tz="utc")
     t6 = pd.Timestamp("1971-01-02 10:00:00", tz="utc")
-    t7 = pd.Timestamp("1971-01-02 11:00:00", tz="utc")
-    t8 = pd.Timestamp("1971-01-02 12:00:00", tz="utc")
-    one_hour = datetime.timedelta(hours=1)
 
     trips_list_dict = [
         # loop
@@ -100,7 +98,7 @@ def example_trip_data():
             "started_at": t5,
             "finished_at": t6,
             "origin_staypoint_id": 1,
-            "destination_staypoint_id": 4,
+            "destination_staypoint_id": 7,
         },
     ]
     # fill geom based on staypoints
@@ -110,7 +108,7 @@ def example_trip_data():
         )
 
     # assign location IDs (only for testing, not a trackintel stps standard!)
-    stps_locs = pd.DataFrame({"location_id": [1, 1, 2, 3, 1, 2]}, index=[1, 2, 3, 4, 5, 6])  # todo: name index?
+    stps_locs = pd.DataFrame({"location_id": [1, 1, 2, 3, 1, 2, 4]}, index=[1, 2, 3, 4, 5, 6, 7])
 
     trips = gpd.GeoDataFrame(data=trips_list_dict, geometry="geom", crs="EPSG:4326")
     trips = trips.set_index("id")
@@ -223,8 +221,7 @@ class TestGenerate_tours:
     def test_accessor(self, example_trip_data):
         """Test if the accessor leads to the same results as the explicit function."""
         # generate tours
-        trips, stps_locs = example_trip_data
-        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, stps_w_locs=stps_locs, max_nr_gaps=1)
+        trips, _ = example_trip_data
 
         # generate tours using the explicit function import
         trips_expl, tours_expl = ti.preprocessing.trips.generate_tours(trips)
@@ -252,3 +249,32 @@ class TestGenerate_tours:
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips, print_progress=True)
 
         assert trips.index.equals(trips_out.index)
+
+    def test_nested_tour(self, example_trip_data):
+        """
+        Test whether we get two tours (a long one and a nested short one), for example for home-work-lunch-work-home
+        """
+        trips, _ = example_trip_data
+
+        # construct trips that lies between trips 6 and 15 and forms a tour on its own
+        # define start and end points of these trips
+        first_trip_subtour = MultiPoint((trips.loc[15, "geom"][0], Point(9.5067847, 47.20001)))
+        second_trip_subtour = MultiPoint((Point(9.5067847, 47.20001), trips.loc[15, "geom"][0]))
+        # define time of start and time at the intermediate point
+        start_time_subtour = pd.Timestamp("1971-01-02 08:45:00", tz="utc")
+        middle_time = pd.Timestamp("1971-01-02 08:55:00", tz="utc")
+        trips.loc[6, "finished_at"] = start_time_subtour
+        # trip 6 starts at 8:45 at sp 5, then at 8:45 the user goes to 7 and back to 5
+        trips.loc[100] = [0, start_time_subtour, middle_time, 5, 7, first_trip_subtour]
+        trips.loc[200] = [0, middle_time, trips.loc[15, "started_at"], 7, 5, second_trip_subtour]
+        trips.sort_values(by=["user_id", "started_at", "origin_staypoint_id", "destination_staypoint_id"], inplace=True)
+
+        trips_out, tours = ti.preprocessing.trips.generate_tours(trips)
+        assert len(tours) == 3
+        # the nested tour of length 2 should be found
+        assert tours.loc[1, "trips"] == [100, 200]
+        # the big tour should be found
+        assert tours.loc[2, "trips"] == [2, 6, 100, 200, 15]
+        # in the trips table, trip 100 and 200 is assigned the tour id of its smaller tour
+        assert trips_out.loc[100, "tour_id"] == 1
+        assert trips_out.loc[200, "tour_id"] == 1
