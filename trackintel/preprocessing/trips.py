@@ -45,7 +45,8 @@ def generate_tours(
     Returns
     -------
     trips: GeoDataFrame (as trackintel trips)
-        Same as `trips_inp`, but with additional column `tour_id`
+        Same as `trips_inp`, but with additional column `tour_id`. This is the id of the smallest tour that the trip
+        belongs to (see notes below).
 
     tours: GeoDataFrame (as trackintel tours)
         The generated tours
@@ -53,7 +54,9 @@ def generate_tours(
     Notes
     -------
     - Tours are defined as a collection of trips in a certain time frame that start and end at the same point
-    - Nested tours are possible and will be regarded as two distinct tours
+    - Nested tours are possible and will be regarded as 2 (or more tours), where the smaller tour is also part of the
+      bigger tour. Therefore, one trip can belong to multiple tours! In the `tour_id` column of the trips table,
+      only the id of the smallest tour is used.
     - It is possible to allow spatial gaps to occur on the tour, which might be useful to deal with missing data.
       Example: The two trips home-work, supermarket-home would still be detected as a tour when max_nr_gaps >= 1,
       althoug the work-supermarket trip is missing.
@@ -343,3 +346,42 @@ def _create_tour_from_stack(temp_tour_stack, stps_w_locs, max_dist, max_time):
     }
 
     return tour_dict_entry
+
+
+def get_trips_grouped(trips, tours):
+    """Helper function to get grouped trips by tour id
+
+    Parameters
+    ----------
+    trips: GeoDataFrame (as trackintel trips)
+        Trips dataframe
+
+    tours: GeoDataFrame (as trackintel tours)
+        Output of generate_tours function, must contain column "trips" with list of trip ids on tour
+
+
+    Returns
+    -------
+    trips_grouped_by_tour: DataFrameGroupBy object
+        Trips grouped by tour id
+
+    Notes
+    -------
+    This function is necessary because when running generate_tours, one trip only gets the tour ID of the smallest
+    tour it belongs to assigned. Here, we return all trips for each tour, which might contain a nested tour.
+    """
+    trips_inp = trips.copy()
+    if "tour_id" in trips_inp.columns:
+        trips_inp.drop(columns=["tour_id"], inplace=True)
+    # make smaller version of tours
+    tours_to_trips = tours.reset_index()[["id", "trips"]]
+    # switch to trips id as index
+    tours_to_trips.rename(columns={"id": "tour_id", "trips": "trip_id"}, inplace=True)
+    # expand this small version so that each trip id is one row
+    tours_expanded = tours_to_trips.explode("trip_id").reset_index(drop=True)
+
+    # join with trips table by id
+    tours_with_trips = tours_expanded.merge(trips_inp, left_on="trip_id", right_on="id", how="left")
+    # group
+    trips_grouped_by_tour = tours_with_trips.groupby("tour_id")
+    return trips_grouped_by_tour

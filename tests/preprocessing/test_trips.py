@@ -117,6 +117,26 @@ def example_trip_data():
     return trips, stps_locs
 
 
+@pytest.fixture
+def example_nested_tour(example_trip_data):
+    """Helper function to create a nested trip"""
+    trips, _ = example_trip_data
+
+    # construct trips that lies between trips 6 and 15 and forms a tour on its own
+    # define start and end points of these trips
+    first_trip_subtour = MultiPoint((trips.loc[15, "geom"][0], Point(9.5067847, 47.20001)))
+    second_trip_subtour = MultiPoint((Point(9.5067847, 47.20001), trips.loc[15, "geom"][0]))
+    # define time of start and time at the intermediate point
+    start_time_subtour = pd.Timestamp("1971-01-02 08:45:00", tz="utc")
+    middle_time = pd.Timestamp("1971-01-02 08:55:00", tz="utc")
+    trips.loc[6, "finished_at"] = start_time_subtour
+    # trip 6 starts at 8:45 at sp 5, then at 8:45 the user goes to 7 and back to 5
+    trips.loc[100] = [0, start_time_subtour, middle_time, 5, 7, first_trip_subtour]
+    trips.loc[200] = [0, middle_time, trips.loc[15, "started_at"], 7, 5, second_trip_subtour]
+    trips.sort_values(by=["user_id", "started_at", "origin_staypoint_id", "destination_staypoint_id"], inplace=True)
+    return trips
+
+
 class TestGenerate_tours:
     """Tests for generate_tours() method."""
 
@@ -250,26 +270,11 @@ class TestGenerate_tours:
 
         assert trips.index.equals(trips_out.index)
 
-    def test_nested_tour(self, example_trip_data):
+    def test_nested_tour(self, example_nested_tour):
         """
         Test whether we get two tours (a long one and a nested short one), for example for home-work-lunch-work-home
         """
-        trips, _ = example_trip_data
-
-        # construct trips that lies between trips 6 and 15 and forms a tour on its own
-        # define start and end points of these trips
-        first_trip_subtour = MultiPoint((trips.loc[15, "geom"][0], Point(9.5067847, 47.20001)))
-        second_trip_subtour = MultiPoint((Point(9.5067847, 47.20001), trips.loc[15, "geom"][0]))
-        # define time of start and time at the intermediate point
-        start_time_subtour = pd.Timestamp("1971-01-02 08:45:00", tz="utc")
-        middle_time = pd.Timestamp("1971-01-02 08:55:00", tz="utc")
-        trips.loc[6, "finished_at"] = start_time_subtour
-        # trip 6 starts at 8:45 at sp 5, then at 8:45 the user goes to 7 and back to 5
-        trips.loc[100] = [0, start_time_subtour, middle_time, 5, 7, first_trip_subtour]
-        trips.loc[200] = [0, middle_time, trips.loc[15, "started_at"], 7, 5, second_trip_subtour]
-        trips.sort_values(by=["user_id", "started_at", "origin_staypoint_id", "destination_staypoint_id"], inplace=True)
-
-        trips_out, tours = ti.preprocessing.trips.generate_tours(trips)
+        trips_out, tours = ti.preprocessing.trips.generate_tours(example_nested_tour)
         assert len(tours) == 3
         # the nested tour of length 2 should be found
         assert tours.loc[1, "trips"] == [100, 200]
@@ -278,3 +283,15 @@ class TestGenerate_tours:
         # in the trips table, trip 100 and 200 is assigned the tour id of its smaller tour
         assert trips_out.loc[100, "tour_id"] == 1
         assert trips_out.loc[200, "tour_id"] == 1
+
+
+class TestTourHelpers:
+    """Test auxiliary function for trip grouping"""
+
+    def test_get_trips_grouped(self, example_nested_tour):
+        trips, tours = ti.preprocessing.trips.generate_tours(example_nested_tour)
+        grouped_trips = ti.preprocessing.trips.get_trips_grouped(trips, tours)
+        for tour_id, trips_on_tour in grouped_trips:
+            # check that all trips belong to the tour
+            for i, id in enumerate(trips_on_tour["trip_id"]):
+                assert id in list(tours.loc[tour_id, "trips"])
