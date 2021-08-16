@@ -356,6 +356,31 @@ class TestGenerate_trips:
         assert (tpls_["trip_id"] == 0).all()
         assert len(trips) == 1
 
+    def test_loop_linestring_case(self):
+        # load pregenerated trips
+        trips_loaded = ti.read_trips_csv(os.path.join("tests", "data", "geolife_long", "trips.csv"), index_col="id")
+
+        # create trips from geolife (based on positionfixes)
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        pfs, stps = pfs.as_positionfixes.generate_staypoints(
+            method="sliding", dist_threshold=25, time_threshold=5, gap_threshold=1e6
+        )
+        stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
+
+        # add a tripleg with same start as end
+        tpls.loc[0, "geom"] = LineString([(0, 0), (1, 1), (0, 0)])  # modify first geometry
+        # generate trips and a joint staypoint/triplegs dataframe
+        stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
+        trips = trips[
+            ["user_id", "started_at", "finished_at", "origin_staypoint_id", "destination_staypoint_id", "geom"]
+        ]
+
+        # test if generated trips are equal
+        assert_geodataframe_equal(trips_loaded.loc[1:], trips.loc[1:])
+        # test if start of first trip is (0,0)
+        assert trips.loc[0, "geom"][0] == Point(0, 0)
+
 
 def _create_debug_stps_tpls_data(stps, tpls, gap_threshold):
     """Preprocess stps and tpls for "test_generate_trips_*."""
