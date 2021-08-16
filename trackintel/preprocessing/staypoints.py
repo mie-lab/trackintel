@@ -221,7 +221,7 @@ def _generate_locations_per_user(user_staypoints, distance_metric, db, geo_col):
     return user_staypoints
 
 
-def merge_staypoints(stps, max_time_gap="10min"):
+def merge_staypoints(stps, tpls, max_time_gap="10min", agg={}):
     """
     Aggregate staypoints horizontally via time threshold
 
@@ -230,21 +230,61 @@ def merge_staypoints(stps, max_time_gap="10min"):
     stps : GeoDataFrame (as trackintel staypoints)
         The staypoints have to follow the standard definition for staypoints DataFrames.
 
+    tpls: GeoDataFrame (as trackintel triplegs)
+        The triplegs have to follow the standard definition for triplegs DataFrames.
+
     max_time_gap : str or pd.Timedelta, default "1h"
         Maximum duration between staypoints to still be merged.
         If str must be parsable by pd.to_timedelta.
+
+    agg: dict, optional
+        Dictionary to aggregate the rows after merging staypoints. If empty, only the required columns of staypoints
+        (which are ['user_id', 'started_at', 'finished_at']) are aggregated and returned.
+
+    Returns
+    -------
+    stps_merged: DataFrame
+        The new staypoints with required columns + columns in `agg`, where staypoints at same location and close in
+        time are aggregated.
+
+    Notes
+    -----
+    - Due to the modification of the staypoint index, the relation between the staypoints and the corresponding
+      positionfixes **is broken** after execution of this function! In explanation, the staypoint_id column of pfs does
+      not necessarily correspond to an id in the new stps table that is returned from this function. The same holds for
+      trips (if generated yet) where the staypoints contained in a trip might be merged in this function.
+    - If there is a tripleg between two staypoints, the staypoints are not merged. If you for some reason want to merge
+      such staypoints, simply pass an empty DataFrame for the tpls argument
+
+    Examples
+    --------
+    >>> stps.as_staypoints.merge_staypoints(tpls, max_time_gap="1h", agg={"geom":"first})
     """
 
     if isinstance(max_time_gap, str):
         max_time_gap = pd.to_timedelta(max_time_gap)
 
     stps_merge = stps.copy()
-    assert stps_merge.index.name == "id", "expected index name to be 'id'"
+    index_name = stps.index.name
 
+    # concat stps and tpls to get information whether there is a tripleg between to staypoints
+    tpls_merge = tpls.copy()
+    tpls_merge["type"] = "tripleg"
+    stps_merge["type"] = "staypoint"
+    # concat and sort by time
+    stps_tpls = pd.concat([stps_merge, tpls_merge]).sort_values(by=["user_id", "started_at"])
+    stps_tpls.index.rename(index_name, inplace=True)
+    # get information whether the there is a tripleg after a staypoint
+    stps_tpls["next_type"] = stps_tpls["type"].shift(-1)
+    # get only staypoints, but with next type information
+    stps_merge = stps_tpls[stps_tpls["type"] == "staypoint"]
+
+    # reset index and make temporary index
     stps_merge = stps_merge.reset_index()
     # copy index to use it in the end (id is modified)
-    stps_merge["index"] = stps_merge["id"]
-    stps_merge.sort_values(inplace=True, by=["user_id", "started_at"])
+    stps_merge["index_temp"] = stps_merge[index_name]
+
+    # roll by 1 to get next row info
     stps_merge[["next_user_id", "next_started_at", "next_location_id"]] = stps_merge[
         ["user_id", "started_at", "location_id"]
     ].shift(-1)
@@ -255,38 +295,30 @@ def merge_staypoints(stps, max_time_gap="10min"):
 
     while np.sum(cond_diff) >= 1:
         # .values is important otherwise the "=" would imply a join via the new index
-        stps_merge["next_id"] = stps_merge["index"].shift(-1).values
+        stps_merge["next_id"] = stps_merge["index_temp"].shift(-1).values
 
         # identify rows to merge
         cond0 = stps_merge["next_user_id"] == stps_merge["user_id"]
-        cond1 = stps_merge["next_started_at"] - stps_merge["finished_at"] <= max_time_gap
+        cond1 = stps_merge["next_started_at"] - stps_merge["finished_at"] <= max_time_gap  # time constraint
         cond2 = stps_merge["location_id"] == stps_merge["next_location_id"]
-        cond3 = stps_merge["index"] != stps_merge["next_id"]  # already merged
-        cond = cond0 & cond1 & cond2 & cond3
+        cond3 = stps_merge["index_temp"] != stps_merge["next_id"]  # already merged
+        cond4 = stps_merge["next_type"] != "tripleg"  # no tripleg inbetween two staypoints
+        cond = cond0 & cond1 & cond2 & cond3 & cond4
 
         # assign index to next row
-        stps_merge.loc[cond, "index"] = stps_merge.loc[cond, "next_id"]
+        stps_merge.loc[cond, "index_temp"] = stps_merge.loc[cond, "next_id"]
         # check whether anything was changed
         cond_diff = cond != cond_old
         cond_old = cond.copy()
 
-    # set all to first by default to aggregate the optional columns as well
-    agg_dict = {col: "first" for col in stps_merge.columns}
-    agg_dict["finished_at"] = "last"
-
-    # helper function: get first element from list that is not NaN
-    first_notnan = lambda x: pd.NA if all(pd.isna(x)) else np.array(x)[~pd.isna(x)][0]
-    if "trip_id" in stps_merge.columns:
-        agg_dict["trip_id"] = list
-        agg_dict["next_trip_id"] = "last"
-    if "activity" in stps_merge.columns:
-        # use first non nan activity
-        agg_dict["activity"] = first_notnan
+    # Staypoint-required columnsare aggregated in the following manner:
+    agg_dict = {index_name: "first", "user_id": "first", "started_at": "first", "finished_at": "last"}
+    # User-defined further aggregation
+    agg_dict.update(agg)
 
     # aggregate values
-    stps_merged = stps_merge.groupby(by="index").agg(agg_dict)
+    stps_merged = stps_merge.groupby(by="index_temp").agg(agg_dict).sort_values(by=["user_id", "started_at"])
 
     # clean
-    stps_merged.drop(columns=["index", "next_id", "next_user_id", "next_location_id", "next_started_at"], inplace=True)
-    stps_merged = stps_merged.set_index("id")
+    stps_merged = stps_merged.set_index(index_name)
     return stps_merged

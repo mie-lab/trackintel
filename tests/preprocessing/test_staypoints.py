@@ -85,7 +85,35 @@ def example_staypoints_merge():
     sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     sp = sp.set_index("id")
     assert sp.as_staypoints
-    return sp
+
+    # generate example triplegs for the merge function
+    tpls = gpd.GeoDataFrame(columns=["user_id", "started_at", "finished_at"])
+    return sp, tpls
+
+
+@pytest.fixture
+def example_triplegs_merge(example_staypoints_merge):
+    """Example triplegs for merge operation
+    If tripleg is between two staypoint, we don't merge those staypoints
+    See staypoints example data above --> tripleg between 5 and 2 and between 6 and 15
+    """
+    # get staypoints from above
+    stps, _ = example_staypoints_merge
+    # create triplegs inbetween
+    # tripleg between 5 and 2
+    t21 = pd.Timestamp("1971-01-02 05:10:00", tz="utc")
+    t22 = pd.Timestamp("1971-01-02 05:40:00", tz="utc")
+    # tripleg between 6 and 15
+    t45 = pd.Timestamp("1971-01-02 08:57:00", tz="utc")
+    t5 = pd.Timestamp("1971-01-02 09:00:00", tz="utc")
+    list_dict = [
+        {"id": 0, "user_id": 0, "started_at": t45, "finished_at": t5},
+        {"id": 1, "user_id": 0, "started_at": t21, "finished_at": t22},
+    ]
+    # geometry is not required for the merge operation, so we leave it away
+    tpls = gpd.GeoDataFrame(data=list_dict, crs="EPSG:4326")
+    tpls = tpls.set_index("id")
+    return stps, tpls
 
 
 class TestGenerate_locations:
@@ -336,18 +364,29 @@ class TestGenerate_locations:
 class TestMergeStaypoints:
     def test_merge_staypoints(self, example_staypoints_merge):
         """Test staypoint merging"""
-        stps = example_staypoints_merge.copy()
-        merged_stps = stps.as_staypoints.merge_staypoints()
+        stps, tpls = example_staypoints_merge
+        # first test with empty tpls
+        merged_stps = stps.as_staypoints.merge_staypoints(tpls, agg={"geom": "first", "location_id": "first"})
         assert len(merged_stps) == len(stps) - 3
         # some staypoints stay the same (not merged)
         assert (merged_stps.loc[1] == stps.loc[1]).all()
         assert (merged_stps.loc[5] == stps.loc[5]).all()
         assert (merged_stps.loc[3] == stps.loc[3]).all()
 
+    def test_merge_staypoints_triplegs(self, example_triplegs_merge):
+        """Test staypoint merging with triplegs inbetween"""
+        # get triplegs inbetween
+        stps, tpls = example_triplegs_merge
+        merged_stps_with_tpls = stps.as_staypoints.merge_staypoints(tpls)
+        # assert that staypoint 6 and 15 were not merged because of tpls inbetween
+        assert len(merged_stps_with_tpls) == len(stps) - 2
+        # 15 should not be merged
+        assert 15 in merged_stps_with_tpls.index
+
     def test_merge_staypoints_time(self, example_staypoints_merge):
         """Test if all merged staypoints have the correct start and end time"""
-        stps = example_staypoints_merge.copy()
-        merged_stps = stps.as_staypoints.merge_staypoints()
+        stps, tpls = example_staypoints_merge
+        merged_stps = stps.as_staypoints.merge_staypoints(tpls)
         # user 1 - id 7 and 80 merged
         assert stps.loc[7, "started_at"] == merged_stps.loc[7, "started_at"]
         assert stps.loc[80, "finished_at"] == merged_stps.loc[7, "finished_at"]
@@ -357,9 +396,23 @@ class TestMergeStaypoints:
 
     def test_merge_staypoints_max_time_gap(self, example_staypoints_merge):
         """Test it the max_time_gap argument works correctly"""
-        stps = example_staypoints_merge.copy()
-        merged_stps = stps.as_staypoints.merge_staypoints(max_time_gap="2h")
+        stps, tpls = example_staypoints_merge
+        merged_stps = stps.as_staypoints.merge_staypoints(tpls, max_time_gap="2h")
         assert len(merged_stps) == len(stps) - 4
         # user 0 - id 5, 2,6, and 15 merged
         assert stps.loc[5, "started_at"] == merged_stps.loc[5, "started_at"]
         assert stps.loc[15, "finished_at"] == merged_stps.loc[5, "finished_at"]
+
+    def test_merge_staypoints_agg(self, example_staypoints_merge):
+        """Test whether the user can specify the aggregation mode"""
+        aggregation_dict = {"geom": "first", "finished_at": "first"}
+
+        stps, tpls = example_staypoints_merge
+        merged_stps = stps.as_staypoints.merge_staypoints(tpls, agg=aggregation_dict)
+
+        # in contrast to the test above, the first of (7,80) should now be used for finished at
+        assert stps.loc[7, "finished_at"] == merged_stps.loc[7, "finished_at"]
+        assert stps.loc[2, "finished_at"] == merged_stps.loc[2, "finished_at"]
+        # the geom should correspond to the first one
+        assert stps.loc[7, "geom"] == merged_stps.loc[7, "geom"]
+        assert stps.loc[2, "geom"] == merged_stps.loc[2, "geom"]
