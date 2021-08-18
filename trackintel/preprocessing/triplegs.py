@@ -237,6 +237,19 @@ def generate_trips(spts, tpls, gap_threshold=15, add_geometry=True):
         axis=1,
     )
 
+    # now handle the data that is aggregated in the trips
+    # assign trip_id to tpls
+    temp = trips.explode("tpls")
+    temp.index = temp["tpls"]
+    temp = temp[temp["tpls"].notna()]
+    tpls = tpls.join(temp["trip_id"], how="left")
+
+    # assign trip_id to spts, for non-activity spts
+    temp = trips.explode("spts")
+    temp.index = temp["spts"]
+    temp = temp[temp["spts"].notna()]
+    spts = spts.join(temp["trip_id"], how="left")
+
     # fill missing points and convert to MultiPoint
     # for all trips with missing 'origin_staypoint_id' we now assign the startpoint of the first tripleg of the trip.
     # for all tripls with missing 'destination_staypoint_id' we now assign the endpoint of the last tripleg of the trip.
@@ -258,19 +271,6 @@ def generate_trips(spts, tpls, gap_threshold=15, add_geometry=True):
         trips = gpd.GeoDataFrame(trips, geometry="geom")
         # cleanup
         trips.drop(["origin_geom", "destination_geom"], inplace=True, axis=1)
-
-    # now handle the data that is aggregated in the trips
-    # assign trip_id to tpls
-    temp = trips.explode("tpls")
-    temp.index = temp["tpls"]
-    temp = temp[temp["tpls"].notna()]
-    tpls = tpls.join(temp["trip_id"], how="left")
-
-    # assign trip_id to spts, for non-activity spts
-    temp = trips.explode("spts")
-    temp.index = temp["spts"]
-    temp = temp[temp["spts"].notna()]
-    spts = spts.join(temp["trip_id"], how="left")
 
     # final cleaning
     tpls.drop(columns=["type"], inplace=True)
