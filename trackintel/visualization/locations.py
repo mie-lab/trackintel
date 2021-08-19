@@ -51,7 +51,7 @@ def plot_locations(
 
     Examples
     --------
-    >>> locs.as_locations.plot('output.png', radius=200, positionfixes=pfs, staypoints=stps, plot_osm=True)
+    >>> locs.as_locations.plot('output.png', radius=200, positionfixes=pfs, staypoints=sp, plot_osm=True)
     """
     if axis is None:
         _, ax = regular_figure()

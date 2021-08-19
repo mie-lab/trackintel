@@ -9,9 +9,9 @@ import trackintel as ti
 @pytest.fixture
 def testdata_locs():
     """Read location test data from files."""
-    stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-    stps = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
-    stps, locs = stps.as_staypoints.generate_locations(
+    sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+    sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+    sp, locs = sp.as_staypoints.generate_locations(
         method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
     )
     return locs

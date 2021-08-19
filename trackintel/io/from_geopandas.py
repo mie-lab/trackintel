@@ -101,7 +101,7 @@ def read_staypoints_gpd(
 
     Returns
     -------
-    stps : GeoDataFrame (as trackintel staypoints)
+    sp : GeoDataFrame (as trackintel staypoints)
         A GeoDataFrame containing the staypoints
 
     Examples

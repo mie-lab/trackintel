@@ -85,10 +85,10 @@ def example_staypoints():
         {"user_id": 0, "started_at": t2, "finished_at": t3, "geom": p2},
         {"user_id": 1, "started_at": t3, "finished_at": t3 + one_hour, "geom": p3},
     ]
-    stps = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
-    stps.index.name = "id"
-    assert stps.as_staypoints
-    return stps
+    sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+    sp.index.name = "id"
+    assert sp.as_staypoints
+    return sp
 
 
 @pytest.fixture

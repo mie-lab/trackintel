@@ -10,8 +10,8 @@ import trackintel as ti
 def testdata_tpls():
     """Read triplegs test data from files."""
     pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
-    pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
-    _, tpls = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+    pfs, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+    _, tpls = pfs.as_positionfixes.generate_triplegs(sp, method="between_staypoints")
 
     return tpls
 

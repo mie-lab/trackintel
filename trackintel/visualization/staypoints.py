@@ -38,7 +38,7 @@ def plot_staypoints(staypoints, out_filename=None, radius=100, positionfixes=Non
 
     Examples
     --------
-    >>> stps.as_staypoints.plot('output.png', radius=100, positionfixes=pfs, plot_osm=True)
+    >>> sp.as_staypoints.plot('output.png', radius=100, positionfixes=pfs, plot_osm=True)
     """
     if axis is None:
         _, ax = regular_figure()

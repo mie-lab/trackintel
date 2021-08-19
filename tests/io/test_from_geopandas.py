@@ -155,16 +155,16 @@ class TestRead_Staypoints_Gpd:
         # read from file and transform to trackintel format
         gdf = gpd.read_file(os.path.join("tests", "data", "staypoints.geojson"))
         gdf.set_index("id", inplace=True)
-        stps_from_gpd = read_staypoints_gpd(
+        sp_from_gpd = read_staypoints_gpd(
             gdf, "start_time", "end_time", geom_col="geometry", crs="EPSG:4326", tz="utc"
         )
 
         # read from csv file
-        stps_file = os.path.join("tests", "data", "staypoints.csv")
-        stps_from_csv = ti.read_staypoints_csv(stps_file, sep=";", tz="utc", index_col="id")
-        stps_from_csv = stps_from_csv.rename(columns={"geom": "geometry"})
+        sp_file = os.path.join("tests", "data", "staypoints.csv")
+        sp_from_csv = ti.read_staypoints_csv(sp_file, sep=";", tz="utc", index_col="id")
+        sp_from_csv = sp_from_csv.rename(columns={"geom": "geometry"})
 
-        assert_frame_equal(stps_from_gpd, stps_from_csv, check_exact=False)
+        assert_frame_equal(sp_from_gpd, sp_from_csv, check_exact=False)
 
     def test_mapper(self):
         """Test if mapper argument allows for additional renaming."""
@@ -172,10 +172,10 @@ class TestRead_Staypoints_Gpd:
         gdf["additional_col"] = [11, 22]
         gdf.rename(columns={"start_time": "started_at", "end_time": "finished_at"}, inplace=True)
         mapper = {"additional_col": "additional_col_renamed"}
-        stps = read_staypoints_gpd(gdf, mapper=mapper, tz="utc")
+        sp = read_staypoints_gpd(gdf, mapper=mapper, tz="utc")
         gdf.rename(columns=mapper, inplace=True)
 
-        assert_index_equal(gdf.columns, stps.columns)
+        assert_index_equal(gdf.columns, sp.columns)
 
 
 @pytest.fixture()
