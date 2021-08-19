@@ -7,8 +7,8 @@ import pandas as pd
 import pytest
 from geopandas.testing import assert_geodataframe_equal
 from pandas.testing import assert_frame_equal, assert_series_equal
-from shapely import geometry
 from shapely.geometry import LineString, Point
+from tqdm import tqdm
 
 import trackintel as ti
 from trackintel.preprocessing.triplegs import generate_trips
@@ -162,22 +162,22 @@ class TestGenerate_trips:
 
         # prepare data
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
-        pfs, spts = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
-        spts = spts.as_staypoints.create_activity_flag(time_threshold=15)
-        pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts)
+        pfs, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+        sp = sp.as_staypoints.create_activity_flag(time_threshold=15)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp)
 
         # accessor with only arguments (not allowed)
         with pytest.raises(AssertionError):
-            _, _, _ = tpls.as_triplegs.generate_trips(spts, 15)
+            _, _, _ = tpls.as_triplegs.generate_trips(sp, 15)
 
         # accessor with only keywords
-        spts_1, tpls_1, trips_1 = tpls.as_triplegs.generate_trips(spts=spts, gap_threshold=15)
+        sp_1, tpls_1, trips_1 = tpls.as_triplegs.generate_trips(staypoints=sp, gap_threshold=15)
 
         # accessor with mixed arguments/keywords
-        spts_2, tpls_2, trips_2 = tpls.as_triplegs.generate_trips(spts, gap_threshold=15)
+        sp_2, tpls_2, trips_2 = tpls.as_triplegs.generate_trips(staypoints=sp, gap_threshold=15)
 
         # test if generated trips are equal (1,2)
-        assert_geodataframe_equal(spts_1, spts_2)
+        assert_geodataframe_equal(sp_1, sp_2)
         assert_geodataframe_equal(tpls_1, tpls_2)
         assert_geodataframe_equal(trips_1, trips_2)
 
@@ -334,7 +334,7 @@ class TestGenerate_trips:
         """Test that trips with only staypoints (non-activities) are deleted."""
         start = pd.Timestamp("2021-07-11 8:00:00")
         h = pd.to_timedelta("1h")
-        spts_tpls = [
+        sp_tpls = [
             {"activity": True, "type": "staypoint"},
             {"activity": False, "type": "staypoint"},
             {"activity": True, "type": "staypoint"},
@@ -342,17 +342,17 @@ class TestGenerate_trips:
             {"activity": False, "type": "staypoint"},
             {"activity": True, "type": "staypoint"},
         ]
-        for n, d in enumerate(spts_tpls):
+        for n, d in enumerate(sp_tpls):
             d["user_id"] = 0
             d["started_at"] = start + n * h
             d["finished_at"] = d["started_at"] + h
-        spts_tpls = pd.DataFrame(spts_tpls)
-        spts = spts_tpls[spts_tpls["type"] == "staypoint"]
-        tpls = spts_tpls[spts_tpls["type"] == "tripleg"]
-        spts_, tpls_, trips = generate_trips(spts, tpls, add_geometry=False)
+        sp_tpls = pd.DataFrame(sp_tpls)
+        sp = sp_tpls[sp_tpls["type"] == "staypoint"]
+        tpls = sp_tpls[sp_tpls["type"] == "tripleg"]
+        sp_, tpls_, trips = generate_trips(sp, tpls, add_geometry=False)
         trip_id_truth = pd.Series([None, None, None, 0, None], dtype="Int64")
-        trip_id_truth.index = spts_.index  # don't check index
-        assert_series_equal(spts_["trip_id"], trip_id_truth, check_names=False)
+        trip_id_truth.index = sp_.index  # don't check index
+        assert_series_equal(sp_["trip_id"], trip_id_truth, check_names=False)
         assert (tpls_["trip_id"] == 0).all()
         assert len(trips) == 1
 

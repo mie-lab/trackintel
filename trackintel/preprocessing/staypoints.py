@@ -76,9 +76,9 @@ def generate_locations(
         raise AttributeError("The parameter method must be one of ['dbscan'].")
 
     # initialize the return GeoDataFrames
-    ret_stps = staypoints.copy()
-    ret_stps = ret_stps.sort_values(["user_id", "started_at"])
-    geo_col = ret_stps.geometry.name
+    sp = staypoints.copy()
+    sp = sp.sort_values(["user_id", "started_at"])
+    geo_col = sp.geometry.name
 
     if method == "dbscan":
 
@@ -92,8 +92,8 @@ def generate_locations(
             db = DBSCAN(eps=epsilon, min_samples=num_samples, algorithm="ball_tree", metric=distance_metric)
 
         if agg_level == "user":
-            ret_stps = applyParallel(
-                ret_stps.groupby("user_id", as_index=False),
+            sp = applyParallel(
+                sp.groupby("user_id", as_index=False),
                 _generate_locations_per_user,
                 n_jobs=n_jobs,
                 print_progress=print_progress,
@@ -103,8 +103,8 @@ def generate_locations(
             )
 
             # keeping track of noise labels
-            ret_stps_non_noise_labels = ret_stps[ret_stps["location_id"] != -1]
-            ret_stps_noise_labels = ret_stps[ret_stps["location_id"] == -1]
+            ret_stps_non_noise_labels = sp[sp["location_id"] != -1]
+            ret_stps_noise_labels = sp[sp["location_id"] == -1]
 
             # sort so that the last location id of a user = max(location id)
             ret_stps_non_noise_labels = ret_stps_non_noise_labels.sort_values(["user_id", "location_id"])
@@ -121,87 +121,87 @@ def generate_locations(
             loc_id_offset = loc_id_offset.fillna(0).cumsum()
 
             ret_stps_non_noise_labels["location_id"] = ret_stps_non_noise_labels["location_id"] + loc_id_offset
-            ret_stps = gpd.GeoDataFrame(pd.concat([ret_stps_non_noise_labels, ret_stps_noise_labels]), geometry=geo_col)
-            ret_stps.sort_values(["user_id", "started_at"], inplace=True)
+            sp = gpd.GeoDataFrame(pd.concat([ret_stps_non_noise_labels, ret_stps_noise_labels]), geometry=geo_col)
+            sp.sort_values(["user_id", "started_at"], inplace=True)
 
         else:
             if distance_metric == "haversine":
                 # the input is converted to list of (lat, lon) tuples in radians unit
-                p = np.array([[radians(g.y), radians(g.x)] for g in ret_stps.geometry])
+                p = np.array([[radians(g.y), radians(g.x)] for g in sp.geometry])
             else:
-                p = np.array([[g.x, g.y] for g in ret_stps.geometry])
+                p = np.array([[g.x, g.y] for g in sp.geometry])
             labels = db.fit_predict(p)
 
-            ret_stps["location_id"] = labels
+            sp["location_id"] = labels
 
         ### create locations as grouped staypoints
-        temp_sp = ret_stps[["user_id", "location_id", ret_stps.geometry.name]]
+        temp_sp = sp[["user_id", "location_id", sp.geometry.name]]
         if agg_level == "user":
             # directly dissolve by 'user_id' and 'location_id'
-            ret_loc = temp_sp.dissolve(by=["user_id", "location_id"], as_index=False)
+            locs = temp_sp.dissolve(by=["user_id", "location_id"], as_index=False)
         else:
             ## generate user-location pairs with same geometries across users
             # get user-location pairs
-            ret_loc = temp_sp.dissolve(by=["user_id", "location_id"], as_index=False).drop(
+            locs = temp_sp.dissolve(by=["user_id", "location_id"], as_index=False).drop(
                 columns={temp_sp.geometry.name}
             )
             # get location geometries
             geom_df = temp_sp.dissolve(by=["location_id"], as_index=False).drop(columns={"user_id"})
             # merge pairs with location geometries
-            ret_loc = ret_loc.merge(geom_df, on="location_id", how="left")
+            locs = locs.merge(geom_df, on="location_id", how="left")
 
         # filter stps not belonging to locations
-        ret_loc = ret_loc.loc[ret_loc["location_id"] != -1]
+        locs = locs.loc[locs["location_id"] != -1]
 
-        ret_loc["center"] = None  # initialize
+        locs["center"] = None  # initialize
         # locations with only one staypoints is of type "Point"
-        point_idx = ret_loc.geom_type == "Point"
-        if not ret_loc.loc[point_idx].empty:
-            ret_loc.loc[point_idx, "center"] = ret_loc.loc[point_idx, ret_loc.geometry.name]
+        point_idx = locs.geom_type == "Point"
+        if not locs.loc[point_idx].empty:
+            locs.loc[point_idx, "center"] = locs.loc[point_idx, locs.geometry.name]
         # locations with multiple staypoints is of type "MultiPoint"
-        if not ret_loc.loc[~point_idx].empty:
-            ret_loc.loc[~point_idx, "center"] = ret_loc.loc[~point_idx, ret_loc.geometry.name].apply(
+        if not locs.loc[~point_idx].empty:
+            locs.loc[~point_idx, "center"] = locs.loc[~point_idx, locs.geometry.name].apply(
                 lambda p: Point(np.array(p)[:, 0].mean(), np.array(p)[:, 1].mean())
             )
 
         # extent is the convex hull of the geometry
-        ret_loc["extent"] = None  # initialize
-        if not ret_loc.empty:
-            ret_loc["extent"] = ret_loc[ret_loc.geometry.name].apply(lambda p: p.convex_hull)
+        locs["extent"] = None  # initialize
+        if not locs.empty:
+            locs["extent"] = locs[locs.geometry.name].apply(lambda p: p.convex_hull)
             # convex_hull of one point would be a Point and two points a Linestring,
             # we change them into Polygon by creating a buffer of epsilon around them.
-            pointLine_idx = (ret_loc["extent"].geom_type == "LineString") | (ret_loc["extent"].geom_type == "Point")
+            pointLine_idx = (locs["extent"].geom_type == "LineString") | (locs["extent"].geom_type == "Point")
 
-            if not ret_loc.loc[pointLine_idx].empty:
+            if not locs.loc[pointLine_idx].empty:
                 # Perform meter to decimal conversion if the distance metric is haversine
                 if distance_metric == "haversine":
-                    ret_loc.loc[pointLine_idx, "extent"] = ret_loc.loc[pointLine_idx].apply(
+                    locs.loc[pointLine_idx, "extent"] = locs.loc[pointLine_idx].apply(
                         lambda p: p["extent"].buffer(meters_to_decimal_degrees(epsilon, p["center"].y)), axis=1
                     )
                 else:
-                    ret_loc.loc[pointLine_idx, "extent"] = ret_loc.loc[pointLine_idx].apply(
+                    locs.loc[pointLine_idx, "extent"] = locs.loc[pointLine_idx].apply(
                         lambda p: p["extent"].buffer(epsilon), axis=1
                     )
 
-        ret_loc = ret_loc.set_geometry("center")
-        ret_loc = ret_loc[["user_id", "location_id", "center", "extent"]]
+        locs = locs.set_geometry("center")
+        locs = locs[["user_id", "location_id", "center", "extent"]]
 
         # index management
-        ret_loc.rename(columns={"location_id": "id"}, inplace=True)
-        ret_loc.set_index("id", inplace=True)
+        locs.rename(columns={"location_id": "id"}, inplace=True)
+        locs.set_index("id", inplace=True)
 
     # stps not linked to a location receive np.nan in 'location_id'
-    ret_stps.loc[ret_stps["location_id"] == -1, "location_id"] = np.nan
+    sp.loc[sp["location_id"] == -1, "location_id"] = np.nan
 
     ## dtype consistency
     # locs id (generated by this function) should be int64
-    ret_loc.index = ret_loc.index.astype("int64")
+    locs.index = locs.index.astype("int64")
     # location_id of stps can only be in Int64 (missing values)
-    ret_stps["location_id"] = ret_stps["location_id"].astype("Int64")
+    sp["location_id"] = sp["location_id"].astype("Int64")
     # user_id of ret_loc should be the same as ret_stps
-    ret_loc["user_id"] = ret_loc["user_id"].astype(ret_stps["user_id"].dtype)
+    locs["user_id"] = locs["user_id"].astype(sp["user_id"].dtype)
 
-    return ret_stps, ret_loc
+    return sp, locs
 
 
 def _generate_locations_per_user(user_staypoints, distance_metric, db, geo_col):

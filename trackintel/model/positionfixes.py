@@ -83,13 +83,13 @@ class PositionfixesAccessor(object):
         return ti.preprocessing.positionfixes.generate_staypoints(self._obj, *args, **kwargs)
 
     @copy_docstring(generate_triplegs)
-    def generate_triplegs(self, stps_input=None, *args, **kwargs):
+    def generate_triplegs(self, staypoints=None, *args, **kwargs):
         """
         Generate triplegs from this collection of positionfixes.
 
         See :func:`trackintel.preprocessing.positionfixes.generate_triplegs`.
         """
-        return ti.preprocessing.positionfixes.generate_triplegs(self._obj, stps_input, *args, **kwargs)
+        return ti.preprocessing.positionfixes.generate_triplegs(self._obj, staypoints, *args, **kwargs)
 
     @copy_docstring(plot_positionfixes)
     def plot(self, *args, **kwargs):

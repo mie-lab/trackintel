@@ -13,28 +13,28 @@ class TestCreate_activity_flag:
 
     def test_create_activity_flag(self):
         """Test if 'activity' = True is assigned to staypoints."""
-        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        stps_test = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
+        sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        sp_test = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
 
-        activity_true = stps_test["activity"].copy()
-        stps_test["activity"] = False
+        activity_true = sp_test["activity"].copy()
+        sp_test["activity"] = False
 
-        stps_test = stps_test.as_staypoints.create_activity_flag(method="time_threshold", time_threshold=5.0)
+        sp_test = sp_test.as_staypoints.create_activity_flag(method="time_threshold", time_threshold=5.0)
 
-        pd.testing.assert_series_equal(stps_test["activity"], activity_true)
+        pd.testing.assert_series_equal(sp_test["activity"], activity_true)
 
     def test_wrong_input_parameter(self):
         """Test if an error will be raised when input wrong method."""
-        stps_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        stps_test = ti.read_staypoints_csv(stps_file, tz="utc", index_col="id")
+        sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        sp_test = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
 
         method = 12345
         with pytest.raises(AttributeError, match=f"Method {method} not known for creating activity flag."):
-            stps_test.as_staypoints.create_activity_flag(method=method)
+            sp_test.as_staypoints.create_activity_flag(method=method)
 
         method = "random"
         with pytest.raises(AttributeError, match=f"Method {method} not known for creating activity flag."):
-            stps_test.as_staypoints.create_activity_flag(method=method)
+            sp_test.as_staypoints.create_activity_flag(method=method)
 
 
 class TestPredict_transport_mode:

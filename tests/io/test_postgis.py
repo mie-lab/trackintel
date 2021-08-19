@@ -361,16 +361,16 @@ class TestTriplegs:
 class TestStaypoints:
     def test_write(self, example_staypoints, conn_postgis):
         """Test if write of staypoints create correct schema in database."""
-        spts = example_staypoints.copy()
+        sp = example_staypoints
         conn_string, conn = conn_postgis
         table = "staypoints"
         try:
-            spts.as_staypoints.to_postgis(table, conn_string)
+            sp.as_staypoints.to_postgis(table, conn_string)
             columns_db, dtypes = get_table_schema(conn, table)
-            columns = spts.columns.tolist() + [spts.index.name]
+            columns = sp.columns.tolist() + [sp.index.name]
             assert len(columns_db) == len(columns)
             assert set(columns_db) == set(columns)
-            srid = _get_srid(spts)
+            srid = _get_srid(sp)
             geom_schema = f"geometry(Point,{srid})"
             assert geom_schema in dtypes
         finally:
@@ -378,31 +378,31 @@ class TestStaypoints:
 
     def test_read(self, example_staypoints, conn_postgis):
         """Test if staypoints written to and read back from database are the same."""
-        spts = example_staypoints.copy()
+        sp = example_staypoints
         conn_string, conn = conn_postgis
         table = "staypoints"
         sql = f"SELECT * FROM {table}"
-        geom_col = spts.geometry.name
+        geom_col = sp.geometry.name
 
         try:
-            spts.as_staypoints.to_postgis(table, conn_string)
-            spts_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col, index_col="id")
-            assert_geodataframe_equal(spts, spts_db)
+            sp.as_staypoints.to_postgis(table, conn_string)
+            sp_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col, index_col="id")
+            assert_geodataframe_equal(sp, sp_db)
         finally:
             del_table(conn, table)
 
     def test_no_crs(self, example_staypoints, conn_postgis):
         """Test if writing reading to postgis also works correctly without CRS."""
-        spts = example_staypoints.copy()
+        sp = example_staypoints
         conn_string, conn = conn_postgis
         table = "staypoints"
         sql = f"SELECT * FROM {table}"
         geom_col = example_staypoints.geometry.name
-        spts.crs = None
+        sp.crs = None
         try:
-            spts.as_staypoints.to_postgis(table, conn_string)
-            spts_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col, index_col="id")
-            assert_geodataframe_equal(spts, spts_db)
+            sp.as_staypoints.to_postgis(table, conn_string)
+            sp_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col, index_col="id")
+            assert_geodataframe_equal(sp, sp_db)
         finally:
             del_table(conn, table)
 
