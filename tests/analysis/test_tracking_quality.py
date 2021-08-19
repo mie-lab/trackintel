@@ -6,36 +6,36 @@ import trackintel as ti
 
 
 @pytest.fixture
-def testdata_stps_tpls_geolife_long():
-    """Generate stps and tpls sequences of the original pfs for subsequent testing."""
+def testdata_sp_tpls_geolife_long():
+    """Generate sp and tpls sequences of the original pfs for subsequent testing."""
     pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
-    pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
-    pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+    pfs, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+    pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp, method="between_staypoints")
 
     tpls["type"] = "tripleg"
-    stps["type"] = "staypoint"
-    stps_tpls = stps.append(tpls, ignore_index=True).sort_values(by="started_at")
-    return stps_tpls
+    sp["type"] = "staypoint"
+    sp_tpls = sp.append(tpls, ignore_index=True).sort_values(by="started_at")
+    return sp_tpls
 
 
 @pytest.fixture
 def testdata_all_geolife_long():
-    """Generate stps, tpls and trips of the original pfs for subsequent testing."""
+    """Generate sp, tpls and trips of the original pfs for subsequent testing."""
     pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
-    pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
-    stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
-    pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
-    stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
+    pfs, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+    sp = sp.as_staypoints.create_activity_flag(time_threshold=15)
+    pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp, method="between_staypoints")
+    sp, tpls, trips = ti.preprocessing.triplegs.generate_trips(sp, tpls, gap_threshold=15)
 
-    return stps, tpls, trips
+    return sp, tpls, trips
 
 
 class TestTemporal_tracking_quality:
     """Tests for the temporal_tracking_quality() function."""
 
-    def test_tracking_quality_all(self, testdata_stps_tpls_geolife_long):
+    def test_tracking_quality_all(self, testdata_sp_tpls_geolife_long):
         """Test if the calculated total tracking quality is correct."""
-        stps_tpls = testdata_stps_tpls_geolife_long
+        stps_tpls = testdata_sp_tpls_geolife_long
 
         # calculate tracking quality for a sample user
         user_0 = stps_tpls.loc[stps_tpls["user_id"] == 0]

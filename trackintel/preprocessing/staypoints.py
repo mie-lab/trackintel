@@ -142,9 +142,7 @@ def generate_locations(
         else:
             ## generate user-location pairs with same geometries across users
             # get user-location pairs
-            locs = temp_sp.dissolve(by=["user_id", "location_id"], as_index=False).drop(
-                columns={temp_sp.geometry.name}
-            )
+            locs = temp_sp.dissolve(by=["user_id", "location_id"], as_index=False).drop(columns={temp_sp.geometry.name})
             # get location geometries
             geom_df = temp_sp.dissolve(by=["location_id"], as_index=False).drop(columns={"user_id"})
             # merge pairs with location geometries
