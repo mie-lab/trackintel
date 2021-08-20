@@ -3,7 +3,7 @@ import warnings
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry import MultiPoint
+from shapely.geometry import MultiPoint, Point
 
 
 def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
@@ -245,13 +245,13 @@ def generate_trips(spts, tpls, gap_threshold=15, add_geometry=True):
         origin_nan_rows = trips[pd.isna(trips["origin_staypoint_id"])].copy()
         trips.loc[pd.isna(trips["origin_staypoint_id"]), "origin_geom"] = origin_nan_rows.tpls.map(
             # from tpls table, get the first point of the first tripleg for the trip
-            lambda x: tpls.loc[x[0], tpls.geometry.name].boundary[0]
+            lambda x: Point(tpls.loc[x[0], tpls.geometry.name].coords[0])
         )
         # fill geometry for destionations staypoints that are NaN
         destination_nan_rows = trips[pd.isna(trips["destination_staypoint_id"])].copy()
         trips.loc[pd.isna(trips["destination_staypoint_id"]), "destination_geom"] = destination_nan_rows.tpls.map(
             # from tpls table, get the last point of the last tripleg on the trip
-            lambda x: tpls.loc[x[-1], tpls.geometry.name].boundary[1]
+            lambda x: Point(tpls.loc[x[-1], tpls.geometry.name].coords[-1])
         )
         # convert to GeoDataFrame with MultiPoint column
         trips["geom"] = [MultiPoint([x, y]) for x, y in zip(trips.origin_geom, trips.destination_geom)]
