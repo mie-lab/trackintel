@@ -142,8 +142,7 @@ class TestReadGeolife:
 
 class TestGeolife_add_modes_to_triplegs:
     def test_duplicate_matching(self, matching_data):
-        """ """
-
+        """Check each tripleg will only receive one largest overlapping ration mode label."""
         triplegs, labels_raw = matching_data
         triplegs["user_id"] = 0
 
@@ -154,6 +153,7 @@ class TestGeolife_add_modes_to_triplegs:
                 [
                     {
                         "id": 2,
+                        # this record started 1 minute later than id=1 record - the final match ratio will be lower
                         "started_at": labels_raw.iloc[-1]["started_at"] + datetime.timedelta(minutes=1),
                         "finished_at": labels_raw.iloc[-1]["finished_at"],
                         "mode": "bus",
@@ -170,6 +170,7 @@ class TestGeolife_add_modes_to_triplegs:
 
         # only one mode per tripleg should be assigned
         assert len(triplegs) == len(tpls)
+        assert tpls.iloc[-1]["mode"] == "bike"
 
     def test_geolife_mode_matching(self, read_geolife_triplegs_with_modes):
         """Test that the matching runs with geolife.
