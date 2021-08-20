@@ -101,15 +101,6 @@ class TestPredict_transport_mode:
         assert tpls_transport_mode_3.iloc[1]["mode"] == "motorized_mobility"
         assert tpls_transport_mode_3.iloc[2]["mode"] == "fast_mobility"
 
-    def test_simple_coarse_identification_geographic(self):
-        """Asserts that a warning is thrown if data in non-WGS geographic coordinate systems."""
-        tpls_file = os.path.join("tests", "data", "triplegs_transport_mode_identification.csv")
-        tpls = ti.read_triplegs_csv(tpls_file, sep=";", index_col="id")
-        tpls_2 = tpls.set_crs(epsg=4326)
-        tpls_4 = tpls_2.to_crs(epsg=4269)
-        with pytest.warns(UserWarning):
-            tpls_4.as_triplegs.predict_transport_mode(method="simple-coarse")
-
     def test_check_categories(self):
         """Asserts the correct identification of valid category dictionaries."""
         tpls_file = os.path.join("tests", "data", "triplegs_transport_mode_identification.csv")
