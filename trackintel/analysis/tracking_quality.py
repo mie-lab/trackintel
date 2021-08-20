@@ -20,6 +20,13 @@ def temporal_tracking_quality(source, granularity="all", max_iter=60):
         by weeks; "weekday" the quality by day of the week (e.g, Mondays, Tuesdays, etc.) and
         "hour" the quality by hours.
 
+    max_iter: int, default 60
+        The maximum iteration when spliting the df per granularity to calculate tracking quality.
+        The unit is the same as the "granularity", e.g., if "max_iter" = 60 and "granularity" = "day",
+        df that contains records with a duration more than 60 days cannot be processed and the quality
+        result is likely to be wrong. if "max_iter" is reached, consider pre-filter the df instead of
+        changing the "max_iter" parameter.
+
     Returns
     -------
     quality: DataFrame
@@ -225,6 +232,10 @@ def _split_overlaps(source, granularity="day", max_iter=60):
     granularity : {'day', 'hour'}, default 'day'
         The criteria of splitting. "day" splits records that have duration of several
         days and "hour" splits records that have duration of several hours.
+
+    max_iter: int, default 60
+        The maximum iteration when spliting the source per granularity.
+        See :func:`trackintel.analysis.tracking_quality.temporal_tracking_quality` for a more detailed explaination.
 
     Returns
     -------
