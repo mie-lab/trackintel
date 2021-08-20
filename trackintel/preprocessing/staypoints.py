@@ -60,10 +60,10 @@ def generate_locations(
 
     Returns
     -------
-    ret_sp: GeoDataFrame (as trackintel staypoints)
+    sp: GeoDataFrame (as trackintel staypoints)
         The original staypoints with a new column ``[`location_id`]``.
 
-    ret_loc: GeoDataFrame (as trackintel locations)
+    locs: GeoDataFrame (as trackintel locations)
         The generated locations.
 
     Examples
@@ -103,25 +103,25 @@ def generate_locations(
             )
 
             # keeping track of noise labels
-            ret_sp_non_noise_labels = sp[sp["location_id"] != -1]
-            ret_sp_noise_labels = sp[sp["location_id"] == -1]
+            sp_non_noise_labels = sp[sp["location_id"] != -1]
+            sp_noise_labels = sp[sp["location_id"] == -1]
 
             # sort so that the last location id of a user = max(location id)
-            ret_sp_non_noise_labels = ret_sp_non_noise_labels.sort_values(["user_id", "location_id"])
+            sp_non_noise_labels = sp_non_noise_labels.sort_values(["user_id", "location_id"])
 
             # identify start positions of new user_ids
-            start_of_user_id = ret_sp_non_noise_labels["user_id"] != ret_sp_non_noise_labels["user_id"].shift(1)
+            start_of_user_id = sp_non_noise_labels["user_id"] != sp_non_noise_labels["user_id"].shift(1)
 
             # calculate the offset (= last location id of the previous user)
             # multiplication is to mask all positions where no new user starts and addition is to have a +1 when a
             # new user starts
-            loc_id_offset = ret_sp_non_noise_labels["location_id"].shift(1) * start_of_user_id + start_of_user_id
+            loc_id_offset = sp_non_noise_labels["location_id"].shift(1) * start_of_user_id + start_of_user_id
 
             # fill first nan with 0 and create the cumulative sum
             loc_id_offset = loc_id_offset.fillna(0).cumsum()
 
-            ret_sp_non_noise_labels["location_id"] = ret_sp_non_noise_labels["location_id"] + loc_id_offset
-            sp = gpd.GeoDataFrame(pd.concat([ret_sp_non_noise_labels, ret_sp_noise_labels]), geometry=geo_col)
+            sp_non_noise_labels["location_id"] = sp_non_noise_labels["location_id"] + loc_id_offset
+            sp = gpd.GeoDataFrame(pd.concat([sp_non_noise_labels, sp_noise_labels]), geometry=geo_col)
             sp.sort_values(["user_id", "started_at"], inplace=True)
 
         else:
