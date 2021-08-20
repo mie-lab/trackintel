@@ -248,6 +248,20 @@ class TestGenerate_staypoints:
 class TestGenerate_triplegs:
     """Tests for generate_triplegs() method."""
 
+    def test_empty_generation(self, example_positionfixes_isolated):
+        """The function should run without error if the generation result is empty (no tripleg could be generated)."""
+        pfs = example_positionfixes_isolated
+
+        # select subset of pfs such that no triplegs can be generated
+        pfs = pfs.loc[pfs["user_id"] == 0]
+        print(pfs)
+
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs()
+        print(pfs)
+        print(tpls)
+
+        assert 1 == 2
+
     def test_noncontinuous_unordered_index(self, example_positionfixes_isolated):
         """The unordered and noncontinuous index of pfs shall not affect the generate_triplegs() result."""
         pfs = example_positionfixes_isolated

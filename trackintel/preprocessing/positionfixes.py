@@ -380,7 +380,11 @@ def generate_triplegs(
 
         # assert validity of triplegs
         tpls, pfs = _drop_invalid_triplegs(tpls, pfs)
-        tpls.as_triplegs
+        
+        if len(tpls) > 0:
+            tpls.as_triplegs
+        else:
+            warnings.warn("No triplegs can be generated ")
 
         if case == 2:
             pfs.drop(columns="staypoint_id", inplace=True)
