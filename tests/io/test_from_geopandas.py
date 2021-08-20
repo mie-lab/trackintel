@@ -155,9 +155,7 @@ class TestRead_Staypoints_Gpd:
         # read from file and transform to trackintel format
         gdf = gpd.read_file(os.path.join("tests", "data", "staypoints.geojson"))
         gdf.set_index("id", inplace=True)
-        sp_from_gpd = read_staypoints_gpd(
-            gdf, "start_time", "end_time", geom_col="geometry", crs="EPSG:4326", tz="utc"
-        )
+        sp_from_gpd = read_staypoints_gpd(gdf, "start_time", "end_time", geom_col="geometry", crs="EPSG:4326", tz="utc")
 
         # read from csv file
         sp_file = os.path.join("tests", "data", "staypoints.csv")
