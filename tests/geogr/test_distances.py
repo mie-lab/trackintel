@@ -1,13 +1,18 @@
 import os
-from math import radians
+import datetime
 
 import geopandas as gpd
+import pandas as pd
 import numpy as np
 import pytest
+
+from math import radians
 from shapely import wkt
 from shapely.geometry import LineString, MultiLineString
 from sklearn.metrics import pairwise_distances
 from geopandas.testing import assert_geodataframe_equal
+from shapely.geometry import Point
+
 
 import trackintel as ti
 from trackintel.geogr.distances import (
@@ -190,6 +195,27 @@ class TestCheck_gdf_crs:
         pfs = ti.read_positionfixes_csv(file, sep=";", crs=None, index_col=None)
         with pytest.warns(UserWarning):
             check_gdf_crs(pfs)
+
+    def test_if_planer(self):
+        """Check if planer crs is successfully checked."""
+        p1 = Point(8.5067847, 47.4)
+        t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+
+        list_dict = [
+            {"user_id": 0, "started_at": t1, "finished_at": t1, "geom": p1},
+        ]
+        # a geographic crs different than wgs1984
+        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4610")
+        assert check_gdf_crs(sp) == False
+
+        # wgs1984
+        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+        assert check_gdf_crs(sp) == False
+
+        # wgs1984 to swiss planer
+        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+        sp = sp.to_crs("EPSG:2056")
+        assert check_gdf_crs(sp) == True
 
 
 class TestMetersToDecimalDegrees:

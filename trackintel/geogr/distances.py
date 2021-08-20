@@ -212,21 +212,22 @@ def check_gdf_crs(gdf, transform=False):
     >>> check_gdf_crs(triplegs, transform=False)
     """
     if_planer = False
-    if gdf.crs is None:
-        # projection is not defined
+    if gdf.crs is None:  # projection is not defined
         if_planer = False
         if transform:
             gdf.crs = "EPSG:4326"
         else:
             warnings.warn("Your data is not projected.")
 
-    elif gdf.crs == "EPSG:4326":
-        # if projection is defined as WGS84
+    elif gdf.crs == "EPSG:4326":  # if projection is defined as WGS84
         if_planer = False
 
-    else:
-        # if projection is defined but not as WGS84
-        if_planer = True
+    else:  # if projection is defined but not as WGS84
+        if gdf.crs.is_geographic:  # if projection is a geographic crs
+            if_planer = False
+        else:
+            if_planer = True
+
         if transform:
             if_planer = False
             gdf = gdf.to_crs("EPSG:4326")
