@@ -273,6 +273,11 @@ def geolife_add_modes_to_triplegs(
     except KeyError:
         pass
 
+    try:
+        tpls.drop(["ratio"], axis=1, inplace=True)
+    except KeyError:
+        pass
+
     return tpls
 
 
