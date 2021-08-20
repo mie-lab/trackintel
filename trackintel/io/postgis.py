@@ -620,7 +620,7 @@ __doc = """Stores {long} to PostGIS. Usually, this is directly called on a {long
     Examples
     --------
     >>> {short}.as_{long}.to_postgis(conn_string, table_name)
-    >>> ti.io.postgis.write_{long}_postgis(pfs, conn_string, table_name)
+    >>> ti.io.postgis.write_{long}_postgis({short}, conn_string, table_name)
 """
 
 write_positionfixes_postgis.__doc__ = __doc.format(long="positionfixes", short="pfs")
