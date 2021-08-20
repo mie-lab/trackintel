@@ -141,6 +141,36 @@ class TestReadGeolife:
 
 
 class TestGeolife_add_modes_to_triplegs:
+    def test_duplicate_matching(self, matching_data):
+        """ """
+
+        triplegs, labels_raw = matching_data
+        triplegs["user_id"] = 0
+
+        # add one record to the labels_raw: mode bus which are 1 min shorter than mode bike
+        labels_raw = (
+            labels_raw.reset_index()
+            .append(
+                [
+                    {
+                        "id": 2,
+                        "started_at": labels_raw.iloc[-1]["started_at"] + datetime.timedelta(minutes=1),
+                        "finished_at": labels_raw.iloc[-1]["finished_at"],
+                        "mode": "bus",
+                    },
+                ]
+            )
+            .set_index("id")
+        )
+        labels = {0: labels_raw}
+
+        # the correct behaviour is to only choose one mode per tripleg id based on overlapping ratio
+        # in this case choose mode bike
+        tpls = geolife_add_modes_to_triplegs(triplegs, labels)
+
+        # only one mode per tripleg should be assigned
+        assert len(triplegs) == len(tpls)
+
     def test_geolife_mode_matching(self, read_geolife_triplegs_with_modes):
         """Test that the matching runs with geolife.
         We only check that there are nan's and non nan's in the results."""

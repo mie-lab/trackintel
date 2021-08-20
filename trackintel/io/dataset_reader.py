@@ -253,8 +253,13 @@ def geolife_add_modes_to_triplegs(
     if len(tpls_id_mode_list) == 0:
         tpls["mode"] = np.nan
     else:
-        tpls_id_mode = pd.DataFrame(tpls_id_mode_list).set_index("id")
-        tpls = tpls.join(tpls_id_mode)
+
+        # only take the label with largest overlapping ratio for each tpls id
+        tpls_id_mode = pd.DataFrame(tpls_id_mode_list).sort_values(by="ratio", ascending=False).groupby("id").head(1)
+        # delete the helper column
+        tpls_id_mode.drop(columns="ratio", inplace=True)
+
+        tpls = tpls.join(tpls_id_mode.set_index("id"))
         tpls = tpls.astype({"label_id": "Int64"})
 
     try:
@@ -321,7 +326,12 @@ def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_thres
             if ratio_this >= ratio_threshold:
                 # assign label to tripleg (by storing matching in dictionary)
                 tpls_id_mode_list.append(
-                    {"id": potential_tripleg.name, "label_id": potential_label.name, "mode": potential_label["mode"]}
+                    {
+                        "id": potential_tripleg.name,
+                        "label_id": potential_label.name,
+                        "mode": potential_label["mode"],
+                        "ratio": ratio_this,
+                    }
                 )
 
     return tpls_id_mode_list
