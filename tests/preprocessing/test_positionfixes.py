@@ -275,13 +275,13 @@ class TestGenerate_staypoints:
         df = pd.DataFrame(pfs_dict)
         pfs = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude))
         pfs.as_positionfixes
-        
+
         # using the default gap_threshold will generate no sp
         warn_string = "No staypoints can be generated, returning empty sp."
         with pytest.warns(UserWarning, match=warn_string):
             _, sp = pfs.as_positionfixes.generate_staypoints(include_last=True)
             assert len(sp) == 0
-            
+
         # using large gap_threshold one sp will be generated
         _, sp = pfs.as_positionfixes.generate_staypoints(gap_threshold=1e8, include_last=True)
         assert len(sp) == 1
