@@ -185,9 +185,9 @@ def meters_to_decimal_degrees(meters, latitude):
 
 def check_gdf_crs(gdf, transform=False):
     """
-    Check if GeoDataFrame has CRS or is already in WGS84.
+    Check if a GeoDataFrame has a planar or projected coordinate system.
 
-    Additionally transform a GeoDataFrame into WGS84.
+    Optionally transform a GeoDataFrame into WGS84.
 
     Parameters
     ----------
@@ -211,31 +211,31 @@ def check_gdf_crs(gdf, transform=False):
     >>> from trackintel.geogr.distances import check_gdf_crs
     >>> check_gdf_crs(triplegs, transform=False)
     """
-    if_planer = False
+    is_planar = False
     if gdf.crs is None:  # projection is not defined
-        if_planer = False
+        is_planar = False
         if transform:
             gdf.crs = "EPSG:4326"
         else:
             warnings.warn("Your data is not projected.")
 
     elif gdf.crs == "EPSG:4326":  # if projection is defined as WGS84
-        if_planer = False
+        is_planar = False
 
     else:  # if projection is defined but not as WGS84
         if gdf.crs.is_geographic:  # if projection is a geographic crs
-            if_planer = False
+            is_planar = False
         else:
-            if_planer = True
+            is_planar = True
 
         if transform:
-            if_planer = False
+            is_planar = False
             gdf = gdf.to_crs("EPSG:4326")
 
     if transform:
-        return if_planer, gdf
+        return is_planar, gdf
     else:
-        return if_planer
+        return is_planar
 
 
 def calculate_haversine_length(gdf):
