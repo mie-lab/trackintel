@@ -16,7 +16,7 @@ from shapely.geometry import Point
 
 import trackintel as ti
 from trackintel.geogr.distances import (
-    check_gdf_crs,
+    check_gdf_planar,
     meters_to_decimal_degrees,
     calculate_distance_matrix,
     calculate_haversine_length,
@@ -178,15 +178,15 @@ class TestCalculate_distance_matrix:
             calculate_distance_matrix(X=gdf, dist_metric="dtw", n_jobs=1)
 
 
-class TestCheck_gdf_crs:
-    """Tests for check_gdf_crs() method."""
+class TestCheck_gdf_planar:
+    """Tests for check_gdf_planar() method."""
 
     def test_transformation(self):
         """Check if data gets transformed."""
         file = os.path.join("tests", "data", "positionfixes.csv")
         pfs = ti.read_positionfixes_csv(file, sep=";", crs="EPSG:4326", index_col=None)
         pfs_2056 = pfs.to_crs("EPSG:2056")
-        _, pfs_4326 = check_gdf_crs(pfs_2056, transform=True)
+        _, pfs_4326 = check_gdf_planar(pfs_2056, transform=True)
         assert_geodataframe_equal(pfs, pfs_4326, check_less_precise=True)
 
     def test_crs_warning(self):
@@ -194,7 +194,7 @@ class TestCheck_gdf_crs:
         file = os.path.join("tests", "data", "positionfixes.csv")
         pfs = ti.read_positionfixes_csv(file, sep=";", crs=None, index_col=None)
         with pytest.warns(UserWarning):
-            check_gdf_crs(pfs)
+            check_gdf_planar(pfs)
 
     def test_if_planer(self):
         """Check if planer crs is successfully checked."""
@@ -206,16 +206,16 @@ class TestCheck_gdf_crs:
         ]
         # a geographic crs different than wgs1984
         sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4610")
-        assert check_gdf_crs(sp) == False
+        assert check_gdf_planar(sp) == False
 
         # wgs1984
         sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
-        assert check_gdf_crs(sp) == False
+        assert check_gdf_planar(sp) == False
 
         # wgs1984 to swiss planer
         sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
         sp = sp.to_crs("EPSG:2056")
-        assert check_gdf_crs(sp) == True
+        assert check_gdf_planar(sp) == True
 
 
 class TestMetersToDecimalDegrees:

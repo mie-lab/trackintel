@@ -183,7 +183,7 @@ def meters_to_decimal_degrees(meters, latitude):
     return meters / (111.32 * 1000.0 * cos(latitude * (pi / 180.0)))
 
 
-def check_gdf_crs(gdf, transform=False):
+def check_gdf_planar(gdf, transform=False):
     """
     Check if a GeoDataFrame has a planar or projected coordinate system.
 
@@ -208,8 +208,8 @@ def check_gdf_crs(gdf, transform=False):
 
     Examples
     --------
-    >>> from trackintel.geogr.distances import check_gdf_crs
-    >>> check_gdf_crs(triplegs, transform=False)
+    >>> from trackintel.geogr.distances import check_gdf_planar
+    >>> check_gdf_planar(triplegs, transform=False)
     """
     is_planar = False
     if gdf.crs is None:  # projection is not defined

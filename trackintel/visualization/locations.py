@@ -5,7 +5,7 @@ import warnings
 from trackintel.geogr.distances import meters_to_decimal_degrees
 from trackintel.visualization.osm import plot_osm_streets
 from trackintel.visualization.util import regular_figure, save_fig
-from trackintel.geogr.distances import check_gdf_crs
+from trackintel.geogr.distances import check_gdf_planar
 
 
 def plot_locations(
@@ -57,7 +57,7 @@ def plot_locations(
         _, ax = regular_figure()
     else:
         ax = axis
-    _, locations = check_gdf_crs(locations, transform=True)
+    _, locations = check_gdf_planar(locations, transform=True)
 
     if staypoints is not None:
         staypoints.as_staypoints.plot(radius=staypoints_radius, positionfixes=positionfixes, plot_osm=plot_osm, axis=ax)
