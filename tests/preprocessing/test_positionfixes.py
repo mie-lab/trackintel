@@ -1,6 +1,7 @@
 import datetime
 import os
 import sys
+import re
 
 import geopandas as gpd
 import numpy as np
@@ -86,6 +87,16 @@ def example_positionfixes_isolated():
 class TestGenerate_staypoints:
     """Tests for generate_staypoints() method."""
 
+    def test_empty_generation(self, example_positionfixes):
+        """The function should run without error if the generation result is empty (no staypoint could be generated)."""
+        # the pfs would not generate staypoints with the default parameters
+        pfs = example_positionfixes
+
+        warn_string = "No staypoints can be generated, returning empty sp."
+        with pytest.warns(UserWarning, match=warn_string):
+            pfs, sp = pfs.as_positionfixes.generate_staypoints()
+        assert len(sp) == 0
+
     def test_parallel_computing(self):
         """The result obtained with parallel computing should be identical."""
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
@@ -110,15 +121,15 @@ class TestGenerate_staypoints:
         pfs_duplicate_all = pfs_duplicate_loc.copy()
         pfs_duplicate_all.loc[0, "tracked_at"] = pfs_duplicate_all.loc[1, "tracked_at"]
 
+        warn_string = ".* duplicates were dropped from your positionfixes."
         with pytest.warns(None) as record:
             example_positionfixes.as_positionfixes.generate_staypoints()
             pfs_duplicate_loc.as_positionfixes.generate_staypoints()
             pfs_duplicate_t.as_positionfixes.generate_staypoints()
 
-            # assert that no warning is raised
-            assert len(record) == 0
+            # assert that no warning of the defined type is raised
+            assert len([x for x in record if warn_string in str(x.message)]) == 0
 
-        warn_string = ".* duplicates were dropped from your positionfixes."
         with pytest.warns(UserWarning, match=warn_string):
             pfs_duplicate_all.as_positionfixes.generate_staypoints()
 
@@ -247,6 +258,19 @@ class TestGenerate_staypoints:
 
 class TestGenerate_triplegs:
     """Tests for generate_triplegs() method."""
+
+    def test_empty_generation(self, example_positionfixes_isolated):
+        """The function should run without error if the generation result is empty (no tripleg could be generated)."""
+        pfs = example_positionfixes_isolated
+
+        # select subset of pfs such that no triplegs can be generated
+        pfs = pfs.loc[pfs["user_id"] == 0]
+        pfs = pfs.iloc[2:]
+
+        warn_string = "No triplegs can be generated, returning empty tpls."
+        with pytest.warns(UserWarning, match=warn_string):
+            pfs, tpls = pfs.as_positionfixes.generate_triplegs()
+        assert len(tpls) == 0
 
     def test_noncontinuous_unordered_index(self, example_positionfixes_isolated):
         """The unordered and noncontinuous index of pfs shall not affect the generate_triplegs() result."""
