@@ -230,7 +230,7 @@ def _generate_locations_per_user(user_staypoints, distance_metric, db, geo_col):
 
 def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     """
-    Aggregate staypoints horizontally via time threshold
+    Aggregate staypoints horizontally via time threshold.
 
     Parameters
     ----------
@@ -250,22 +250,22 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
         If empty, only the required columns of staypoints (which are ['user_id', 'started_at', 'finished_at']) are
         aggregated and returned. In order to return for example also the geometry column of the merged staypoints, set
         'agg={"geom":"first"}' to return the first geometry of the merged staypoints, or 'agg={"geom":"last"}' to use
-        the last one etc.
+        the last one.
 
     Returns
     -------
     sp: DataFrame
-        The new staypoints with required columns + columns in `agg`, where staypoints at same location and close in
+        The new staypoints with the default columns and columns in `agg`, where staypoints at same location and close in
         time are aggregated.
 
     Notes
     -----
     - Due to the modification of the staypoint index, the relation between the staypoints and the corresponding
       positionfixes **is broken** after execution of this function! In explanation, the staypoint_id column of pfs does
-      not necessarily correspond to an id in the new stps table that is returned from this function. The same holds for
+      not necessarily correspond to an id in the new sp table that is returned from this function. The same holds for
       trips (if generated yet) where the staypoints contained in a trip might be merged in this function.
     - If there is a tripleg between two staypoints, the staypoints are not merged. If you for some reason want to merge
-      such staypoints, simply pass an empty DataFrame for the tpls argument
+      such staypoints, simply pass an empty DataFrame for the tpls argument.
 
     Examples
     --------
@@ -274,7 +274,6 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     >>> # or using the trackintel datamodel
     >>> sp.as_staypoints.merge_staypoints(triplegs, max_time_gap="1h", agg={"geom":"first"})
     """
-
     if isinstance(max_time_gap, str):
         max_time_gap = pd.to_timedelta(max_time_gap)
     # otherwise check if it's a Timedelta already, and raise error if not
@@ -284,7 +283,7 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     sp_merge = staypoints.copy()
     index_name = staypoints.index.name
 
-    # concat stps and tpls to get information whether there is a tripleg between to staypoints
+    # concat sp and tpls to get information whether there is a tripleg between to staypoints
     tpls_merge = triplegs.copy()
     tpls_merge["type"] = "tripleg"
     sp_merge["type"] = "staypoint"

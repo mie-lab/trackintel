@@ -102,7 +102,7 @@ def example_triplegs_merge(example_staypoints_merge):
     See staypoints example data above --> tripleg between 5 and 2 and between 6 and 15
     """
     # get staypoints from above
-    stps, _ = example_staypoints_merge
+    sp, _ = example_staypoints_merge
     # create triplegs inbetween
     # tripleg between 5 and 2
     t21 = pd.Timestamp("1971-01-02 05:10:00", tz="utc")
@@ -117,7 +117,7 @@ def example_triplegs_merge(example_staypoints_merge):
     # geometry is not required for the merge operation, so we leave it away
     tpls = gpd.GeoDataFrame(data=list_dict, crs="EPSG:4326")
     tpls = tpls.set_index("id")
-    return stps, tpls
+    return sp, tpls
 
 
 class TestGenerate_locations:
@@ -398,7 +398,7 @@ class TestGenerate_locations:
 
 class TestMergeStaypoints:
     def test_merge_staypoints(self, example_staypoints_merge):
-        """Test staypoint merging"""
+        """Test staypoint merging."""
         sp, tpls = example_staypoints_merge
         # first test with empty tpls
         merged_sp = sp.as_staypoints.merge_staypoints(tpls, agg={"geom": "first", "location_id": "first"})
