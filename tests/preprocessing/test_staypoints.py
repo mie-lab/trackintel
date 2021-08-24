@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
+from geopandas.testing import assert_geodataframe_equal
 
 import trackintel as ti
 from trackintel.geogr.distances import calculate_distance_matrix
@@ -16,6 +17,9 @@ from trackintel.geogr.distances import calculate_distance_matrix
 def example_staypoints():
     """Staypoints for location generation.
     Staypoints have non-continous ids and should result in noise and several locations per user.
+
+    With epsilon=10, num_samples=2:
+
     The following staypoint ids should form a location (1, 15), (5,6), (80, 3)
     The following staypoint ids should be noise (2, 7)
 
@@ -48,7 +52,7 @@ def example_staypoints():
     ]
     sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     sp = sp.set_index("id")
-    assert sp.as_staypoints
+    sp.as_staypoints
     return sp
 
 
@@ -118,6 +122,37 @@ def example_triplegs_merge(example_staypoints_merge):
 
 class TestGenerate_locations:
     """Tests for generate_locations() method."""
+
+    def test_empty_generation(self, example_staypoints):
+        """The function should run without error if the generation result is empty (no locations could be generated)."""
+        # the pfs would not generate staypoints with the default parameters
+        sp = example_staypoints
+        # select subset of sp such that no locations can be generated
+        sp = sp.iloc[:3]
+
+        warn_string = "No locations can be generated, returning empty locs."
+        with pytest.warns(UserWarning, match=warn_string):
+            sp, locs = sp.as_staypoints.generate_locations(
+                method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user"
+            )
+        assert len(locs) == 0
+
+    def test_parallel_computing(self, example_staypoints):
+        """The result obtained with parallel computing should be identical."""
+        stps = example_staypoints
+
+        # without parallel computing code
+        stps_ori, locs_ori = stps.as_staypoints.generate_locations(
+            method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user", n_jobs=1
+        )
+        # using two cores
+        stps_para, locs_para = stps.as_staypoints.generate_locations(
+            method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user", n_jobs=2
+        )
+
+        # the result of parallel computing should be identical
+        assert_geodataframe_equal(locs_ori, locs_para)
+        assert_geodataframe_equal(stps_ori, stps_para)
 
     def test_dbscan_hav_euc(self):
         """Test if using haversine and euclidean distances will generate the same location result."""
