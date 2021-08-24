@@ -88,17 +88,11 @@ def generate_locations(
             if print_progress:
                 tqdm.pandas(desc="User location generation")
                 ret_stps = ret_stps.groupby("user_id", as_index=False).progress_apply(
-                    _generate_locations_per_user,
-                    geo_col=geo_col,
-                    distance_metric=distance_metric,
-                    db=db,
+                    _generate_locations_per_user, geo_col=geo_col, distance_metric=distance_metric, db=db,
                 )
             else:
                 ret_stps = ret_stps.groupby("user_id", as_index=False).apply(
-                    _generate_locations_per_user,
-                    geo_col=geo_col,
-                    distance_metric=distance_metric,
-                    db=db,
+                    _generate_locations_per_user, geo_col=geo_col, distance_metric=distance_metric, db=db,
                 )
 
             # keeping track of noise labels
@@ -221,16 +215,16 @@ def _generate_locations_per_user(user_staypoints, distance_metric, db, geo_col):
     return user_staypoints
 
 
-def merge_staypoints(stps, tpls, max_time_gap="10min", agg={}):
+def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     """
     Aggregate staypoints horizontally via time threshold
 
     Parameters
     ----------
-    stps : GeoDataFrame (as trackintel staypoints)
+    staypoints : GeoDataFrame (as trackintel staypoints)
         The staypoints have to follow the standard definition for staypoints DataFrames.
 
-    tpls: GeoDataFrame (as trackintel triplegs)
+    triplegs: GeoDataFrame (as trackintel triplegs)
         The triplegs have to follow the standard definition for triplegs DataFrames.
 
     max_time_gap : str or pd.Timedelta, default "1h"
@@ -243,7 +237,7 @@ def merge_staypoints(stps, tpls, max_time_gap="10min", agg={}):
 
     Returns
     -------
-    stps_merged: DataFrame
+    sp: DataFrame
         The new staypoints with required columns + columns in `agg`, where staypoints at same location and close in
         time are aggregated.
 
@@ -258,55 +252,62 @@ def merge_staypoints(stps, tpls, max_time_gap="10min", agg={}):
 
     Examples
     --------
-    >>> stps.as_staypoints.merge_staypoints(tpls, max_time_gap="1h", agg={"geom":"first})
+    >>> # direct function call
+    >>> ti.preprocessing.staypoints.merge_staypoints(staypoints=sp, triplegs=tpls)
+    >>> # or using the trackintel datamodel
+    >>> sp.as_staypoints.merge_staypoints(triplegs, max_time_gap="1h", agg={"geom":"first})
     """
 
     if isinstance(max_time_gap, str):
         max_time_gap = pd.to_timedelta(max_time_gap)
+    # otherwise check if it's a Timedelta already, and raise error if not
+    elif not isinstance(max_time_gap, pd.Timedelta):
+        raise TypeError("Parameter max_time_gap must be either of type String or pd.Timedelta!")
 
-    stps_merge = stps.copy()
-    index_name = stps.index.name
+    sp_merge = staypoints.copy()
+    index_name = staypoints.index.name
 
     # concat stps and tpls to get information whether there is a tripleg between to staypoints
-    tpls_merge = tpls.copy()
+    tpls_merge = triplegs.copy()
     tpls_merge["type"] = "tripleg"
-    stps_merge["type"] = "staypoint"
+    sp_merge["type"] = "staypoint"
+    # a joined dataframe sp_tpls is constructed to add the columns 'type' and 'next_type' to the 'sp_merge' table
     # concat and sort by time
-    stps_tpls = pd.concat([stps_merge, tpls_merge]).sort_values(by=["user_id", "started_at"])
-    stps_tpls.index.rename(index_name, inplace=True)
+    sp_tpls = pd.concat([sp_merge, tpls_merge]).sort_values(by=["user_id", "started_at"])
+    sp_tpls.index.rename(index_name, inplace=True)
     # get information whether the there is a tripleg after a staypoint
-    stps_tpls["next_type"] = stps_tpls["type"].shift(-1)
+    sp_tpls["next_type"] = sp_tpls["type"].shift(-1)
     # get only staypoints, but with next type information
-    stps_merge = stps_tpls[stps_tpls["type"] == "staypoint"]
+    sp_merge = sp_tpls[sp_tpls["type"] == "staypoint"]
 
     # reset index and make temporary index
-    stps_merge = stps_merge.reset_index()
+    sp_merge = sp_merge.reset_index()
     # copy index to use it in the end (id is modified)
-    stps_merge["index_temp"] = stps_merge[index_name]
+    sp_merge["index_temp"] = sp_merge[index_name]
 
     # roll by 1 to get next row info
-    stps_merge[["next_user_id", "next_started_at", "next_location_id"]] = stps_merge[
+    sp_merge[["next_user_id", "next_started_at", "next_location_id"]] = sp_merge[
         ["user_id", "started_at", "location_id"]
     ].shift(-1)
     # Conditions to keep on merging
-    cond = pd.Series(data=False, index=stps_merge.index)
-    cond_old = pd.Series(data=True, index=stps_merge.index)
+    cond = pd.Series(data=False, index=sp_merge.index)
+    cond_old = pd.Series(data=True, index=sp_merge.index)
     cond_diff = cond != cond_old
 
     while np.sum(cond_diff) >= 1:
         # .values is important otherwise the "=" would imply a join via the new index
-        stps_merge["next_id"] = stps_merge["index_temp"].shift(-1).values
+        sp_merge["next_id"] = sp_merge["index_temp"].shift(-1).values
 
         # identify rows to merge
-        cond0 = stps_merge["next_user_id"] == stps_merge["user_id"]
-        cond1 = stps_merge["next_started_at"] - stps_merge["finished_at"] <= max_time_gap  # time constraint
-        cond2 = stps_merge["location_id"] == stps_merge["next_location_id"]
-        cond3 = stps_merge["index_temp"] != stps_merge["next_id"]  # already merged
-        cond4 = stps_merge["next_type"] != "tripleg"  # no tripleg inbetween two staypoints
+        cond0 = sp_merge["next_user_id"] == sp_merge["user_id"]
+        cond1 = sp_merge["next_started_at"] - sp_merge["finished_at"] <= max_time_gap  # time constraint
+        cond2 = sp_merge["location_id"] == sp_merge["next_location_id"]
+        cond3 = sp_merge["index_temp"] != sp_merge["next_id"]  # already merged
+        cond4 = sp_merge["next_type"] != "tripleg"  # no tripleg inbetween two staypoints
         cond = cond0 & cond1 & cond2 & cond3 & cond4
 
         # assign index to next row
-        stps_merge.loc[cond, "index_temp"] = stps_merge.loc[cond, "next_id"]
+        sp_merge.loc[cond, "index_temp"] = sp_merge.loc[cond, "next_id"]
         # check whether anything was changed
         cond_diff = cond != cond_old
         cond_old = cond.copy()
@@ -317,8 +318,8 @@ def merge_staypoints(stps, tpls, max_time_gap="10min", agg={}):
     agg_dict.update(agg)
 
     # aggregate values
-    stps_merged = stps_merge.groupby(by="index_temp").agg(agg_dict).sort_values(by=["user_id", "started_at"])
+    sp = sp_merge.groupby(by="index_temp").agg(agg_dict).sort_values(by=["user_id", "started_at"])
 
     # clean
-    stps_merged = stps_merged.set_index(index_name)
-    return stps_merged
+    sp = sp.set_index(index_name)
+    return sp

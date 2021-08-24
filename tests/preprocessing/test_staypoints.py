@@ -364,55 +364,64 @@ class TestGenerate_locations:
 class TestMergeStaypoints:
     def test_merge_staypoints(self, example_staypoints_merge):
         """Test staypoint merging"""
-        stps, tpls = example_staypoints_merge
+        sp, tpls = example_staypoints_merge
         # first test with empty tpls
-        merged_stps = stps.as_staypoints.merge_staypoints(tpls, agg={"geom": "first", "location_id": "first"})
-        assert len(merged_stps) == len(stps) - 3
+        merged_sp = sp.as_staypoints.merge_staypoints(tpls, agg={"geom": "first", "location_id": "first"})
+        assert len(merged_sp) == len(sp) - 3
         # some staypoints stay the same (not merged)
-        assert (merged_stps.loc[1] == stps.loc[1]).all()
-        assert (merged_stps.loc[5] == stps.loc[5]).all()
-        assert (merged_stps.loc[3] == stps.loc[3]).all()
+        assert (merged_sp.loc[1] == sp.loc[1]).all()
+        assert (merged_sp.loc[5] == sp.loc[5]).all()
+        assert (merged_sp.loc[3] == sp.loc[3]).all()
 
     def test_merge_staypoints_triplegs(self, example_triplegs_merge):
         """Test staypoint merging with triplegs inbetween"""
         # get triplegs inbetween
-        stps, tpls = example_triplegs_merge
-        merged_stps_with_tpls = stps.as_staypoints.merge_staypoints(tpls)
+        sp, tpls = example_triplegs_merge
+        merged_sp_with_tpls = sp.as_staypoints.merge_staypoints(tpls)
         # assert that staypoint 6 and 15 were not merged because of tpls inbetween
-        assert len(merged_stps_with_tpls) == len(stps) - 2
+        assert len(merged_sp_with_tpls) == len(sp) - 2
         # 15 should not be merged
-        assert 15 in merged_stps_with_tpls.index
+        assert 15 in merged_sp_with_tpls.index
 
     def test_merge_staypoints_time(self, example_staypoints_merge):
         """Test if all merged staypoints have the correct start and end time"""
-        stps, tpls = example_staypoints_merge
-        merged_stps = stps.as_staypoints.merge_staypoints(tpls)
+        sp, tpls = example_staypoints_merge
+        merged_sp = sp.as_staypoints.merge_staypoints(tpls)
         # user 1 - id 7 and 80 merged
-        assert stps.loc[7, "started_at"] == merged_stps.loc[7, "started_at"]
-        assert stps.loc[80, "finished_at"] == merged_stps.loc[7, "finished_at"]
+        assert sp.loc[7, "started_at"] == merged_sp.loc[7, "started_at"]
+        assert sp.loc[80, "finished_at"] == merged_sp.loc[7, "finished_at"]
         # user 0 - id 2,6, and 15 merged
-        assert stps.loc[2, "started_at"] == merged_stps.loc[2, "started_at"]
-        assert stps.loc[15, "finished_at"] == merged_stps.loc[2, "finished_at"]
+        assert sp.loc[2, "started_at"] == merged_sp.loc[2, "started_at"]
+        assert sp.loc[15, "finished_at"] == merged_sp.loc[2, "finished_at"]
 
     def test_merge_staypoints_max_time_gap(self, example_staypoints_merge):
         """Test it the max_time_gap argument works correctly"""
-        stps, tpls = example_staypoints_merge
-        merged_stps = stps.as_staypoints.merge_staypoints(tpls, max_time_gap="2h")
-        assert len(merged_stps) == len(stps) - 4
+        sp, tpls = example_staypoints_merge
+        merged_sp = sp.as_staypoints.merge_staypoints(tpls, max_time_gap="2h")
+        assert len(merged_sp) == len(sp) - 4
         # user 0 - id 5, 2,6, and 15 merged
-        assert stps.loc[5, "started_at"] == merged_stps.loc[5, "started_at"]
-        assert stps.loc[15, "finished_at"] == merged_stps.loc[5, "finished_at"]
+        assert sp.loc[5, "started_at"] == merged_sp.loc[5, "started_at"]
+        assert sp.loc[15, "finished_at"] == merged_sp.loc[5, "finished_at"]
+
+    def test_merge_staypoints_time_gap_error(self, example_staypoints_merge):
+        sp, tpls = example_staypoints_merge
+        # check that an int as max time gap raises a TypeError
+        with pytest.raises(Exception) as e_info:
+            merged_sp = sp.as_staypoints.merge_staypoints(tpls, max_time_gap=2)
+            assert e_info == "Parameter max_time_gap must be either of type String or pd.Timedelta!"
+        # check that an timedelta as max time gap works
+        _ = sp.as_staypoints.merge_staypoints(tpls, max_time_gap=pd.to_timedelta("1h"))
 
     def test_merge_staypoints_agg(self, example_staypoints_merge):
         """Test whether the user can specify the aggregation mode"""
         aggregation_dict = {"geom": "first", "finished_at": "first"}
 
-        stps, tpls = example_staypoints_merge
-        merged_stps = stps.as_staypoints.merge_staypoints(tpls, agg=aggregation_dict)
+        sp, tpls = example_staypoints_merge
+        merged_sp = sp.as_staypoints.merge_staypoints(tpls, agg=aggregation_dict)
 
         # in contrast to the test above, the first of (7,80) should now be used for finished at
-        assert stps.loc[7, "finished_at"] == merged_stps.loc[7, "finished_at"]
-        assert stps.loc[2, "finished_at"] == merged_stps.loc[2, "finished_at"]
+        assert sp.loc[7, "finished_at"] == merged_sp.loc[7, "finished_at"]
+        assert sp.loc[2, "finished_at"] == merged_sp.loc[2, "finished_at"]
         # the geom should correspond to the first one
-        assert stps.loc[7, "geom"] == merged_stps.loc[7, "geom"]
-        assert stps.loc[2, "geom"] == merged_stps.loc[2, "geom"]
+        assert sp.loc[7, "geom"] == merged_sp.loc[7, "geom"]
+        assert sp.loc[2, "geom"] == merged_sp.loc[2, "geom"]
