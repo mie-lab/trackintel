@@ -232,8 +232,12 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
         If str must be parsable by pd.to_timedelta.
 
     agg: dict, optional
-        Dictionary to aggregate the rows after merging staypoints. If empty, only the required columns of staypoints
-        (which are ['user_id', 'started_at', 'finished_at']) are aggregated and returned.
+        Dictionary to aggregate the rows after merging staypoints. This dictionary is used as input to the pandas
+        aggregate function: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.agg.html
+        If empty, only the required columns of staypoints (which are ['user_id', 'started_at', 'finished_at']) are
+        aggregated and returned. In order to return for example also the geometry column of the merged staypoints, set
+        'agg={"geom":"first"}' to return the first geometry of the merged staypoints, or 'agg={"geom":"last"}' to use
+        the last one etc.
 
     Returns
     -------
@@ -255,7 +259,7 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     >>> # direct function call
     >>> ti.preprocessing.staypoints.merge_staypoints(staypoints=sp, triplegs=tpls)
     >>> # or using the trackintel datamodel
-    >>> sp.as_staypoints.merge_staypoints(triplegs, max_time_gap="1h", agg={"geom":"first})
+    >>> sp.as_staypoints.merge_staypoints(triplegs, max_time_gap="1h", agg={"geom":"first"})
     """
 
     if isinstance(max_time_gap, str):
