@@ -335,7 +335,7 @@ class TestGenerate_trips:
         assert len(trips) == 1
 
     def test_spts_tpls_index(self):
-        """Test that index stays the same for staypoints and triplegs after generating trips."""
+        """Test if staypoint and tripleg index are identical before and after generating trips."""
         start = pd.Timestamp("2021-07-11 8:00:00")
         h = pd.to_timedelta("1h")
         spts_tpls = [
