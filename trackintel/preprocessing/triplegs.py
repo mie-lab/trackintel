@@ -217,6 +217,7 @@ def generate_trips(spts, tpls, gap_threshold=15, add_geometry=True):
     trips_with_act["next_trip_id"] = trips_with_act["trip_id"].shift(-1)
     activity_staypoints = trips_with_act[trips_with_act["type"] == "staypoint"].copy()
     activity_staypoints.index = activity_staypoints["spts_tpls_id"]
+    # containing None changes dtype -> revert to original dtype.
     activity_staypoints.index = activity_staypoints.index.astype(spts.index.dtype)
     spts = spts.join(activity_staypoints[["prev_trip_id", "next_trip_id"]], how="left")
 
