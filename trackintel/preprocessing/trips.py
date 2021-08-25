@@ -197,10 +197,9 @@ def _generate_tours_user(
         trip_id = row.name  # trip id
         end_time = row["finished_at"]
 
-        # check if there is a spatial gap between the previous and current trip
         if len(start_candidates) > 0:
-            # For spatial gaps, check whether two consecutive trips (the current one and the previous one) share the
-            # same location
+            # Check if there is a spatial gap between the previous and current trip:
+            # If staypoints with locations are available, check whether they share the same location
             if staypoints is not None:
                 end_start_at_same_loc = _check_same_loc(
                     user_trip_df.loc[start_candidates[-1], "destination_staypoint_id"],  # dest. stp of previous trip
@@ -208,7 +207,7 @@ def _generate_tours_user(
                     staypoints,
                 )
             else:
-                # if no locations are available, check whether the distance is smaller than max_dist
+                # If no locations are available, check whether the distance is smaller than max_dist
                 end_start_at_same_loc = _check_max_dist(
                     user_trip_df.loc[start_candidates[-1], geom_col][1],  # destination point of previous trip
                     row[geom_col][0],  # start point of current trip
