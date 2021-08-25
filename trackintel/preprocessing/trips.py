@@ -59,17 +59,17 @@ def generate_tours(
       only the id of the smallest tour is used.
     - It is possible to allow spatial gaps to occur on the tour, which might be useful to deal with missing data.
       Example: The two trips home-work, supermarket-home would still be detected as a tour when max_nr_gaps >= 1,
-      althoug the work-supermarket trip is missing.
-      Warning: So far, neither temporal nor spatial distances of gaps are bounded (except by max_time)! Thus, this
-      parameter should be set with caution, because trips that are hours apart might still be connected to a tour if
-      `max_nr_gaps > 0`.
+      although the work-supermarket trip is missing.
+      Warning: This only counts the number of gaps, but neither temporal or spatial distance of gaps, nor the number
+      of missing trips in a gap are bounded. Thus, this parameter should be set with caution, because trips that are
+      hours apart might still be connected to a tour if `max_nr_gaps > 0`.
     """
     # Two options: either the location IDs for staypoints on the trips are provided, or a maximum distance threshold
     # between end and start of trips is used
     if staypoints is not None:
         assert (
             "location_id" in staypoints.columns
-        ), "Staypoints with location ID is required, otherwise tours are generated wo location from maximum distance"
+        ), "Staypoints with location ID is required, otherwise tours are generated without location using max_dist"
         geom_col = None  # not used
         crs_is_projected = False  # not used
     else:
@@ -146,6 +146,40 @@ def _generate_tours_user(
     geom_col="geom",
     crs_is_projected=False,
 ):
+    """
+    Compute tours from trips for one user
+
+    Parameters
+    ----------
+    user_trip_df : GeoDataFrame (as trackintel trips)
+        The trips have to follow the standard definition for trips DataFrames
+
+    staypoints : GeoDataFrame (as trackintel staypoints, preprocessed to contain location IDs), default None
+        The staypoints have to follow the standard definition for staypoints DataFrames. The location ID column
+        is necessary to connect trips via locations to a tour. If None, trips will be connected based only on a
+        distance threshold `max_dist`.
+
+    max_dist: float, default 100 (meters)
+        Maximum distance between the end point of one trip and the start point of the next trip on a tour.
+        Note: If `max_nr_gaps > 0` (see below), a tour can contain gaps
+
+    max_time: Timedelta, default 1 day
+        Maximum time that a tour is allowed to take
+
+    max_nr_gaps: int, default 0
+        Maximum number of spatial gaps on the tour. Use with caution - see notes below.
+
+    geom_col : str, optional
+        Name of geometry column of user_trip_df, by default "geom"
+
+    crs_is_projected : bool, optional
+        Whether the crs of user_trip_df is projected, by default False
+
+    Returns
+    -------
+    tours_df: DataFrame
+        Tours for one user
+    """
     user_id = user_trip_df["user_id"].unique()
     assert len(user_id) == 1
     user_id = user_id[0]
@@ -162,7 +196,6 @@ def _generate_tours_user(
     for i, row in user_trip_df.iterrows():
         trip_id = row.name  # trip id
         end_time = row["finished_at"]
-        # print("current candidates", start_candidates)
 
         # check if there is a spatial gap between the previous and current trip
         if len(start_candidates) > 0:
@@ -175,9 +208,12 @@ def _generate_tours_user(
                     staypoints,
                 )
             else:
-                # check distance between point 1: end point of previous trip, point 2: start of current trip
+                # if no locations are available, check whether the distance is smaller than max_dist
                 end_start_at_same_loc = _check_max_dist(
-                    user_trip_df.loc[start_candidates[-1], geom_col][1], row[geom_col][0], max_dist, crs_is_projected
+                    user_trip_df.loc[start_candidates[-1], geom_col][1],  # destination point of previous trip
+                    row[geom_col][0],  # start point of current trip
+                    max_dist,
+                    crs_is_projected,
                 )
 
             # if the current trip does not start at the end of the previous trip, there is a gap
@@ -233,9 +269,12 @@ def _generate_tours_user(
                     staypoints,
                 )
             else:
-                # check distance between point 1: end point of current trip, point 2: start of first trip on tour
+                # if no locations are available, check whether the distance is smaller than max_dist
                 end_start_at_same_loc = _check_max_dist(
-                    row[geom_col][1], user_trip_df.loc[cand, geom_col][0], max_dist, crs_is_projected=crs_is_projected
+                    user_trip_df.loc[cand, geom_col][0],  # start point of first trip
+                    row[geom_col][1],  # destination point of current trip
+                    max_dist,
+                    crs_is_projected=crs_is_projected,
                 )
 
             if end_start_at_same_loc:
