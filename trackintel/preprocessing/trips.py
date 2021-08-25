@@ -8,7 +8,12 @@ import trackintel as ti
 
 
 def generate_tours(
-    trips_inp, staypoints=None, max_dist=100, max_time=timedelta(days=1), max_nr_gaps=0, print_progress=False,
+    trips_inp,
+    staypoints=None,
+    max_dist=100,
+    max_time=timedelta(days=1),
+    max_nr_gaps=0,
+    print_progress=False,
 ):
     """
     Generate trackintel-tours from trips
