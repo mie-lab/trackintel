@@ -155,6 +155,16 @@ class TestGeolife_add_modes_to_triplegs:
 
         assert "started_at_s" not in tpls.columns
 
+    def test_no_overlap(self, read_geolife_triplegs_with_modes):
+        """Test that overlapping labels are not causing duplicate ids.
+        user 10 was modified to have several overlapping labels"""
+
+        tpls, labels = read_geolife_triplegs_with_modes
+        tpls = geolife_add_modes_to_triplegs(tpls, labels)
+
+        assert tpls.index.is_unique
+        assert not tpls.duplicated(subset=["started_at", "finished_at"]).any()
+
     def test_mode_matching(self, matching_data):
         # bring label data into right format. All labels belong to the same user
         tpls, labels_raw = matching_data

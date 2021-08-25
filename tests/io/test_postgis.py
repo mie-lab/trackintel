@@ -1,14 +1,14 @@
-"""A copy of the geopandas postgis test to verify the continuous integration"""
 import datetime
 import os
 
 import geopandas as gpd
-import pandas as pd
-import pytest
 from geopandas.testing import assert_geodataframe_equal
+import pandas as pd
 from pandas.testing import assert_frame_equal
-from shapely.geometry import LineString, Point, Polygon
+import pytest
 import sqlalchemy
+from shapely.geometry import LineString, MultiPoint, Point, Polygon
+
 import trackintel as ti
 
 
@@ -275,6 +275,22 @@ class TestPositionfixes:
         finally:
             del_table(conn, table)
 
+    def test_non_standard_column_names(self, example_positionfixes, conn_postgis):
+        """Test renaming handled by read_positionfixes_gpd()."""
+        pfs = example_positionfixes.copy()
+        conn_string, conn = conn_postgis
+        table = "positionfixes"
+        sql = f"SELECT * FROM {table}"
+        geom_col = pfs.geometry.name
+        rename_dict = {"user_id": "USER", "tracked_at": "time"}
+        pfs.rename(rename_dict, inplace=True)
+        try:
+            pfs.as_positionfixes.to_postgis(table, conn_string)
+            pfs_db = ti.io.read_positionfixes_postgis(sql, conn_string, geom_col, index_col="id", **rename_dict)
+            assert_geodataframe_equal(example_positionfixes, pfs_db)
+        finally:
+            del_table(conn, table)
+
 
 class TestTriplegs:
     def test_write(self, example_triplegs, conn_postgis):
@@ -304,7 +320,7 @@ class TestTriplegs:
 
         try:
             tpls.as_triplegs.to_postgis(table, conn_string)
-            tpls_db = ti.io.read_triplegs_postgis(sql, conn_string, geom_col)
+            tpls_db = ti.io.read_triplegs_postgis(sql, conn_string, geom_col, index_col="id")
             assert_geodataframe_equal(tpls, tpls_db)
         finally:
             del_table(conn, table)
@@ -320,8 +336,24 @@ class TestTriplegs:
 
         try:
             tpls.as_triplegs.to_postgis(table, conn_string)
-            tpls_db = ti.io.read_triplegs_postgis(sql, conn_string, geom_col)
+            tpls_db = ti.io.read_triplegs_postgis(sql, conn_string, geom_col, index_col="id")
             assert_geodataframe_equal(tpls, tpls_db)
+        finally:
+            del_table(conn, table)
+
+    def test_non_standard_column_names(self, example_triplegs, conn_postgis):
+        """Test renaming handled by read_triplegs_gpd()."""
+        tpls = example_triplegs.copy()
+        conn_string, conn = conn_postgis
+        table = "triplegs"
+        sql = f"SELECT * FROM {table}"
+        geom_col = tpls.geometry.name
+        rename_dict = {"user_id": "USER", "started_at": "start_time", "finished_at": "end_time"}
+        tpls.rename(rename_dict, inplace=True)
+        try:
+            tpls.as_triplegs.to_postgis(table, conn_string)
+            tpls_db = ti.io.read_triplegs_postgis(sql, conn_string, geom_col, index_col="id", **rename_dict)
+            assert_geodataframe_equal(example_triplegs, tpls_db)
         finally:
             del_table(conn, table)
 
@@ -354,7 +386,7 @@ class TestStaypoints:
 
         try:
             spts.as_staypoints.to_postgis(table, conn_string)
-            spts_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col)
+            spts_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col, index_col="id")
             assert_geodataframe_equal(spts, spts_db)
         finally:
             del_table(conn, table)
@@ -369,7 +401,7 @@ class TestStaypoints:
         spts.crs = None
         try:
             spts.as_staypoints.to_postgis(table, conn_string)
-            spts_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col)
+            spts_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col, index_col="id")
             assert_geodataframe_equal(spts, spts_db)
         finally:
             del_table(conn, table)
@@ -403,7 +435,7 @@ class TestLocations:
 
         try:
             locs.as_locations.to_postgis(table, conn_string)
-            locs_db = ti.io.read_locations_postgis(sql, conn_string, geom_col)
+            locs_db = ti.io.read_locations_postgis(sql, conn_string, geom_col, index_col="id")
             assert_geodataframe_equal(locs, locs_db)
         finally:
             del_table(conn, table)
@@ -418,7 +450,7 @@ class TestLocations:
         locs.crs = None
         try:
             locs.as_locations.to_postgis(table, conn_string)
-            locs_db = ti.io.read_locations_postgis(sql, conn_string, geom_col)
+            locs_db = ti.io.read_locations_postgis(sql, conn_string, geom_col, index_col="id")
             assert_geodataframe_equal(locs, locs_db)
         finally:
             del_table(conn, table)
@@ -442,6 +474,23 @@ class TestLocations:
             geom_schema_extent = f"geometry(Polygon,{srid})"
             assert geom_schema_center in dtypes
             assert geom_schema_extent in dtypes
+        finally:
+            del_table(conn, table)
+
+    def test_non_standard_column_names(self, example_locations, conn_postgis):
+        """Test renaming handled by read_locations_gpd()."""
+        locs = example_locations.copy()
+        conn_string, conn = conn_postgis
+        table = "locations"
+        sql = f"SELECT * FROM {table}"
+        rename_dict = {"user_id": "USER", "center": "geom"}
+        locs.rename(rename_dict, inplace=True)
+        del rename_dict["center"]
+        geom_col = locs.geometry.name
+        try:
+            locs.as_locations.to_postgis(table, conn_string)
+            tpls_db = ti.io.read_locations_postgis(sql, conn_string, geom_col, index_col="id", **rename_dict)
+            assert_geodataframe_equal(example_locations, tpls_db)
         finally:
             del_table(conn, table)
 
@@ -470,8 +519,65 @@ class TestTrips:
 
         try:
             trips.as_trips.to_postgis(table, conn_string)
-            trips_db = ti.io.read_trips_postgis(sql, conn_string)
+            trips_db = ti.io.read_trips_postgis(sql, conn_string, index_col="id")
             assert_frame_equal(trips, trips_db)
+        finally:
+            del_table(conn, table)
+
+    def test_non_standard_column_names(self, example_trips, conn_postgis):
+        """Test renaming handled by read_trips_gpd()."""
+        trips = example_trips.copy()
+        conn_string, conn = conn_postgis
+        table = "trips"
+        sql = f"SELECT * FROM {table}"
+        rename_dict = {
+            "started_at": "start_time",
+            "finished_at": "end_time",
+            "user_id": "USER",
+            "origin_staypoint_id": "ORIGIN",
+            "destination_staypoint_id": "DEST",
+        }
+        trips.rename(rename_dict, inplace=True)
+        try:
+            trips.as_trips.to_postgis(table, conn_string)
+            tpls_db = ti.io.read_trips_postgis(sql, conn_string, index_col="id", **rename_dict)
+            assert_frame_equal(example_trips, tpls_db)
+        finally:
+            del_table(conn, table)
+
+    def test_write_with_geometry(self, example_trips, conn_postgis):
+        """Test if write of trips with geometry creates correct schema in database."""
+        mp1 = MultiPoint([(0.0, 0.0), (1.0, 1.0)])
+        mp2 = MultiPoint([(2.0, 2.0), (3.0, 3.0)])
+        trips = gpd.GeoDataFrame(example_trips, copy=True, geometry=[mp1, mp2, mp2], crs="EPSG:4326")
+        conn_string, conn = conn_postgis
+        table = "positionfixes"
+        try:
+            trips.as_trips.to_postgis(table, conn_string)
+            columns_db, dtypes = get_table_schema(conn, table)
+            columns = trips.columns.tolist() + [trips.index.name]
+            assert len(columns_db) == len(columns)
+            assert set(columns_db) == set(columns)
+            srid = _get_srid(trips)
+            geom_schema = f"geometry(MultiPoint,{srid})"
+            assert geom_schema in dtypes
+        finally:
+            del_table(conn, table)
+
+    def test_read_with_geometry(self, example_trips, conn_postgis):
+        """Test if read with geometry works."""
+        mp1 = MultiPoint([(0.0, 0.0), (1.0, 1.0)])
+        mp2 = MultiPoint([(2.0, 2.0), (3.0, 3.0)])
+        trips = gpd.GeoDataFrame(example_trips, copy=True, geometry=[mp1, mp2, mp2], crs="EPSG:4326")
+        conn_string, conn = conn_postgis
+        table = "trips"
+        sql = f"SELECT * FROM {table}"
+        geom_col = trips.geometry.name
+
+        try:
+            trips.as_trips.to_postgis(table, conn_string)
+            locs_db = ti.io.read_trips_postgis(sql, conn_string, geom_col=geom_col, index_col="id")
+            assert_geodataframe_equal(trips, locs_db)
         finally:
             del_table(conn, table)
 

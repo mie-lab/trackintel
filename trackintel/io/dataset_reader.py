@@ -201,6 +201,11 @@ def geolife_add_modes_to_triplegs(
     tpls : GeoDataFrame (as trackintel triplegs)
         triplegs with mode labels.
 
+    Notes
+    ------
+    In the case that several labels overlap with the same tripleg the label with the highest overlap (relative to the
+    tripleg) is chosen
+
     Example
     ----------
     >>> from trackintel.io.dataset_reader import read_geolife, geolife_add_modes_to_triplegs
@@ -253,12 +258,23 @@ def geolife_add_modes_to_triplegs(
     if len(tpls_id_mode_list) == 0:
         tpls["mode"] = np.nan
     else:
-        tpls_id_mode = pd.DataFrame(tpls_id_mode_list).set_index("id")
+        tpls_id_mode = pd.DataFrame(tpls_id_mode_list)
+
+        # chose label with highest overlap
+        tpls_id_mode = tpls_id_mode.sort_values(by=["id", "ratio"])
+        # keep last (df sorted ascending)
+        tpls_id_mode = tpls_id_mode.drop_duplicates(subset="id", keep="last").set_index("id")
+
         tpls = tpls.join(tpls_id_mode)
         tpls = tpls.astype({"label_id": "Int64"})
 
     try:
         tpls.drop(["started_at_s", "finished_at_s"], axis=1, inplace=True)
+    except KeyError:
+        pass
+
+    try:
+        tpls.drop(["ratio"], axis=1, inplace=True)
     except KeyError:
         pass
 
@@ -321,7 +337,12 @@ def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_thres
             if ratio_this >= ratio_threshold:
                 # assign label to tripleg (by storing matching in dictionary)
                 tpls_id_mode_list.append(
-                    {"id": potential_tripleg.name, "label_id": potential_label.name, "mode": potential_label["mode"]}
+                    {
+                        "id": potential_tripleg.name,
+                        "label_id": potential_label.name,
+                        "mode": potential_label["mode"],
+                        "ratio": ratio_this,
+                    }
                 )
 
     return tpls_id_mode_list
