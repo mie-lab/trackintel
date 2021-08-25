@@ -217,7 +217,7 @@ def check_gdf_planar(gdf, transform=False):
         if transform:
             gdf.crs = "EPSG:4326"
         else:
-            warnings.warn("Your data is not projected.")
+            warnings.warn("The CRS of your data is not defined.")
 
     elif gdf.crs == "EPSG:4326":  # if projection is defined as WGS84
         is_planar = False
