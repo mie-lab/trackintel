@@ -71,7 +71,7 @@ class TestPredict_transport_mode:
 
         with pytest.warns(
             UserWarning,
-            match="Your data is not projected.",
+            match="The CRS of your data is not defined.",
         ):
             tpls_transport_mode = tpls.as_triplegs.predict_transport_mode(method="simple-coarse")
 
