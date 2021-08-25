@@ -13,7 +13,7 @@ import trackintel as ti
 def example_trip_data():
     """Trips and locations for tour generation."""
     # define points for each staypoint
-    stp_geom_mapping = {
+    sp_geom_mapping = {
         1: Point(8.5067847, 47.4),
         2: Point(8.5067847, 47.40001),
         3: Point(8.5067847, 47.6),
@@ -104,17 +104,17 @@ def example_trip_data():
     # fill geom based on staypoints
     for row_dict in trips_list_dict:
         row_dict["geom"] = MultiPoint(
-            (stp_geom_mapping[row_dict["origin_staypoint_id"]], stp_geom_mapping[row_dict["destination_staypoint_id"]])
+            (sp_geom_mapping[row_dict["origin_staypoint_id"]], sp_geom_mapping[row_dict["destination_staypoint_id"]])
         )
 
-    # assign location IDs (only for testing, not a trackintel stps standard!)
-    stps_locs = pd.DataFrame({"location_id": [1, 1, 2, 3, 1, 2, 4]}, index=[1, 2, 3, 4, 5, 6, 7])
+    # assign location IDs (only for testing, not a trackintel staypoints standard!)
+    sp_locs = pd.DataFrame({"location_id": [1, 1, 2, 3, 1, 2, 4]}, index=[1, 2, 3, 4, 5, 6, 7])
 
     trips = gpd.GeoDataFrame(data=trips_list_dict, geometry="geom", crs="EPSG:4326")
     trips = trips.set_index("id")
     # assert valid trips
     trips.as_trips
-    return trips, stps_locs
+    return trips, sp_locs
 
 
 @pytest.fixture
@@ -142,7 +142,7 @@ class TestGenerate_tours:
 
     def test_generate_tours(self, example_trip_data):
         """Test general functionality of generate tours function"""
-        trips, stps_locs = example_trip_data
+        trips, sp_locs = example_trip_data
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips)
         # check that nothing else than the new column has changed in trips df
         assert all(trips_out.iloc[:, :6] == trips)
@@ -157,7 +157,7 @@ class TestGenerate_tours:
 
     def test_tours_with_gap(self, example_trip_data):
         """Test functionality of max_nr_gaps parameter in tour generation"""
-        trips, stps_locs = example_trip_data
+        trips, sp_locs = example_trip_data
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_nr_gaps=1)
         # new tour was found for user 1
         assert len(tours) == 3
@@ -166,7 +166,7 @@ class TestGenerate_tours:
 
     def test_tour_times(self, example_trip_data):
         """Check whether the start and end times of generated tours are correct"""
-        trips, stps_locs = example_trip_data
+        trips, sp_locs = example_trip_data
         max_time = datetime.timedelta(days=1)
         trips_out, tours = ti.preprocessing.trips.generate_tours(
             trips, max_nr_gaps=1, max_time=datetime.timedelta(days=1)
@@ -184,7 +184,7 @@ class TestGenerate_tours:
 
     def test_tour_geom(self, example_trip_data):
         """Test whether tour generation is invariant to the name of the geometry column"""
-        trips, stps_locs = example_trip_data
+        trips, sp_locs = example_trip_data
         trips.rename(columns={"geom": "other_geom_name"}, inplace=True)
         trips = trips.set_geometry("other_geom_name")
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips)
@@ -193,7 +193,7 @@ class TestGenerate_tours:
 
     def test_tour_max_time(self, example_trip_data):
         """Test functionality of max time argument in tour generation"""
-        trips, stps_locs = example_trip_data
+        trips, sp_locs = example_trip_data
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_time=datetime.timedelta(hours=2))
         assert len(tours) == 0
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_time=datetime.timedelta(hours=3))
@@ -201,12 +201,12 @@ class TestGenerate_tours:
 
     def test_tours_locations(self, example_trip_data):
         """Test whether tour generation with locations as input yields correct results as well"""
-        trips, stps_locs = example_trip_data
-        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, stps_w_locs=stps_locs, max_nr_gaps=1)
+        trips, sp_locs = example_trip_data
+        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, staypoints=sp_locs, max_nr_gaps=1)
         assert all(tours["location_id"] == pd.Series([1, 2, 2]))
         for tour_id, tour_df in trips_out.groupby("tour_id"):
             gt_start = tour_df.iloc[0]["origin_staypoint_id"]
-            gt_loc = stps_locs.loc[gt_start, "location_id"]
+            gt_loc = sp_locs.loc[gt_start, "location_id"]
             gt_end = tour_df.iloc[-1]["destination_staypoint_id"]
             assert gt_start == tours.loc[tour_id, "origin_staypoint_id"]
             assert gt_end == tours.loc[tour_id, "destination_staypoint_id"]
@@ -254,7 +254,7 @@ class TestGenerate_tours:
 
     def test_print_progress_flag(self, example_trip_data, capsys):
         """Test if the print_progress bar controls the printing behavior."""
-        trips, stps_locs = example_trip_data
+        trips, sp_locs = example_trip_data
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips, print_progress=True)
         captured_print = capsys.readouterr()
         assert captured_print.err != ""
@@ -265,7 +265,7 @@ class TestGenerate_tours:
 
     def test_index_stability(self, example_trip_data):
         """Test if the index of the trips remains stable"""
-        trips, stps_locs = example_trip_data
+        trips, sp_locs = example_trip_data
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips, print_progress=True)
 
         assert trips.index.equals(trips_out.index)

@@ -8,12 +8,7 @@ import trackintel as ti
 
 
 def generate_tours(
-    trips_inp,
-    stps_w_locs=None,
-    max_dist=100,
-    max_time=timedelta(days=1),
-    max_nr_gaps=0,
-    print_progress=False,
+    trips_inp, staypoints=None, max_dist=100, max_time=timedelta(days=1), max_nr_gaps=0, print_progress=False,
 ):
     """
     Generate trackintel-tours from trips
@@ -23,7 +18,7 @@ def generate_tours(
     trips_inp : GeoDataFrame (as trackintel trips)
         The trips have to follow the standard definition for trips DataFrames
 
-    stps_w_locs : GeoDataFrame (as trackintel staypoints, preprocessed to contain location IDs), default None
+    staypoints : GeoDataFrame (as trackintel staypoints, preprocessed to contain location IDs), default None
         The staypoints have to follow the standard definition for staypoints DataFrames. The location ID column
         is necessary to connect trips via locations to a tour. If None, trips will be connected based only on a
         distance threshold `max_dist`.
@@ -66,9 +61,9 @@ def generate_tours(
     """
     # Two options: either the location IDs for staypoints on the trips are provided, or a maximum distance threshold
     # between end and start of trips is used
-    if stps_w_locs is not None:
+    if staypoints is not None:
         assert (
-            "location_id" in stps_w_locs.columns
+            "location_id" in staypoints.columns
         ), "Staypoints with location ID is required, otherwise tours are generated wo location from maximum distance"
         geom_col = None  # not used
         crs_is_projected = False  # not used
@@ -85,7 +80,7 @@ def generate_tours(
         "max_dist": max_dist,
         "max_nr_gaps": max_nr_gaps,
         "max_time": max_time,
-        "stps_w_locs": stps_w_locs,
+        "staypoints": staypoints,
         "geom_col": geom_col,
         "crs_is_projected": crs_is_projected,
     }
@@ -139,7 +134,7 @@ def generate_tours(
 
 def _generate_tours_user(
     user_trip_df,
-    stps_w_locs=None,
+    staypoints=None,
     max_dist=100,
     max_nr_gaps=0,
     max_time=timedelta(days=1),
@@ -168,11 +163,11 @@ def _generate_tours_user(
         if len(start_candidates) > 0:
             # For spatial gaps, check whether two consecutive trips (the current one and the previous one) share the
             # same location
-            if stps_w_locs is not None:
+            if staypoints is not None:
                 end_start_at_same_loc = _check_same_loc(
                     user_trip_df.loc[start_candidates[-1], "destination_staypoint_id"],  # dest. stp of previous trip
                     row["origin_staypoint_id"],  # start stp of current trip
-                    stps_w_locs,
+                    staypoints,
                 )
             else:
                 # check distance between point 1: end point of previous trip, point 2: start of current trip
@@ -226,11 +221,11 @@ def _generate_tours_user(
                 continue
 
             # check if endpoint of trip = start location of cand
-            if stps_w_locs is not None:
+            if staypoints is not None:
                 end_start_at_same_loc = _check_same_loc(
                     user_trip_df.loc[cand, "origin_staypoint_id"],  # start stp of first trip
                     row["destination_staypoint_id"],  # destination stp of current trip
-                    stps_w_locs,
+                    staypoints,
                 )
             else:
                 # check distance between point 1: end point of current trip, point 2: start of first trip on tour
@@ -243,7 +238,7 @@ def _generate_tours_user(
                 # collect the trips on the tour in a list
                 non_gap_trip_idxs = [c for c in start_candidates[-j - 1 :] if ~np.isnan(c)]
                 tour_candidate = user_trip_df[user_trip_df.index.isin(non_gap_trip_idxs)]
-                tours.append(_create_tour_from_stack(tour_candidate, stps_w_locs, max_dist, max_time))
+                tours.append(_create_tour_from_stack(tour_candidate, staypoints, max_time))
 
                 # do not consider the other trips - one trip cannot close two tours at a time
                 break
@@ -255,7 +250,7 @@ def _generate_tours_user(
     return tours_df
 
 
-def _check_same_loc(stp1, stp2, stps_w_locs):
+def _check_same_loc(stp1, stp2, staypoints):
     """Check whether two staypoints are at the same location
 
     Parameters
@@ -264,7 +259,7 @@ def _check_same_loc(stp1, stp2, stps_w_locs):
         First staypoint id
     stp2 : int
         Second staypoint id
-    stps_w_locs : Trackintel staypoints
+    staypoints : Trackintel staypoints
         GeoDataFrame with staypoints and also location ids
 
     Returns
@@ -274,7 +269,7 @@ def _check_same_loc(stp1, stp2, stps_w_locs):
     """
     if pd.isna(stp1) or pd.isna(stp2):
         return False
-    share_location = stps_w_locs.loc[stp1, "location_id"] == stps_w_locs.loc[stp2, "location_id"]
+    share_location = staypoints.loc[stp1, "location_id"] == staypoints.loc[stp2, "location_id"]
     return share_location
 
 
@@ -300,7 +295,7 @@ def _check_max_dist(p1, p2, max_dist, crs_is_projected=False):
     return dist_below_thresh
 
 
-def _create_tour_from_stack(temp_tour_stack, stps_w_locs, max_dist, max_time):
+def _create_tour_from_stack(temp_tour_stack, staypoints, max_time):
     """
     Aggregate information of tour elements in a structured dictionary.
 
@@ -320,10 +315,10 @@ def _create_tour_from_stack(temp_tour_stack, stps_w_locs, max_dist, max_time):
     last_trip = temp_tour_stack.iloc[-1]
 
     # get location ID if available:
-    if stps_w_locs is not None:
-        start_loc = stps_w_locs.loc[first_trip["origin_staypoint_id"], "location_id"]
+    if staypoints is not None:
+        start_loc = staypoints.loc[first_trip["origin_staypoint_id"], "location_id"]
         # double check whether start and end location are the same
-        end_loc = stps_w_locs.loc[last_trip["destination_staypoint_id"], "location_id"]
+        end_loc = staypoints.loc[last_trip["destination_staypoint_id"], "location_id"]
         assert start_loc == end_loc
     else:
         # set location to NaN since not available
