@@ -1,7 +1,7 @@
 import datetime
 import os
 import sys
-import re
+from pandas import Timestamp
 
 import geopandas as gpd
 import numpy as np
@@ -254,6 +254,37 @@ class TestGenerate_staypoints:
                 pfs.dropna(subset=["staypoint_id"], inplace=True)
                 pfs.drop_duplicates(subset=["staypoint_id"], keep="last", inplace=True)
                 assert (pfs["diff"] < gap_threshold).all()
+
+    def test_gap_threshold(self):
+        """Test for gap_threshold for consecutive pfs."""
+        # two pfs far apart in time that could potentially form a sp spatially.
+        pfs_dict = [
+            {
+                "latitude": 39.976,
+                "longitude": 116.330683333333,
+                "tracked_at": Timestamp("2007-08-09 01:35:46+0000", tz="UTC"),
+                "user_id": 55,
+            },
+            {
+                "latitude": 39.975818526,
+                "longitude": 116.331600228,
+                "tracked_at": Timestamp("2011-08-03 09:12:52+0000", tz="UTC"),
+                "user_id": 55,
+            },
+        ]
+        df = pd.DataFrame(pfs_dict)
+        pfs = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude))
+        pfs.as_positionfixes
+
+        # using the default gap_threshold will generate no sp
+        warn_string = "No staypoints can be generated, returning empty sp."
+        with pytest.warns(UserWarning, match=warn_string):
+            _, sp = pfs.as_positionfixes.generate_staypoints(include_last=True)
+            assert len(sp) == 0
+
+        # using large gap_threshold one sp will be generated
+        _, sp = pfs.as_positionfixes.generate_staypoints(gap_threshold=1e8, include_last=True)
+        assert len(sp) == 1
 
 
 class TestGenerate_triplegs:
