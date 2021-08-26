@@ -81,7 +81,7 @@ else:
 # Where the magic happens:
 setup(
     name=NAME,
-    version=about["__version__"],
+    version=__version__,
     description=DESCRIPTION,
     long_description=long_description,
     long_description_content_type="text/markdown",
