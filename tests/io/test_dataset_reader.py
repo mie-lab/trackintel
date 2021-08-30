@@ -27,7 +27,7 @@ def read_geolife_triplegs_with_modes(read_geolife_modes):
 
 @pytest.fixture
 def matching_data():
-    """generate test data for tripleg mode matching
+    """Test data for tripleg mode matching.
 
     There are two labels given:
         Tripleg_0 overlaps from the left and is almost fully included in label_0
@@ -52,6 +52,7 @@ def matching_data():
     ]
 
     triplegs = pd.DataFrame(triplegs).set_index("id")
+    triplegs["user_id"] = 0
     labels_raw = pd.DataFrame(labels_raw).set_index("id")
 
     return triplegs, labels_raw
@@ -59,11 +60,7 @@ def matching_data():
 
 @pytest.fixture()
 def impossible_matching_data():
-    """
-    generate test data for tripleg mode matching where the labels and the tracking data are really far apart
-
-    """
-
+    """Test data for tripleg mode matching where the labels and the tracking data are really far apart."""
     one_hour = datetime.timedelta(hours=1)
     one_min = datetime.timedelta(minutes=1)
     time_1 = pd.Timestamp("1970-01-01", tz="utc")
@@ -75,6 +72,7 @@ def impossible_matching_data():
     ]
 
     triplegs = pd.DataFrame(triplegs).set_index("id")
+    triplegs["user_id"] = 0
     labels_raw = pd.DataFrame(labels_raw).set_index("id")
 
     return triplegs, labels_raw
@@ -144,7 +142,6 @@ class TestGeolife_add_modes_to_triplegs:
     def test_duplicate_matching(self, matching_data):
         """Check each tripleg will only receive one largest overlapping ration mode label."""
         triplegs, labels_raw = matching_data
-        triplegs["user_id"] = 0
 
         # add one record to the labels_raw: mode bus which are 1 min shorter than mode bike
         labels_raw = (
@@ -197,9 +194,8 @@ class TestGeolife_add_modes_to_triplegs:
         assert not tpls.duplicated(subset=["started_at", "finished_at"]).any()
 
     def test_mode_matching(self, matching_data):
-        # bring label data into right format. All labels belong to the same user
+        # bring label data into right format.
         tpls, labels_raw = matching_data
-        tpls["user_id"] = 0
         labels = {0: labels_raw}
 
         tpls = geolife_add_modes_to_triplegs(tpls, labels)
@@ -210,13 +206,10 @@ class TestGeolife_add_modes_to_triplegs:
         assert tpls.loc[3, "mode"] == "bike" and tpls.loc[3, "label_id"] == 1
 
     def test_mode_matching_multi_user(self, matching_data):
-        # bring label data into right format. All labels belong to the same user but we add an empty DataFrame with
-        # labels in the end
-
         tpls, labels_raw = matching_data
-        tpls["user_id"] = 0
+        # we add an empty DataFrame with labels in the end
         labels = {0: labels_raw, 1: pd.DataFrame(columns=labels_raw.columns)}
-
+        # explicitly change the user_id of the second record
         tpls.loc[1, "user_id"] = 1
 
         tpls = geolife_add_modes_to_triplegs(tpls, labels)
@@ -227,9 +220,8 @@ class TestGeolife_add_modes_to_triplegs:
         assert tpls.loc[3, "mode"] == "bike" and tpls.loc[3, "label_id"] == 1
 
     def test_impossible_matching(self, impossible_matching_data):
-        # bring label data into right format. All labels belong to the same user
+        # bring label data into right format.
         tpls, labels_raw = impossible_matching_data
-        tpls["user_id"] = 0
         labels = {0: labels_raw}
 
         tpls = geolife_add_modes_to_triplegs(tpls, labels)
