@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from geopandas.testing import assert_geodataframe_equal
-from pandas.testing import assert_frame_equal, assert_series_equal
+from pandas.testing import assert_frame_equal, assert_series_equal, assert_index_equal
 from shapely import geometry
 from shapely.geometry import LineString, Point
 
@@ -335,6 +335,31 @@ class TestGenerate_trips:
         assert_series_equal(spts_["trip_id"], trip_id_truth, check_names=False)
         assert (tpls_["trip_id"] == 0).all()
         assert len(trips) == 1
+
+    def test_spts_tpls_index(self):
+        """Test if staypoint and tripleg index are identical before and after generating trips."""
+        start = pd.Timestamp("2021-07-11 8:00:00")
+        h = pd.to_timedelta("1h")
+        spts_tpls = [
+            {"activity": True, "type": "staypoint"},
+            {"activity": False, "type": "tripleg"},
+            {"activity": False, "type": "staypoint"},
+            {"activity": False, "type": "tripleg"},
+            {"activity": True, "type": "staypoint"},
+        ]
+        for n, d in enumerate(spts_tpls):
+            d["user_id"] = 0
+            d["started_at"] = start + n * h
+            d["finished_at"] = d["started_at"] + h
+
+        spts_tpls = pd.DataFrame(spts_tpls)
+        spts = spts_tpls[spts_tpls["type"] == "staypoint"]
+        tpls = spts_tpls[spts_tpls["type"] != "staypoint"]
+        tpls.index.name = "something_long_and_obscure"
+        spts.index.name = "even_obscurer"
+        spts_, tpls_, _ = generate_trips(spts, tpls, add_geometry=False)
+        assert_index_equal(tpls.index, tpls_.index)
+        assert_index_equal(spts.index, spts_.index)
 
     def test_loop_linestring_case(self, example_triplegs):
         """Test corner case where a tripleg starts and ends at the same point"""
