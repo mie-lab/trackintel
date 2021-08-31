@@ -119,4 +119,4 @@ class TripsAccessor(object):
         See :func:`trackintel.preprocessing.trips.generate_tours`.
         """
         assert len(args) == 0, "When calling 'generate_tours' via the accessor all arguments must be keyword arguments"
-        return ti.preprocessing.trips.generate_tours(trips_inp=self._obj, **kwargs)
+        return ti.preprocessing.trips.generate_tours(trips=self._obj, **kwargs)

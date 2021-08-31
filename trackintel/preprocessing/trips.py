@@ -8,8 +8,47 @@ import warnings
 import trackintel as ti
 
 
+def get_trips_grouped(trips, tours):
+    """Helper function to get grouped trips by tour id
+
+    Parameters
+    ----------
+    trips: GeoDataFrame (as trackintel trips)
+        Trips dataframe
+
+    tours: GeoDataFrame (as trackintel tours)
+        Output of generate_tours function, must contain column "trips" with list of trip ids on tour
+
+
+    Returns
+    -------
+    trips_grouped_by_tour: DataFrameGroupBy object
+        Trips grouped by tour id
+
+    Notes
+    -------
+    This function is necessary because when running generate_tours, one trip only gets the tour ID of the smallest
+    tour it belongs to assigned. Here, we return all trips for each tour, which might contain a nested tour.
+    """
+    trips_inp = trips.copy()
+    if "tour_id" in trips_inp.columns:
+        trips_inp.drop(columns=["tour_id"], inplace=True)
+    # make smaller version of tours
+    tours_to_trips = tours.reset_index()[["id", "trips"]]
+    # switch to trips id as index
+    tours_to_trips.rename(columns={"id": "tour_id", "trips": "trip_id"}, inplace=True)
+    # expand this small version so that each trip id is one row
+    tours_expanded = tours_to_trips.explode("trip_id").reset_index(drop=True)
+
+    # join with trips table by id
+    tours_with_trips = tours_expanded.merge(trips_inp, left_on="trip_id", right_on="id", how="left")
+    # group
+    trips_grouped_by_tour = tours_with_trips.groupby("tour_id")
+    return trips_grouped_by_tour
+
+
 def generate_tours(
-    trips_inp,
+    trips,
     staypoints=None,
     max_dist=100,
     max_time=24,
@@ -21,7 +60,7 @@ def generate_tours(
 
     Parameters
     ----------
-    trips_inp : GeoDataFrame (as trackintel trips)
+    trips : GeoDataFrame (as trackintel trips)
         The trips have to follow the standard definition for trips DataFrames
 
     staypoints : GeoDataFrame (as trackintel staypoints, preprocessed to contain location IDs), default None
@@ -31,7 +70,7 @@ def generate_tours(
 
     max_dist: float, default 100 (meters)
         Maximum distance between the end point of one trip and the start point of the next trip on a tour.
-        Note: If `max_nr_gaps > 0` (see below), a tour can contain gaps
+        However, if `max_nr_gaps > 0`, a tour can contain larger spatial gaps (see Notes below)
 
     max_time: float, default 24 (hours)
         Maximum time (in hours) that a tour is allowed to take
@@ -45,8 +84,8 @@ def generate_tours(
 
     Returns
     -------
-    trips: GeoDataFrame (as trackintel trips)
-        Same as `trips_inp`, but with additional column `tour_id`. This is the id of the smallest tour that the trip
+    trips_with_tours: GeoDataFrame (as trackintel trips)
+        Same as `trips`, but with additional column `tour_id`. This is the id of the smallest tour that the trip
         belongs to (see notes below).
 
     tours: GeoDataFrame (as trackintel tours)
@@ -75,15 +114,15 @@ def generate_tours(
         crs_is_projected = False  # not used
     else:
         # if no location is given, we need the trips table to have a geometry column
-        assert isinstance(trips_inp, gpd.geodataframe.GeoDataFrame), "Trips table must be a GeoDataFrame"
-        geom_col = trips_inp.geometry.name
+        assert isinstance(trips, gpd.geodataframe.GeoDataFrame), "Trips table must be a GeoDataFrame"
+        geom_col = trips.geometry.name
         # get crs
-        crs_is_projected = ti.geogr.distances.check_gdf_crs(trips_inp.copy())
+        crs_is_projected = ti.geogr.distances.check_gdf_planar(trips)
 
-    trips = trips_inp.copy()
+    trips_input = trips.copy()
     # If the trips already have a column "tour_id", we drop it
-    if "tour_id" in trips:
-        trips.drop(columns="tour_id", inplace=True)
+    if "tour_id" in trips_input:
+        trips_input.drop(columns="tour_id", inplace=True)
         warnings.warn("Deleted existing column 'tour_id' from trips.")
 
     # convert hours to timedelta
@@ -100,20 +139,20 @@ def generate_tours(
     if print_progress:
         tqdm.pandas(desc="User trip generation")
         tours = (
-            trips.groupby(["user_id"], group_keys=False, as_index=False)
+            trips_input.groupby(["user_id"], group_keys=False, as_index=False)
             .progress_apply(_generate_tours_user, **kwargs)
             .reset_index(drop=True)
         )
     else:
         tours = (
-            trips.groupby(["user_id"], group_keys=False, as_index=False)
+            trips_input.groupby(["user_id"], group_keys=False, as_index=False)
             .apply(_generate_tours_user, **kwargs)
             .reset_index(drop=True)
         )
 
     # No tours found
     if len(tours) == 0:
-        return trips, tours
+        return trips_input, tours
 
     # index management
     tours["id"] = np.arange(len(tours))
@@ -130,19 +169,16 @@ def generate_tours(
             if value not in already_assigned:
                 ls.append([value, key])
                 already_assigned.append(value)
-    temp = pd.DataFrame(ls, columns=[trips.index.name, "tour_id"]).set_index(trips.index.name)
+    temp = pd.DataFrame(ls, columns=[trips_input.index.name, "tour_id"]).set_index(trips_input.index.name)
     # temp_grouped = temp.groupby("id").agg({"tour_id": list}) # other version: provide list of tour ids
-    trips = trips.join(temp, how="left")
+    trips_with_tours = trips_input.join(temp, how="left")
 
     ## dtype consistency
     # trips id (generated by this function) should be int64
     tours.index = tours.index.astype("int64")
-    trips["tour_id"] = trips["tour_id"].astype("Int64")
+    trips_with_tours["tour_id"] = trips_with_tours["tour_id"].astype("Int64")
 
-    # cleaning
-    # tours.drop(columns=["trips"], inplace=True)
-
-    return trips, tours
+    return trips_with_tours, tours
 
 
 def _generate_tours_user(
@@ -169,13 +205,13 @@ def _generate_tours_user(
 
     max_dist: float, default 100 (meters)
         Maximum distance between the end point of one trip and the start point of the next trip on a tour.
-        Note: If `max_nr_gaps > 0` (see below), a tour can contain gaps
+        However, if `max_nr_gaps > 0`, a tour can contain larger spatial gaps (see notes in `generate_tours`)
 
     max_time: Timedelta, default 1 day
         Maximum time that a tour is allowed to take
 
     max_nr_gaps: int, default 0
-        Maximum number of spatial gaps on the tour. Use with caution - see notes below.
+        Maximum number of spatial gaps on the tour. Use with caution - see notes in `generate_tours`.
 
     geom_col : str, optional
         Name of geometry column of user_trip_df, by default "geom"
@@ -201,8 +237,7 @@ def _generate_tours_user(
     # collect tours
     tours = []
     # Iterate over trips
-    for i, row in user_trip_df.iterrows():
-        trip_id = row.name  # trip id
+    for _, row in user_trip_df.iterrows():
         end_time = row["finished_at"]
 
         if len(start_candidates) > 0:
@@ -392,42 +427,3 @@ def _create_tour_from_stack(temp_tour_stack, staypoints, max_time):
     }
 
     return tour_dict_entry
-
-
-def get_trips_grouped(trips, tours):
-    """Helper function to get grouped trips by tour id
-
-    Parameters
-    ----------
-    trips: GeoDataFrame (as trackintel trips)
-        Trips dataframe
-
-    tours: GeoDataFrame (as trackintel tours)
-        Output of generate_tours function, must contain column "trips" with list of trip ids on tour
-
-
-    Returns
-    -------
-    trips_grouped_by_tour: DataFrameGroupBy object
-        Trips grouped by tour id
-
-    Notes
-    -------
-    This function is necessary because when running generate_tours, one trip only gets the tour ID of the smallest
-    tour it belongs to assigned. Here, we return all trips for each tour, which might contain a nested tour.
-    """
-    trips_inp = trips.copy()
-    if "tour_id" in trips_inp.columns:
-        trips_inp.drop(columns=["tour_id"], inplace=True)
-    # make smaller version of tours
-    tours_to_trips = tours.reset_index()[["id", "trips"]]
-    # switch to trips id as index
-    tours_to_trips.rename(columns={"id": "tour_id", "trips": "trip_id"}, inplace=True)
-    # expand this small version so that each trip id is one row
-    tours_expanded = tours_to_trips.explode("trip_id").reset_index(drop=True)
-
-    # join with trips table by id
-    tours_with_trips = tours_expanded.merge(trips_inp, left_on="trip_id", right_on="id", how="left")
-    # group
-    trips_grouped_by_tour = tours_with_trips.groupby("tour_id")
-    return trips_grouped_by_tour
