@@ -3,6 +3,7 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+import warnings
 
 import trackintel as ti
 
@@ -80,6 +81,10 @@ def generate_tours(
         crs_is_projected = ti.geogr.distances.check_gdf_crs(trips_inp.copy())
 
     trips = trips_inp.copy()
+    # If the trips already have a column "tour_id", we drop it
+    if "tour_id" in trips:
+        trips.drop(columns="tour_id", inplace=True)
+        warnings.warn("Deleted existing column 'tour_id' from trips.")
 
     # convert hours to timedelta
     max_time_delta = timedelta(hours=max_time)

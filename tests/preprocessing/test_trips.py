@@ -281,6 +281,12 @@ class TestGenerate_tours:
         assert trips_out.loc[100, "tour_id"] == 1
         assert trips_out.loc[200, "tour_id"] == 1
 
+    def test_tours_warn_existing_column(self, example_trip_data):
+        trips, _ = example_trip_data
+        trips["tour_id"] = 1
+        with pytest.warns(UserWarning, match="Deleted existing column 'tour_id' from trips."):
+            _ = ti.preprocessing.trips.generate_tours(trips, print_progress=True)
+
 
 class TestTourHelpers:
     """Test auxiliary function for trip grouping"""
