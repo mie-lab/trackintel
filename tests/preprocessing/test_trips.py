@@ -191,9 +191,10 @@ class TestGenerate_tours:
     def test_tour_max_time(self, example_trip_data):
         """Test functionality of max time argument in tour generation"""
         trips, sp_locs = example_trip_data
-        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_time=2)  # only 2 hours allowed
-        assert len(tours) == 0
-        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_time=3)  # increase to 3 hours
+        with pytest.warns(UserWarning, match="No tours can be generated, return empty tours"):
+            _, tours = ti.preprocessing.trips.generate_tours(trips, max_time=2)  # only 2 hours allowed
+            assert len(tours) == 0
+        _, tours = ti.preprocessing.trips.generate_tours(trips, max_time=3)  # increase to 3 hours
         assert len(tours) == 1
 
     def test_tours_locations(self, example_trip_data):

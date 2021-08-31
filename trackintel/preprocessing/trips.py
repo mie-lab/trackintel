@@ -155,6 +155,7 @@ def generate_tours(
 
     # No tours found
     if len(tours) == 0:
+        warnings.warn("No tours can be generated, return empty tours")
         return trips_input, tours
 
     # index management
@@ -335,6 +336,19 @@ def _generate_tours_user(
         # remove points because they are out of the time window
         start_candidates = start_candidates[new_list_start:]
 
+    if len(tours) == 0:
+        return pd.DataFrame(
+            tours,
+            columns=[
+                "user_id",
+                "started_at",
+                "finished_at",
+                "origin_staypoint_id",
+                "destination_staypoint_id",
+                "trips",
+                "location_id",
+            ],
+        )
     tours_df = pd.DataFrame(tours)
     return tours_df
 
