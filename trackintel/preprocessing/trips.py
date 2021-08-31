@@ -70,7 +70,8 @@ def generate_tours(
 
     max_dist: float, default 100 (meters)
         Maximum distance between the end point of one trip and the start point of the next trip on a tour.
-        However, if `max_nr_gaps > 0`, a tour can contain larger spatial gaps (see Notes below)
+        This is parameter is only used if staypoints is None!
+        Also, if `max_nr_gaps > 0`, a tour can contain larger spatial gaps (see Notes below)
 
     max_time: float, default 24 (hours)
         Maximum time (in hours) that a tour is allowed to take
@@ -93,6 +94,8 @@ def generate_tours(
 
     Notes
     -------
+    - This function implements two possibilities to generate tours of trips: Via the location ID in the `staypoints`
+      df, or via a maximum distance. Thus, note that only one of the parameters `staypoints` or `max_dist` is used!
     - Tours are defined as a collection of trips in a certain time frame that start and end at the same point
     - Nested tours are possible and will be regarded as 2 (or more tours), where the smaller tour is also part of the
       bigger tour. Therefore, one trip can belong to multiple tours! In the `tour_id` column of the trips table,
