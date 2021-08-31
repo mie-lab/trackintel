@@ -167,14 +167,11 @@ class TestGenerate_tours:
     def test_tour_times(self, example_trip_data):
         """Check whether the start and end times of generated tours are correct"""
         trips, sp_locs = example_trip_data
-        max_time = datetime.timedelta(days=1)
-        trips_out, tours = ti.preprocessing.trips.generate_tours(
-            trips, max_nr_gaps=1, max_time=datetime.timedelta(days=1)
-        )
+        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_nr_gaps=1, max_time=24)
         # check that all times are below the max time
         for i, row in tours.iterrows():
             time_diff = row["finished_at"] - row["started_at"]
-            assert time_diff > datetime.timedelta(0) and time_diff < max_time
+            assert time_diff > datetime.timedelta(0) and time_diff < datetime.timedelta(hours=24)
         # check that all times are taken correctly from the trips table
         for tour_id, tour_df in trips_out.groupby("tour_id"):
             gt_start = tour_df.iloc[0]["started_at"]
@@ -194,9 +191,9 @@ class TestGenerate_tours:
     def test_tour_max_time(self, example_trip_data):
         """Test functionality of max time argument in tour generation"""
         trips, sp_locs = example_trip_data
-        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_time=datetime.timedelta(hours=2))
+        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_time=2)  # only 2 hours allowed
         assert len(tours) == 0
-        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_time=datetime.timedelta(hours=3))
+        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_time=3)  # increase to 3 hours
         assert len(tours) == 1
 
     def test_tours_locations(self, example_trip_data):

@@ -11,7 +11,7 @@ def generate_tours(
     trips_inp,
     staypoints=None,
     max_dist=100,
-    max_time=timedelta(days=1),
+    max_time=24,
     max_nr_gaps=0,
     print_progress=False,
 ):
@@ -32,8 +32,8 @@ def generate_tours(
         Maximum distance between the end point of one trip and the start point of the next trip on a tour.
         Note: If `max_nr_gaps > 0` (see below), a tour can contain gaps
 
-    max_time: Timedelta, default 1 day
-        Maximum time that a tour is allowed to take
+    max_time: float, default 24 (hours)
+        Maximum time (in hours) that a tour is allowed to take
 
     max_nr_gaps: int, default 0
         Maximum number of spatial gaps on the tour. Use with caution - see notes below.
@@ -81,10 +81,13 @@ def generate_tours(
 
     trips = trips_inp.copy()
 
+    # convert hours to timedelta
+    max_time_delta = timedelta(hours=max_time)
+
     kwargs = {
         "max_dist": max_dist,
         "max_nr_gaps": max_nr_gaps,
-        "max_time": max_time,
+        "max_time": max_time_delta,
         "staypoints": staypoints,
         "geom_col": geom_col,
         "crs_is_projected": crs_is_projected,
