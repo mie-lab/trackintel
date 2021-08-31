@@ -163,18 +163,11 @@ def generate_tours(
     tours.set_index("id", inplace=True)
 
     # assign tour id to trips
-    tour2trip_map = tours[["trips"]].to_dict()["trips"]
-    ls = []
+    tour2trip_map = tours.reset_index().explode("trips").rename(columns={"id": "tour_id"})
     # Each trip is only assigned to one tour. If a trip belongs to multiple tours, we can find its smallest subtour
     # by using the first one it is assigned to (nested tours are always found before big tours - have smaller tour_id)
-    already_assigned = []
-    for key, values in tour2trip_map.items():
-        for value in values:
-            if value not in already_assigned:
-                ls.append([value, key])
-                already_assigned.append(value)
-    temp = pd.DataFrame(ls, columns=[trips_input.index.name, "tour_id"]).set_index(trips_input.index.name)
-    # temp_grouped = temp.groupby("id").agg({"tour_id": list}) # other version: provide list of tour ids
+    temp = tour2trip_map.groupby("trips").agg({"tour_id": "min"})  # other possibility would be list instead of first
+
     trips_with_tours = trips_input.join(temp, how="left")
 
     ## dtype consistency
