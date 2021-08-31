@@ -240,7 +240,7 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     triplegs: GeoDataFrame (as trackintel triplegs)
         The triplegs have to follow the standard definition for triplegs DataFrames.
 
-    max_time_gap : str or pd.Timedelta, default "1h"
+    max_time_gap : str or pd.Timedelta, default "10min"
         Maximum duration between staypoints to still be merged.
         If str must be parsable by pd.to_timedelta.
 
