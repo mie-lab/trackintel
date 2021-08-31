@@ -6,7 +6,7 @@ from trackintel.io.file import write_staypoints_csv
 from trackintel.io.postgis import write_staypoints_postgis
 from trackintel.model.util import copy_docstring
 from trackintel.preprocessing.filter import spatial_filter
-from trackintel.preprocessing.staypoints import generate_locations
+from trackintel.preprocessing.staypoints import generate_locations, merge_staypoints
 from trackintel.visualization.staypoints import plot_staypoints
 
 
@@ -86,6 +86,15 @@ class StaypointsAccessor(object):
         See :func:`trackintel.preprocessing.staypoints.generate_locations`.
         """
         return ti.preprocessing.staypoints.generate_locations(self._obj, *args, **kwargs)
+
+    @copy_docstring(merge_staypoints)
+    def merge_staypoints(self, *args, **kwargs):
+        """
+        Aggregate staypoints horizontally via time threshold.
+
+        See :func:`trackintel.preprocessing.staypoints.merge_staypoints`.
+        """
+        return ti.preprocessing.staypoints.merge_staypoints(self._obj, *args, **kwargs)
 
     @copy_docstring(create_activity_flag)
     def create_activity_flag(self, *args, **kwargs):

@@ -2,9 +2,10 @@ import datetime
 
 import pandas as pd
 import numpy as np
+import warnings
 
 
-def temporal_tracking_quality(source, granularity="all"):
+def temporal_tracking_quality(source, granularity="all", max_iter=60):
     """
     Calculate per-user temporal tracking quality (temporal coverage).
 
@@ -18,6 +19,13 @@ def temporal_tracking_quality(source, granularity="all"):
         the overall tracking quality; "day" the tracking quality by days; "week" the quality
         by weeks; "weekday" the quality by day of the week (e.g, Mondays, Tuesdays, etc.) and
         "hour" the quality by hours.
+
+    max_iter: int, default 60
+        The maximum iteration when spliting the df per granularity to calculate tracking quality.
+        The unit is the same as the "granularity", e.g., if "max_iter" = 60 and "granularity" = "day",
+        df that contains records with a duration more than 60 days cannot be processed and the quality
+        result is likely to be wrong. if "max_iter" is reached, consider pre-filter the df instead of
+        changing the "max_iter" parameter.
 
     Returns
     -------
@@ -61,12 +69,21 @@ def temporal_tracking_quality(source, granularity="all"):
 
     df = source.copy()
     df.reset_index(inplace=True)
+
+    # filter out records with duration <= 0
+    df["duration"] = (df["finished_at"] - df["started_at"]).dt.total_seconds()
+    df = df.loc[df["duration"] > 0].copy()
+    # ensure proper handle of empty dataframes
+    if len(df) == 0:
+        warnings.warn(f"The input dataframe does not contain any record with positive duration. Please check.")
+        return None
+
     if granularity == "all":
         quality = df.groupby("user_id", as_index=False).apply(_get_tracking_quality_user, granularity)
 
     elif granularity == "day":
         # split records that span several days
-        df = _split_overlaps(df, granularity=granularity)
+        df = _split_overlaps(df, granularity=granularity, max_iter=max_iter)
         # get the tracked day relative to the first day
         start_date = df["started_at"].min().date()
         df["day"] = df["started_at"].apply(lambda x: (x.date() - start_date).days)
@@ -78,7 +95,7 @@ def temporal_tracking_quality(source, granularity="all"):
 
     elif granularity == "week":
         # split records that span several days
-        df = _split_overlaps(df, granularity="day")
+        df = _split_overlaps(df, granularity="day", max_iter=max_iter)
         # get the tracked week relative to the first day
         start_date = df["started_at"].min().date()
         df["week"] = df["started_at"].apply(lambda x: (x.date() - start_date).days // 7)
@@ -90,7 +107,7 @@ def temporal_tracking_quality(source, granularity="all"):
 
     elif granularity == "weekday":
         # split records that span several days
-        df = _split_overlaps(df, granularity="day")
+        df = _split_overlaps(df, granularity="day", max_iter=max_iter)
 
         # get the tracked week relative to the first day
         start_date = df["started_at"].min().date()
@@ -105,7 +122,7 @@ def temporal_tracking_quality(source, granularity="all"):
 
     elif granularity == "hour":
         # first do a day split to speed up the hour split
-        df = _split_overlaps(df, granularity="day")
+        df = _split_overlaps(df, granularity="day", max_iter=max_iter)
         df = _split_overlaps(df, granularity=granularity)
 
         # get the tracked day relative to the first day
@@ -203,7 +220,7 @@ def _get_tracking_quality_user(df, granularity="all"):
     return pd.Series([tracked_duration / extent], index=["quality"])
 
 
-def _split_overlaps(source, granularity="day"):
+def _split_overlaps(source, granularity="day", max_iter=60):
     """
     Split input df that have a duration of several days or hours.
 
@@ -216,6 +233,10 @@ def _split_overlaps(source, granularity="day"):
         The criteria of splitting. "day" splits records that have duration of several
         days and "hour" splits records that have duration of several hours.
 
+    max_iter: int, default 60
+        The maximum iteration when spliting the source per granularity.
+        See :func:`trackintel.analysis.tracking_quality.temporal_tracking_quality` for a more detailed explaination.
+
     Returns
     -------
     GeoDataFrame (as trackintel datamodels)
@@ -223,6 +244,8 @@ def _split_overlaps(source, granularity="day"):
     """
     df = source.copy()
     change_flag = __get_split_index(df, granularity=granularity)
+
+    iter_count = 0
 
     # Iteratively split one day/hour from multi day/hour entries until no entry spans over multiple days/hours
     while change_flag.sum() > 0:
@@ -246,6 +269,13 @@ def _split_overlaps(source, granularity="day"):
         df = df.append(new_df, ignore_index=True, sort=True)
 
         change_flag = __get_split_index(df, granularity=granularity)
+        iter_count += 1
+        if iter_count > max_iter:
+            warnings.warn(
+                f"Maximum iteration {max_iter} reached when splitting the input dataframe by {granularity}. "
+                "Consider checking the timeframe of the input or parsing a higher 'max_iter' parameter."
+            )
+            break
 
     if "duration" in df.columns:
         df["duration"] = df["finished_at"] - df["started_at"]

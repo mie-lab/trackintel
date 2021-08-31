@@ -175,7 +175,7 @@ def freq_method(spts, *labels):
     Assigning the most visited location the label "home" and the second most visited location the label "work".
     The remaining locations get no label.
 
-    Labels can also be passes as an arguement.
+    Labels can also be given as arguments.
 
     Parameters
     ----------
@@ -241,6 +241,7 @@ def _freq_assign(duration, *labels):
     """
     kth = (-duration).argsort()[: len(labels)]  # if inefficient use partial sort.
     label_array = np.full(len(duration), fill_value=None)
+    labels = labels[: len(kth)]  # if provided with more labels than entries.
     label_array[kth] = labels
     return label_array
 
@@ -307,15 +308,18 @@ def osna_method(spts):
     spts_pivot = spts_agg.unstack()
     # get index of maximum for columns "work" and "home"
     spts_idxmax = spts_pivot.groupby(["user_id"]).idxmax()
-    # first assign "home" label
-    spts_pivot.loc[spts_idxmax["home"], "activity_label"] = "home"
+    # first assign labels
+    for col in spts_idxmax.columns:
+        spts_pivot.loc[spts_idxmax[col].dropna(), "activity_label"] = col
 
     # The "home" label could overlap with the "work" label
     # we set the rows where "home" is maximum to zero (pd.NaT) and recalculate index of work maximum.
-    redo_work = spts_idxmax[spts_idxmax["home"] == spts_idxmax["work"]]
-    spts_pivot.loc[redo_work["work"], "work"] = pd.NaT
-    spts_idxmax_work = spts_pivot.groupby(["user_id"])["work"].idxmax()
-    spts_pivot.loc[spts_idxmax_work, "activity_label"] = "work"
+    if all(col in spts_idxmax.columns for col in ["work", "home"]):
+        redo_work = spts_idxmax[spts_idxmax["home"] == spts_idxmax["work"]]
+        spts_pivot.loc[redo_work["work"], "activity_label"] = "home"
+        spts_pivot.loc[redo_work["work"], "work"] = pd.NaT
+        spts_idxmax_work = spts_pivot.groupby(["user_id"])["work"].idxmax()
+        spts_pivot.loc[spts_idxmax_work.dropna(), "activity_label"] = "work"
 
     # now join it back together
     sel = spts_in.columns != "activity_label"  # no overlap with older "activity_label"

@@ -6,16 +6,16 @@ import pandas as pd
 import pytest
 import trackintel as ti
 from geopandas.testing import assert_geodataframe_equal
-from pandas.testing import assert_index_equal
+from pandas.testing import assert_frame_equal, assert_index_equal
 from shapely.geometry import Point
 from trackintel.analysis.location_identification import (
     _freq_assign,
     _freq_transform,
+    _osna_label_timeframes,
     freq_method,
     location_identifier,
-    pre_filter_locations,
     osna_method,
-    _osna_label_timeframes,
+    pre_filter_locations,
 )
 
 
@@ -210,6 +210,13 @@ class Test_Freq_Assign:
         freq = _freq_assign(dur, *labels)
         assert all(freq == freq_sol)
 
+    def test_more_labels_than_entries(self):
+        dur = pd.Series([9, 0])
+        labels = ("label1", "label2", "label3")
+        freq_sol = np.array([labels[0], labels[1]])
+        freq = _freq_assign(dur, *labels)
+        assert all(freq == freq_sol)
+
 
 class TestLocation_Identifier:
     """Test function `location_identifier`"""
@@ -366,6 +373,42 @@ class TestOsna_Method:
         spts.loc[spts["location_id"] == 2, "activity_label"] = "work"
         assert_geodataframe_equal(spts, result)
 
+    def test_only_one_work_location(self):
+        """Test if only one work location of a user can be handled."""
+        t_work = pd.Timestamp("2021-07-14 18:00:00", tz="utc")
+        h = pd.Timedelta("1h")
+        p = Point(0.0, 0.0)  # not used
+        list_dict = [{"user_id": 0, "location_id": 0, "started_at": t_work, "finished_at": t_work + h, "g": p}]
+        spts = gpd.GeoDataFrame(data=list_dict, geometry="g")
+        spts.index.name = "id"
+        result = osna_method(spts)
+        spts["activity_label"] = "work"
+        assert_geodataframe_equal(result, spts)
+
+    def test_only_one_rest_location(self):
+        """Test if only one rest location of a user can be handled."""
+        t_rest = pd.Timestamp("2021-07-14 07:00:00", tz="utc")
+        h = pd.Timedelta("1h")
+        p = Point(0.0, 0.0)  # not used
+        list_dict = [{"user_id": 0, "location_id": 0, "started_at": t_rest, "finished_at": t_rest + h, "g": p}]
+        spts = gpd.GeoDataFrame(data=list_dict, geometry="g")
+        spts.index.name = "id"
+        result = osna_method(spts)
+        spts["activity_label"] = "home"
+        assert_geodataframe_equal(result, spts)
+
+    def test_only_one_leisure_location(self):
+        """Test if only one leisure location of a user can be handled."""
+        t_leis = pd.Timestamp("2021-07-14 01:00:00", tz="utc")
+        h = pd.Timedelta("1h")
+        p = Point(0.0, 0.0)  # not used
+        list_dict = [{"user_id": 0, "location_id": 0, "started_at": t_leis, "finished_at": t_leis + h, "g": p}]
+        spts = gpd.GeoDataFrame(data=list_dict, geometry="g")
+        spts.index.name = "id"
+        result = osna_method(spts)
+        spts["activity_label"] = "home"
+        assert_geodataframe_equal(result, spts)
+
     def test_prior_activity_label(self, example_osna):
         """Test that prior activity_label column does not corrupt output."""
         example_osna["activity_label"] = np.arange(len(example_osna))
@@ -374,6 +417,23 @@ class TestOsna_Method:
         example_osna.loc[example_osna["location_id"] == 0, "activity_label"] = "home"
         example_osna.loc[example_osna["location_id"] == 1, "activity_label"] = "work"
         assert_geodataframe_equal(example_osna, result)
+
+    def test_multiple_users_with_only_one_location(self):
+        """Test that function can handle multiple users with only one location."""
+        t_leis = pd.Timestamp("2021-07-14 01:00:00", tz="utc")
+        t_work = pd.Timestamp("2021-07-14 18:00:00", tz="utc")
+        h = pd.Timedelta("1h")
+        list_dict = [
+            {"user_id": 0, "location_id": 0, "started_at": t_leis, "finished_at": t_leis + h},
+            {"user_id": 0, "location_id": 1, "started_at": t_work, "finished_at": t_work + h},
+            {"user_id": 1, "location_id": 0, "started_at": t_leis, "finished_at": t_leis + h},
+            {"user_id": 2, "location_id": 0, "started_at": t_work, "finished_at": t_work + h},
+        ]
+        spts = pd.DataFrame(list_dict)
+        spts.index.name = "id"
+        result = osna_method(spts)
+        spts["activity_label"] = ["home", "work", "home", "work"]
+        assert_frame_equal(spts, result)
 
 
 class Test_osna_label_timeframes:

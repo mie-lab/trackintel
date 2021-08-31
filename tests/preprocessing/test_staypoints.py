@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
+from geopandas.testing import assert_geodataframe_equal
 
 import trackintel as ti
 from trackintel.geogr.distances import calculate_distance_matrix
@@ -16,6 +17,9 @@ from trackintel.geogr.distances import calculate_distance_matrix
 def example_staypoints():
     """Staypoints for location generation.
     Staypoints have non-continous ids and should result in noise and several locations per user.
+
+    With epsilon=10, num_samples=2:
+
     The following staypoint ids should form a location (1, 15), (5,6), (80, 3)
     The following staypoint ids should be noise (2, 7)
 
@@ -34,8 +38,6 @@ def example_staypoints():
     t4 = pd.Timestamp("1971-01-02 08:00:00", tz="utc")
     t5 = pd.Timestamp("1971-01-02 09:00:00", tz="utc")
     t6 = pd.Timestamp("1971-01-02 10:00:00", tz="utc")
-    t6 = pd.Timestamp("1971-01-02 10:00:00", tz="utc")
-    t6 = pd.Timestamp("1971-01-02 10:00:00", tz="utc")
     one_hour = datetime.timedelta(hours=1)
 
     list_dict = [
@@ -50,12 +52,107 @@ def example_staypoints():
     ]
     sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     sp = sp.set_index("id")
-    assert sp.as_staypoints
+    sp.as_staypoints
     return sp
+
+
+@pytest.fixture
+def example_staypoints_merge():
+    """
+    Staypoints for merge operation
+
+    The following staypoints should be merged: id 2,6,15 for user 0 and 7, 80 for user 1
+    Note: id 5 and 2 should not be merged because of time gap
+    It must be ensured that 15 and 7 are not merged (different user)
+    """
+    p1 = Point(8.5067847, 47.4)
+
+    t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+    t2 = pd.Timestamp("1971-01-02 05:00:00", tz="utc")
+    t3 = pd.Timestamp("1971-01-02 06:45:00", tz="utc")
+    t4 = pd.Timestamp("1971-01-02 08:55:00", tz="utc")
+    t45 = pd.Timestamp("1971-01-02 08:57:00", tz="utc")
+    t5 = pd.Timestamp("1971-01-02 09:00:00", tz="utc")
+    t6 = pd.Timestamp("1971-01-02 09:20:00", tz="utc")
+    one_hour = datetime.timedelta(hours=1)
+
+    list_dict = [
+        {"id": 1, "user_id": 0, "started_at": t1, "finished_at": t2, "geom": p1, "location_id": 1},
+        {"id": 5, "user_id": 0, "started_at": t2, "finished_at": t2, "geom": p1, "location_id": 2},
+        {"id": 2, "user_id": 0, "started_at": t3, "finished_at": t4, "geom": p1, "location_id": 2},
+        {"id": 6, "user_id": 0, "started_at": t4, "finished_at": t45, "geom": p1, "location_id": 2},
+        {"id": 15, "user_id": 0, "started_at": t5, "finished_at": t6, "geom": p1, "location_id": 2},
+        {"id": 7, "user_id": 1, "started_at": t3, "finished_at": t4, "geom": p1, "location_id": 2},
+        {"id": 80, "user_id": 1, "started_at": t45, "finished_at": t5, "geom": p1, "location_id": 2},
+        {"id": 3, "user_id": 1, "started_at": t5, "finished_at": t6, "geom": p1, "location_id": 4},
+    ]
+    sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+    sp = sp.set_index("id")
+    assert sp.as_staypoints
+
+    # generate example triplegs for the merge function
+    tpls = gpd.GeoDataFrame(columns=["user_id", "started_at", "finished_at"])
+    return sp, tpls
+
+
+@pytest.fixture
+def example_triplegs_merge(example_staypoints_merge):
+    """Example triplegs for merge operation
+    If tripleg is between two staypoint, we don't merge those staypoints
+    See staypoints example data above --> tripleg between 5 and 2 and between 6 and 15
+    """
+    # get staypoints from above
+    sp, _ = example_staypoints_merge
+    # create triplegs inbetween
+    # tripleg between 5 and 2
+    t21 = pd.Timestamp("1971-01-02 05:10:00", tz="utc")
+    t22 = pd.Timestamp("1971-01-02 05:40:00", tz="utc")
+    # tripleg between 6 and 15
+    t45 = pd.Timestamp("1971-01-02 08:57:00", tz="utc")
+    t5 = pd.Timestamp("1971-01-02 09:00:00", tz="utc")
+    list_dict = [
+        {"id": 0, "user_id": 0, "started_at": t45, "finished_at": t5},
+        {"id": 1, "user_id": 0, "started_at": t21, "finished_at": t22},
+    ]
+    # geometry is not required for the merge operation, so we leave it away
+    tpls = gpd.GeoDataFrame(data=list_dict, crs="EPSG:4326")
+    tpls = tpls.set_index("id")
+    return sp, tpls
 
 
 class TestGenerate_locations:
     """Tests for generate_locations() method."""
+
+    def test_empty_generation(self, example_staypoints):
+        """The function should run without error if the generation result is empty (no locations could be generated)."""
+        # the pfs would not generate staypoints with the default parameters
+        sp = example_staypoints
+        # select subset of sp such that no locations can be generated
+        sp = sp.iloc[:3]
+
+        warn_string = "No locations can be generated, returning empty locs."
+        with pytest.warns(UserWarning, match=warn_string):
+            sp, locs = sp.as_staypoints.generate_locations(
+                method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user"
+            )
+        assert len(locs) == 0
+
+    def test_parallel_computing(self, example_staypoints):
+        """The result obtained with parallel computing should be identical."""
+        stps = example_staypoints
+
+        # without parallel computing code
+        stps_ori, locs_ori = stps.as_staypoints.generate_locations(
+            method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user", n_jobs=1
+        )
+        # using two cores
+        stps_para, locs_para = stps.as_staypoints.generate_locations(
+            method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user", n_jobs=2
+        )
+
+        # the result of parallel computing should be identical
+        assert_geodataframe_equal(locs_ori, locs_para)
+        assert_geodataframe_equal(stps_ori, stps_para)
 
     def test_dbscan_hav_euc(self):
         """Test if using haversine and euclidean distances will generate the same location result."""
@@ -297,3 +394,69 @@ class TestGenerate_locations:
         assert sp2.loc[1, "location_id"] != sp2.loc[5, "location_id"]
 
         assert sp2.loc[[2, 7], "location_id"].isnull().all()
+
+
+class TestMergeStaypoints:
+    def test_merge_staypoints(self, example_staypoints_merge):
+        """Test staypoint merging."""
+        sp, tpls = example_staypoints_merge
+        # first test with empty tpls
+        merged_sp = sp.as_staypoints.merge_staypoints(tpls, agg={"geom": "first", "location_id": "first"})
+        assert len(merged_sp) == len(sp) - 3
+        # some staypoints stay the same (not merged)
+        assert (merged_sp.loc[1] == sp.loc[1]).all()
+        assert (merged_sp.loc[5] == sp.loc[5]).all()
+        assert (merged_sp.loc[3] == sp.loc[3]).all()
+
+    def test_merge_staypoints_triplegs(self, example_triplegs_merge):
+        """Test staypoint merging with triplegs inbetween"""
+        # get triplegs inbetween
+        sp, tpls = example_triplegs_merge
+        merged_sp_with_tpls = sp.as_staypoints.merge_staypoints(tpls)
+        # assert that staypoint 6 and 15 were not merged because of tpls inbetween
+        assert len(merged_sp_with_tpls) == len(sp) - 2
+        # 15 should not be merged
+        assert 15 in merged_sp_with_tpls.index
+
+    def test_merge_staypoints_time(self, example_staypoints_merge):
+        """Test if all merged staypoints have the correct start and end time"""
+        sp, tpls = example_staypoints_merge
+        merged_sp = sp.as_staypoints.merge_staypoints(tpls)
+        # user 1 - id 7 and 80 merged
+        assert sp.loc[7, "started_at"] == merged_sp.loc[7, "started_at"]
+        assert sp.loc[80, "finished_at"] == merged_sp.loc[7, "finished_at"]
+        # user 0 - id 2,6, and 15 merged
+        assert sp.loc[2, "started_at"] == merged_sp.loc[2, "started_at"]
+        assert sp.loc[15, "finished_at"] == merged_sp.loc[2, "finished_at"]
+
+    def test_merge_staypoints_max_time_gap(self, example_staypoints_merge):
+        """Test it the max_time_gap argument works correctly"""
+        sp, tpls = example_staypoints_merge
+        merged_sp = sp.as_staypoints.merge_staypoints(tpls, max_time_gap="2h")
+        assert len(merged_sp) == len(sp) - 4
+        # user 0 - id 5, 2,6, and 15 merged
+        assert sp.loc[5, "started_at"] == merged_sp.loc[5, "started_at"]
+        assert sp.loc[15, "finished_at"] == merged_sp.loc[5, "finished_at"]
+
+    def test_merge_staypoints_time_gap_error(self, example_staypoints_merge):
+        sp, tpls = example_staypoints_merge
+        # check that an int as max time gap raises a TypeError
+        with pytest.raises(Exception) as e_info:
+            merged_sp = sp.as_staypoints.merge_staypoints(tpls, max_time_gap=2)
+            assert e_info == "Parameter max_time_gap must be either of type String or pd.Timedelta!"
+        # check that an timedelta as max time gap works
+        _ = sp.as_staypoints.merge_staypoints(tpls, max_time_gap=pd.to_timedelta("1h"))
+
+    def test_merge_staypoints_agg(self, example_staypoints_merge):
+        """Test whether the user can specify the aggregation mode"""
+        aggregation_dict = {"geom": "first", "finished_at": "first"}
+
+        sp, tpls = example_staypoints_merge
+        merged_sp = sp.as_staypoints.merge_staypoints(tpls, agg=aggregation_dict)
+
+        # in contrast to the test above, the first of (7,80) should now be used for finished at
+        assert sp.loc[7, "finished_at"] == merged_sp.loc[7, "finished_at"]
+        assert sp.loc[2, "finished_at"] == merged_sp.loc[2, "finished_at"]
+        # the geom should correspond to the first one
+        assert sp.loc[7, "geom"] == merged_sp.loc[7, "geom"]
+        assert sp.loc[2, "geom"] == merged_sp.loc[2, "geom"]

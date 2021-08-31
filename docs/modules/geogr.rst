@@ -8,7 +8,7 @@ distance functions for points and trajectories
 
 .. autofunction:: trackintel.geogr.distances.meters_to_decimal_degrees
 
-.. autofunction:: trackintel.geogr.distances.check_gdf_crs
+.. autofunction:: trackintel.geogr.distances.check_gdf_planar
 
 .. autofunction:: trackintel.geogr.distances.calculate_haversine_length
 

@@ -38,12 +38,19 @@ This is a place to collect conventions we agreed upon until we find the right pl
 ### Time stamps
 All timestamps are timezone aware pandas `datetime64[ns, UTC]` objects. The default timezone should be `UTC` but the user should be free to use a different one if he wants. See [Issue 101](https://github.com/mie-lab/trackintel/issues/18). 
 
-### Organization of tests
+### Tests 
+#### Organization of tests
 See [Issue 23](https://github.com/mie-lab/trackintel/issues/23)
 - The test folder copies the folder structure that the trackintel.trackintel folder has.
 - Every python module has a single test file
 - Every function has 1 test class
 - Every method of this function should test a single property
+
+#### Test data
+If possible test data should be
+- independent of unrelated preprocessing steps (e.g., avoid starting with positionfixes if you write tests for trips)
+- simple and easy to understand (e.g., try to have a short example with an isolated special case rather than a large dataset that contains a lot of special cases)
+- defined directly in the code itself (e.g, [this example](https://github.com/mie-lab/trackintel/blob/e0c0cdd0d8472ba7b113b3819d062ea8abcd8168/tests/io/test_postgis_gpd.py#L50)
 
 ### Integrety of input data
 Functions should never change the input dataframe but rather return an altered copy.
