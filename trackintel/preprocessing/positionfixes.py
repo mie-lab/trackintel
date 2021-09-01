@@ -165,8 +165,8 @@ def generate_staypoints(
     # rearange column order
     sp = sp[sp_column]
 
-    if len(stps) > 0:
-        stps.as_staypoints
+    if len(sp) > 0:
+        sp.as_staypoints
     else:
         warnings.warn("No staypoints can be generated, returning empty sp.")
 

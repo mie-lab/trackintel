@@ -219,7 +219,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
 
     activity_staypoints.index = activity_staypoints["sp_tpls_id"]
     # containing None changes dtype -> revert to original dtype.
-    activity_staypoints.index = activity_staypoints.index.astype(spts.index.dtype)
+    activity_staypoints.index = activity_staypoints.index.astype(sp.index.dtype)
     sp = sp.join(activity_staypoints[["prev_trip_id", "next_trip_id"]], how="left")
 
     # transform column to binary

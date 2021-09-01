@@ -34,12 +34,12 @@ def example_triplegs_higher_gap_threshold():
     # create trips from geolife (based on positionfixes) - with gap_threshold 1e6
     pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
 
-    pfs, stps = pfs.as_positionfixes.generate_staypoints(
+    pfs, sp = pfs.as_positionfixes.generate_staypoints(
         method="sliding", dist_threshold=25, time_threshold=5, gap_threshold=1e6
     )
-    stps = stps.as_staypoints.create_activity_flag(time_threshold=15)
-    pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps)
-    return stps, tpls
+    sp = sp.as_staypoints.create_activity_flag(time_threshold=15)
+    pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp)
+    return sp, tpls
 
 
 class TestSmoothen_triplegs:
@@ -175,7 +175,7 @@ class TestGenerate_trips:
         assert_geodataframe_equal(trips_1, trips_2)
 
     def test_generate_trips_missing_link(self, example_triplegs):
-        """Test nan is assigned for missing link between stps and trips, and tpls and trips."""
+        """Test nan is assigned for missing link between sp and trips, and tpls and trips."""
         sp, tpls = example_triplegs
 
         # generate trips and a joint staypoint/triplegs dataframe
@@ -326,41 +326,41 @@ class TestGenerate_trips:
         assert (tpls_["trip_id"] == 0).all()
         assert len(trips) == 1
 
-    def test_spts_tpls_index(self):
+    def test_sp_tpls_index(self):
         """Test if staypoint and tripleg index are identical before and after generating trips."""
         start = pd.Timestamp("2021-07-11 8:00:00")
         h = pd.to_timedelta("1h")
-        spts_tpls = [
+        sp_tpls = [
             {"activity": True, "type": "staypoint"},
             {"activity": False, "type": "tripleg"},
             {"activity": False, "type": "staypoint"},
             {"activity": False, "type": "tripleg"},
             {"activity": True, "type": "staypoint"},
         ]
-        for n, d in enumerate(spts_tpls):
+        for n, d in enumerate(sp_tpls):
             d["user_id"] = 0
             d["started_at"] = start + n * h
             d["finished_at"] = d["started_at"] + h
 
-        spts_tpls = pd.DataFrame(spts_tpls)
-        spts = spts_tpls[spts_tpls["type"] == "staypoint"]
-        tpls = spts_tpls[spts_tpls["type"] != "staypoint"]
+        sp_tpls = pd.DataFrame(sp_tpls)
+        sp = sp_tpls[sp_tpls["type"] == "staypoint"]
+        tpls = sp_tpls[sp_tpls["type"] != "staypoint"]
         tpls.index.name = "something_long_and_obscure"
-        spts.index.name = "even_obscurer"
-        spts_, tpls_, _ = generate_trips(spts, tpls, add_geometry=False)
+        sp.index.name = "even_obscurer"
+        sp_, tpls_, _ = generate_trips(sp, tpls, add_geometry=False)
         assert_index_equal(tpls.index, tpls_.index)
-        assert_index_equal(spts.index, spts_.index)
+        assert_index_equal(sp.index, sp_.index)
 
     def test_loop_linestring_case(self, example_triplegs):
         """Test corner case where a tripleg starts and ends at the same point"""
-        # input data: preprocessed stps and tpls
-        stps, tpls = example_triplegs
+        # input data: preprocessed sp and tpls
+        sp, tpls = example_triplegs
 
         # add a tripleg with same start as end, by modifying the first tripleg
         tpls.loc[0, "geom"] = LineString([(0, 0), (1, 1), (0, 0)])
 
         # generate trips and a joint staypoint/triplegs dataframe
-        stps, tpls, trips = ti.preprocessing.triplegs.generate_trips(stps, tpls, gap_threshold=15)
+        sp, tpls, trips = ti.preprocessing.triplegs.generate_trips(sp, tpls, gap_threshold=15)
 
         # test if start of first trip is (0,0)
         assert trips.loc[0, "geom"][0] == Point(0, 0)

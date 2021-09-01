@@ -192,8 +192,8 @@ def generate_locations(
     # staypoints not linked to a location receive np.nan in 'location_id'
     sp.loc[sp["location_id"] == -1, "location_id"] = np.nan
 
-    if len(ret_loc) > 0:
-        ret_loc.as_locations
+    if len(locs) > 0:
+        locs.as_locations
     else:
         warnings.warn("No locations can be generated, returning empty locs.")
 
