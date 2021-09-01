@@ -147,9 +147,11 @@ class TestGenerate_tours:
         # check that nothing else than the new column has changed in trips df
         assert all(trips_out.iloc[:, :6] == trips)
         # check that the two tours were found
-        assert trips_out.loc[1, "tour_id"] == 0
+        assert trips_out.loc[1, "tour_id"] == [0]
         assert (
-            trips_out.loc[2, "tour_id"] == 1 and trips_out.loc[6, "tour_id"] == 1 and trips_out.loc[15, "tour_id"] == 1
+            trips_out.loc[2, "tour_id"] == [1]
+            and trips_out.loc[6, "tour_id"] == [1]
+            and trips_out.loc[15, "tour_id"] == [1]
         )
         # all others have tour id nan
         user_1_df = trips_out[trips_out["user_id"] == 1]
@@ -161,8 +163,8 @@ class TestGenerate_tours:
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_nr_gaps=1)
         # new tour was found for user 1
         assert len(tours) == 3
-        assert trips_out.loc[7, "tour_id"] == 2
-        assert trips_out.loc[80, "tour_id"] == 2
+        assert trips_out.loc[7, "tour_id"] == [2]
+        assert trips_out.loc[80, "tour_id"] == [2]
 
     def test_tour_times(self, example_trip_data):
         """Check whether the start and end times of generated tours are correct"""
@@ -172,8 +174,10 @@ class TestGenerate_tours:
         for i, row in tours.iterrows():
             time_diff = row["finished_at"] - row["started_at"]
             assert time_diff > pd.to_timedelta("0m") and time_diff < pd.to_timedelta("1d")
-        # check that all times are taken correctly from the trips table
-        for tour_id, tour_df in trips_out.groupby("tour_id"):
+
+        # group trips by tour and check that start and end of each tour are correct
+        grouped_trips = ti.preprocessing.trips.get_trips_grouped(trips, tours)
+        for tour_id, tour_df in grouped_trips:
             gt_start = tour_df.iloc[0]["started_at"]
             gt_end = tour_df.iloc[-1]["finished_at"]
             assert gt_start == tours.loc[tour_id, "started_at"]
@@ -202,7 +206,10 @@ class TestGenerate_tours:
         trips, sp_locs = example_trip_data
         trips_out, tours = ti.preprocessing.trips.generate_tours(trips, staypoints=sp_locs, max_nr_gaps=1)
         assert all(tours["location_id"] == pd.Series([1, 2, 2]))
-        for tour_id, tour_df in trips_out.groupby("tour_id"):
+
+        # group trips by tour and check that the locations of start and end of each tour are correct
+        grouped_trips = ti.preprocessing.trips.get_trips_grouped(trips, tours)
+        for tour_id, tour_df in grouped_trips:
             gt_start = tour_df.iloc[0]["origin_staypoint_id"]
             gt_loc = sp_locs.loc[gt_start, "location_id"]
             gt_end = tour_df.iloc[-1]["destination_staypoint_id"]
@@ -228,7 +235,7 @@ class TestGenerate_tours:
     def test_generate_tours_geolife(self):
         """Test tour generation also on the geolife dataset"""
         trips = ti.io.file.read_trips_csv(os.path.join("tests", "data", "geolife_long", "trips.csv"), index_col="id")
-        trips_, tours = ti.preprocessing.trips.generate_tours(trips, max_dist=100)
+        _, tours = ti.preprocessing.trips.generate_tours(trips, max_dist=100)
 
         tours_loaded = ti.io.file.read_tours_csv(
             os.path.join("tests", "data", "geolife_long", "tours.csv"), index_col="id"
@@ -279,8 +286,8 @@ class TestGenerate_tours:
         # the big tour should be found
         assert tours.loc[2, "trips"] == [2, 6, 100, 200, 15]
         # in the trips table, trip 100 and 200 is assigned the tour id of its smaller tour
-        assert trips_out.loc[100, "tour_id"] == 1
-        assert trips_out.loc[200, "tour_id"] == 1
+        assert trips_out.loc[100, "tour_id"] == [1, 2]
+        assert trips_out.loc[200, "tour_id"] == [1, 2]
 
     def test_tours_warn_existing_column(self, example_trip_data):
         trips, _ = example_trip_data
