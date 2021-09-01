@@ -33,7 +33,7 @@ def example_triplegs_higher_gap_threshold():
     """Generate input data for trip generation, but with a higher gap threshold in stp generation"""
     # create trips from geolife (based on positionfixes) - with gap_threshold 1e6
     pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
-    
+
     pfs, stps = pfs.as_positionfixes.generate_staypoints(
         method="sliding", dist_threshold=25, time_threshold=5, gap_threshold=1e6
     )
