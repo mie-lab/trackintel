@@ -167,11 +167,11 @@ class TestGenerate_tours:
     def test_tour_times(self, example_trip_data):
         """Check whether the start and end times of generated tours are correct"""
         trips, sp_locs = example_trip_data
-        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_nr_gaps=1, max_time=24)
+        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, max_nr_gaps=1, max_time="1d")
         # check that all times are below the max time
         for i, row in tours.iterrows():
             time_diff = row["finished_at"] - row["started_at"]
-            assert time_diff > datetime.timedelta(0) and time_diff < datetime.timedelta(hours=24)
+            assert time_diff > pd.to_timedelta("0m") and time_diff < pd.to_timedelta("1d")
         # check that all times are taken correctly from the trips table
         for tour_id, tour_df in trips_out.groupby("tour_id"):
             gt_start = tour_df.iloc[0]["started_at"]
@@ -192,9 +192,9 @@ class TestGenerate_tours:
         """Test functionality of max time argument in tour generation"""
         trips, sp_locs = example_trip_data
         with pytest.warns(UserWarning, match="No tours can be generated, return empty tours"):
-            _, tours = ti.preprocessing.trips.generate_tours(trips, max_time=2)  # only 2 hours allowed
+            _, tours = ti.preprocessing.trips.generate_tours(trips, max_time="2h")  # only 2 hours allowed
             assert len(tours) == 0
-        _, tours = ti.preprocessing.trips.generate_tours(trips, max_time=3)  # increase to 3 hours
+        _, tours = ti.preprocessing.trips.generate_tours(trips, max_time="3h")  # increase to 3 hours
         assert len(tours) == 1
 
     def test_tours_locations(self, example_trip_data):
@@ -287,6 +287,13 @@ class TestGenerate_tours:
         trips["tour_id"] = 1
         with pytest.warns(UserWarning, match="Deleted existing column 'tour_id' from trips."):
             _ = ti.preprocessing.trips.generate_tours(trips, print_progress=True)
+
+    def test_tours_time_gap_error(self, example_trip_data):
+        trips, _ = example_trip_data
+        # check that an int as max time raises a TypeError
+        with pytest.raises(Exception) as e_info:
+            _ = ti.preprocessing.trips.generate_tours(trips, max_time=24)
+            assert e_info == "Parameter max_time must be either of type String or pd.Timedelta!"
 
 
 class TestTourHelpers:

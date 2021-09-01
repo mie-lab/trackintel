@@ -51,7 +51,7 @@ def generate_tours(
     trips,
     staypoints=None,
     max_dist=100,
-    max_time=24,
+    max_time="1d",
     max_nr_gaps=0,
     print_progress=False,
 ):
@@ -73,8 +73,8 @@ def generate_tours(
         This is parameter is only used if staypoints is None!
         Also, if `max_nr_gaps > 0`, a tour can contain larger spatial gaps (see Notes below)
 
-    max_time: float, default 24 (hours)
-        Maximum time (in hours) that a tour is allowed to take
+    max_time: str or pd.Timedelta, default "1d" (1 day)
+        Maximum time that a tour is allowed to take
 
     max_nr_gaps: int, default 0
         Maximum number of spatial gaps on the tour. Use with caution - see notes below.
@@ -122,19 +122,23 @@ def generate_tours(
         # get crs
         crs_is_projected = ti.geogr.distances.check_gdf_planar(trips)
 
+    # convert max_time to timedelta
+    if isinstance(max_time, str):
+        max_time = pd.to_timedelta(max_time)
+    # otherwise check if it's a Timedelta already, and raise error if not
+    elif not isinstance(max_time, pd.Timedelta):
+        raise TypeError("Parameter max_time must be either of type String or pd.Timedelta!")
+
     trips_input = trips.copy()
     # If the trips already have a column "tour_id", we drop it
     if "tour_id" in trips_input:
         trips_input.drop(columns="tour_id", inplace=True)
         warnings.warn("Deleted existing column 'tour_id' from trips.")
 
-    # convert hours to timedelta
-    max_time_delta = timedelta(hours=max_time)
-
     kwargs = {
         "max_dist": max_dist,
         "max_nr_gaps": max_nr_gaps,
-        "max_time": max_time_delta,
+        "max_time": max_time,
         "staypoints": staypoints,
         "geom_col": geom_col,
         "crs_is_projected": crs_is_projected,
