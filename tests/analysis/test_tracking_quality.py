@@ -1,7 +1,11 @@
 import os
+import datetime
 
 import pytest
 import pandas as pd
+import geopandas as gpd
+from shapely.geometry import Point
+
 import trackintel as ti
 
 
@@ -200,6 +204,47 @@ class TestTemporal_tracking_quality:
         trips_quality_method = ti.analysis.tracking_quality.temporal_tracking_quality(trips)
         pd.testing.assert_frame_equal(trips_quality_accessor, trips_quality_method)
 
+    def test_non_positive_duration_warning(self):
+        """Test the function can handle non positive duration records without running into infinite loop."""
+        p1 = Point(8.5067847, 47.4)
+        t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+
+        one_hour = datetime.timedelta(hours=1)
+
+        list_dict = [
+            {"user_id": 0, "started_at": t1, "finished_at": t1, "geom": p1},  # duration 0 at midnight
+            {"user_id": 0, "started_at": t1, "finished_at": t1 - one_hour, "geom": p1},  # negative duration
+        ]
+        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+        sp.index.name = "id"
+
+        with pytest.warns(UserWarning):
+            ti.analysis.tracking_quality.temporal_tracking_quality(sp)
+
+    def test_non_positive_duration_filtered(self):
+        """Test the non positive duration records are filtered and do not affect the result."""
+        p1 = Point(8.5067847, 47.4)
+        t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+
+        one_hour = datetime.timedelta(hours=1)
+
+        list_dict = [
+            {"user_id": 0, "started_at": t1, "finished_at": t1, "geom": p1},  # duration 0 at midnight
+            {"user_id": 0, "started_at": t1, "finished_at": t1 - one_hour, "geom": p1},  # negative duration
+            {"user_id": 0, "started_at": t1, "finished_at": t1 + one_hour, "geom": p1},  # positive duration
+        ]
+
+        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+        sp.index.name = "id"
+
+        granularity_ls = ["all", "day", "week", "weekday", "hour"]
+        correct_quality_ls = [1, 1 / 24, 1 / 24 / 7, 1 / 24, 1]
+
+        for granularity, correct_quality in zip(granularity_ls, correct_quality_ls):
+            quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity=granularity)
+            # get the "quality" of the last record and compare to the correct_quality
+            assert quality.values[-1][-1] == correct_quality
+
 
 class TestSplit_overlaps:
     """Tests for the _split_overlaps() function."""
@@ -276,3 +321,19 @@ class TestSplit_overlaps:
         # test "duration" is recalculated after the split
         assert splitted_day["duration"].sum() == sp_tpls["duration"].sum()
         assert splitted_hour["duration"].sum() == sp_tpls["duration"].sum()
+
+    def test_max_iter_warning(self):
+        """Test if a warning is raised when maximum iteration is reached."""
+        p1 = Point(8.5067847, 47.4)
+        # construct time that is far apart - exceeding the default max_iter
+        t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+        t2 = pd.Timestamp("1981-01-01 00:00:00", tz="utc")
+
+        list_dict = [
+            {"user_id": 0, "started_at": t1, "finished_at": t2, "geom": p1},
+        ]
+        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+        sp.index.name = "id"
+
+        with pytest.warns(UserWarning):
+            ti.analysis.tracking_quality._split_overlaps(sp, granularity="day")

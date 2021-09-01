@@ -3,7 +3,7 @@ import warnings
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry import MultiPoint
+from shapely.geometry import MultiPoint, Point
 
 
 def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
@@ -216,7 +216,10 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     trips_with_act["prev_trip_id"] = trips_with_act["trip_id"].shift(1)
     trips_with_act["next_trip_id"] = trips_with_act["trip_id"].shift(-1)
     activity_staypoints = trips_with_act[trips_with_act["type"] == "staypoint"].copy()
+
     activity_staypoints.index = activity_staypoints["sp_tpls_id"]
+    # containing None changes dtype -> revert to original dtype.
+    activity_staypoints.index = activity_staypoints.index.astype(spts.index.dtype)
     sp = sp.join(activity_staypoints[["prev_trip_id", "next_trip_id"]], how="left")
 
     # transform column to binary
@@ -237,28 +240,6 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
         axis=1,
     )
 
-    # fill missing points and convert to MultiPoint
-    # for all trips with missing 'origin_staypoint_id' we now assign the startpoint of the first tripleg of the trip.
-    # for all tripls with missing 'destination_staypoint_id' we now assign the endpoint of the last tripleg of the trip.
-    if add_geometry:
-        # fill geometry for origin staypoints that are NaN
-        origin_nan_rows = trips[pd.isna(trips["origin_staypoint_id"])].copy()
-        trips.loc[pd.isna(trips["origin_staypoint_id"]), "origin_geom"] = origin_nan_rows.tpls.map(
-            # from tpls table, get the first point of the first tripleg for the trip
-            lambda x: tpls.loc[x[0], tpls.geometry.name].boundary[0]
-        )
-        # fill geometry for destionations staypoints that are NaN
-        destination_nan_rows = trips[pd.isna(trips["destination_staypoint_id"])].copy()
-        trips.loc[pd.isna(trips["destination_staypoint_id"]), "destination_geom"] = destination_nan_rows.tpls.map(
-            # from tpls table, get the last point of the last tripleg on the trip
-            lambda x: tpls.loc[x[-1], tpls.geometry.name].boundary[1]
-        )
-        # convert to GeoDataFrame with MultiPoint column
-        trips["geom"] = [MultiPoint([x, y]) for x, y in zip(trips.origin_geom, trips.destination_geom)]
-        trips = gpd.GeoDataFrame(trips, geometry="geom")
-        # cleanup
-        trips.drop(["origin_geom", "destination_geom"], inplace=True, axis=1)
-
     # now handle the data that is aggregated in the trips
     # assign trip_id to tpls
     temp = trips.explode("tpls")
@@ -271,6 +252,28 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     temp.index = temp["sp"]
     temp = temp[temp["sp"].notna()]
     sp = sp.join(temp["trip_id"], how="left")
+
+    # fill missing points and convert to MultiPoint
+    # for all trips with missing 'origin_staypoint_id' we now assign the startpoint of the first tripleg of the trip.
+    # for all tripls with missing 'destination_staypoint_id' we now assign the endpoint of the last tripleg of the trip.
+    if add_geometry:
+        # fill geometry for origin staypoints that are NaN
+        origin_nan_rows = trips[pd.isna(trips["origin_staypoint_id"])].copy()
+        trips.loc[pd.isna(trips["origin_staypoint_id"]), "origin_geom"] = origin_nan_rows.tpls.map(
+            # from tpls table, get the first point of the first tripleg for the trip
+            lambda x: Point(tpls.loc[x[0], tpls.geometry.name].coords[0])
+        )
+        # fill geometry for destionations staypoints that are NaN
+        destination_nan_rows = trips[pd.isna(trips["destination_staypoint_id"])].copy()
+        trips.loc[pd.isna(trips["destination_staypoint_id"]), "destination_geom"] = destination_nan_rows.tpls.map(
+            # from tpls table, get the last point of the last tripleg on the trip
+            lambda x: Point(tpls.loc[x[-1], tpls.geometry.name].coords[-1])
+        )
+        # convert to GeoDataFrame with MultiPoint column
+        trips["geom"] = [MultiPoint([x, y]) for x, y in zip(trips.origin_geom, trips.destination_geom)]
+        trips = gpd.GeoDataFrame(trips, geometry="geom")
+        # cleanup
+        trips.drop(["origin_geom", "destination_geom"], inplace=True, axis=1)
 
     # final cleaning
     tpls.drop(columns=["type"], inplace=True)

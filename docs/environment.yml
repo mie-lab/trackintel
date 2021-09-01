@@ -3,19 +3,19 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-- python=3.8
-- numpy
-- matplotlib
-- pandas
+# - python=3.8
 - geopandas
-- scikit-learn
-- networkx
-- pint
-- pip
-- geoalchemy2
-- osmnx
-- psycopg2
-- sphinx
-- sphinx_rtd_theme
-- tqdm
-- similaritymeasures
+- pip:
+  - numpy
+  - matplotlib
+  - pandas
+  - scikit-learn
+  - networkx
+  - pint
+  - geoalchemy2
+  - osmnx
+  - psycopg2
+  - sphinx
+  - sphinx_rtd_theme
+  - tqdm
+  - similaritymeasures
