@@ -50,7 +50,12 @@ def temporal_tracking_quality(source, granularity="all", max_iter=60):
 
     The tracking quality of each user is calculated based on his or her own tracking extent.
     For granularity = ``day`` or ``week``, the quality["day"] or quality["week"] column displays the
-    time relative to the first record in the entire dataset.
+    time relative to the first record in the entire dataset. In addition to the relative values of
+    the chosen granularity w.r.t the first recrod, when the granularity is either "day" or
+    "week", the quality dataframe has an extra column called "date" or "week_number" respectively.
+    Using the "date" and "week_number" columns, the trackintel user can estimate which specific
+    "date" or "week_number" had poor tracking quality
+
 
     Examples
     --------
