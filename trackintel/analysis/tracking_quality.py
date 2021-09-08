@@ -87,11 +87,12 @@ def temporal_tracking_quality(source, granularity="all", max_iter=60):
         # get the tracked day relative to the first day
         start_date = df["started_at"].min().date()
         df["day"] = df["started_at"].apply(lambda x: (x.date() - start_date).days)
+        df["date"] = df["started_at"]
 
         # calculate per-user per-day raw tracking quality
-        raw_quality = df.groupby(["user_id", "day"], as_index=False).apply(_get_tracking_quality_user, granularity)
+        raw_quality = df.groupby(["user_id", "date"], as_index=False).apply(_get_tracking_quality_user, granularity)
         # add quality = 0 records
-        quality = _get_all_quality(df, raw_quality, granularity)
+        quality = _get_all_quality(df, raw_quality, "date")
 
     elif granularity == "week":
         # split records that span several days
@@ -167,6 +168,9 @@ def _get_all_quality(df, raw_quality, granularity):
         A pandas.Series object containing the tracking quality
     """
     all_users = df["user_id"].unique()
+    if granularity == "date":
+        all_granularity = np.arange(np.datetime64(df["date"].min()), np.datetime64(df["date"].max()) + 1)
+
     all_granularity = np.arange(df[granularity].max() + 1)
     # construct array containing all user and granularity combinations
     all_combi = np.array(np.meshgrid(all_users, all_granularity)).T.reshape(-1, 2)
