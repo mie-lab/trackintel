@@ -115,7 +115,9 @@ class TestTemporal_tracking_quality:
         # test if the result of the user agrees
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="weekday")
 
-        assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["weekday"] == 3), "quality"].values[0]
+        assert (
+            quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["weekday"] == 3), "quality"].values[0]
+        )
         assert (quality["quality"] < 1).all()
 
     def test_tracking_quality_hour(self, testdata_stps_tpls_geolife_long):
@@ -243,7 +245,12 @@ class TestTemporal_tracking_quality:
         for granularity, correct_quality in zip(granularity_ls, correct_quality_ls):
             quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity=granularity)
             # get the "quality" of the last record and compare to the correct_quality
-            assert quality.values[-1][-1] == correct_quality
+            if granularity in ("day", "week"):
+                # the second last index is the one where the quality value is present
+                assert quality.values[-1][-2] == correct_quality
+            else:
+                # the last index is the one where the quality value is present
+                assert quality.values[-1][-1] == correct_quality
 
 
 class TestSplit_overlaps:
