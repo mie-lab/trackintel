@@ -106,15 +106,13 @@ def temporal_tracking_quality(source, granularity="all", max_iter=60):
         # get the tracked week relative to the first day
         start_date = df["started_at"].min().date()
         df["week"] = df["started_at"].apply(lambda x: (x.date() - start_date).days // 7)
-        dict_relative_week_to_absolute_week = dict(
-            zip(df["week"], df["started_at"].apply(lambda x: pd.to_datetime(x).week))
-        )
+        dict_week_num = dict(zip(df["week"], df["started_at"].apply(lambda x: pd.to_datetime(x).week)))
 
         # calculate per-user per-week raw tracking quality
         raw_quality = df.groupby(["user_id", "week"], as_index=False).apply(_get_tracking_quality_user, granularity)
         # add quality = 0 records
         quality = _get_all_quality(df, raw_quality, granularity)
-        quality["week_number"] = quality["week"].map(dict_relative_week_to_absolute_week)
+        quality["week_number"] = quality["week"].map(dict_week_num)
 
     elif granularity == "weekday":
         # split records that span several days
