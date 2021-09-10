@@ -50,3 +50,18 @@ The function `generate_trips` follows this algorithm:
 .. image:: /_static/tripalgorithm.png
    :scale: 100 %
    :align: center
+
+Trips
+========
+
+Trips denote the sequence of all triplegs between two consecutive activities. These can be composed of multiple means
+of transports. A further aggregation of Trips are Tours, which is a sequence of trips such that it starts and ends
+at the same location. Using the trips, we can generate tours.
+
+.. autofunction:: trackintel.preprocessing.trips.generate_tours
+
+Trips and Tours have an n:n relationship: One tour consists of multiple trips, but due to nested or overlapping tours,
+one trip can also be part of mulitple tours. A helper function can be used to get the trips grouped by tour.
+
+.. autofunction:: trackintel.preprocessing.trips.get_trips_grouped
+
