@@ -323,7 +323,7 @@ def read_tours_gpd(
     user_id="user_id",
     started_at="started_at",
     finished_at="finished_at",
-    origin_destination_location_id="origin_destination_location_id",
+    location_id="location_id",
     journey="journey",
     tz=None,
     mapper={},
@@ -347,7 +347,7 @@ def read_tours_gpd(
     finished_at : str, default 'finished_at'
         name of the column storing the endtime of the staypoints.
 
-    origin_destination_location_id : str, default 'origin_destination_location_id'
+    location_id : str, default 'location_id'
         the name of the column storing the id of the location where the tour starts and ends.
 
     journey : str, default 'journey'
@@ -364,7 +364,7 @@ def read_tours_gpd(
     # columns = {user_id: 'user_id',
     #            started_at: 'tracked_at',
     #            finished_at: 'finished_at',
-    #            origin_destination_location_id: 'origin_destination_location_id',
+    #            location_id: 'location_id',
     #            journey: 'journey'}
     # columns.update(mapper)
 

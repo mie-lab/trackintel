@@ -301,7 +301,7 @@ They are linked to a user::
         user_id integer NOT NULL,
 
         -- References to foreign tables.
-        origin_destination_location_id bigint,
+        location_id bigint,
 
         -- Temporal attributes.
         started_at timestamp with time zone NOT NULL,

@@ -1,4 +1,5 @@
 import pandas as pd
+import trackintel as ti
 
 
 @pd.api.extensions.register_dataframe_accessor("as_tours")
@@ -6,12 +7,12 @@ class ToursAccessor(object):
     """A pandas accessor to treat DataFrames as collections of `Tours`.
 
     Requires at least the following columns:
-    ['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'journey']
+    ['user_id', 'started_at', 'finished_at']
 
-    The 'index' of the GeoDataFrame will be treated as unique identifier of the `Tours`
+    The 'index' of the DataFrame will be treated as unique identifier of the `Tours`
 
     For several usecases, the following additional columns are required:
-    ['context']
+    ['location_id', 'journey', 'context', 'origin_staypoint_id', 'destination_staypoint_id']
 
     Notes
     -----
@@ -25,7 +26,7 @@ class ToursAccessor(object):
     >>> df.as_tours.plot()
     """
 
-    required_columns = ["user_id", "started_at", "finished_at", "origin_destination_location_id", "journey"]
+    required_columns = ["user_id", "started_at", "finished_at"]
 
     def __init__(self, pandas_obj):
         self._validate(pandas_obj)
@@ -54,7 +55,7 @@ class ToursAccessor(object):
 
         See :func:`trackintel.io.file.write_tours_csv`.
         """
-        raise NotImplementedError
+        ti.io.file.write_tours_csv(self._obj, filename, *args, **kwargs)
 
     def plot(self, *args, **kwargs):
         """

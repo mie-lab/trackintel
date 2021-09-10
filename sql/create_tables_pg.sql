@@ -163,14 +163,12 @@ CREATE TABLE tours (
     user_id integer NOT NULL,
 
     -- References to foreign tables.
-    origin_destination_location_id bigint,
+    location_id bigint,
 
     -- Temporal attributes.
     started_at timestamp without time zone NOT NULL,
     finished_at timestamp without time zone NOT NULL,
     
-    -- Specific attributes.
-    journey bool,
     -- The context contains additional information that might be filled in by trackintel.
     -- This could include things such as the temperature, public transport stops in vicinity, etc.
     context json,

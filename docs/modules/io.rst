@@ -30,6 +30,8 @@ CSV File Import
 
 .. autofunction:: trackintel.io.file.read_trips_csv
 
+.. autofunction:: trackintel.io.file.read_tours_csv
+
 GeoDataFrame Import
 =============================
 
@@ -69,6 +71,8 @@ CSV File Export
 .. autofunction:: trackintel.io.file.write_locations_csv
 
 .. autofunction:: trackintel.io.file.write_trips_csv
+
+.. autofunction:: trackintel.io.file.write_tours_csv
 
 PostGIS Export
 ==============
