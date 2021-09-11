@@ -314,7 +314,6 @@ class TestPositionfixes:
             del_table(conn, table)
 
 
-
 class TestTriplegs:
     def test_write(self, example_triplegs, conn_postgis):
         """Test if write of triplegs create correct schema in database."""
