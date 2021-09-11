@@ -90,6 +90,17 @@ class Test_Trackintel_Model:
         pfs["tracked_at"] = ["1971-01-01 04:00:00", "1971-01-01 05:00:00", "1971-01-02 07:00:00"]
         pfs = _trackintel_model(pfs, tz_cols=["tracked_at"], tz="UTC")
         assert_geodataframe_equal(pfs, example_positionfixes)
+    
+    def test_multiple_timezones_in_col(self, example_positionfixes):
+        """Test if datetimes in column don't have the same timezone get casted to UTC."""
+        example_positionfixes["tracked_at"] = [
+            pd.Timestamp("2021-08-01 16:00:00", tz="Europe/Amsterdam"),
+            pd.Timestamp("2021-08-01 16:00:00", tz="Asia/Muscat"),
+            pd.Timestamp("2021-08-01 16:00:00", tz="Pacific/Niue")
+        ]
+        pfs = _trackintel_model(example_positionfixes, tz_cols=["tracked_at"])
+        example_positionfixes["tracked_at"] = pd.to_datetime(example_positionfixes["tracked_at"], utc=True)
+        assert_geodataframe_equal(pfs, example_positionfixes)
 
 
 class TestRead_Positionfixes_Gpd:
@@ -297,6 +308,17 @@ class TestRead_Trips_Gpd:
         trips = read_trips_gpd(example_trips, mapper=mapper)
         example_trips.rename(columns=mapper, inplace=True)
         assert_geodataframe_equal(trips, example_trips)
+    
+    def test_multiple_timezones_in_col(self, example_trips):
+        """Test if datetimes in column don't have the same timezone get casted to UTC."""
+        example_trips["started_at"] = [
+            pd.Timestamp("2021-08-01 16:00:00", tz="Europe/Amsterdam"),
+            pd.Timestamp("2021-08-01 16:00:00", tz="Asia/Muscat"),
+            pd.Timestamp("2021-08-01 16:00:00", tz="Pacific/Niue")
+        ]
+        trips = read_trips_gpd(example_trips)
+        example_trips["started_at"] = pd.to_datetime(example_trips["started_at"], utc=True)
+        assert_geodataframe_equal(example_trips, trips)
 
 
 class TestRead_Tours_Gpd:
