@@ -243,7 +243,14 @@ class TestTemporal_tracking_quality:
         for granularity, correct_quality in zip(granularity_ls, correct_quality_ls):
             quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity=granularity)
             # get the "quality" of the last record and compare to the correct_quality
-            assert quality.values[-1][-1] == correct_quality
+            if granularity in ("day", "week"):
+                # when using the granularity of "day" or "week", the quality dataframe has an extra column
+                # hence the last value for other granularity is the second last value here (hence indec=-2)
+                # the second last index is the one where the quality value is present
+                assert quality.values[-1][-2] == correct_quality
+            else:
+                # the last index is the one where the quality value is present
+                assert quality.values[-1][-1] == correct_quality
 
 
 class TestSplit_overlaps:
