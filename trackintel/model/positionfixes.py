@@ -89,7 +89,7 @@ class PositionfixesAccessor(object):
 
         See :func:`trackintel.preprocessing.positionfixes.generate_triplegs`.
         """
-        return ti.preprocessing.positionfixes.generate_triplegs(self._obj, stps_input, *args, **kwargs)
+        return ti.preprocessing.positionfixes.generate_triplegs(self._obj, staypoints, *args, **kwargs)
 
     @_copy_docstring(plot_positionfixes)
     def plot(self, *args, **kwargs):

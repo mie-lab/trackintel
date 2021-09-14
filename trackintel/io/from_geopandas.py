@@ -101,7 +101,7 @@ def read_staypoints_gpd(
 
     Returns
     -------
-    stps : GeoDataFrame (as trackintel staypoints)
+    sp : GeoDataFrame (as trackintel staypoints)
         A GeoDataFrame containing the staypoints
 
     Examples
@@ -112,11 +112,11 @@ def read_staypoints_gpd(
     if mapper is not None:
         columns.update(mapper)
 
-    stps = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
+    sp = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
 
     # assert validity of staypoints
-    stps.as_staypoints
-    return stps
+    sp.as_staypoints
+    return sp
 
 
 def read_triplegs_gpd(

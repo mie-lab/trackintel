@@ -256,7 +256,7 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), crs=No
 
     Returns
     -------
-    stps : GeoDataFrame (as trackintel staypoints)
+    sp : GeoDataFrame (as trackintel staypoints)
         A GeoDataFrame containing the staypoints.
 
     Examples
@@ -294,13 +294,13 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), crs=No
         if not pd.api.types.is_datetime64tz_dtype(df[col]):
             df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
 
-    stps = gpd.GeoDataFrame(df, geometry="geom")
+    sp = gpd.GeoDataFrame(df, geometry="geom")
     if crs:
-        stps.set_crs(crs, inplace=True)
+        sp.set_crs(crs, inplace=True)
 
     # assert validity of staypoints
-    stps.as_staypoints
-    return stps
+    sp.as_staypoints
+    return sp
 
 
 def write_staypoints_csv(staypoints, filename, *args, **kwargs):
