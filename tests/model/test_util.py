@@ -1,11 +1,11 @@
-from trackintel.model.util import copy_docstring
+from trackintel.model.util import _copy_docstring
 from functools import WRAPPER_ASSIGNMENTS
 from trackintel.io.postgis import read_trips_postgis
 
 
-class TestCopy_Docstring:
+class Test_copy_docstring:
     def test_default(self):
-        @copy_docstring(read_trips_postgis)
+        @_copy_docstring(read_trips_postgis)
         def bar(b: int) -> int:
             """Old docstring."""
             pass
