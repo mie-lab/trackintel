@@ -7,7 +7,7 @@ from trackintel.analysis.tracking_quality import temporal_tracking_quality
 from trackintel.geogr.distances import calculate_distance_matrix
 from trackintel.io.file import write_triplegs_csv
 from trackintel.io.postgis import write_triplegs_postgis
-from trackintel.model.util import copy_docstring
+from trackintel.model.util import _copy_docstring
 from trackintel.preprocessing.filter import spatial_filter
 from trackintel.preprocessing.triplegs import generate_trips
 from trackintel.visualization.triplegs import plot_triplegs
@@ -71,7 +71,7 @@ class TriplegsAccessor(object):
             obj["finished_at"]
         ), "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj["finished_at"].dtype)
 
-    @copy_docstring(plot_triplegs)
+    @_copy_docstring(plot_triplegs)
     def plot(self, *args, **kwargs):
         """
         Plot this collection of triplegs.
@@ -80,7 +80,7 @@ class TriplegsAccessor(object):
         """
         ti.visualization.triplegs.plot_triplegs(self._obj, *args, **kwargs)
 
-    @copy_docstring(write_triplegs_csv)
+    @_copy_docstring(write_triplegs_csv)
     def to_csv(self, filename, *args, **kwargs):
         """
         Store this collection of triplegs as a CSV file.
@@ -89,7 +89,7 @@ class TriplegsAccessor(object):
         """
         ti.io.file.write_triplegs_csv(self._obj, filename, *args, **kwargs)
 
-    @copy_docstring(write_triplegs_postgis)
+    @_copy_docstring(write_triplegs_postgis)
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
@@ -102,7 +102,7 @@ class TriplegsAccessor(object):
             self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype
         )
 
-    @copy_docstring(calculate_distance_matrix)
+    @_copy_docstring(calculate_distance_matrix)
     def calculate_distance_matrix(self, *args, **kwargs):
         """
         Calculate pair-wise distance among triplegs or to other triplegs.
@@ -111,7 +111,7 @@ class TriplegsAccessor(object):
         """
         return ti.geogr.distances.calculate_distance_matrix(self._obj, *args, **kwargs)
 
-    @copy_docstring(spatial_filter)
+    @_copy_docstring(spatial_filter)
     def spatial_filter(self, *args, **kwargs):
         """
         Filter triplegs with a geo extent.
@@ -120,7 +120,7 @@ class TriplegsAccessor(object):
         """
         return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
 
-    @copy_docstring(generate_trips)
+    @_copy_docstring(generate_trips)
     def generate_trips(self, *args, **kwargs):
         """
         Generate trips based on staypoints and triplegs.
@@ -138,7 +138,7 @@ class TriplegsAccessor(object):
             )
             return ti.preprocessing.triplegs.generate_trips(spts=args[0], tpls=self._obj, **kwargs)
 
-    @copy_docstring(predict_transport_mode)
+    @_copy_docstring(predict_transport_mode)
     def predict_transport_mode(self, *args, **kwargs):
         """
         Predict/impute the transport mode with which each tripleg was likely covered.
@@ -147,7 +147,7 @@ class TriplegsAccessor(object):
         """
         return ti.analysis.labelling.predict_transport_mode(self._obj, *args, **kwargs)
 
-    @copy_docstring(calculate_modal_split)
+    @_copy_docstring(calculate_modal_split)
     def calculate_modal_split(self, *args, **kwargs):
         """
         Calculate the modal split of the triplegs.
@@ -156,7 +156,7 @@ class TriplegsAccessor(object):
         """
         return ti.analysis.modal_split.calculate_modal_split(self._obj, *args, **kwargs)
 
-    @copy_docstring(temporal_tracking_quality)
+    @_copy_docstring(temporal_tracking_quality)
     def temporal_tracking_quality(self, *args, **kwargs):
         """
         Calculate per-user temporal tracking quality (temporal coverage).

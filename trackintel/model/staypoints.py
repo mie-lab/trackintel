@@ -4,7 +4,7 @@ from trackintel.analysis.labelling import create_activity_flag
 from trackintel.analysis.tracking_quality import temporal_tracking_quality
 from trackintel.io.file import write_staypoints_csv
 from trackintel.io.postgis import write_staypoints_postgis
-from trackintel.model.util import copy_docstring
+from trackintel.model.util import _copy_docstring
 from trackintel.preprocessing.filter import spatial_filter
 from trackintel.preprocessing.staypoints import generate_locations, merge_staypoints
 from trackintel.visualization.staypoints import plot_staypoints
@@ -78,7 +78,7 @@ class StaypointsAccessor(object):
         lon = self._obj.geometry.x
         return (float(lon.mean()), float(lat.mean()))
 
-    @copy_docstring(generate_locations)
+    @_copy_docstring(generate_locations)
     def generate_locations(self, *args, **kwargs):
         """
         Generate locations from this collection of staypoints.
@@ -87,7 +87,7 @@ class StaypointsAccessor(object):
         """
         return ti.preprocessing.staypoints.generate_locations(self._obj, *args, **kwargs)
 
-    @copy_docstring(merge_staypoints)
+    @_copy_docstring(merge_staypoints)
     def merge_staypoints(self, *args, **kwargs):
         """
         Aggregate staypoints horizontally via time threshold.
@@ -96,7 +96,7 @@ class StaypointsAccessor(object):
         """
         return ti.preprocessing.staypoints.merge_staypoints(self._obj, *args, **kwargs)
 
-    @copy_docstring(create_activity_flag)
+    @_copy_docstring(create_activity_flag)
     def create_activity_flag(self, *args, **kwargs):
         """
         Set a flag if a staypoint is also an activity.
@@ -105,7 +105,7 @@ class StaypointsAccessor(object):
         """
         return ti.analysis.labelling.create_activity_flag(self._obj, *args, **kwargs)
 
-    @copy_docstring(spatial_filter)
+    @_copy_docstring(spatial_filter)
     def spatial_filter(self, *args, **kwargs):
         """
         Filter staypoints with a geo extent.
@@ -114,7 +114,7 @@ class StaypointsAccessor(object):
         """
         return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
 
-    @copy_docstring(plot_staypoints)
+    @_copy_docstring(plot_staypoints)
     def plot(self, *args, **kwargs):
         """
         Plot this collection of staypoints.
@@ -123,7 +123,7 @@ class StaypointsAccessor(object):
         """
         ti.visualization.staypoints.plot_staypoints(self._obj, *args, **kwargs)
 
-    @copy_docstring(write_staypoints_csv)
+    @_copy_docstring(write_staypoints_csv)
     def to_csv(self, filename, *args, **kwargs):
         """
         Store this collection of staypoints as a CSV file.
@@ -132,7 +132,7 @@ class StaypointsAccessor(object):
         """
         ti.io.file.write_staypoints_csv(self._obj, filename, *args, **kwargs)
 
-    @copy_docstring(write_staypoints_postgis)
+    @_copy_docstring(write_staypoints_postgis)
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
@@ -145,7 +145,7 @@ class StaypointsAccessor(object):
             self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype
         )
 
-    @copy_docstring(temporal_tracking_quality)
+    @_copy_docstring(temporal_tracking_quality)
     def temporal_tracking_quality(self, *args, **kwargs):
         """
         Calculate per-user temporal tracking quality (temporal coverage).
