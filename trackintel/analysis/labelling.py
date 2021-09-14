@@ -31,8 +31,8 @@ def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.
 
     Examples
     --------
-    >>> stps  = stps.as_staypoints.create_activity_flag(method='time_threshold', time_threshold=15)
-    >>> print(stps['activity'])
+    >>> sp  = sp.as_staypoints.create_activity_flag(method='time_threshold', time_threshold=15)
+    >>> print(sp['activity'])
     """
     if method == "time_threshold":
         staypoints[activity_column_name] = staypoints["finished_at"] - staypoints["started_at"] > datetime.timedelta(

@@ -153,14 +153,14 @@ class TestStaypoints:
         orig_file = os.path.join("tests", "data", "staypoints.csv")
         mod_file = os.path.join("tests", "data", "staypoints_mod_columns.csv")
         tmp_file = os.path.join("tests", "data", "staypoints_test_1.csv")
-        stps = ti.read_staypoints_csv(orig_file, sep=";", tz="utc", index_col="id")
-        mod_stps = ti.read_staypoints_csv(mod_file, columns={"User": "user_id"}, sep=";", index_col="id")
-        assert mod_stps.equals(stps)
-        stps["started_at"] = stps["started_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
-        stps["finished_at"] = stps["finished_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
+        sp = ti.read_staypoints_csv(orig_file, sep=";", tz="utc", index_col="id")
+        mod_sp = ti.read_staypoints_csv(mod_file, columns={"User": "user_id"}, sep=";", index_col="id")
+        assert mod_sp.equals(sp)
+        sp["started_at"] = sp["started_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
+        sp["finished_at"] = sp["finished_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
 
         columns = ["user_id", "started_at", "finished_at", "elevation", "geom"]
-        stps.as_staypoints.to_csv(tmp_file, sep=";", columns=columns)
+        sp.as_staypoints.to_csv(tmp_file, sep=";", columns=columns)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
@@ -168,27 +168,27 @@ class TestStaypoints:
         """Test setting the crs when reading."""
         file = os.path.join("tests", "data", "staypoints.csv")
         crs = "EPSG:2056"
-        stps = ti.read_staypoints_csv(file, sep=";", tz="utc", index_col="id")
-        assert stps.crs is None
+        sp = ti.read_staypoints_csv(file, sep=";", tz="utc", index_col="id")
+        assert sp.crs is None
 
-        stps = ti.read_staypoints_csv(file, sep=";", tz="utc", index_col="id", crs=crs)
-        assert stps.crs == crs
+        sp = ti.read_staypoints_csv(file, sep=";", tz="utc", index_col="id", crs=crs)
+        assert sp.crs == crs
 
     def test_set_datatime_tz(self):
         """Test setting the timezone infomation when reading."""
         # check if tz is added to the datatime column
         file = os.path.join("tests", "data", "staypoints.csv")
-        stps = ti.read_staypoints_csv(file, sep=";", index_col="id")
-        assert pd.api.types.is_datetime64tz_dtype(stps["started_at"])
+        sp = ti.read_staypoints_csv(file, sep=";", index_col="id")
+        assert pd.api.types.is_datetime64tz_dtype(sp["started_at"])
 
         # check if a timezone will be set after manually deleting the timezone
-        stps["started_at"] = stps["started_at"].dt.tz_localize(None)
-        assert not pd.api.types.is_datetime64tz_dtype(stps["started_at"])
+        sp["started_at"] = sp["started_at"].dt.tz_localize(None)
+        assert not pd.api.types.is_datetime64tz_dtype(sp["started_at"])
         tmp_file = os.path.join("tests", "data", "staypoints_test_2.csv")
-        stps.as_staypoints.to_csv(tmp_file, sep=";")
-        stps = ti.read_staypoints_csv(tmp_file, sep=";", index_col="id", tz="utc")
+        sp.as_staypoints.to_csv(tmp_file, sep=";")
+        sp = ti.read_staypoints_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
-        assert pd.api.types.is_datetime64tz_dtype(stps["started_at"])
+        assert pd.api.types.is_datetime64tz_dtype(sp["started_at"])
 
         # check if a warning is raised if 'tz' is not provided
         with pytest.warns(UserWarning):

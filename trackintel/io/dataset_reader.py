@@ -170,7 +170,7 @@ def read_geolife(geolife_path, print_progress=False):
 
 
 def geolife_add_modes_to_triplegs(
-    tpls_in, labels, ratio_threshold=0.5, max_triplegs=20, max_duration_tripleg=7 * 24 * 60 * 60
+    triplegs, labels, ratio_threshold=0.5, max_triplegs=20, max_duration_tripleg=7 * 24 * 60 * 60
 ):
     """
     Add available mode labels to geolife data.
@@ -180,7 +180,7 @@ def geolife_add_modes_to_triplegs(
 
     Parameters
     ----------
-    tpls_in : GeoDataFrame (as trackintel triplegs)
+    triplegs : GeoDataFrame (as trackintel triplegs)
         Geolife triplegs.
 
     labels : dictionary
@@ -210,11 +210,11 @@ def geolife_add_modes_to_triplegs(
     ----------
     >>> from trackintel.io.dataset_reader import read_geolife, geolife_add_modes_to_triplegs
     >>> pfs, mode_labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'))
-    >>> pfs, spts = pfs.as_positionfixes.generate_staypoints()
-    >>> pfs, tpls = pfs.as_positionfixes.generate_triplegs(spts)
+    >>> pfs, sp = pfs.as_positionfixes.generate_staypoints()
+    >>> pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp)
     >>> tpls = geolife_add_modes_to_triplegs(tpls, mode_labels)
     """
-    tpls = tpls_in.copy()
+    tpls = triplegs.copy()
     # temp time fields for nn query
     tpls["started_at_s"] = (tpls["started_at"] - pd.Timestamp("1970-01-01", tz="utc")) // pd.Timedelta("1s")
     tpls["finished_at_s"] = (tpls["finished_at"] - pd.Timestamp("1970-01-01", tz="utc")) // pd.Timedelta("1s")

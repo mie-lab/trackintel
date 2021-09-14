@@ -81,6 +81,9 @@ See [issue 117](https://github.com/mie-lab/trackintel/issues/117)
 - New release version tags use [semantic numbering](https://semver.org/).
 - Commits follow the standard of [pandas](https://pandas.pydata.org/pandas-docs/stable/development/contributing.html#committing-your-code).
 - There should be no warnings when running tests.
+- We agreed on the following naming conventions for trackintel datatypes:
+  - long: positionfixes, staypoints, triplegs, locations, trips, and tours
+  - short: pfs, sp, tpls, locs, trips, tours
 
 ## Version release checklist
 Before you release a new version you should check/modify the following files:

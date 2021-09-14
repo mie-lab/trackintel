@@ -42,7 +42,7 @@ def plot_triplegs(
 
     Example
     -------
-    >>> tpls.as_triplegs.plot('output.png', positionfixes=pfs, staypoints=stps, plot_osm=True)
+    >>> tpls.as_triplegs.plot('output.png', positionfixes=pfs, staypoints=sp, plot_osm=True)
     """
     if axis is None:
         _, ax = regular_figure()

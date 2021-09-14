@@ -303,11 +303,11 @@ def read_staypoints_postgis(
 
     Examples
     --------
-    >>> spts = ti.io.read_staypoints_postgis("SELECT * FROM staypoints", con, geom_col="geom")
-    >>> spts = ti.io.read_staypoints_postgis("SELECT * FROM staypoints", con, geom_col="geom", index_col="id",
+    >>> sp = ti.io.read_staypoints_postgis("SELECT * FROM staypoints", con, geom_col="geom")
+    >>> sp = ti.io.read_staypoints_postgis("SELECT * FROM staypoints", con, geom_col="geom", index_col="id",
     ...                                      started_at="start_time", finished_at="end_time", user_id="USER")
     """
-    spts = gpd.GeoDataFrame.from_postgis(
+    sp = gpd.GeoDataFrame.from_postgis(
         sql,
         con,
         geom_col=geom_col,
@@ -319,7 +319,7 @@ def read_staypoints_postgis(
         chunksize=chunksize,
     )
 
-    return ti.io.read_staypoints_gpd(spts, **kwargs)
+    return ti.io.read_staypoints_gpd(sp, **kwargs)
 
 
 @_handle_con_string
@@ -625,6 +625,6 @@ __doc = """Stores {long} to PostGIS. Usually, this is directly called on a {long
 
 write_positionfixes_postgis.__doc__ = __doc.format(long="positionfixes", short="pfs")
 write_triplegs_postgis.__doc__ = __doc.format(long="triplegs", short="tpls")
-write_staypoints_postgis.__doc__ = __doc.format(long="staypoints", short="spts")
+write_staypoints_postgis.__doc__ = __doc.format(long="staypoints", short="sp")
 write_locations_postgis.__doc__ = __doc.format(long="locations", short="locs")
 write_trips_postgis.__doc__ = __doc.format(long="trips", short="trips")
