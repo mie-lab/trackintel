@@ -399,7 +399,8 @@ class TestMergeStaypoints:
         """Test staypoint merging."""
         sp, tpls = example_staypoints_merge
         # first test with empty tpls
-        merged_sp = sp.as_staypoints.merge_staypoints(tpls, agg={"geom": "first", "location_id": "first"})
+        merged_sp = sp.as_staypoints.merge_staypoints(tpls, agg={"geom": "first"})
+        merged_sp = merged_sp.reindex(columns=sp.columns)
         assert len(merged_sp) == len(sp) - 3
         # some staypoints stay the same (not merged)
         assert (merged_sp.loc[1] == sp.loc[1]).all()
@@ -458,3 +459,11 @@ class TestMergeStaypoints:
         # the geom should correspond to the first one
         assert sp.loc[7, "geom"] == merged_sp.loc[7, "geom"]
         assert sp.loc[2, "geom"] == merged_sp.loc[2, "geom"]
+
+    def test_merge_staypoints_error(self, example_staypoints_merge):
+        sp, tpls = example_staypoints_merge
+        sp.drop(columns=["location_id"], inplace=True)
+        with pytest.raises(AssertionError) as excinfo:
+            _ = sp.as_staypoints.merge_staypoints(tpls)
+
+        assert "Staypoints must contain column location_id" in str(excinfo.value)
