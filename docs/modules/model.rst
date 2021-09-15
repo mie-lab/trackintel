@@ -6,7 +6,6 @@ assumed that data is already available in all these classes, instead, trackintel
 provides functionality to generate everything starting from the raw GPS positionfix data 
 (consisting of at least ``(user_id, tracked_at, longitude, latitude)`` tuples).
 
-* **users**: The users for which data is available.
 * **positionfixes**: Raw GPS data.
 * **staypoints**: Locations where a user spent a minimal time.
 * **triplegs**: Segments covered with one mode of transport.
@@ -56,12 +55,6 @@ Available Accessors
 ===================
 
 The following accessors are available within *trackintel*.
-
-UsersAccessor
--------------
-
-.. autoclass:: trackintel.model.users.UsersAccessor
-	:members:
 
 PositionfixesAccessor
 ---------------------
@@ -113,27 +106,6 @@ in case you want to quickly set up a database. Also take a look at the `example 
 <https://github.com/mie-lab/trackintel/blob/master/examples/setup_example_database.py>`_.
 
 .. highlight:: sql
-
-The **users** table contains information about individual users for which mobility data is available 
-(i.e., each ``user_id`` appearing in the tables below should have a corresponding user in the ``users``
-table)::
-
-    CREATE TABLE users (
-        -- Common to all tables.
-        id bigint NOT NULL,
-
-        -- Specific attributes.
-        -- The attributes contain additional information that might be given for each user. This
-        -- could be demographic information, such as age, gender, or income. 
-        attributes json,
-
-        -- Spatial attributes.
-        geom_home geometry(Point, 4326),
-        geom_work geometry(Point, 4326),
-
-        -- Constraints.
-        CONSTRAINT users_pkey PRIMARY KEY (id)
-    );
 
 The **positionfixes** table contains all positionfixes (i.e., all individual GPS trackpoints, 
 consisting of longitude, latitude and timestamp) of all users. They are not only linked to 
