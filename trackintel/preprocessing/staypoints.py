@@ -233,7 +233,8 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     Parameters
     ----------
     staypoints : GeoDataFrame (as trackintel staypoints)
-        The staypoints have to follow the standard definition for staypoints DataFrames.
+        The staypoints must contain a column `location_id` (see `generate_locations` function) and have to follow the
+        standard trackintel definition for staypoints DataFrames.
 
     triplegs: GeoDataFrame (as trackintel triplegs)
         The triplegs have to follow the standard definition for triplegs DataFrames.
@@ -277,6 +278,7 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     # otherwise check if it's a Timedelta already, and raise error if not
     elif not isinstance(max_time_gap, pd.Timedelta):
         raise TypeError("Parameter max_time_gap must be either of type String or pd.Timedelta!")
+    assert "location_id" in staypoints.columns, "Staypoints must contain column location_id"
 
     sp_merge = staypoints.copy()
     index_name = staypoints.index.name
@@ -285,6 +287,9 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     tpls_merge = triplegs.copy()
     tpls_merge["type"] = "tripleg"
     sp_merge["type"] = "staypoint"
+    # convert datatypes in order to preserve the datatypes (especially ints) despite of NaNs during concat
+    sp_merge = sp_merge.convert_dtypes()
+
     # a joined dataframe sp_tpls is constructed to add the columns 'type' and 'next_type' to the 'sp_merge' table
     # concat and sort by time
     sp_tpls = pd.concat([sp_merge, tpls_merge]).sort_values(by=["user_id", "started_at"])
@@ -327,7 +332,13 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
         cond_old = cond.copy()
 
     # Staypoint-required columnsare aggregated in the following manner:
-    agg_dict = {index_name: "first", "user_id": "first", "started_at": "first", "finished_at": "last"}
+    agg_dict = {
+        index_name: "first",
+        "user_id": "first",
+        "started_at": "first",
+        "finished_at": "last",
+        "location_id": "first",
+    }
     # User-defined further aggregation
     agg_dict.update(agg)
 
