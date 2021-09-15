@@ -31,6 +31,11 @@ frequently visits and/or infer if they correspond to activities.
 
 .. autofunction:: trackintel.preprocessing.staypoints.generate_locations
 
+Due to tracking artifacts, it can occur that one activity is split into several staypoints. 
+We can aggregate the staypoints horizontally that are close in time and at the same location.
+
+.. autofunction:: trackintel.preprocessing.staypoints.merge_staypoints
+
 Triplegs
 ========
 
