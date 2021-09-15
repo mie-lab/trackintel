@@ -55,6 +55,10 @@ def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kw
     D: np.array
         matrix of shape (len(X), len(X)) or of shape (len(X), len(Y)) if Y is provided.
 
+    Examples
+    --------
+    >>> calculate_distance_matrix(staypoints, dist_metric="haversine")
+    >>> calculate_distance_matrix(triplegs_1, triplegs_2, dist_metric="dtw")
     """
     geom_type = X.geometry.iat[0].geom_type
     if Y is None:
@@ -179,6 +183,10 @@ def meters_to_decimal_degrees(meters, latitude):
     -------
     float
         An approximation of a distance (given in meters) in degrees.
+
+    Examples
+    --------
+    >>> meters_to_decimal_degrees(500.0, 47.410)
     """
     return meters / (111.32 * 1000.0 * cos(latitude * (pi / 180.0)))
 
@@ -204,7 +212,6 @@ def check_gdf_planar(gdf, transform=False):
 
     gdf : GeoDataFrame
         if transform is True, return the re-projected gdf.
-
 
     Examples
     --------
