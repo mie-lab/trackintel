@@ -304,9 +304,9 @@ def example_tours():
     h = pd.Timedelta("1h")
 
     list_dict = [
-        {"user_id": 0, "started_at": start + 0*h, "finished_at": start + 1*h},
-        {"user_id": 0, "started_at": start + 2*h, "finished_at": start + 3*h},
-        {"user_id": 1, "started_at": start + 4*h, "finished_at": start + 5*h},
+        {"user_id": 0, "started_at": start + 0 * h, "finished_at": start + 1 * h},
+        {"user_id": 0, "started_at": start + 2 * h, "finished_at": start + 3 * h},
+        {"user_id": 1, "started_at": start + 4 * h, "finished_at": start + 5 * h},
     ]
     tours = pd.DataFrame(data=list_dict)
     tours.index.name = "id"
