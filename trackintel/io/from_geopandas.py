@@ -312,7 +312,12 @@ def read_locations_gpd(gdf, user_id="user_id", center="center", extent=None, crs
 
 
 def read_tours_gpd(
-    gdf, user_id="user_id", started_at="started_at", finished_at="finished_at", tz=None, mapper=None,
+    gdf,
+    user_id="user_id",
+    started_at="started_at",
+    finished_at="finished_at",
+    tz=None,
+    mapper=None,
 ):
     """
     Read tours from GeoDataFrames.
