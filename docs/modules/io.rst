@@ -61,6 +61,8 @@ PostGIS Import
 
 .. autofunction:: trackintel.io.postgis.read_trips_postgis
 
+.. autofunction:: trackintel.io.postgis.read_tours_postgis
+
 CSV File Export
 ===============
 
@@ -88,6 +90,8 @@ PostGIS Export
 .. autofunction:: trackintel.io.postgis.write_locations_postgis
 
 .. autofunction:: trackintel.io.postgis.write_trips_postgis
+
+.. autofunction:: trackintel.io.postgis.write_tours_postgis
 
 Predefined dataset readers
 ==========================

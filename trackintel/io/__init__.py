@@ -30,6 +30,9 @@ from .from_geopandas import read_trips_gpd
 
 from .file import read_tours_csv
 from .file import write_tours_csv
+from .postgis import read_tours_postgis
+from .postgis import write_tours_postgis
+from .from_geopandas import read_tours_gpd
 
 from .dataset_reader import read_geolife
 from .dataset_reader import geolife_add_modes_to_triplegs

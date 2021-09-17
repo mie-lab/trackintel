@@ -160,6 +160,24 @@ def example_trips():
     return trips
 
 
+@pytest.fixture
+def example_tours():
+    """Tours to load into the database."""
+    t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+    t2 = pd.Timestamp("1971-01-01 05:00:00", tz="utc")
+    t3 = pd.Timestamp("1971-01-02 07:00:00", tz="utc")
+    h = datetime.timedelta(hours=1)
+
+    list_dict = [
+        {"user_id": 0, "started_at": t1, "finished_at": t1 + h},
+        {"user_id": 0, "started_at": t2, "finished_at": t2 + h},
+        {"user_id": 1, "started_at": t3, "finished_at": t3 + h},
+    ]
+    tours = pd.DataFrame(data=list_dict)
+    tours.index.name = "id"
+    assert tours.as_tours
+    return tours
+
 def del_table(con, table):
     """Delete table in con."""
     try:
@@ -578,6 +596,50 @@ class TestTrips:
             trips.as_trips.to_postgis(table, conn_string)
             locs_db = ti.io.read_trips_postgis(sql, conn_string, geom_col=geom_col, index_col="id")
             assert_geodataframe_equal(trips, locs_db)
+        finally:
+            del_table(conn, table)
+
+
+class TestTours:
+    """Test of postgis functions for tours."""
+    def test_write(self, example_tours, conn_postgis):
+        """Test if write of tours create correct schema in database."""
+        tours = example_tours
+        conn_string, conn = conn_postgis
+        table = "tours"
+        try:
+            tours.as_tours.to_postgis(table, conn_string)
+            columns_db, dtypes = get_table_schema(conn, table)
+            columns = tours.columns.tolist() + [tours.index.name]
+            assert len(columns_db) == len(columns)
+            assert set(columns_db) == set(columns)
+        finally:
+            del_table(conn, table)
+
+    def test_read(self, example_tours, conn_postgis):
+        """Test if tours written to and read back from database are the same."""
+        tours = example_tours
+        conn_string, conn = conn_postgis
+        table = "tours"
+        sql = f"SELECT * FROM {table}"
+
+        try:
+            tours.as_tours.to_postgis(table, conn_string)
+            tours_db = ti.io.read_tours_postgis(sql, conn_string, index_col="id")
+            assert_frame_equal(tours, tours_db)
+        finally:
+            del_table(conn, table)
+
+    def test_no_crs(self, example_tours, conn_postgis):
+        """Test if writing reading to postgis also works correctly without CRS."""
+        tours = example_tours
+        conn_string, conn = conn_postgis
+        table = "tours"
+        sql = f"SELECT * FROM {table}"
+        try:
+            tours.as_tours.to_postgis(table, conn_string)
+            tours_db = ti.io.read_tours_postgis(sql, conn_string, index_col="id")
+            assert_frame_equal(tours, tours_db)
         finally:
             del_table(conn, table)
 
