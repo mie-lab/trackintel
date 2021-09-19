@@ -172,17 +172,21 @@ class TestGenerate_staypoints:
     def test_sliding_max(self):
         """Test if using large thresholds, stp extraction yield no pfs."""
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
-        _, sp = pfs.as_positionfixes.generate_staypoints(
-            method="sliding", dist_threshold=sys.maxsize, time_threshold=sys.maxsize
-        )
+        warn_string = "No staypoints can be generated, returning empty sp."
+        with pytest.warns(UserWarning, match=warn_string):
+            _, sp = pfs.as_positionfixes.generate_staypoints(
+                method="sliding", dist_threshold=sys.maxsize, time_threshold=sys.maxsize
+            )
         assert len(sp) == 0
 
     def test_missing_link(self):
         """Test nan is assigned for missing link between pfs and sp."""
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
-        pfs, _ = pfs.as_positionfixes.generate_staypoints(
-            method="sliding", dist_threshold=sys.maxsize, time_threshold=sys.maxsize
-        )
+        warn_string = "No staypoints can be generated, returning empty sp."
+        with pytest.warns(UserWarning, match=warn_string):
+            pfs, _ = pfs.as_positionfixes.generate_staypoints(
+                method="sliding", dist_threshold=sys.maxsize, time_threshold=sys.maxsize
+            )
 
         assert pd.isna(pfs["staypoint_id"]).any()
 
