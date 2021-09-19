@@ -8,7 +8,8 @@ import trackintel as ti
 @pytest.fixture
 def testdata_trips():
     """Read trips test data from file."""
-    test_trips = ti.read_trips_csv(os.path.join("tests", "data", "geolife_long", "trips.csv"), index_col="id")
+    path = os.path.join("tests", "data", "geolife_long", "trips.csv")
+    test_trips = ti.read_trips_csv(path, index_col="id", geom_col="geom")
     return test_trips
 
 

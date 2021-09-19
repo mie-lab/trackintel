@@ -563,7 +563,7 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), geom_col=No
     # convert to geodataframe
     if geom_col is not None:
         trips[geom_col] = trips[geom_col].apply(wkt.loads)
-        trips = gpd.GeoDataFrame(trips, geometry=geom_col)
+        trips = gpd.GeoDataFrame(trips, geometry=geom_col, crs=crs)
 
     # assert validity of trips
     trips.as_trips
