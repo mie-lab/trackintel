@@ -166,7 +166,7 @@ class Test_GetDf:
         df_lengths = [681, 818, 915, 1004, 66, 327, 256, 66, 84]
         columns = ["elevation", "tracked_at", "geom", "user_id"]
         for df, df_len in zip(df_gen, df_lengths):
-            assert len(df) == df_len
+            assert len(df) in df_len
             assert df.columns.tolist() == columns
             assert isinstance(df["geom"][0], Point)
             s += 1
