@@ -1,14 +1,14 @@
 import datetime
 import os
 
-import numpy as np
 import pandas as pd
 import pytest
-
-from geopandas.testing import assert_geoseries_equal
+from geopandas.testing import assert_geodataframe_equal
+from pandas.testing import assert_frame_equal
+from shapely.geometry import Point
 
 import trackintel as ti
-from trackintel.io.dataset_reader import read_geolife, geolife_add_modes_to_triplegs
+from trackintel.io.dataset_reader import _get_df, _get_labels, geolife_add_modes_to_triplegs, read_geolife
 
 
 @pytest.fixture
@@ -88,7 +88,7 @@ class TestReadGeolife:
         pfs_reRead = ti.read_positionfixes_csv(saved_file, index_col="id", crs="epsg:4326")
         os.remove(saved_file)
 
-        assert_geoseries_equal(pfs.geometry, pfs_reRead.geometry)
+        assert_geodataframe_equal(pfs, pfs_reRead, check_like=True)
 
     def test_print_progress_flag(self, capsys):
         """Test if the print_progress bar controls the printing behavior."""
@@ -114,17 +114,6 @@ class TestReadGeolife:
             assert key in [10, 20, 178]
             assert isinstance(value, pd.DataFrame)
 
-    def test_unavailable_label_reading(self):
-        """Test data types of the labels returned by read_geolife from a dictionary without label files."""
-        _, labels = read_geolife(os.path.join("tests", "data", "geolife_long"))
-
-        # the output is a dictionary
-        assert isinstance(labels, dict)
-
-        # the values are pandas dataframes
-        for key, value in labels.items():
-            assert isinstance(value, pd.DataFrame)
-
     def test_wrong_folder_name(self):
         """Check if invalid folder names raise an exception."""
         geolife_path = os.path.join("tests", "data", "geolife")
@@ -133,9 +122,55 @@ class TestReadGeolife:
 
         try:
             with pytest.raises(ValueError):
-                _, _ = read_geolife(geolife_path)
+                read_geolife(geolife_path)
         finally:
             os.rmdir(temp_dir)
+
+    def test_no_user_folders(self):
+        """Check if no user folders raise an exception."""
+        geolife_path = os.path.join("tests", "data", "geolife", "000", "Trajectory")
+        with pytest.raises(FileNotFoundError):
+            read_geolife(geolife_path)
+
+
+class Test_GetLabels:
+    def test_example_data(self):
+        """Read example data and test if it is valid."""
+        geolife_path = os.path.join("tests", "data", "geolife_modes")
+        uids = ["010", "020", "178"]
+        labels = _get_labels(geolife_path, uids)
+
+        assert len(labels) == 2
+        assert all(key in [10, 20] for key in labels.keys())
+        assert len(labels[10]) == 434
+        assert len(labels[20]) == 223
+        assert all(df.columns.tolist() == ["started_at", "finished_at", "mode"] for df in labels.values())
+
+    def test_defaultdict(self):
+        """Test if non existing entries return a correct empty pd.DataFrame"""
+        geolife_path = os.path.join("tests", "data", "geolife_modes")
+        uids = ["010", "020", "178"]
+        labels = _get_labels(geolife_path, uids)
+        empty_df = pd.DataFrame(columns=["started_at", "finished_at", "mode"])
+        assert_frame_equal(labels[-1], empty_df)
+
+
+class Test_GetDf:
+    def test_example_data(self):
+        """Read example data and test if it is valid."""
+        geolife_path = os.path.join("tests", "data", "geolife_modes")
+        uids = ["010", "020", "178"]
+        df_gen = _get_df(geolife_path, uids, False)
+
+        s = 0
+        df_lengths = [681, 818, 915, 1004, 66, 327, 256, 66, 84]
+        columns = ["elevation", "tracked_at", "geom", "user_id"]
+        for df, df_len in zip(df_gen, df_lengths):
+            assert len(df) == df_len
+            assert df.columns.tolist() == columns
+            assert isinstance(df["geom"][0], Point)
+            s += 1
+        assert s == len(df_lengths)
 
 
 class TestGeolife_add_modes_to_triplegs:
