@@ -1,12 +1,12 @@
 import logging
 
 import osmnx as ox
-from networkx.exception import NetworkXPointlessConcept
 from matplotlib.collections import LineCollection
+from networkx.exception import NetworkXPointlessConcept
 
 
 def plot_osm_streets(north, south, east, west, ax):
-    """Plots OpenStreetMap streets onto an axis.
+    """Plots with osmnx OpenStreetMap streets onto an axis.
 
     Parameters
     ----------
@@ -21,6 +21,13 @@ def plot_osm_streets(north, south, east, west, ax):
 
     west : float
         The westernmost coordinate.
+
+    ax : matplotlib.pyplot.Artist, optional
+        Axis on which to draw the plot.
+
+    Examples
+    --------
+    >>> ti.visualization.osm.plot_osm_street(47.392, 47.364, 8.557, 8.509, ax)
     """
     try:
         G = ox.graph_from_bbox(north, south, east, west, network_type="drive")
