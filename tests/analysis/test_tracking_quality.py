@@ -115,7 +115,9 @@ class TestTemporal_tracking_quality:
         # test if the result of the user agrees
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(stps_tpls, granularity="weekday")
 
-        assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["weekday"] == 3), "quality"].values[0]
+        assert (
+            quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["weekday"] == 3), "quality"].values[0]
+        )
         assert (quality["quality"] < 1).all()
 
     def test_tracking_quality_hour(self, testdata_stps_tpls_geolife_long):
@@ -221,6 +223,56 @@ class TestTemporal_tracking_quality:
         with pytest.warns(UserWarning):
             ti.analysis.tracking_quality.temporal_tracking_quality(sp)
 
+    def test_last_day_same_as_last_day_in_record(self):
+        """Test the take the last tracking record's day and assert it is the same as the
+        last absolute date in the quality."""
+        p1 = Point(8.5067847, 47.4)
+        t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+
+        ten_days = pd.Timedelta(days=10)
+
+        list_dict = [
+            {"user_id": 0, "started_at": t1, "finished_at": t1, "geom": p1},  # duration 0 at midnight
+            {"user_id": 0, "started_at": t1, "finished_at": t1 - ten_days, "geom": p1},  # negative duration
+            {"user_id": 0, "started_at": t1, "finished_at": t1 + ten_days, "geom": p1},  # positive duration
+        ]
+
+        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+        sp.index.name = "id"
+
+        granularity_ls = ["day"]
+        correct_quality_ls = [1 / 24]
+
+        for granularity, correct_quality in zip(granularity_ls, correct_quality_ls):
+            quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity=granularity)
+            # get the "date" of the last record and compare to the last "date" in data
+            assert quality.values[-1][-1] == (t1 + ten_days).date()
+
+    def test_last_day_same_as_last_week_in_record(self):
+        """Test the take the last tracking record's day and assert it is the same as the
+        last absolute date in the quality."""
+        p1 = Point(8.5067847, 47.4)
+        t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+
+        ten_weeks = pd.Timedelta(weeks=4)
+
+        list_dict = [
+            {"user_id": 0, "started_at": t1, "finished_at": t1, "geom": p1},  # duration 0 at midnight
+            {"user_id": 0, "started_at": t1, "finished_at": t1 - ten_weeks, "geom": p1},  # negative duration
+            {"user_id": 0, "started_at": t1, "finished_at": t1 + ten_weeks, "geom": p1},  # positive duration
+        ]
+
+        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+        sp.index.name = "id"
+
+        granularity_ls = ["week"]
+        correct_quality_ls = [1 / 24 / 7]
+
+        for granularity, correct_quality in zip(granularity_ls, correct_quality_ls):
+            quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity=granularity)
+            # get the "date" of the last record and compare to the last "date" in data
+            assert quality.values[-1][-1] == (t1 + ten_weeks).isocalendar()[1]
+
     def test_non_positive_duration_filtered(self):
         """Test the non positive duration records are filtered and do not affect the result."""
         p1 = Point(8.5067847, 47.4)
@@ -245,7 +297,7 @@ class TestTemporal_tracking_quality:
             # get the "quality" of the last record and compare to the correct_quality
             if granularity in ("day", "week"):
                 # when using the granularity of "day" or "week", the quality dataframe has an extra column
-                # hence the last value for other granularity is the second last value here (hence indec=-2)
+                # hence the last value for other granularity is the second last value here (hence index=-2)
                 # the second last index is the one where the quality value is present
                 assert quality.values[-1][-2] == correct_quality
             else:
