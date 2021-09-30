@@ -310,7 +310,7 @@ def example_tours():
     ]
     tours = pd.DataFrame(data=list_dict)
     tours.index.name = "id"
-    assert tours.as_tours
+    tours.as_tours
     return tours
 
 
