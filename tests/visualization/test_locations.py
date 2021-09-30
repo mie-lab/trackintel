@@ -14,13 +14,13 @@ def test_data():
     pfs_file = os.path.join("examples", "data", "geolife_trajectory.csv")
     pfs = ti.read_positionfixes_csv(pfs_file, sep=";", index_col=None, crs="EPSG:4326")
 
-    pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding")
-    pfs, _ = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+    pfs, sp = pfs.as_positionfixes.generate_staypoints(method="sliding")
+    pfs, _ = pfs.as_positionfixes.generate_triplegs(sp, method="between_staypoints")
 
-    stps, locs = stps.as_staypoints.generate_locations(
+    sp, locs = sp.as_staypoints.generate_locations(
         method="dbscan", distance_metric="haversine", epsilon=200, num_samples=1
     )
-    return pfs, stps, locs
+    return pfs, sp, locs
 
 
 class TestPlot_locations:
@@ -28,10 +28,10 @@ class TestPlot_locations:
 
     def test_locations_plot(self, test_data):
         """Use trackintel visualization function to plot locations and check if the file exists."""
-        pfs, stps, locs = test_data
+        pfs, sp, locs = test_data
         tmp_file = os.path.join("tests", "data", "locations_plot1.png")
         locs.as_locations.plot(
-            out_filename=tmp_file, radius=200, positionfixes=pfs, staypoints=stps, staypoints_radius=100, plot_osm=False
+            out_filename=tmp_file, radius=200, positionfixes=pfs, staypoints=sp, staypoints_radius=100, plot_osm=False
         )
         assert os.path.exists(tmp_file)
         os.remove(tmp_file)

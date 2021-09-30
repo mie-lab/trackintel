@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 def calc_temp_overlap(start_1, end_1, start_2, end_2):
     """
-    Calculate the portion of the first time span that overlaps with the second
+    Calculate the portion of the first time span that overlaps with the second.
 
     Parameters
     ----------
@@ -21,7 +21,11 @@ def calc_temp_overlap(start_1, end_1, start_2, end_2):
     Returns
     -------
     float:
-        The ratio by which the
+        The ratio by which the first timespan overlaps with the second.
+
+    Examples
+    --------
+    >>> ti.preprocessing.calc_temp_overlap(start_1, end_1, start_2, end_2)
 
     """
 
@@ -94,6 +98,11 @@ def applyParallel(dfGrouped, func, n_jobs, print_progress, **kwargs):
     -------
     pd.DataFrame:
         The result of dfGrouped.apply(func)
+
+    Examples
+    --------
+    >>> from trackintel.preprocessing.util import applyParallel
+    >>> applyParallel(tpfs.groupby("user_id", as_index=False), func, n_jobs=2)
     """
     df_ls = Parallel(n_jobs=n_jobs)(
         delayed(func)(group, **kwargs) for _, group in tqdm(dfGrouped, disable=not print_progress)

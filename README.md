@@ -61,14 +61,14 @@ pfs, _ = ti.io.dataset_reader.read_geolife(".\tests\data\geolife_long")
 **[2.]** Data model generation. 
 ```python
 # generate staypoints and triplegs
-pfs, stps = pfs.as_positionfixes.generate_staypoints(method='sliding')
-pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps, method='between_staypoints')
+pfs, sp = pfs.as_positionfixes.generate_staypoints(method='sliding')
+pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp, method='between_staypoints')
 ```
 
 **[3.]** Visualization.
  ```python
 # plot the generated tripleg result
-tpls.as_triplegs.plot(positionfixes=pfs,staypoints=stps, staypoints_radius=10)
+tpls.as_triplegs.plot(positionfixes=pfs, staypoints=sp, staypoints_radius=10)
 ```
 
 **[4.]** Analysis.
@@ -82,7 +82,7 @@ tracking_coverage = ti.temporal_tracking_quality(tpls, granularity='all')
 **[5.]** Save results.
  ```python
 # save the generated results as csv file 
-stps.as_staypoints.to_csv('.\examples\data\stps.csv')
+sp.as_staypoints.to_csv('.\examples\data\sp.csv')
 tpls.as_triplegs.to_csv('.\examples\data\tpls.csv')
 ```
 

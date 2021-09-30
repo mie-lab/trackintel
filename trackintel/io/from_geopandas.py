@@ -101,7 +101,7 @@ def read_staypoints_gpd(
 
     Returns
     -------
-    stps : GeoDataFrame (as trackintel staypoints)
+    sp : GeoDataFrame (as trackintel staypoints)
         A GeoDataFrame containing the staypoints
 
     Examples
@@ -112,11 +112,11 @@ def read_staypoints_gpd(
     if mapper is not None:
         columns.update(mapper)
 
-    stps = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
+    sp = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
 
     # assert validity of staypoints
-    stps.as_staypoints
-    return stps
+    sp.as_staypoints
+    return sp
 
 
 def read_triplegs_gpd(
@@ -251,19 +251,7 @@ def read_trips_gpd(
     if mapper is not None:
         columns.update(mapper)
 
-    if geom_col is not None:  # handle (Geo)DataFrame modes.
-        trips = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
-    else:
-        trips = gdf.rename(columns=columns)
-        # check and/or set timezone
-        for col in ["started_at", "finished_at"]:
-            if not pd.api.types.is_datetime64tz_dtype(trips[col]):
-                try:
-                    trips[col] = _localize_timestamp(dt_series=trips[col], pytz_tzinfo=tz, col_name=col)
-                except ValueError:
-                    # Taken if column contains datetimes with different timezone informations.
-                    # Cast them to UTC in this case.
-                    trips[col] = pd.to_datetime(trips[col], utc=True)
+    trips = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
 
     # assert validity of trips
     trips.as_trips
@@ -328,10 +316,8 @@ def read_tours_gpd(
     user_id="user_id",
     started_at="started_at",
     finished_at="finished_at",
-    location_id="location_id",
-    journey="journey",
     tz=None,
-    mapper={},
+    mapper=None,
 ):
     """
     Read tours from GeoDataFrames.
@@ -341,48 +327,42 @@ def read_tours_gpd(
     Parameters
     ----------
     gdf : GeoDataFrame
-        GeoDataFrame with valid point geometry, containing the locations to import.
+        GeoDataFrame containing the tours to import.
 
     user_id : str, default 'user_id'
-        name of the column storing the user_id.
+        Name of the column storing the user_id.
 
     started_at : str, default 'started_at'
-        name of the column storing the starttime of the staypoints.
+        Name of the column storing the start time of the tours.
 
     finished_at : str, default 'finished_at'
-        name of the column storing the endtime of the staypoints.
+        Name of the column storing the end time of the tours.
 
-    location_id : str, default 'location_id'
-        the name of the column storing the id of the location where the tour starts and ends.
-
-    journey : str, default 'journey'
-        name of the column storing the information (bool) if the tour is a journey.
+    tz : str, optional
+        pytz compatible timezone string. If None UTC is assumed.
 
     mapper : dict, optional
-        further columns that should be renamed.
+        Further columns that should be renamed.
 
     Returns
     -------
-    trs : GeoDataFrame (as trackintel tours)
+    tours : GeoDataFrame (as trackintel tours)
         A GeoDataFrame containing the tours
     """
-    # columns = {user_id: 'user_id',
-    #            started_at: 'tracked_at',
-    #            finished_at: 'finished_at',
-    #            location_id: 'location_id',
-    #            journey: 'journey'}
-    # columns.update(mapper)
+    columns = {
+        user_id: "user_id",
+        started_at: "started_at",
+        finished_at: "finished_at",
+    }
+    if mapper is not None:
+        columns.update(mapper)
 
-    # trs = gdf.rename(columns=columns)
+    tours = _trackintel_model(gdf, set_names=columns, tz_cols=["started_at", "finished_at"], tz=tz)
 
-    # # check and/or set timezone
-    # for col in ['started_at', 'finished_at']:
-    #     if not pd.api.types.is_datetime64tz_dtype(trs[col]):
-    #         trs[col] = localize_timestamp(dt_series=trs[col], pytz_tzinfo=tz, col_name=col)
+    # assert validity of tours
+    tours.as_tours
 
-    # trs.as_tours
-    # return trs
-    pass
+    return tours
 
 
 def _trackintel_model(gdf, set_names=None, geom_col=None, crs=None, tz_cols=None, tz=None):
@@ -418,6 +398,21 @@ def _trackintel_model(gdf, set_names=None, geom_col=None, crs=None, tz_cols=None
     if set_names is not None:
         gdf = gdf.rename(columns=set_names)
 
+    if tz_cols is not None:
+        for col in tz_cols:
+            if not pd.api.types.is_datetime64tz_dtype(gdf[col]):
+                try:
+                    gdf[col] = _localize_timestamp(dt_series=gdf[col], pytz_tzinfo=tz, col_name=col)
+                except ValueError:
+                    # Taken if column contains datetimes with different timezone informations.
+                    # Cast them to UTC in this case.
+                    gdf[col] = pd.to_datetime(gdf[col], utc=True)
+
+    # If is not GeoDataFrame and no geom_col is set end early.
+    # That allows us to handle DataFrames and GeoDataFrames in one function.
+    if not isinstance(gdf, gpd.GeoDataFrame) and geom_col is None:
+        return gdf
+
     if geom_col is not None:
         gdf = gdf.set_geometry(geom_col)
     else:
@@ -428,15 +423,5 @@ def _trackintel_model(gdf, set_names=None, geom_col=None, crs=None, tz_cols=None
 
     if crs is not None:
         gdf = gdf.set_crs(crs)
-
-    if tz_cols is not None:
-        for col in tz_cols:
-            if not pd.api.types.is_datetime64tz_dtype(gdf[col]):
-                try:
-                    gdf[col] = _localize_timestamp(dt_series=gdf[col], pytz_tzinfo=tz, col_name=col)
-                except ValueError:
-                    # Taken if column contains datetimes with different timezone informations.
-                    # Cast them to UTC in this case.
-                    gdf[col] = pd.to_datetime(gdf[col], utc=True)
 
     return gdf

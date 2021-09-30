@@ -53,15 +53,15 @@ Of course, we can start our analysis, for example by detecting staypoints (aggre
 where the user stayed for a certain amount of time)::
 
     _, locs = pfs.as_positionfixes.generate_staypoints(method='sliding')
-    stps.as_staypoints.plot(out_filename='staypoints.png', radius=10, positionfixes=pfs, plot_osm=True)
+    sp.as_staypoints.plot(out_filename='staypoints.png', radius=10, positionfixes=pfs, plot_osm=True)
 
 This will additionally plot the original positionfixes, as well as the underlying 
 street network from OSM. We can for example continue by extracting and plotting locations 
 (locations that "contain" multiple staypoints, i.e., are visited often by a user)::
 
-    _, locs = stps.as_staypoints.generate_locations(method='dbscan', epsilon=100, num_samples=1)
+    _, locs = sp.as_staypoints.generate_locations(method='dbscan', epsilon=100, num_samples=1)
     locs.as_locations.plot(out_filename='locations.png', radius=125, positionfixes=pfs, 
-        staypoints=stps, staypoints_radius=100, plot_osm=True)
+        staypoints=sp, staypoints_radius=100, plot_osm=True)
     
 This will extract locations and plot them to a file called ``locations.png``, additionally 
 plotting the original positionfixes and staypoints, as well as the street network.

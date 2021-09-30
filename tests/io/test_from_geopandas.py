@@ -166,16 +166,14 @@ class TestRead_Staypoints_Gpd:
         # read from file and transform to trackintel format
         gdf = gpd.read_file(os.path.join("tests", "data", "staypoints.geojson"))
         gdf.set_index("id", inplace=True)
-        stps_from_gpd = read_staypoints_gpd(
-            gdf, "start_time", "end_time", geom_col="geometry", crs="EPSG:4326", tz="utc"
-        )
+        sp_from_gpd = read_staypoints_gpd(gdf, "start_time", "end_time", geom_col="geometry", crs="EPSG:4326", tz="utc")
 
         # read from csv file
-        stps_file = os.path.join("tests", "data", "staypoints.csv")
-        stps_from_csv = ti.read_staypoints_csv(stps_file, sep=";", tz="utc", index_col="id")
-        stps_from_csv = stps_from_csv.rename(columns={"geom": "geometry"})
+        sp_file = os.path.join("tests", "data", "staypoints.csv")
+        sp_from_csv = ti.read_staypoints_csv(sp_file, sep=";", tz="utc", index_col="id")
+        sp_from_csv = sp_from_csv.rename(columns={"geom": "geometry"})
 
-        assert_frame_equal(stps_from_gpd, stps_from_csv, check_exact=False)
+        assert_frame_equal(sp_from_gpd, sp_from_csv, check_exact=False)
 
     def test_mapper(self):
         """Test if mapper argument allows for additional renaming."""
@@ -183,10 +181,10 @@ class TestRead_Staypoints_Gpd:
         gdf["additional_col"] = [11, 22]
         gdf.rename(columns={"start_time": "started_at", "end_time": "finished_at"}, inplace=True)
         mapper = {"additional_col": "additional_col_renamed"}
-        stps = read_staypoints_gpd(gdf, mapper=mapper, tz="utc")
+        sp = read_staypoints_gpd(gdf, mapper=mapper, tz="utc")
         gdf.rename(columns=mapper, inplace=True)
 
-        assert_index_equal(gdf.columns, stps.columns)
+        assert_index_equal(gdf.columns, sp.columns)
 
 
 @pytest.fixture()
@@ -272,7 +270,7 @@ def example_trips():
 class TestRead_Trips_Gpd:
     """Test `read_trips_gpd()` function."""
 
-    def test_cvs(self):
+    def test_csv(self):
         """Test if the results of reading from gpd and csv agrees."""
         df = pd.read_csv(os.path.join("tests", "data", "trips.csv"), sep=";")
         df.set_index("id", inplace=True)
@@ -321,9 +319,40 @@ class TestRead_Trips_Gpd:
         assert_geodataframe_equal(example_trips, trips)
 
 
+@pytest.fixture
+def example_tours():
+    """Model conform tours to test with."""
+    start = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+    h = pd.Timedelta("1h")
+
+    list_dict = [
+        {"user_id": 0, "started_at": start + 0 * h, "finished_at": start + 1 * h},
+        {"user_id": 0, "started_at": start + 2 * h, "finished_at": start + 3 * h},
+        {"user_id": 1, "started_at": start + 4 * h, "finished_at": start + 5 * h},
+    ]
+    tours = pd.DataFrame(data=list_dict)
+    tours.index.name = "id"
+    tours.as_tours
+    return tours
+
+
 class TestRead_Tours_Gpd:
     """Test `read_trips_gpd()` function."""
 
-    def test_read_tours_gpd(self):
-        # TODO: implement tests for reading tours from Geopandas
-        pass
+    def test_csv(self):
+        """Test if the results of reading from gpd and csv agrees."""
+        tours_file = os.path.join("tests", "data", "tours.csv")
+        df = pd.read_csv(tours_file, sep=";")
+        df.set_index("id", inplace=True)
+        tours_from_gpd = read_tours_gpd(df, tz="utc")
+
+        tours_from_csv = ti.read_tours_csv(tours_file, sep=";", tz="utc", index_col="id")
+
+        assert_frame_equal(tours_from_gpd, tours_from_csv, check_exact=False)
+
+    def test_mapper(self, example_tours):
+        example_tours["additional_col"] = [11, 22, 33]
+        mapper = {"additional_col": "additional_col_renamed"}
+        tours = read_tours_gpd(example_tours, mapper=mapper)
+        example_tours.rename(columns=mapper, inplace=True)
+        assert_frame_equal(tours, example_tours)

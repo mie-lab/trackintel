@@ -4,12 +4,12 @@ import pandas as pd
 import trackintel as ti
 
 
-def location_identifier(spts, method="FREQ", pre_filter=True, **pre_filter_kwargs):
+def location_identifier(staypoints, method="FREQ", pre_filter=True, **pre_filter_kwargs):
     """Assign "home" and "work" activity label for each user with different methods.
 
     Parameters
     ----------
-    spts : Geodataframe (as trackintel staypoints)
+    staypoints : Geodataframe (as trackintel staypoints)
         Staypoints with column "location_id".
 
     method : {'FREQ', 'OSNA'}, default "FREQ"
@@ -27,7 +27,7 @@ def location_identifier(spts, method="FREQ", pre_filter=True, **pre_filter_kwarg
 
     Returns
     -------
-    Geodataframe (as trackintel staypoints)
+    sp: Geodataframe (as trackintel staypoints)
         With additional column `activity label` assigning one of three activity labels {'home', 'work', None}.
 
     Note
@@ -46,37 +46,37 @@ def location_identifier(spts, method="FREQ", pre_filter=True, **pre_filter_kwarg
     Examples
     --------
     >>> from ti.analysis.location_identification import location_identifier
-    >>> location_identifier(spts, pre_filter=True, method="FREQ")
+    >>> location_identifier(staypoints, pre_filter=True, method="FREQ")
     """
     # assert validity of staypoints
-    spts.as_staypoints
+    staypoints.as_staypoints
 
-    spts = spts.copy()
-    if "location_id" not in spts.columns:
+    sp = staypoints.copy()
+    if "location_id" not in sp.columns:
         raise KeyError(
             (
                 "To derive activity labels the GeoDataFrame (as trackintel staypoints) must have a column "
-                f"named 'location_id' but it has [{', '.join(spts.columns)}]"
+                f"named 'location_id' but it has [{', '.join(sp.columns)}]"
             )
         )
     if pre_filter:
-        f = pre_filter_locations(spts, **pre_filter_kwargs)
+        f = pre_filter_locations(sp, **pre_filter_kwargs)
     else:
-        f = pd.Series(np.full(len(spts.index), True))
+        f = pd.Series(np.full(len(sp.index), True))
 
     if method == "FREQ":
-        method_val = freq_method(spts[f], "home", "work")
+        method_val = freq_method(sp[f], "home", "work")
     elif method == "OSNA":
-        method_val = osna_method(spts[f])
+        method_val = osna_method(sp[f])
     else:
         raise ValueError(f"Method {method} does not exist.")
 
-    spts.loc[f, "activity_label"] = method_val["activity_label"]
-    return spts
+    sp.loc[f, "activity_label"] = method_val["activity_label"]
+    return sp
 
 
 def pre_filter_locations(
-    spts,
+    staypoints,
     agg_level="user",
     thresh_sp=10,
     thresh_loc=10,
@@ -90,7 +90,7 @@ def pre_filter_locations(
 
     Parameters
     ----------
-    spts : GeoDataFrame (as trackintel staypoints)
+    staypoints : GeoDataFrame (as trackintel staypoints)
         Staypoints with the column "location_id".
 
     agg_level: {"user", "dataset"}, default "user"
@@ -122,35 +122,35 @@ def pre_filter_locations(
     Examples
     --------
     >>> from ti.analysis.location_identification import pre_filter_locations
-    >>> mask = pre_filter_locations(spts)
-    >>> spts = spts[mask]
+    >>> mask = pre_filter_locations(staypoints)
+    >>> staypoints = staypoints[mask]
     """
     # assert validity of staypoints
-    spts.as_staypoints
+    staypoints.as_staypoints
 
-    spts = spts.copy()
+    sp = staypoints.copy()
     if isinstance(thresh_loc_time, str):
         thresh_loc_time = pd.to_timedelta(thresh_loc_time)
     if isinstance(thresh_loc_period, str):
         thresh_loc_period = pd.to_timedelta(thresh_loc_period)
 
     # filtering users
-    user = spts.groupby("user_id").nunique()
+    user = sp.groupby("user_id").nunique()
     user_sp = user["started_at"] >= thresh_sp  # every staypoint should have a started_at -> count
     user_loc = user["location_id"] >= thresh_loc
     user_filter_agg = user_sp & user_loc
     user_filter_agg.rename("user_filter", inplace=True)  # rename for merging
-    user_filter = pd.merge(spts["user_id"], user_filter_agg, left_on="user_id", right_index=True)["user_filter"]
+    user_filter = pd.merge(sp["user_id"], user_filter_agg, left_on="user_id", right_index=True)["user_filter"]
 
     # filtering locations
-    spts["duration"] = spts["finished_at"] - spts["started_at"]
+    sp["duration"] = sp["finished_at"] - sp["started_at"]
     if agg_level == "user":
         groupby_loc = ["user_id", "location_id"]
     elif agg_level == "dataset":
         groupby_loc = ["location_id"]
     else:
         raise ValueError(f"Unknown agg_level '{agg_level}' use instead {{'user', 'dataset'}}.")
-    loc = spts.groupby(groupby_loc).agg({"started_at": [min, "count"], "finished_at": max, "duration": sum})
+    loc = sp.groupby(groupby_loc).agg({"started_at": [min, "count"], "finished_at": max, "duration": sum})
     loc.columns = loc.columns.droplevel(0)  # remove possible multi-index
     loc.rename(columns={"min": "started_at", "max": "finished_at", "sum": "duration"}, inplace=True)
     # period for maximal time span first visit - last visit.
@@ -161,7 +161,7 @@ def pre_filter_locations(
     loc_period = loc["period"] >= thresh_loc_period
     loc_filter_agg = loc_sp & loc_time & loc_period
     loc_filter_agg.rename("loc_filter", inplace=True)  # rename for merging
-    loc_filter = pd.merge(spts[groupby_loc], loc_filter_agg, how="left", left_on=groupby_loc, right_index=True)
+    loc_filter = pd.merge(sp[groupby_loc], loc_filter_agg, how="left", left_on=groupby_loc, right_index=True)
     loc_filter = loc_filter["loc_filter"]
 
     total_filter = user_filter & loc_filter
@@ -169,7 +169,7 @@ def pre_filter_locations(
     return total_filter
 
 
-def freq_method(spts, *labels):
+def freq_method(staypoints, *labels):
     """Generate an activity label per user.
 
     Assigning the most visited location the label "home" and the second most visited location the label "work".
@@ -179,7 +179,7 @@ def freq_method(spts, *labels):
 
     Parameters
     ----------
-    spts : GeoDataFrame (as trackintel staypoints)
+    staypoints : GeoDataFrame (as trackintel staypoints)
         Staypoints with the column "location_id".
 
     labels : collection of str, default ("home", "work")
@@ -187,7 +187,7 @@ def freq_method(spts, *labels):
 
     Returns
     -------
-    GeoDataFrame (as trackintel staypoints)
+    sp: GeoDataFrame (as trackintel staypoints)
         The input staypoints with additional column "activity_label".
 
     Examples
@@ -195,15 +195,15 @@ def freq_method(spts, *labels):
     >>> from ti.analysis.location_identification import freq_method
     >>> staypoints = freq_method(staypoints, "home", "work")
     """
-    spts = spts.copy()
+    sp = staypoints.copy()
     if not labels:
         labels = ("home", "work")
-    for name, group in spts.groupby("user_id"):
+    for name, group in sp.groupby("user_id"):
         if "duration" not in group.columns:
             group["duration"] = group["finished_at"] - group["started_at"]
         # pandas keeps inner order of groups
-        spts.loc[spts["user_id"] == name, "activity_label"] = _freq_transform(group, *labels)
-    return spts
+        sp.loc[sp["user_id"] == name, "activity_label"] = _freq_transform(group, *labels)
+    return sp
 
 
 def _freq_transform(group, *labels):
@@ -246,7 +246,7 @@ def _freq_assign(duration, *labels):
     return label_array
 
 
-def osna_method(spts):
+def osna_method(staypoints):
     """Find "home" location for timeframes "rest" and "leisure" and "work" location for "work" timeframe.
 
     Use weekdays data divided in three time frames ["rest", "work", "leisure"] to generate location labels.
@@ -255,7 +255,7 @@ def osna_method(spts):
 
     Parameters
     ----------
-    spts : GeoDataFrame (as trackintel staypoints)
+    staypoints : GeoDataFrame (as trackintel staypoints)
         Staypoints with the column "location_id".
 
     Returns
@@ -281,14 +281,14 @@ def osna_method(spts):
     >>> from ti.analysis.location_identification import osna_method
     >>> staypoints = osna_method(staypoints)
     """
-    spts_in = spts  # no copy --> used to join back later.
-    spts = spts_in.copy()
-    spts["duration"] = spts["finished_at"] - spts["started_at"]
-    spts["mean_time"] = spts["started_at"] + spts["duration"] / 2
+    sp_in = staypoints  # no copy --> used to join back later.
+    sp = sp_in.copy()
+    sp["duration"] = sp["finished_at"] - sp["started_at"]
+    sp["mean_time"] = sp["started_at"] + sp["duration"] / 2
 
-    spts["label"] = spts["mean_time"].apply(_osna_label_timeframes)
-    spts.loc[spts["label"] == "rest", "duration"] *= 0.739  # weight given in paper
-    spts.loc[spts["label"] == "leisure", "duration"] *= 0.358  # weight given in paper
+    sp["label"] = sp["mean_time"].apply(_osna_label_timeframes)
+    sp.loc[sp["label"] == "rest", "duration"] *= 0.739  # weight given in paper
+    sp.loc[sp["label"] == "leisure", "duration"] *= 0.358  # weight given in paper
 
     groups_map = {
         "rest": "home",
@@ -296,36 +296,36 @@ def osna_method(spts):
         "work": "work",
     }  # weekends aren't included in analysis!
     # groupby user, location and label.
-    groups = ["user_id", "location_id", spts["label"].map(groups_map)]
+    groups = ["user_id", "location_id", sp["label"].map(groups_map)]
 
-    spts_agg = spts.groupby(groups)["duration"].sum()
-    if spts_agg.empty:
+    sp_agg = sp.groupby(groups)["duration"].sum()
+    if sp_agg.empty:
         warnings.warn("Got empty table in the osna method, check if the dates lie in weekends.")
-        spts_in["activity_label"] = pd.NA
-        return spts_in
+        sp_in["activity_label"] = pd.NA
+        return sp_in
 
     # create a pivot table -> labels "home" and "work" as columns. ("user_id", "location_id" still in index.)
-    spts_pivot = spts_agg.unstack()
+    sp_pivot = sp_agg.unstack()
     # get index of maximum for columns "work" and "home"
-    spts_idxmax = spts_pivot.groupby(["user_id"]).idxmax()
+    sp_idxmax = sp_pivot.groupby(["user_id"]).idxmax()
     # first assign labels
-    for col in spts_idxmax.columns:
-        spts_pivot.loc[spts_idxmax[col].dropna(), "activity_label"] = col
+    for col in sp_idxmax.columns:
+        sp_pivot.loc[sp_idxmax[col].dropna(), "activity_label"] = col
 
     # The "home" label could overlap with the "work" label
     # we set the rows where "home" is maximum to zero (pd.NaT) and recalculate index of work maximum.
-    if all(col in spts_idxmax.columns for col in ["work", "home"]):
-        redo_work = spts_idxmax[spts_idxmax["home"] == spts_idxmax["work"]]
-        spts_pivot.loc[redo_work["work"], "activity_label"] = "home"
-        spts_pivot.loc[redo_work["work"], "work"] = pd.NaT
-        spts_idxmax_work = spts_pivot.groupby(["user_id"])["work"].idxmax()
-        spts_pivot.loc[spts_idxmax_work.dropna(), "activity_label"] = "work"
+    if all(col in sp_idxmax.columns for col in ["work", "home"]):
+        redo_work = sp_idxmax[sp_idxmax["home"] == sp_idxmax["work"]]
+        sp_pivot.loc[redo_work["work"], "activity_label"] = "home"
+        sp_pivot.loc[redo_work["work"], "work"] = pd.NaT
+        sp_idxmax_work = sp_pivot.groupby(["user_id"])["work"].idxmax()
+        sp_pivot.loc[sp_idxmax_work.dropna(), "activity_label"] = "work"
 
     # now join it back together
-    sel = spts_in.columns != "activity_label"  # no overlap with older "activity_label"
+    sel = sp_in.columns != "activity_label"  # no overlap with older "activity_label"
     return pd.merge(
-        spts_in.loc[:, sel],
-        spts_pivot["activity_label"],
+        sp_in.loc[:, sel],
+        sp_pivot["activity_label"],
         how="left",
         left_on=["user_id", "location_id"],
         right_index=True,

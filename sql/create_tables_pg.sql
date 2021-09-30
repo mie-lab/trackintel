@@ -3,23 +3,6 @@
 
 CREATE EXTENSION PostGIS;
 
-CREATE TABLE users (
-    -- Common to all tables.
-    id bigint NOT NULL,
-
-    -- Specific attributes.
-    -- The attributes contain additional information that might be given for each user. This
-    -- could be demographic information, such as age, gender, or income. 
-    attributes json,
-
-    -- Spatial attributes.
-    geom_home geometry(Point, 4326),
-    geom_work geometry(Point, 4326),
-
-    -- Constraints.
-    CONSTRAINT users_pkey PRIMARY KEY (id)
-);
-
 CREATE TABLE positionfixes (
     -- Common to all tables.
     id bigint NOT NULL,

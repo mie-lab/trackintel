@@ -14,10 +14,10 @@ def test_data():
     pfs_file = os.path.join("examples", "data", "geolife_trajectory.csv")
     pfs = ti.read_positionfixes_csv(pfs_file, sep=";", index_col=None, crs="EPSG:4326")
 
-    pfs, stps = pfs.as_positionfixes.generate_staypoints(method="sliding")
-    pfs, tpls = pfs.as_positionfixes.generate_triplegs(stps, method="between_staypoints")
+    pfs, sp = pfs.as_positionfixes.generate_staypoints(method="sliding")
+    pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp, method="between_staypoints")
 
-    return pfs, stps, tpls
+    return pfs, sp, tpls
 
 
 class TestPlot_triplegs:
@@ -25,10 +25,10 @@ class TestPlot_triplegs:
 
     def test_triplegs_plot(self, test_data):
         """Use trackintel visualization function to plot triplegs and check if the file exists."""
-        pfs, stps, tpls = test_data
+        pfs, sp, tpls = test_data
 
         tmp_file = os.path.join("tests", "data", "triplegs_plot1.png")
-        tpls.as_triplegs.plot(out_filename=tmp_file, positionfixes=pfs, staypoints=stps, plot_osm=False)
+        tpls.as_triplegs.plot(out_filename=tmp_file, positionfixes=pfs, staypoints=sp, plot_osm=False)
         assert os.path.exists(tmp_file)
         os.remove(tmp_file)
 
