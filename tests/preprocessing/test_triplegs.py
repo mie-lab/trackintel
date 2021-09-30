@@ -78,7 +78,8 @@ class TestGenerate_trips:
     def test_generate_trips(self, example_triplegs_higher_gap_threshold):
         """Test if we can generate the example trips based on example data."""
         # load pregenerated trips
-        trips_loaded = ti.read_trips_csv(os.path.join("tests", "data", "geolife_long", "trips.csv"), index_col="id")
+        path = os.path.join("tests", "data", "geolife_long", "trips.csv")
+        trips_loaded = ti.read_trips_csv(path, index_col="id", geom_col="geom", crs=None)
 
         # create trips from geolife (based on positionfixes) - with gap_threshold 1e6
         sp, tpls = example_triplegs_higher_gap_threshold

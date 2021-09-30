@@ -19,11 +19,14 @@ def get_trips_grouped(trips, tours):
     tours: GeoDataFrame (as trackintel tours)
         Output of generate_tours function, must contain column "trips" with list of trip ids on tour
 
-
     Returns
     -------
     trips_grouped_by_tour: DataFrameGroupBy object
         Trips grouped by tour id
+
+    Examples
+    --------
+    >>> get_trips_grouped(trips, tours)
 
     Notes
     -------
@@ -90,6 +93,10 @@ def generate_tours(
 
     tours: GeoDataFrame (as trackintel tours)
         The generated tours
+
+    Examples
+    --------
+    >>> trips.as_trips.generate_tours(staypoints)
 
     Notes
     -------

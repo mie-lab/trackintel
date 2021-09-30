@@ -1,15 +1,10 @@
-import time
 import logging
-import warnings
+import time
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-
-from functools import partial
 from pint import UnitRegistry
-from shapely.geometry import Point
-
 
 ureg = UnitRegistry()
 
@@ -32,6 +27,10 @@ def a4_figsize(fig_height_mm=None, columns=2):
     -------
     (float, float)
         The width and height in which to plot a figure to fit on an A4 sheet.
+
+    Examples
+    --------
+    >>> ti.visualization.util.a4_figsize(columns=4)
     """
     if columns == 1:
         fig_width_mm = 84.0
@@ -100,6 +99,10 @@ def save_fig(out_filename, tight="tight", formats=["png", "pdf"]):
         How the bounding box should be drawn.
     formats : list
         A list denoting in which formats this figure should be saved ('png' or 'pdf').
+
+    Examples
+    --------
+    >>> ti.visualization.util("figure", formats=["png"])
     """
 
     if out_filename.endswith(".png"):
