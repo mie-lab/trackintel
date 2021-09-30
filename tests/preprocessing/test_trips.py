@@ -234,12 +234,12 @@ class TestGenerate_tours:
 
     def test_generate_tours_geolife(self):
         """Test tour generation also on the geolife dataset"""
-        trips = ti.io.file.read_trips_csv(os.path.join("tests", "data", "geolife_long", "trips.csv"), index_col="id")
+        path_trips = os.path.join("tests", "data", "geolife_long", "trips.csv")
+        trips = ti.io.file.read_trips_csv(path_trips, index_col="id", geom_col="geom", crs="EPSG:4326")
         _, tours = ti.preprocessing.trips.generate_tours(trips, max_dist=100)
 
-        tours_loaded = ti.io.file.read_tours_csv(
-            os.path.join("tests", "data", "geolife_long", "tours.csv"), index_col="id"
-        )
+        path_tours = os.path.join("tests", "data", "geolife_long", "tours.csv")
+        tours_loaded = ti.io.file.read_tours_csv(path_tours, index_col="id")
         # check only first five columns because location ID is empty in this case
         pd.testing.assert_frame_equal(tours_loaded.iloc[:, :5], tours.iloc[:, :5])
 
