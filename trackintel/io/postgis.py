@@ -580,7 +580,18 @@ def write_trips_postgis(
 
 
 @_handle_con_string
-def read_tours_postgis(sql, con, geom_col=None, crs=None, index_col=None, coerce_float=True, parse_dates=None, params=None, chunksize=None, **kwargs):
+def read_tours_postgis(
+    sql,
+    con,
+    geom_col=None,
+    crs=None,
+    index_col=None,
+    coerce_float=True,
+    parse_dates=None,
+    params=None,
+    chunksize=None,
+    **kwargs
+):
     """Read tours from a PostGIS database.
 
     Parameters

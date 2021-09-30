@@ -178,6 +178,7 @@ def example_tours():
     assert tours.as_tours
     return tours
 
+
 def del_table(con, table):
     """Delete table in con."""
     try:
@@ -602,6 +603,7 @@ class TestTrips:
 
 class TestTours:
     """Test of postgis functions for tours."""
+
     def test_write(self, example_tours, conn_postgis):
         """Test if write of tours create correct schema in database."""
         tours = example_tours

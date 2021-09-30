@@ -65,9 +65,7 @@ class ToursAccessor(object):
 
         See :func:`trackintel.io.postgis.write_tours_postgis`.
         """
-        ti.io.postgis.write_tours_postgis(
-            self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype
-        )
+        ti.io.postgis.write_tours_postgis(self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
     def plot(self, *args, **kwargs):
         """
