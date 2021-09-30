@@ -186,11 +186,10 @@ def _get_df(geolife_path, uids, print_progress):
         for traj_file in glob.glob(pattern):
             data = pd.read_csv(traj_file, skiprows=6, header=None, names=names, usecols=usecols)
             data["tracked_at"] = pd.to_datetime(data["date"] + " " + data["time"], format="%Y-%m-%d %H:%M:%S", utc=True)
-            data["geom"] = list(zip(data["longitude"], data["latitude"]))
-            data.drop(columns=["date", "time", "longitude", "latitude"], inplace=True)
-            data["geom"] = gpd.GeoSeries(data["geom"].apply(Point))
+            data["geom"] = gpd.points_from_xy(data["longitude"], data["latitude"])
             data["user_id"] = int(user_id)
             data["elevation"] = data["elevation"] * FEET2METER
+            data.drop(columns=["date", "time", "longitude", "latitude"], inplace=True)
             yield data
 
 
