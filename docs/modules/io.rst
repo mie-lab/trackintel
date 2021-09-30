@@ -45,6 +45,8 @@ GeoDataFrame Import
 
 .. autofunction:: trackintel.io.from_geopandas.read_trips_gpd
 
+.. autofunction:: trackintel.io.from_geopandas.read_tours_gpd
+
 
 PostGIS Import
 ==============
