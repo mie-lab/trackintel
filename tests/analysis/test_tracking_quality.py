@@ -238,13 +238,9 @@ class TestTemporal_tracking_quality:
         sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
         sp.index.name = "id"
 
-        granularity_ls = ["day"]
-        correct_quality_ls = [1 / 24]
-
-        for granularity, correct_quality in zip(granularity_ls, correct_quality_ls):
-            quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity=granularity)
-            # get the "date" of the last record and compare to the last "date" in data
-            assert quality.values[-1][-1] == (t1 + ten_days).date()
+        quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity="day")
+        # get the "date" of the last record and compare to the last "date" in data
+        assert quality.values[-1][-1] == (t1 + ten_days).date()
 
     def test_last_day_same_as_last_week_in_record(self):
         """Test the take the last tracking record's day and assert it is the same as the
@@ -252,24 +248,20 @@ class TestTemporal_tracking_quality:
         p1 = Point(8.5067847, 47.4)
         t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
 
-        ten_weeks = pd.Timedelta(weeks=4)
+        four_weeks = pd.Timedelta(weeks=4)
 
         list_dict = [
             {"user_id": 0, "started_at": t1, "finished_at": t1, "geom": p1},  # duration 0 at midnight
-            {"user_id": 0, "started_at": t1, "finished_at": t1 - ten_weeks, "geom": p1},  # negative duration
-            {"user_id": 0, "started_at": t1, "finished_at": t1 + ten_weeks, "geom": p1},  # positive duration
+            {"user_id": 0, "started_at": t1, "finished_at": t1 - four_weeks, "geom": p1},  # negative duration
+            {"user_id": 0, "started_at": t1, "finished_at": t1 + four_weeks, "geom": p1},  # positive duration
         ]
 
         sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
         sp.index.name = "id"
 
-        granularity_ls = ["week"]
-        correct_quality_ls = [1 / 24 / 7]
-
-        for granularity, correct_quality in zip(granularity_ls, correct_quality_ls):
-            quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity=granularity)
-            # get the "date" of the last record and compare to the last "date" in data
-            assert quality.values[-1][-1] == (t1 + ten_weeks).isocalendar()[1]
+        quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity="week")
+        # get the "week" of the last record and compare to the last "week" in data
+        assert (quality.values[-1][-1]) == (t1 + four_weeks).date()
 
     def test_non_positive_duration_filtered(self):
         """Test the non positive duration records are filtered and do not affect the result."""
