@@ -221,6 +221,48 @@ class TestTemporal_tracking_quality:
         with pytest.warns(UserWarning):
             ti.analysis.tracking_quality.temporal_tracking_quality(sp)
 
+    def test_last_day_same_as_last_day_in_record(self):
+        """Test the take the last tracking record's day and assert it is the same as the
+        last absolute date in the quality."""
+        p1 = Point(8.5067847, 47.4)
+        t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+
+        ten_days = pd.Timedelta(days=10)
+
+        list_dict = [
+            {"user_id": 0, "started_at": t1, "finished_at": t1, "geom": p1},  # duration 0 at midnight
+            {"user_id": 0, "started_at": t1, "finished_at": t1 - ten_days, "geom": p1},  # negative duration
+            {"user_id": 0, "started_at": t1, "finished_at": t1 + ten_days, "geom": p1},  # positive duration
+        ]
+
+        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+        sp.index.name = "id"
+
+        quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity="day")
+        # get the "date" of the last record and compare to the last "date" in data
+        assert quality.values[-1][-2] == (t1 + ten_days - pd.Timedelta(days=1))
+
+    def test_last_day_same_as_last_week_in_record(self):
+        """Test the take the last tracking record's day and assert it is the same as the
+        last absolute date in the quality."""
+        p1 = Point(8.5067847, 47.4)
+        t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+
+        four_weeks = pd.Timedelta(weeks=4)
+
+        list_dict = [
+            {"user_id": 0, "started_at": t1, "finished_at": t1, "geom": p1},  # duration 0 at midnight
+            {"user_id": 0, "started_at": t1, "finished_at": t1 - four_weeks, "geom": p1},  # negative duration
+            {"user_id": 0, "started_at": t1, "finished_at": t1 + four_weeks, "geom": p1},  # positive duration
+        ]
+
+        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+        sp.index.name = "id"
+
+        quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity="week")
+        # get the "week" of the last record and compare to the last "week" in data
+        assert (quality.values[-1][-2]).week == (t1 + four_weeks).week
+
     def test_non_positive_duration_filtered(self):
         """Test the non positive duration records are filtered and do not affect the result."""
         p1 = Point(8.5067847, 47.4)
