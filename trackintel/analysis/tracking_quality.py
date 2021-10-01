@@ -50,11 +50,14 @@ def temporal_tracking_quality(source, granularity="all", max_iter=60):
 
     The tracking quality of each user is calculated based on his or her own tracking extent.
     For granularity = ``day`` or ``week``, the quality["day"] or quality["week"] column displays the
-    time relative to the first record in the entire dataset. In addition to the relative values of
-    the chosen granularity w.r.t the first recrod, when the granularity is either "day" or
-    "week", the quality dataframe has an extra column called "date" or "week_number" respectively.
-    Using the "date" and "week_number" columns, the trackintel user can estimate which specific
-    "date" or "week_number" had poor tracking quality
+    time relative to the first record in the entire dataset.
+
+    In addition to the relative values of the chosen granularity w.r.t the first recrod, when the granularity
+    is either "day" or "week", the quality dataframe has an extra column called "date" or "week_monday" respectively.
+    Both of these are of type pandas datetime object
+
+    Using the "date" and "week_monday" columns, the trackintel user can estimate which specific
+    "date" or "week_monday" had poor tracking quality
 
 
     Examples
@@ -92,7 +95,9 @@ def temporal_tracking_quality(source, granularity="all", max_iter=60):
         # get the tracked day relative to the first day
         start_date = df["started_at"].min().date()
         df["day"] = df["started_at"].apply(lambda x: (x.date() - start_date).days)
-        dict_day_to_date = dict(zip(df["day"], df["started_at"].apply(lambda x: x.date())))
+        dict_start_day_to_date = dict(zip(df["day"], df["started_at"].apply(lambda x: x.date())))
+        dict_finish_day_to_date = dict(zip(df["day"], df["finished_at"].apply(lambda x: x.date())))
+        dict_day_to_date = {**dict_start_day_to_date, **dict_finish_day_to_date}
 
         # calculate per-user per-day raw tracking quality
         raw_quality = df.groupby(["user_id", "day"], as_index=False).apply(_get_tracking_quality_user, granularity)
@@ -106,13 +111,15 @@ def temporal_tracking_quality(source, granularity="all", max_iter=60):
         # get the tracked week relative to the first day
         start_date = df["started_at"].min().date()
         df["week"] = df["started_at"].apply(lambda x: (x.date() - start_date).days // 7)
-        dict_week_num = dict(zip(df["week"], df["started_at"].apply(lambda x: pd.to_datetime(x).week)))
+        dict_start_week_monday = dict(zip(df["week"], df["started_at"].apply((lambda x: x.date()))))
+        dict_finish_week_monday = dict(zip(df["week"], df["finished_at"].apply((lambda x: x.date()))))
+        dict_week_monday = {**dict_start_week_monday, **dict_finish_week_monday}
 
         # calculate per-user per-week raw tracking quality
         raw_quality = df.groupby(["user_id", "week"], as_index=False).apply(_get_tracking_quality_user, granularity)
         # add quality = 0 records
         quality = _get_all_quality(df, raw_quality, granularity)
-        quality["week_number"] = quality["week"].map(dict_week_num)
+        quality["week_monday"] = quality["week"].map(dict_week_monday)
 
     elif granularity == "weekday":
         # split records that span several days
@@ -279,6 +286,7 @@ def _split_overlaps(source, granularity="day", max_iter=60):
 
         change_flag = __get_split_index(df, granularity=granularity)
         iter_count += 1
+
         if iter_count > max_iter:
             warnings.warn(
                 f"Maximum iteration {max_iter} reached when splitting the input dataframe by {granularity}. "
