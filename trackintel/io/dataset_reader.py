@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import glob
-import ntpath
 import os
+from collections import defaultdict
+from functools import partial
 
 import geopandas as gpd
 import numpy as np
@@ -11,11 +12,10 @@ from shapely.geometry import Point
 from sklearn.neighbors import NearestNeighbors
 from tqdm import tqdm
 
-FEET2METER = 0.3048
-
-CRS_WGS84 = "epsg:4326"
-
 from trackintel.preprocessing.util import calc_temp_overlap
+
+FEET2METER = 0.3048
+CRS_WGS84 = "epsg:4326"
 
 
 def read_geolife(geolife_path, print_progress=False):
@@ -27,7 +27,7 @@ def read_geolife(geolife_path, print_progress=False):
     Parameters
     ----------
     geolife_path: str
-        path to the directory with the geolife data
+        Path to the directory with the geolife data
 
     print_progress: Bool, default False
         Show per-user progress if set to True.
@@ -42,9 +42,8 @@ def read_geolife(geolife_path, print_progress=False):
 
     Notes
     -----
-    The geopandas dataframe has the following columns and datatype: 'latitude': float64, Latitude WGS84;
-    'longitude': float64, Longitude WGS84; 'elevation': float64, in meters; 'tracked_at': datetime64[ns];
-    'user_id': int64; 'geom': geopandas/shapely geometry; 'accuracy': None;
+    The geopandas dataframe has the following columns and datatype: 'elevation': float64 (in meters); 'tracked_at': datetime64[ns];
+    'user_id': int64; 'geom': shapely geometry; 'accuracy': None;
 
     For some users, travel mode labels are provided as .txt file. These labels are read and returned as label dictionary.
     The label dictionary contains the user ids as keys and DataFrames with the available labels as values.
@@ -93,80 +92,105 @@ def read_geolife(geolife_path, print_progress=False):
     >>> from trackintel.io.dataset_reader import read_geolife
     >>> pfs, mode_labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'))
     """
-    geolife_path = os.path.join(geolife_path, "*")
-    user_folder = sorted(glob.glob(geolife_path))
+    # u are strings in the format "052", "002".
+    uids = [u for u in os.listdir(geolife_path) if os.path.isdir(os.path.join(geolife_path, u))]
 
-    df_list_users = []
-    label_dict = dict()
+    if len(uids) == 0:
+        raise FileNotFoundError("No user folders found at path {}".format(geolife_path))
 
-    if len(user_folder) == 0:
-        raise NameError("No folders found with working directory {} and path {}".format(os.getcwd(), geolife_path))
-
-    for user_folder_this in tqdm(user_folder, disable=not print_progress):
-
-        # skip files
-        if not os.path.isdir(user_folder_this):
-            continue
-
-        # check if labels are available
+    for user_id in uids:
         try:
-            labels = pd.read_csv(os.path.join(user_folder_this, "labels.txt"), delimiter="\t")
-            rename_dict = {"Start Time": "started_at", "End Time": "finished_at", "Transportation Mode": "mode"}
-            labels.rename(rename_dict, axis=1, inplace=True)
-            labels["started_at"] = pd.to_datetime(labels["started_at"], format="%Y/%m/%d %H:%M:%S", utc=True)
-            labels["finished_at"] = pd.to_datetime(labels["finished_at"], format="%Y/%m/%d %H:%M:%S", utc=True)
-        except OSError:
-            labels = pd.DataFrame(columns=["started_at", "finished_at", "mode"])
-
-        # extract user id from path
-        _, tail = ntpath.split(user_folder_this)
-        try:
-            user_id = int(tail)
+            int(user_id)
         except ValueError as err:
             errmsg = (
                 "Invalid user_id '{}' found in geolife path '{}'. The geolife path can only contain folders"
-                " named with integers that represent the user id.".format(tail, user_folder_this)
+                " named with integers that represent the user id.".format(user_id, os.path.join(geolife_path, user_id))
             )
             raise ValueError(errmsg) from err
 
-        input_files = sorted(glob.glob(os.path.join(user_folder_this, "Trajectory", "*.plt")))
-        df_list_days = []
-
-        # read every day of every user and concatenate input files
-        for input_file_this in input_files:
-            data_this = pd.read_csv(
-                input_file_this,
-                skiprows=6,
-                header=None,
-                names=["latitude", "longitude", "zeros", "elevation", "date days", "date", "time"],
-            )
-
-            data_this["tracked_at"] = pd.to_datetime(
-                data_this["date"] + " " + data_this["time"], format="%Y-%m-%d %H:%M:%S", utc=True
-            )
-
-            data_this.drop(["zeros", "date days", "date", "time"], axis=1, inplace=True)
-            data_this["user_id"] = user_id
-            data_this["elevation"] = data_this["elevation"] * FEET2METER
-
-            data_this["geom"] = list(zip(data_this["longitude"], data_this["latitude"]))
-            data_this["geom"] = data_this["geom"].apply(Point)
-
-            df_list_days.append(data_this)
-
-        # concat all days of a user into a single dataframe
-        df_user_this = pd.concat(df_list_days, axis=0, ignore_index=True)
-        label_dict[user_id] = labels
-
-        df_list_users.append(df_user_this)
-
-    df = pd.concat(df_list_users, axis=0, ignore_index=True)
-    gdf = gpd.GeoDataFrame(df, geometry="geom", crs=CRS_WGS84)
+    labels = _get_labels(geolife_path, uids)
+    # get the dfs in form of an generator and concatinate them
+    gdf = pd.concat(_get_df(geolife_path, uids, print_progress), axis=0, ignore_index=True)
+    gdf = gpd.GeoDataFrame(gdf, geometry="geom", crs=CRS_WGS84)
     gdf["accuracy"] = np.nan
-
     gdf.index.name = "id"
+    return gdf, labels
 
-    return gdf, label_dict
+
+def _get_labels(geolife_path, uids):
+    """Generate dictionary with the available mode labels.
+
+    Parameters
+    ----------
+    geolife_path : str
+        Path to the directory with the geolife data.
+    uids : iterable
+        User folders in the geolife data directory.
+
+    Returns
+    -------
+    dict
+        dict containing the mode labels with the uids in the keys.
+
+    Notes
+    -----
+    No further checks are done on user ids, they must be convertable to ints.
+    """
+    labels_rename = {"Start Time": "started_at", "End Time": "finished_at", "Transportation Mode": "mode"}
+    label_dict = defaultdict(
+        partial(pd.DataFrame, columns=["started_at", "finished_at", "mode"])
+    )  # output dict for the labels
+    # TODO: change geolife_add_modes_to_triplegs so that we can use a dict instead.
+
+    # get paths to all "labels.txt" files.
+    possible_label_paths = ((os.path.join(geolife_path, user_id, "labels.txt"), user_id) for user_id in uids)
+    label_paths = ((path, user_id) for path, user_id in possible_label_paths if os.path.exists(path))
+
+    # insert all labels into the output dict
+    for path, user_id in label_paths:
+        labels = pd.read_csv(path, delimiter="\t")
+        labels.rename(columns=labels_rename, inplace=True)
+        labels["started_at"] = pd.to_datetime(labels["started_at"], format="%Y/%m/%d %H:%M:%S", utc=True)
+        labels["finished_at"] = pd.to_datetime(labels["finished_at"], format="%Y/%m/%d %H:%M:%S", utc=True)
+        label_dict[int(user_id)] = labels
+    return label_dict
+
+
+def _get_df(geolife_path, uids, print_progress):
+    """Create a generator that yields single trajectory dataframes.
+
+    Parameters
+    ----------
+    geolife_path : str
+        Path to the directory with the geolife data.
+    uids : iterable
+        User folders in the geolife data directory.
+    print_progress : bool
+        Show per-user progress if set to True.
+
+    Yields
+    -------
+    pd.DataFrame
+        A single DataFrame from a single trajectory file.
+
+    Notes
+    -----
+    No further checks are done on user ids, they must be convertable to ints.
+    """
+    disable = not print_progress
+    names = ["latitude", "longitude", "zeros", "elevation", "date days", "date", "time"]
+    usecols = ["latitude", "longitude", "elevation", "date", "time"]
+
+    for user_id in tqdm(uids, disable=disable):
+        pattern = os.path.join(geolife_path, user_id, "Trajectory", "*.plt")
+        for traj_file in glob.glob(pattern):
+            data = pd.read_csv(traj_file, skiprows=6, header=None, names=names, usecols=usecols)
+            data["tracked_at"] = pd.to_datetime(data["date"] + " " + data["time"], format="%Y-%m-%d %H:%M:%S", utc=True)
+            data["geom"] = gpd.points_from_xy(data["longitude"], data["latitude"])
+            data["user_id"] = int(user_id)
+            data["elevation"] = data["elevation"] * FEET2METER
+            data.drop(columns=["date", "time", "longitude", "latitude"], inplace=True)
+            yield data
 
 
 def geolife_add_modes_to_triplegs(
