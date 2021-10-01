@@ -115,7 +115,7 @@ def example_triplegs_merge(example_staypoints_merge):
         {"id": 1, "user_id": 0, "started_at": t21, "finished_at": t22},
     ]
     # geometry is not required for the merge operation, so we leave it away
-    tpls = gpd.GeoDataFrame(data=list_dict, crs="EPSG:4326")
+    tpls = gpd.GeoDataFrame(data=list_dict)
     tpls = tpls.set_index("id")
     return sp, tpls
 
@@ -269,12 +269,14 @@ class TestGenerate_locations:
         _, sp = pfs.as_positionfixes.generate_staypoints(
             method="sliding", gap_threshold=1e6, dist_threshold=0, time_threshold=0
         )
-        _, locs_user = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=1e18, num_samples=1000, agg_level="user"
-        )
-        _, locs_data = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=1e18, num_samples=1000, agg_level="dataset"
-        )
+        warn_string = "No locations can be generated, returning empty locs."
+        with pytest.warns(UserWarning, match=warn_string):
+            _, locs_user = sp.as_staypoints.generate_locations(
+                method="dbscan", epsilon=1e18, num_samples=1000, agg_level="user"
+            )
+            _, locs_data = sp.as_staypoints.generate_locations(
+                method="dbscan", epsilon=1e18, num_samples=1000, agg_level="dataset"
+            )
         # "With large epsilon, every user location is an outlier"
         assert len(locs_user) == 0
         assert len(locs_data) == 0
@@ -286,7 +288,11 @@ class TestGenerate_locations:
         _, sp = pfs.as_positionfixes.generate_staypoints(
             method="sliding", gap_threshold=1e6, dist_threshold=0, time_threshold=0
         )
-        sp, _ = sp.as_staypoints.generate_locations(method="dbscan", epsilon=1e18, num_samples=1000, agg_level="user")
+        warn_string = "No locations can be generated, returning empty locs."
+        with pytest.warns(UserWarning, match=warn_string):
+            sp, _ = sp.as_staypoints.generate_locations(
+                method="dbscan", epsilon=1e18, num_samples=1000, agg_level="user"
+            )
 
         assert pd.isna(sp["location_id"]).any()
 
