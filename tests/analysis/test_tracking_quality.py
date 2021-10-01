@@ -69,8 +69,8 @@ class TestTemporal_tracking_quality:
         # test if the result of the user agrees
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp_tpls, granularity="day")
 
-        assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["day"] == 0), "quality"].values[0]
-        assert (quality["quality"] < 1).all()
+        assert quality_manual == quality.iloc[0]["quality"]
+        assert (quality["quality"] <= 1).all()
 
     def test_tracking_quality_week(self, testdata_sp_tpls_geolife_long):
         """Test if the calculated tracking quality per week is correct."""
@@ -92,7 +92,7 @@ class TestTemporal_tracking_quality:
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp_tpls, granularity="week")
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0), "quality"].values[0]
-        assert (quality["quality"] < 1).all()
+        assert (quality["quality"] <= 1).all()
 
     def test_tracking_quality_weekday(self, testdata_sp_tpls_geolife_long):
         """Test if the calculated tracking quality per weekday is correct."""
@@ -116,7 +116,7 @@ class TestTemporal_tracking_quality:
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp_tpls, granularity="weekday")
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["weekday"] == 3), "quality"].values[0]
-        assert (quality["quality"] < 1).all()
+        assert (quality["quality"] <= 1).all()
 
     def test_tracking_quality_hour(self, testdata_sp_tpls_geolife_long):
         """Test if the calculated tracking quality per hour is correct."""
