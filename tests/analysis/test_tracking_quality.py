@@ -69,8 +69,9 @@ class TestTemporal_tracking_quality:
         # test if the result of the user agrees
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp_tpls, granularity="day")
 
-        assert quality_manual == quality.loc[(quality["user_id"] == 0) & (quality["day"] == 0), "quality"].values[0]
-        assert (quality["quality"] < 1).all()
+        # print()
+        assert quality_manual == quality.iloc[0]["quality"]
+        assert (quality["quality"] <= 1).all()
 
     def test_tracking_quality_week(self, testdata_sp_tpls_geolife_long):
         """Test if the calculated tracking quality per week is correct."""
@@ -92,7 +93,7 @@ class TestTemporal_tracking_quality:
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp_tpls, granularity="week")
 
         assert quality_manual == quality.loc[(quality["user_id"] == 0), "quality"].values[0]
-        assert (quality["quality"] < 1).all()
+        assert (quality["quality"] <= 1).all()
 
     def test_tracking_quality_weekday(self, testdata_sp_tpls_geolife_long):
         """Test if the calculated tracking quality per weekday is correct."""
@@ -240,7 +241,7 @@ class TestTemporal_tracking_quality:
 
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity="day")
         # get the "date" of the last record and compare to the last "date" in data
-        assert quality.values[-1][-1] == (t1 + ten_days).date()
+        assert quality.values[-1][-2] == (t1 + ten_days - pd.Timedelta(days=1))
 
     def test_last_day_same_as_last_week_in_record(self):
         """Test the take the last tracking record's day and assert it is the same as the
@@ -261,7 +262,7 @@ class TestTemporal_tracking_quality:
 
         quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity="week")
         # get the "week" of the last record and compare to the last "week" in data
-        assert (quality.values[-1][-1]) == (t1 + four_weeks).date()
+        assert (quality.values[-1][-2]).week == (t1 + four_weeks).week
 
     def test_non_positive_duration_filtered(self):
         """Test the non positive duration records are filtered and do not affect the result."""
@@ -285,14 +286,8 @@ class TestTemporal_tracking_quality:
         for granularity, correct_quality in zip(granularity_ls, correct_quality_ls):
             quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity=granularity)
             # get the "quality" of the last record and compare to the correct_quality
-            if granularity in ("day", "week"):
-                # when using the granularity of "day" or "week", the quality dataframe has an extra column
-                # hence the last value for other granularity is the second last value here (hence index=-2)
-                # the second last index is the one where the quality value is present
-                assert quality.values[-1][-2] == correct_quality
-            else:
-                # the last index is the one where the quality value is present
-                assert quality.values[-1][-1] == correct_quality
+            # the last index is the one where the quality value is present
+            assert quality.values[-1][-1] == correct_quality
 
 
 class TestSplit_overlaps:

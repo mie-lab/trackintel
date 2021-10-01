@@ -40,25 +40,33 @@ def temporal_tracking_quality(source, granularity="all", max_iter=60):
     datamodels and their combinations (e.g., staypoints and triplegs sequence).
 
     The temporal tracking quality is the ratio of tracking time and the total time extent. It is
-    calculated and returned per-user in the defined ``granularity``. The possible time extents of
-    the different granularities are different:
+    calculated and returned per-user in the defined ``granularity``. The time extents
+    and the columns for the returned ``quality`` df for different ``granularity`` are:
 
-    - ``all`` considers the time between the latest "finished_at" and the earliest "started_at";
-    - ``week`` considers the whole week (604800 sec)
-    - ``day`` and ``weekday`` consider the whole day (86400 sec)
-    - ``hour`` considers the whole hour (3600 sec).
+    - ``all``:
 
-    The tracking quality of each user is calculated based on his or her own tracking extent.
-    For granularity = ``day`` or ``week``, the quality["day"] or quality["week"] column displays the
-    time relative to the first record in the entire dataset.
+        - time extent: between the latest "finished_at" and the earliest "started_at" for each user.
+        - columns: ``['user_id', 'quality']``.
 
-    In addition to the relative values of the chosen granularity w.r.t the first recrod, when the granularity
-    is either "day" or "week", the quality dataframe has an extra column called "date" or "week_monday" respectively.
-    Both of these are of type pandas datetime object
+    - ``week``:
 
-    Using the "date" and "week_monday" columns, the trackintel user can estimate which specific
-    "date" or "week_monday" had poor tracking quality
+        - time extent: the whole week (604800 sec) for each user.
+        - columns: ``['user_id', 'week_monday', 'quality']``.
 
+    - ``day``:
+
+        - time extent: the whole day (86400 sec) for each user
+        - columns: ``['user_id', 'day', 'quality']``
+
+    - ``weekday``
+
+        - time extent: the whole day (86400 sec) * number of tracked weeks for each user for each user
+        - columns: ``['user_id', 'weekday', 'quality']``
+
+    - ``hour``:
+
+        - time extent: the whole hour (3600 sec) * number of tracked days for each user
+        - columns: ``['user_id', 'hour', 'quality']``
 
     Examples
     --------
@@ -88,108 +96,47 @@ def temporal_tracking_quality(source, granularity="all", max_iter=60):
 
     if granularity == "all":
         quality = df.groupby("user_id", as_index=False).apply(_get_tracking_quality_user, granularity)
+        return quality
 
-    elif granularity == "day":
-        # split records that span several days
-        df = _split_overlaps(df, granularity=granularity, max_iter=max_iter)
-        # get the tracked day relative to the first day
-        start_date = df["started_at"].min().date()
-        df["day"] = df["started_at"].apply(lambda x: (x.date() - start_date).days)
-        dict_start_day_to_date = dict(zip(df["day"], df["started_at"].apply(lambda x: x.date())))
-        dict_finish_day_to_date = dict(zip(df["day"], df["finished_at"].apply(lambda x: x.date())))
-        dict_day_to_date = {**dict_start_day_to_date, **dict_finish_day_to_date}
-
-        # calculate per-user per-day raw tracking quality
-        raw_quality = df.groupby(["user_id", "day"], as_index=False).apply(_get_tracking_quality_user, granularity)
-        # add quality = 0 records
-        quality = _get_all_quality(df, raw_quality, granularity)
-        quality["date"] = quality["day"].map(dict_day_to_date)
+    # split records that span several days
+    df = _split_overlaps(df, granularity="day", max_iter=max_iter)
+    if granularity == "day":
+        grouper = pd.Grouper(key="started_at", freq="D")
+        column_name = "day"
 
     elif granularity == "week":
-        # split records that span several days
-        df = _split_overlaps(df, granularity="day", max_iter=max_iter)
-        # get the tracked week relative to the first day
-        start_date = df["started_at"].min().date()
-        df["week"] = df["started_at"].apply(lambda x: (x.date() - start_date).days // 7)
-        dict_start_week_monday = dict(zip(df["week"], df["started_at"].apply((lambda x: x.date()))))
-        dict_finish_week_monday = dict(zip(df["week"], df["finished_at"].apply((lambda x: x.date()))))
-        dict_week_monday = {**dict_start_week_monday, **dict_finish_week_monday}
-
-        # calculate per-user per-week raw tracking quality
-        raw_quality = df.groupby(["user_id", "week"], as_index=False).apply(_get_tracking_quality_user, granularity)
-        # add quality = 0 records
-        quality = _get_all_quality(df, raw_quality, granularity)
-        quality["week_monday"] = quality["week"].map(dict_week_monday)
+        grouper = pd.Grouper(key="started_at", freq="W")
+        column_name = "week_monday"
 
     elif granularity == "weekday":
-        # split records that span several days
-        df = _split_overlaps(df, granularity="day", max_iter=max_iter)
-
         # get the tracked week relative to the first day
         start_date = df["started_at"].min().date()
         df["week"] = df["started_at"].apply(lambda x: (x.date() - start_date).days // 7)
-        # get the weekday
-        df["weekday"] = df["started_at"].dt.weekday
 
-        # calculate per-user per-weekday raw tracking quality
-        raw_quality = df.groupby(["user_id", "weekday"], as_index=False).apply(_get_tracking_quality_user, granularity)
-        # add quality = 0 records
-        quality = _get_all_quality(df, raw_quality, granularity)
+        grouper = df["started_at"].dt.weekday
+        column_name = "weekday"
 
     elif granularity == "hour":
-        # first do a day split to speed up the hour split
-        df = _split_overlaps(df, granularity="day", max_iter=max_iter)
-        df = _split_overlaps(df, granularity=granularity)
-
+        df = _split_overlaps(df, granularity="hour")
         # get the tracked day relative to the first day
         start_date = df["started_at"].min().date()
         df["day"] = df["started_at"].apply(lambda x: (x.date() - start_date).days)
-        # get the hour
-        df["hour"] = df["started_at"].dt.hour
 
-        # calculate per-user per-hour raw tracking quality
-        raw_quality = df.groupby(["user_id", "hour"], as_index=False).apply(_get_tracking_quality_user, granularity)
-        # add quality = 0 records
-        quality = _get_all_quality(df, raw_quality, granularity)
+        grouper = df["started_at"].dt.hour
+        column_name = "hour"
 
     else:
         raise AttributeError(
             f"granularity unknown. We only support ['all', 'day', 'week', 'weekday', 'hour']. You passed {granularity}"
         )
 
-    return quality
+    # calculate per-user per-grouper tracking quality
+    quality = df.groupby(["user_id", grouper]).apply(_get_tracking_quality_user, granularity).reset_index()
 
+    # rename and reorder
+    quality.rename(columns={"started_at": column_name}, inplace=True)
+    quality = quality[["user_id", column_name, "quality"]]
 
-def _get_all_quality(df, raw_quality, granularity):
-    """
-    Add tracking quality values for empty bins.
-
-    raw_quality is calculated using `groupby` and does not report bins (=granularties) with
-    quality = 0. This function adds these values.
-
-    Parameters
-    ----------
-    df : GeoDataFrame (as trackintel datamodels)
-
-    raw_quality: DataFrame
-        The calculated raw tracking quality directly from the groupby operations.
-
-    granularity : {"all", "day", "weekday", "week", "hour"}
-        Used for accessing the column in raw_quality.
-
-    Returns
-    -------
-    quality: pandas.Series
-        A pandas.Series object containing the tracking quality
-    """
-    all_users = df["user_id"].unique()
-    all_granularity = np.arange(df[granularity].max() + 1)
-    # construct array containing all user and granularity combinations
-    all_combi = np.array(np.meshgrid(all_users, all_granularity)).T.reshape(-1, 2)
-    # the records with no corresponding raw_quality is nan, and transformed into 0
-    all_combi = pd.DataFrame(all_combi, columns=["user_id", granularity])
-    quality = all_combi.merge(raw_quality, how="left", on=["user_id", granularity], validate="one_to_one")
-    quality.fillna(0, inplace=True)
     return quality
 
 
