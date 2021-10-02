@@ -39,6 +39,7 @@ def read_geolife(geolife_path, print_progress=False):
 
     labels: dict
         Dictionary with the available mode labels.
+        Keys are user ids of users that have a "labels.txt" in their folder.
 
     Notes
     -----
@@ -137,10 +138,7 @@ def _get_labels(geolife_path, uids):
     No further checks are done on user ids, they must be convertable to ints.
     """
     labels_rename = {"Start Time": "started_at", "End Time": "finished_at", "Transportation Mode": "mode"}
-    label_dict = defaultdict(
-        partial(pd.DataFrame, columns=["started_at", "finished_at", "mode"])
-    )  # output dict for the labels
-    # TODO: change geolife_add_modes_to_triplegs so that we can use a dict instead.
+    label_dict = {}  # output dict for the labels
 
     # get paths to all "labels.txt" files.
     possible_label_paths = ((os.path.join(geolife_path, user_id, "labels.txt"), user_id) for user_id in uids)
@@ -242,16 +240,13 @@ def geolife_add_modes_to_triplegs(
     # temp time fields for nn query
     tpls["started_at_s"] = (tpls["started_at"] - pd.Timestamp("1970-01-01", tz="utc")) // pd.Timedelta("1s")
     tpls["finished_at_s"] = (tpls["finished_at"] - pd.Timestamp("1970-01-01", tz="utc")) // pd.Timedelta("1s")
-    all_users = tpls["user_id"].unique()
     # tpls_id_mode_list is used to collect tripleg-mode matches. It will be filled with dictionaries with the
     # following keys: [id', 'label_id', 'mode']
     tpls_id_mode_list = list()
 
-    for user_this in all_users:
+    for user_this in labels.keys():
         tpls_this = tpls[tpls["user_id"] == user_this]
         labels_this = labels[user_this]
-        if labels_this.empty:
-            continue
 
         labels_this["started_at_s"] = (
             labels_this["started_at"] - pd.Timestamp("1970-01-01", tz="utc")
@@ -292,10 +287,7 @@ def geolife_add_modes_to_triplegs(
         tpls = tpls.join(tpls_id_mode)
         tpls = tpls.astype({"label_id": "Int64"})
 
-    try:
-        tpls.drop(["started_at_s", "finished_at_s"], axis=1, inplace=True)
-    except KeyError:
-        pass
+    tpls.drop(["started_at_s", "finished_at_s"], axis=1, inplace=True)
 
     try:
         tpls.drop(["ratio"], axis=1, inplace=True)

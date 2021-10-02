@@ -35,8 +35,8 @@ def matching_data():
         Tripleg_2 overlaps and extents to the right but is almost not covered by label_0
         Tripleg_3 overlaps label_1 to the right and the left but is almost fully covered by it.
     """
-    one_hour = datetime.timedelta(hours=1)
-    one_min = datetime.timedelta(minutes=1)
+    one_hour = pd.Timedelta("1h")
+    one_min = pd.Timedelta("1min")
     time_1 = pd.Timestamp("1970-01-01", tz="utc")
 
     triplegs = [
@@ -146,14 +146,6 @@ class Test_GetLabels:
         assert len(labels[20]) == 223
         assert all(df.columns.tolist() == ["started_at", "finished_at", "mode"] for df in labels.values())
 
-    def test_defaultdict(self):
-        """Test if non existing entries return a correct empty pd.DataFrame"""
-        geolife_path = os.path.join("tests", "data", "geolife_modes")
-        uids = ["010", "020", "178"]
-        labels = _get_labels(geolife_path, uids)
-        empty_df = pd.DataFrame(columns=["started_at", "finished_at", "mode"])
-        assert_frame_equal(labels[-1], empty_df)
-
 
 class Test_GetDf:
     def test_example_data(self):
@@ -242,8 +234,7 @@ class TestGeolife_add_modes_to_triplegs:
 
     def test_mode_matching_multi_user(self, matching_data):
         tpls, labels_raw = matching_data
-        # we add an empty DataFrame with labels in the end
-        labels = {0: labels_raw, 1: pd.DataFrame(columns=labels_raw.columns)}
+        labels = {0: labels_raw}
         # explicitly change the user_id of the second record
         tpls.loc[1, "user_id"] = 1
 
