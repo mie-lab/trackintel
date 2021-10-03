@@ -57,6 +57,16 @@ class ToursAccessor(object):
         """
         ti.io.file.write_tours_csv(self._obj, filename, *args, **kwargs)
 
+    def to_postgis(
+        self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
+    ):
+        """
+        Store this collection of tours to PostGIS.
+
+        See :func:`trackintel.io.postgis.write_tours_postgis`.
+        """
+        ti.io.postgis.write_tours_postgis(self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype)
+
     def plot(self, *args, **kwargs):
         """
         Plot this collection of tours.

@@ -579,6 +579,118 @@ def write_trips_postgis(
         )
 
 
+@_handle_con_string
+def read_tours_postgis(
+    sql,
+    con,
+    geom_col=None,
+    crs=None,
+    index_col=None,
+    coerce_float=True,
+    parse_dates=None,
+    params=None,
+    chunksize=None,
+    **kwargs
+):
+    """Read tours from a PostGIS database.
+
+    Parameters
+    ----------
+    sql : str
+        SQL query e.g. "SELECT * FROM tours"
+
+    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Connection string or active connection to PostGIS database.
+
+    geom_col : str, optional
+        The geometry column of the table (if exists).
+
+    crs : optional
+        Coordinate reference system if table has geometry.
+
+    index_col : string or list of strings, optional
+        Column(s) to set as index(MultiIndex)
+
+    coerce_float : boolean, default True
+        Attempt to convert values of non-string, non-numeric objects (like
+        decimal.Decimal) to floating point, useful for SQL result sets
+
+    parse_dates : list or dict, default None
+        - List of column names to parse as dates.
+        - Dict of ``{column_name: format string}`` where format string is
+            strftime compatible in case of parsing string times, or is one of
+            (D, s, ns, ms, us) in case of parsing integer timestamps.
+        - Dict of ``{column_name: arg dict}``, where the arg dict
+            corresponds to the keyword arguments of
+            :func:`pandas.to_datetime`. Especially useful with databases
+            without native Datetime support, such as SQLite.
+
+    params : list, tuple or dict, optional, default None
+        List of parameters to pass to execute method.
+
+    chunksize : int, default None
+        If specified, return an iterator where chunksize is the number
+        of rows to include in each chunk.
+
+    **kwargs
+        Further keyword arguments as available in trackintels trackintel.io.read_tours_gpd().
+        Especially useful to rename column names from the SQL table to trackintel conform column names.
+        See second example how to use it in code.
+
+    Returns
+    -------
+    GeoDataFrame (as trackintel tours)
+        A GeoDataFrame containing the tours.
+
+    Examples
+    --------
+    >>> tours = ti.io.read_tours_postgis("SELECT * FROM tours", con)
+    >>> tours = ti.io.read_tours_postgis("SELECT * FROM tours", con, index_col="id", started_at="start_time",
+    ...                                  finished_at="end_time", user_id="USER")
+    """
+    if geom_col is None:
+        tours = pd.read_sql(
+            sql,
+            con,
+            index_col=index_col,
+            coerce_float=coerce_float,
+            params=params,
+            parse_dates=parse_dates,
+            chunksize=chunksize,
+        )
+    else:
+        tours = gpd.GeoDataFrame.from_postgis(
+            sql,
+            con,
+            geom_col=geom_col,
+            crs=crs,
+            index_col=index_col,
+            coerce_float=coerce_float,
+            parse_dates=parse_dates,
+            params=params,
+            chunksize=chunksize,
+        )
+
+    return ti.io.read_tours_gpd(tours, **kwargs)
+
+
+@_handle_con_string
+def write_tours_postgis(
+    tours, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
+):
+    write_trips_postgis(
+        tours,
+        name=name,
+        con=con,
+        schema=schema,
+        if_exists=if_exists,
+        index=index,
+        index_label=index_label,
+        chunksize=chunksize,
+        dtype=dtype,
+    )
+
+
 # helper docstring to change __doc__ of all write functions conveniently in one place
 __doc = """Stores {long} to PostGIS. Usually, this is directly called on a {long}
     DataFrame (see example below).
@@ -628,3 +740,4 @@ write_triplegs_postgis.__doc__ = __doc.format(long="triplegs", short="tpls")
 write_staypoints_postgis.__doc__ = __doc.format(long="staypoints", short="sp")
 write_locations_postgis.__doc__ = __doc.format(long="locations", short="locs")
 write_trips_postgis.__doc__ = __doc.format(long="trips", short="trips")
+write_tours_postgis.__doc__ = __doc.format(long="tours", short="tours")
