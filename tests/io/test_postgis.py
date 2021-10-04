@@ -310,6 +310,28 @@ class TestPositionfixes:
         finally:
             del_table(conn, table)
 
+    def test_daylight_saving_tz(self, example_positionfixes, conn_postgis):
+        """Test if function can handle different tz informations in one column.
+
+        PostgreSQL saves all its datetimes in UTC and then on exports them to the local timezone.
+        That all works fine except when the local timezone changed in the past for example with daylight saving.
+        """
+        pfs = example_positionfixes.copy()
+        conn_string, conn = conn_postgis
+        table = "positionfixes"
+        sql = f"SELECT * FROM {table}"
+        t1 = pd.Timestamp("2021-08-01 16:00:00", tz="utc")  # summer time
+        t2 = pd.Timestamp("2021-08-01 15:00:00", tz="utc")  # summer time
+        t3 = pd.Timestamp("2021-02-01 14:00:00", tz="utc")  # winter time
+        pfs["tracked_at"] = [t1, t2, t3]
+        geom_col = pfs.geometry.name
+        try:
+            pfs.as_positionfixes.to_postgis(table, conn_string)
+            pfs_db = ti.io.read_positionfixes_postgis(sql, conn_string, geom_col, index_col="id")
+            assert_geodataframe_equal(pfs, pfs_db)
+        finally:
+            del_table(conn, table)
+
 
 class TestTriplegs:
     def test_write(self, example_triplegs, conn_postgis):

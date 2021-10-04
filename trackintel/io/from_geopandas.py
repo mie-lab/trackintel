@@ -401,7 +401,12 @@ def _trackintel_model(gdf, set_names=None, geom_col=None, crs=None, tz_cols=None
     if tz_cols is not None:
         for col in tz_cols:
             if not pd.api.types.is_datetime64tz_dtype(gdf[col]):
-                gdf[col] = _localize_timestamp(dt_series=gdf[col], pytz_tzinfo=tz, col_name=col)
+                try:
+                    gdf[col] = _localize_timestamp(dt_series=gdf[col], pytz_tzinfo=tz, col_name=col)
+                except ValueError:
+                    # Taken if column contains datetimes with different timezone informations.
+                    # Cast them to UTC in this case.
+                    gdf[col] = pd.to_datetime(gdf[col], utc=True)
 
     # If is not GeoDataFrame and no geom_col is set end early.
     # That allows us to handle DataFrames and GeoDataFrames in one function.
