@@ -34,6 +34,22 @@ def testdata_all_geolife_long():
     return sp, tpls, trips
 
 
+def get_test_sp(start_time, duration):
+    """Generate test staypoints for tracking duration given start_time and duration."""
+    p1 = Point(8.5067847, 47.4)
+
+    # we generate three records, duration = 0, negative duration and positive duration
+    list_dict = [
+        {"user_id": 0, "started_at": start_time, "finished_at": start_time, "geom": p1},
+        {"user_id": 0, "started_at": start_time, "finished_at": start_time - duration, "geom": p1},
+        {"user_id": 0, "started_at": start_time, "finished_at": start_time + duration, "geom": p1},
+    ]
+    sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+    sp.index.name = "id"
+
+    return sp
+
+
 class TestTemporal_tracking_quality:
     """Tests for the temporal_tracking_quality() function."""
 
@@ -206,78 +222,37 @@ class TestTemporal_tracking_quality:
 
     def test_non_positive_duration_warning(self):
         """Test the function can handle non positive duration records without running into infinite loop."""
-        p1 = Point(8.5067847, 47.4)
-        t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+        t = pd.Timestamp("1971-01-01 00:00:00", tz="utc")  # duration 0 at midnight
+        negative_one_hour = datetime.timedelta(hours=1)  # negative duration
+        sp = get_test_sp(t, negative_one_hour)
 
-        one_hour = datetime.timedelta(hours=1)
+        warn_string = "The input dataframe does not contain any record with positive duration. Please check."
+        with pytest.warns(UserWarning, match=warn_string):
+            ti.analysis.tracking_quality.temporal_tracking_quality(sp.iloc[:-1])
 
-        list_dict = [
-            {"user_id": 0, "started_at": t1, "finished_at": t1, "geom": p1},  # duration 0 at midnight
-            {"user_id": 0, "started_at": t1, "finished_at": t1 - one_hour, "geom": p1},  # negative duration
-        ]
-        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
-        sp.index.name = "id"
-
-        with pytest.warns(UserWarning):
-            ti.analysis.tracking_quality.temporal_tracking_quality(sp)
-
-    def test_last_day_same_as_last_day_in_record(self):
-        """Test the take the last tracking record's day and assert it is the same as the
-        last absolute date in the quality."""
-        p1 = Point(8.5067847, 47.4)
-        t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
-
+    def test_absolute_extent(self):
+        """Test the absolute date is correctly generated for both granularity day and week."""
+        # we test two examples: one at midnight the other at midday
+        t_ls = [pd.Timestamp("1971-01-01 00:00:00", tz="utc"), pd.Timestamp("1971-01-01 12:00:00", tz="utc")]
         ten_days = pd.Timedelta(days=10)
+        # the midnight record loses one day after the split
+        last_start_date_after_split_ls = [t_ls[0] + ten_days - pd.Timedelta(days=1), t_ls[0] + ten_days]
+        for t, last_start_date_after_split in zip(t_ls, last_start_date_after_split_ls):
+            sp = get_test_sp(t, ten_days)
 
-        list_dict = [
-            {"user_id": 0, "started_at": t1, "finished_at": t1, "geom": p1},  # duration 0 at midnight
-            {"user_id": 0, "started_at": t1, "finished_at": t1 - ten_days, "geom": p1},  # negative duration
-            {"user_id": 0, "started_at": t1, "finished_at": t1 + ten_days, "geom": p1},  # positive duration
-        ]
+            quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity="day")
+            # get the "date" of the last record and compare to the last "date" in data
+            assert quality.values[-1][-2].day == last_start_date_after_split.day
 
-        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
-        sp.index.name = "id"
-
-        quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity="day")
-        # get the "date" of the last record and compare to the last "date" in data
-        assert quality.values[-1][-2] == (t1 + ten_days - pd.Timedelta(days=1))
-
-    def test_last_day_same_as_last_week_in_record(self):
-        """Test the take the last tracking record's day and assert it is the same as the
-        last absolute date in the quality."""
-        p1 = Point(8.5067847, 47.4)
-        t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
-
-        four_weeks = pd.Timedelta(weeks=4)
-
-        list_dict = [
-            {"user_id": 0, "started_at": t1, "finished_at": t1, "geom": p1},  # duration 0 at midnight
-            {"user_id": 0, "started_at": t1, "finished_at": t1 - four_weeks, "geom": p1},  # negative duration
-            {"user_id": 0, "started_at": t1, "finished_at": t1 + four_weeks, "geom": p1},  # positive duration
-        ]
-
-        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
-        sp.index.name = "id"
-
-        quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity="week")
-        # get the "week" of the last record and compare to the last "week" in data
-        assert (quality.values[-1][-2]).week == (t1 + four_weeks).week
+            quality = ti.analysis.tracking_quality.temporal_tracking_quality(sp, granularity="week")
+            # get the "week" of the last record and compare to the last "week" in data
+            assert quality.values[-1][-2].week == last_start_date_after_split.week
 
     def test_non_positive_duration_filtered(self):
         """Test the non positive duration records are filtered and do not affect the result."""
-        p1 = Point(8.5067847, 47.4)
-        t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
-
+        t = pd.Timestamp("1971-01-01 00:00:00", tz="utc")  # duration 0 at midnight
         one_hour = datetime.timedelta(hours=1)
-
-        list_dict = [
-            {"user_id": 0, "started_at": t1, "finished_at": t1, "geom": p1},  # duration 0 at midnight
-            {"user_id": 0, "started_at": t1, "finished_at": t1 - one_hour, "geom": p1},  # negative duration
-            {"user_id": 0, "started_at": t1, "finished_at": t1 + one_hour, "geom": p1},  # positive duration
-        ]
-
-        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
-        sp.index.name = "id"
+        sp = get_test_sp(t, one_hour)
 
         granularity_ls = ["all", "day", "week", "weekday", "hour"]
         correct_quality_ls = [1, 1 / 24, 1 / 24 / 7, 1 / 24, 1]
