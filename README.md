@@ -101,7 +101,7 @@ You should then be able to run the examples in the `examples` folder or import t
 ```{python}
 import trackintel as ti
 
-ti.print_version()
+ti.print_version() 
 ```
 
 ## Requirements and dependencies
