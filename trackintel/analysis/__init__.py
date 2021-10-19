@@ -10,6 +10,8 @@ from .location_identification import location_identifier
 from .location_identification import pre_filter_locations
 from .location_identification import freq_method, osna_method
 
+from .speed import speed_positionfixes, mean_speed_triplegs
+
 __all__ = [
     "temporal_tracking_quality",
     "split_overlaps",
@@ -20,4 +22,6 @@ __all__ = [
     "pre_filter_locations",
     "freq_method",
     "osna_method",
+    "speed_positionfixes",
+    "mean_speed_triplegs",
 ]
