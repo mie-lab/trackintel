@@ -40,6 +40,22 @@ class TestSpeedPositionfixes:
         assert speed_pfs.loc[speed_pfs.index[0], "speed"] == speed_pfs.loc[speed_pfs.index[1], "speed"]
         assert np.all(np.isclose(speed_pfs["speed"].values, correct_speeds))
 
+    def test_one_speed(self, load_positionfixes):
+        """Test for each individual speed whether is is correct"""
+        pfs, correct_speeds = load_positionfixes
+        # compute speeds
+        speed_pfs = ti.analysis.speed.speed_positionfixes(pfs)
+        computed_speeds = speed_pfs["speed"].values
+        # test for each row whether the speed is correct
+        for ind in range(1, len(correct_speeds)):
+            ind_prev = ind - 1
+            time_diff = (pfs.loc[ind, "tracked_at"] - pfs.loc[ind_prev, "tracked_at"]).total_seconds()
+            point1 = pfs.loc[ind_prev, "geom"]
+            point2 = pfs.loc[ind, "geom"]
+            dist = ti.geogr.point_distances.haversine_dist(point1.x, point1.y, point2.x, point2.y)[0]
+            assert np.isclose(3.6 * dist / time_diff, computed_speeds[ind])
+            assert np.isclose(3.6 * dist / time_diff, correct_speeds[ind])
+
 
 class TestSpeedTriplegs:
     def test_triplegs_stable(self, example_triplegs):
