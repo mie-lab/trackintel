@@ -28,7 +28,7 @@ def location_identifier(staypoints, method="FREQ", pre_filter=True, **pre_filter
     Returns
     -------
     sp: Geodataframe (as trackintel staypoints)
-        With additional column `activity label` assigning one of three activity labels {'home', 'work', None}.
+        With additional column `purpose` assigning one of three activity labels {'home', 'work', None}.
 
     Note
     ----
@@ -71,7 +71,7 @@ def location_identifier(staypoints, method="FREQ", pre_filter=True, **pre_filter
     else:
         raise ValueError(f"Method {method} does not exist.")
 
-    sp.loc[f, "activity_label"] = method_val["activity_label"]
+    sp.loc[f, "purpose"] = method_val["purpose"]
     return sp
 
 
@@ -188,7 +188,7 @@ def freq_method(staypoints, *labels):
     Returns
     -------
     sp: GeoDataFrame (as trackintel staypoints)
-        The input staypoints with additional column "activity_label".
+        The input staypoints with additional column "purpose".
 
     Examples
     --------
@@ -202,7 +202,7 @@ def freq_method(staypoints, *labels):
         if "duration" not in group.columns:
             group["duration"] = group["finished_at"] - group["started_at"]
         # pandas keeps inner order of groups
-        sp.loc[sp["user_id"] == name, "activity_label"] = _freq_transform(group, *labels)
+        sp.loc[sp["user_id"] == name, "purpose"] = _freq_transform(group, *labels)
     return sp
 
 
@@ -220,11 +220,11 @@ def _freq_transform(group, *labels):
         dtype : object
     """
     group_agg = group.groupby("location_id").agg({"duration": sum})
-    group_agg["activity_label"] = _freq_assign(group_agg["duration"], *labels)
+    group_agg["purpose"] = _freq_assign(group_agg["duration"], *labels)
     group_merge = pd.merge(
-        group["location_id"], group_agg["activity_label"], how="left", left_on="location_id", right_index=True
+        group["location_id"], group_agg["purpose"], how="left", left_on="location_id", right_index=True
     )
-    return group_merge["activity_label"]
+    return group_merge["purpose"]
 
 
 def _freq_assign(duration, *labels):
@@ -261,7 +261,7 @@ def osna_method(staypoints):
     Returns
     -------
     GeoDataFrame (as trackintel staypoints)
-        The input staypoints with additional column "activity_label".
+        The input staypoints with additional column "purpose".
 
     Note
     ----
@@ -301,7 +301,7 @@ def osna_method(staypoints):
     sp_agg = sp.groupby(groups)["duration"].sum()
     if sp_agg.empty:
         warnings.warn("Got empty table in the osna method, check if the dates lie in weekends.")
-        sp_in["activity_label"] = pd.NA
+        sp_in["purpose"] = pd.NA
         return sp_in
 
     # create a pivot table -> labels "home" and "work" as columns. ("user_id", "location_id" still in index.)
@@ -310,22 +310,22 @@ def osna_method(staypoints):
     sp_idxmax = sp_pivot.groupby(["user_id"]).idxmax()
     # first assign labels
     for col in sp_idxmax.columns:
-        sp_pivot.loc[sp_idxmax[col].dropna(), "activity_label"] = col
+        sp_pivot.loc[sp_idxmax[col].dropna(), "purpose"] = col
 
     # The "home" label could overlap with the "work" label
     # we set the rows where "home" is maximum to zero (pd.NaT) and recalculate index of work maximum.
     if all(col in sp_idxmax.columns for col in ["work", "home"]):
         redo_work = sp_idxmax[sp_idxmax["home"] == sp_idxmax["work"]]
-        sp_pivot.loc[redo_work["work"], "activity_label"] = "home"
+        sp_pivot.loc[redo_work["work"], "purpose"] = "home"
         sp_pivot.loc[redo_work["work"], "work"] = pd.NaT
         sp_idxmax_work = sp_pivot.groupby(["user_id"])["work"].idxmax()
-        sp_pivot.loc[sp_idxmax_work.dropna(), "activity_label"] = "work"
+        sp_pivot.loc[sp_idxmax_work.dropna(), "purpose"] = "work"
 
     # now join it back together
-    sel = sp_in.columns != "activity_label"  # no overlap with older "activity_label"
+    sel = sp_in.columns != "purpose"  # no overlap with older "purpose"
     return pd.merge(
         sp_in.loc[:, sel],
-        sp_pivot["activity_label"],
+        sp_pivot["purpose"],
         how="left",
         left_on=["user_id", "location_id"],
         right_index=True,
