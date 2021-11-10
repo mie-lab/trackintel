@@ -97,7 +97,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
 
     """
 
-    assert "activity" in staypoints.columns, "staypoints need the column 'activities' to be able to generate trips"
+    assert "is_activity" in staypoints.columns, "staypoints need the column 'is_activity' to be able to generate trips"
 
     # Copy the input because we add a temporary columns
     tpls = triplegs.copy()
@@ -121,7 +121,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     # create table with relevant information from triplegs and staypoints.
     sp_tpls = pd.concat(
         [
-            sp[["started_at", "finished_at", "user_id", "type", "activity"]],
+            sp[["started_at", "finished_at", "user_id", "type", "is_activity"]],
             tpls[["started_at", "finished_at", "user_id", "type"]],
         ]
     )
@@ -129,7 +129,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
         sp_tpls["geom"] = pd.concat([sp.geometry, tpls.geometry])
 
     # transform nan to bool
-    sp_tpls["activity"].fillna(False, inplace=True)
+    sp_tpls["is_activity"].fillna(False, inplace=True)
 
     # create ID field from index
     sp_tpls["sp_tpls_id"] = sp_tpls.index
@@ -157,8 +157,8 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
 
     # exclude activities to aggregate trips together.
     # activity can be thought of as the same aggregation level as trips.
-    sp_tpls_no_act = sp_tpls[~sp_tpls["activity"]]
-    sp_tpls_only_act = sp_tpls[sp_tpls["activity"]]
+    sp_tpls_no_act = sp_tpls[~sp_tpls["is_activity"]]
+    sp_tpls_only_act = sp_tpls[sp_tpls["is_activity"]]
 
     trips_grouper = sp_tpls_no_act.groupby("temp_trip_id")
     trips = trips_grouper.agg(
@@ -188,12 +188,12 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     # add gaps as activities, to simplify id assignment.
     gaps = pd.DataFrame(sp_tpls.loc[gap, "user_id"])
     gaps["started_at"] = sp_tpls.loc[gap, "finished_at"] + gap_threshold / 2
-    gaps[["type", "activity"]] = ["gap", True]  # nicer for debugging
+    gaps[["type", "is_activity"]] = ["gap", True]  # nicer for debugging
 
     # same for user changes
     user_change = pd.DataFrame(sp_tpls.loc[condition_new_user, "user_id"])
     user_change["started_at"] = sp_tpls.loc[condition_new_user, "started_at"] - gap_threshold / 2
-    user_change[["type", "activity"]] = ["user_change", True]  # nicer for debugging
+    user_change[["type", "is_activity"]] = ["user_change", True]  # nicer for debugging
 
     # merge trips with (filler) activities
     trips.drop(columns=["type", "sp_tpls_id"], inplace=True)  # make space so no overlap with activity "sp_tpls_id"
@@ -212,7 +212,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
         trips_with_act["origin_geom"] = trips_with_act["geom"].shift(1)
         trips_with_act["destination_geom"] = trips_with_act["geom"].shift(-1)
 
-    # add prev_trip_id and next_trip_id for activity staypoints
+    # add prev_trip_id and next_trip_id for is_activity staypoints
     trips_with_act["prev_trip_id"] = trips_with_act["trip_id"].shift(1)
     trips_with_act["next_trip_id"] = trips_with_act["trip_id"].shift(-1)
     activity_staypoints = trips_with_act[trips_with_act["type"] == "staypoint"].copy()
@@ -223,15 +223,15 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     sp = sp.join(activity_staypoints[["prev_trip_id", "next_trip_id"]], how="left")
 
     # transform column to binary
-    trips_with_act["activity"].fillna(False, inplace=True)
+    trips_with_act["is_activity"].fillna(False, inplace=True)
     # delete activities
-    trips = trips_with_act[~trips_with_act["activity"]].copy()
+    trips = trips_with_act[~trips_with_act["is_activity"]].copy()
 
     trips.drop(
         [
             "type",
             "sp_tpls_id",
-            "activity",
+            "is_activity",
             "temp_trip_id",
             "prev_trip_id",
             "next_trip_id",
@@ -305,16 +305,16 @@ def _get_activity_masks(df):
     Parameters
     ----------
     df : DataFrame
-        DataFrame with boolean column "activity".
+        DataFrame with boolean column "is_activity".
 
     Returns
     -------
     is_first, is_inter, is_last
         Three boolean Series
     """
-    prev_activity = df["activity"].shift(1, fill_value=False)
-    next_activity = df["activity"].shift(-1, fill_value=False)
-    is_first = df["activity"] & ~prev_activity
-    is_last = df["activity"] & ~next_activity
-    is_inter = df["activity"] & ~is_first & ~is_last
+    prev_activity = df["is_activity"].shift(1, fill_value=False)
+    next_activity = df["is_activity"].shift(-1, fill_value=False)
+    is_first = df["is_activity"] & ~prev_activity
+    is_last = df["is_activity"] & ~next_activity
+    is_inter = df["is_activity"] & ~is_first & ~is_last
     return is_first, is_inter, is_last

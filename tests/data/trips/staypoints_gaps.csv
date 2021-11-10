@@ -1,4 +1,4 @@
-﻿started_at;finished_at;user_id;activity;id
+﻿started_at;finished_at;user_id;is_activity;id
 02.01.2010 01:29;02.01.2010 20:21;1;TRUE;9
 02.01.2010 20:31;02.01.2010 21:29;1;TRUE;10
 09.01.2010 06:55;09.01.2010 08:37;1;TRUE;59

@@ -5,7 +5,7 @@ import numpy as np
 from trackintel.geogr.distances import check_gdf_planar, calculate_haversine_length
 
 
-def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.0, activity_column_name="activity"):
+def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.0, activity_column_name="is_activity"):
     """
     Add a flag whether or not a staypoint is considered an activity.
 
@@ -21,7 +21,7 @@ def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.
     time_threshold : float, default = 15 (minutes)
         The time threshold for which a staypoint is considered an activity in minutes. Used by method 'time_threshold'
 
-    activity_column_name : str , default = 'activity'
+    activity_column_name : str , default = 'is_activity'
         The name of the newly created column that holds the activity flag.
 
     Returns
