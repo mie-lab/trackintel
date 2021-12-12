@@ -153,21 +153,21 @@ class TestFreq_method:
     """Test freq_method."""
 
     def test_default_labels(self, example_freq):
-        """Test method with default labels"""
+        """Test method with default labels."""
         freq = freq_method(example_freq)
-        example_freq["activity_label"] = None
-        example_freq.loc[example_freq["location_id"] == 0, "activity_label"] = "home"
-        example_freq.loc[example_freq["location_id"] == 1, "activity_label"] = "work"
-        assert freq["activity_label"].count() == example_freq["activity_label"].count()
+        example_freq["purpose"] = None
+        example_freq.loc[example_freq["location_id"] == 0, "purpose"] = "home"
+        example_freq.loc[example_freq["location_id"] == 1, "purpose"] = "work"
+        assert freq["purpose"].count() == example_freq["purpose"].count()
         assert_geodataframe_equal(example_freq, freq)
 
     def test_custom_labels(self, example_freq):
-        """Test method with custom label of a different length"""
+        """Test method with custom label of a different length."""
         custom_label = "doing_nothing"
         freq = freq_method(example_freq, "doing_nothing")
-        example_freq["activity_label"] = None
-        example_freq.loc[example_freq["location_id"] == 0, "activity_label"] = custom_label
-        assert freq["activity_label"].count() == example_freq["activity_label"].count()
+        example_freq["purpose"] = None
+        example_freq.loc[example_freq["location_id"] == 0, "purpose"] = custom_label
+        assert freq["purpose"].count() == example_freq["purpose"].count()
         assert_geodataframe_equal(example_freq, freq)
 
     def test_duration(self, example_freq):
@@ -176,10 +176,10 @@ class TestFreq_method:
         del example_freq["finished_at"]
         del example_freq["started_at"]
         freq = freq_method(example_freq)
-        example_freq["activity_label"] = None
-        example_freq.loc[example_freq["location_id"] == 0, "activity_label"] = "home"
-        example_freq.loc[example_freq["location_id"] == 1, "activity_label"] = "work"
-        assert freq["activity_label"].count() == example_freq["activity_label"].count()
+        example_freq["purpose"] = None
+        example_freq.loc[example_freq["location_id"] == 0, "purpose"] = "home"
+        example_freq.loc[example_freq["location_id"] == 1, "purpose"] = "work"
+        assert freq["purpose"].count() == example_freq["purpose"].count()
         assert_geodataframe_equal(example_freq, freq)
 
 
@@ -238,7 +238,7 @@ class TestLocation_Identifier:
         default_kwargs["thresh_sp_at_loc"] = 2
         li = location_identifier(example_freq, method="FREQ", pre_filter=True, **default_kwargs)
         f = pre_filter_locations(example_freq, **default_kwargs)
-        example_freq.loc[f, "activity_label"] = freq_method(example_freq[f])["activity_label"]
+        example_freq.loc[f, "purpose"] = freq_method(example_freq[f])["purpose"]
         assert_geodataframe_equal(li, example_freq)
 
     def test_freq_method(self, example_freq):
@@ -291,8 +291,8 @@ class TestOsna_Method:
     def test_default(self, example_osna):
         """Test with no changes to test data."""
         osna = osna_method(example_osna)
-        example_osna.loc[example_osna["location_id"] == 0, "activity_label"] = "home"
-        example_osna.loc[example_osna["location_id"] == 1, "activity_label"] = "work"
+        example_osna.loc[example_osna["location_id"] == 0, "purpose"] = "home"
+        example_osna.loc[example_osna["location_id"] == 1, "purpose"] = "work"
         assert_geodataframe_equal(example_osna, osna)
 
     def test_overlap(self, example_osna):
@@ -311,8 +311,8 @@ class TestOsna_Method:
         sp = example_osna.append(sp)
 
         result = osna_method(sp).iloc[:-2]
-        example_osna.loc[example_osna["location_id"] == 0, "activity_label"] = "home"
-        example_osna.loc[example_osna["location_id"] == 1, "activity_label"] = "work"
+        example_osna.loc[example_osna["location_id"] == 0, "purpose"] = "home"
+        example_osna.loc[example_osna["location_id"] == 1, "purpose"] = "work"
         assert_geodataframe_equal(result, example_osna)
 
     def test_only_weekends(self, example_osna):
@@ -334,7 +334,7 @@ class TestOsna_Method:
             result = osna_method(example_osna)
 
         # activity_label column is all pd.NA
-        example_osna["activity_label"] = pd.NA
+        example_osna["purpose"] = pd.NA
         assert_geodataframe_equal(result, example_osna)
 
     def test_two_users(self, example_osna):
@@ -342,8 +342,8 @@ class TestOsna_Method:
         two_user = example_osna.append(example_osna)
         two_user.iloc[len(example_osna) :, 0] = 1  # second user gets id 1
         result = osna_method(two_user)
-        two_user.loc[two_user["location_id"] == 0, "activity_label"] = "home"
-        two_user.loc[two_user["location_id"] == 1, "activity_label"] = "work"
+        two_user.loc[two_user["location_id"] == 0, "purpose"] = "home"
+        two_user.loc[two_user["location_id"] == 1, "purpose"] = "work"
         assert_geodataframe_equal(result, two_user)
 
     def test_leisure_weighting(self):
@@ -369,8 +369,8 @@ class TestOsna_Method:
         sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
         sp.index.name = "id"
         result = osna_method(sp)
-        sp.loc[sp["location_id"] == 1, "activity_label"] = "home"
-        sp.loc[sp["location_id"] == 2, "activity_label"] = "work"
+        sp.loc[sp["location_id"] == 1, "purpose"] = "home"
+        sp.loc[sp["location_id"] == 2, "purpose"] = "work"
         assert_geodataframe_equal(sp, result)
 
     def test_only_one_work_location(self):
@@ -382,7 +382,7 @@ class TestOsna_Method:
         sp = gpd.GeoDataFrame(data=list_dict, geometry="g")
         sp.index.name = "id"
         result = osna_method(sp)
-        sp["activity_label"] = "work"
+        sp["purpose"] = "work"
         assert_geodataframe_equal(result, sp)
 
     def test_only_one_rest_location(self):
@@ -394,7 +394,7 @@ class TestOsna_Method:
         sp = gpd.GeoDataFrame(data=list_dict, geometry="g")
         sp.index.name = "id"
         result = osna_method(sp)
-        sp["activity_label"] = "home"
+        sp["purpose"] = "home"
         assert_geodataframe_equal(result, sp)
 
     def test_only_one_leisure_location(self):
@@ -406,16 +406,16 @@ class TestOsna_Method:
         sp = gpd.GeoDataFrame(data=list_dict, geometry="g")
         sp.index.name = "id"
         result = osna_method(sp)
-        sp["activity_label"] = "home"
+        sp["purpose"] = "home"
         assert_geodataframe_equal(result, sp)
 
     def test_prior_activity_label(self, example_osna):
-        """Test that prior activity_label column does not corrupt output."""
-        example_osna["activity_label"] = np.arange(len(example_osna))
+        """Test that prior purpose column does not corrupt output."""
+        example_osna["purpose"] = np.arange(len(example_osna))
         result = osna_method(example_osna)
-        del example_osna["activity_label"]
-        example_osna.loc[example_osna["location_id"] == 0, "activity_label"] = "home"
-        example_osna.loc[example_osna["location_id"] == 1, "activity_label"] = "work"
+        del example_osna["purpose"]
+        example_osna.loc[example_osna["location_id"] == 0, "purpose"] = "home"
+        example_osna.loc[example_osna["location_id"] == 1, "purpose"] = "work"
         assert_geodataframe_equal(example_osna, result)
 
     def test_multiple_users_with_only_one_location(self):
@@ -432,7 +432,7 @@ class TestOsna_Method:
         sp = pd.DataFrame(list_dict)
         sp.index.name = "id"
         result = osna_method(sp)
-        sp["activity_label"] = ["home", "work", "home", "work"]
+        sp["purpose"] = ["home", "work", "home", "work"]
         assert_frame_equal(sp, result)
 
 

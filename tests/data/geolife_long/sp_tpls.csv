@@ -1,4 +1,4 @@
-id,started_at,finished_at,user_id,type,activity,trip_id,prev_trip_id,next_trip_id,started_at_next,activity_next,gap
+id,started_at,finished_at,user_id,type,is_activity,trip_id,prev_trip_id,next_trip_id,started_at_next,activity_next,gap
 0,2008-10-23 02:53:04+00:00,2008-10-23 03:05:00+00:00,0,tripleg,False,0,,,2008-10-23 03:05:05+00:00,True,False
 0,2008-10-23 03:05:05+00:00,2008-10-23 04:08:07+00:00,0,staypoint,True,,0,1,2008-10-23 04:08:07+00:00,False,False
 1,2008-10-23 04:08:07+00:00,2008-10-23 04:34:37+00:00,0,tripleg,False,1,,,2008-10-23 04:34:42+00:00,True,False

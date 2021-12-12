@@ -19,11 +19,12 @@ Try *trackintel* online in a MyBinder notebook: [![Binder](https://mybinder.org/
 
 An overview of the data model of *trackintel*:
 * **positionfixes** (Raw tracking points, e.g., GPS recordings or check-ins)
-* **staypoints** (Locations where a user spent time without moving, e.g., aggregations of positionfixes or check-ins)
-* **activities** (Staypoints with a purpose and a semantic label, e.g., meeting to drink a coffee as opposed to waiting for the bus)
+* **staypoints** (Locations where a user spent time without moving, e.g., aggregations of positionfixes or check-ins). Staypoints can be classified into the following categories:
+  * **activity** staypoints. Staypoints with a purpose and a semantic label, e.g., stopping at a cafe to meet with friends or staying at the workplace.
+  * non-activity staypoints. Staypoints without an explicit purpose, e.g., waiting for a bus or stopping in a traffic jam.
 * **locations** (Important places that are visited more than once, e.g., home or work location)
 * **triplegs** (or stages) (Continuous movement without changing mode, vehicle or stopping for too long, e.g., a taxi trip between pick-up and drop-off)
-* **trips** (The sequence of all triplegs between two consecutive activities)
+* **trips** (The sequence of all triplegs between two consecutive activity staypoints)
 * **tours** (A collection of sequential trips that return to the same location)
 
 An example plot showing the hierarchy of the *trackintel* data model can be found below:

@@ -306,12 +306,12 @@ class TestGenerate_trips:
         start = pd.Timestamp("2021-07-11 8:00:00")
         h = pd.to_timedelta("1h")
         sp_tpls = [
-            {"activity": True, "type": "staypoint"},
-            {"activity": False, "type": "staypoint"},
-            {"activity": True, "type": "staypoint"},
-            {"activity": False, "type": "tripleg"},
-            {"activity": False, "type": "staypoint"},
-            {"activity": True, "type": "staypoint"},
+            {"is_activity": True, "type": "staypoint"},
+            {"is_activity": False, "type": "staypoint"},
+            {"is_activity": True, "type": "staypoint"},
+            {"is_activity": False, "type": "tripleg"},
+            {"is_activity": False, "type": "staypoint"},
+            {"is_activity": True, "type": "staypoint"},
         ]
         for n, d in enumerate(sp_tpls):
             d["user_id"] = 0
@@ -332,11 +332,11 @@ class TestGenerate_trips:
         start = pd.Timestamp("2021-07-11 8:00:00")
         h = pd.to_timedelta("1h")
         sp_tpls = [
-            {"activity": True, "type": "staypoint"},
-            {"activity": False, "type": "tripleg"},
-            {"activity": False, "type": "staypoint"},
-            {"activity": False, "type": "tripleg"},
-            {"activity": True, "type": "staypoint"},
+            {"is_activity": True, "type": "staypoint"},
+            {"is_activity": False, "type": "tripleg"},
+            {"is_activity": False, "type": "staypoint"},
+            {"is_activity": False, "type": "tripleg"},
+            {"is_activity": True, "type": "staypoint"},
         ]
         for n, d in enumerate(sp_tpls):
             d["user_id"] = 0
@@ -373,14 +373,14 @@ def _create_debug_sp_tpls_data(sp, tpls, gap_threshold):
     tpls["type"] = "tripleg"
     sp["type"] = "staypoint"
     sp_tpls = sp[
-        ["started_at", "finished_at", "user_id", "type", "activity", "trip_id", "prev_trip_id", "next_trip_id"]
+        ["started_at", "finished_at", "user_id", "type", "is_activity", "trip_id", "prev_trip_id", "next_trip_id"]
     ].append(tpls[["started_at", "finished_at", "user_id", "type", "trip_id"]])
 
     # transform nan to bool
-    sp_tpls["activity"] = sp_tpls["activity"] == True
+    sp_tpls["is_activity"] = sp_tpls["is_activity"] == True
     sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
     sp_tpls["started_at_next"] = sp_tpls["started_at"].shift(-1)
-    sp_tpls["activity_next"] = sp_tpls["activity"].shift(-1)
+    sp_tpls["activity_next"] = sp_tpls["is_activity"].shift(-1)
 
     sp_tpls["gap"] = (sp_tpls["started_at_next"] - sp_tpls["finished_at"]).dt.seconds / 60 > gap_threshold
 
@@ -431,7 +431,7 @@ def _generate_trips_old(sp_input, tpls_input, gap_threshold=15, print_progress=F
     --------
     >>> staypoints, triplegs, trips = generate_trips(staypoints, triplegs)
     """
-    assert "activity" in sp_input.columns, "staypoints need the column 'activities' to be able to generate trips"
+    assert "is_activity" in sp_input.columns, "staypoints need the column 'is_activity' to be able to generate trips"
 
     # we copy the input because we need to add a temporary column
     tpls = tpls_input.copy()
@@ -452,7 +452,7 @@ def _generate_trips_old(sp_input, tpls_input, gap_threshold=15, print_progress=F
     # create table with relevant information from triplegs and staypoints.
     sp_tpls = pd.concat(
         [
-            sp[["started_at", "finished_at", "user_id", "type", "activity"]],
+            sp[["started_at", "finished_at", "user_id", "type", "is_activity"]],
             tpls[["started_at", "finished_at", "user_id", "type"]],
         ]
     )
@@ -461,11 +461,11 @@ def _generate_trips_old(sp_input, tpls_input, gap_threshold=15, print_progress=F
     sp_tpls["id"] = sp_tpls.index
 
     # transform nan to bool
-    sp_tpls["activity"] = sp_tpls["activity"] == True
+    sp_tpls["is_activity"] = sp_tpls["is_activity"] == True
 
     sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
     sp_tpls["started_at_next"] = sp_tpls["started_at"].shift(-1)
-    sp_tpls["activity_next"] = sp_tpls["activity"].shift(-1)
+    sp_tpls["is_activity_next"] = sp_tpls["is_activity"].shift(-1)
 
     if print_progress:
         tqdm.pandas(desc="User trip generation")
@@ -543,7 +543,7 @@ def _generate_trips_user(df, gap_threshold):
     assert len(user_id) == 1
     user_id = user_id[0]
 
-    unknown_activity = {"user_id": user_id, "activity": True, "id": np.nan}
+    unknown_activity = {"user_id": user_id, "is_activity": True, "id": np.nan}
     origin_activity = unknown_activity
     temp_trip_stack = []
     in_trip = False
@@ -555,11 +555,11 @@ def _generate_trips_user(df, gap_threshold):
         # (we make sure that we start the trip with the most recent activity)
         if in_trip is False:
             # If there are several activities in a row, we skip until the last one
-            if row["activity"] and row["activity_next"]:
+            if row["is_activity"] and row["activity_next"]:
                 continue
 
             # if this is the last activity before the trip starts, reset the origin
-            elif row["activity"]:
+            elif row["is_activity"]:
                 origin_activity = row
                 in_trip = True
                 continue
@@ -573,7 +573,7 @@ def _generate_trips_user(df, gap_threshold):
 
             # check if trip ends regularly
             is_gap = row["started_at_next"] - row["finished_at"] > datetime.timedelta(minutes=gap_threshold)
-            if row["activity"] is True:
+            if row["is_activity"] is True:
 
                 # if there are no triplegs in the trip, set the current activity as origin and start over
                 if not _check_trip_stack_has_tripleg(temp_trip_stack):
@@ -678,7 +678,7 @@ def _create_trip_from_stack(temp_trip_stack, origin_activity, destination_activi
         list of dictionary like elements (either pandas series or python dictionary).
         Contains all elements that will be aggregated into a trip
 
-    origin_activity : dictionary like
+    origin_purpose : dictionary like
         Either dictionary or pandas series
 
     destination_activity : dictionary like
@@ -697,9 +697,9 @@ def _create_trip_from_stack(temp_trip_stack, origin_activity, destination_activi
     assert origin_activity["user_id"] == last_trip_element["user_id"]
 
     # double check if trip requirements are fulfilled
-    assert origin_activity["activity"] == True
-    assert destination_activity["activity"] == True
-    assert first_trip_element["activity"] == False
+    assert origin_activity["is_activity"] == True
+    assert destination_activity["is_activity"] == True
+    assert first_trip_element["is_activity"] == False
 
     trip_dict_entry = {
         "user_id": origin_activity["user_id"],

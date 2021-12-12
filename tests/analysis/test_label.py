@@ -16,12 +16,12 @@ class TestCreate_activity_flag:
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         sp_test = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
 
-        activity_true = sp_test["activity"].copy()
-        sp_test["activity"] = False
+        activity_true = sp_test["is_activity"].copy()
+        sp_test["is_activity"] = False
 
         sp_test = sp_test.as_staypoints.create_activity_flag(method="time_threshold", time_threshold=5.0)
 
-        pd.testing.assert_series_equal(sp_test["activity"], activity_true)
+        pd.testing.assert_series_equal(sp_test["is_activity"], activity_true)
 
     def test_wrong_input_parameter(self):
         """Test if an error will be raised when input wrong method."""
