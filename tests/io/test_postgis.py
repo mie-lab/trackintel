@@ -517,11 +517,11 @@ class TestLocations:
             assert geom_schema_extent in dtypes
         finally:
             del_table(conn, table)
-    
+
     def test_read_extent(self, example_locations, conn_postgis):
         """Test if extent geometry can be read correctly."""
         conn_string, conn = conn_postgis
-        table= "locations"
+        table = "locations"
         sql = f"SELECT * FROM {table}"
         coords = [[8.45, 47.6], [8.45, 47.4], [8.55, 47.4], [8.55, 47.6], [8.45, 47.6]]
         extent = Polygon(coords)
