@@ -304,7 +304,7 @@ def read_locations_gpd(gdf, user_id="user_id", center="center", extent=None, crs
     locs = _trackintel_model(gdf, columns, "center", crs)
 
     if extent is not None:
-        locs["extent"] = gpd.geopandas.GeoSeries.from_wkb(locs["extent"])
+        locs["extent"] = gpd.GeoSeries(locs["extent"])
 
     # assert validity of locations
     locs.as_locations

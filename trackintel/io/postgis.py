@@ -419,6 +419,8 @@ def read_locations_postgis(
         params=params,
         chunksize=chunksize,
     )
+    if "extent" in kwargs:
+        locs[kwargs["extent"]] = gpd.GeoSeries.from_wkb(locs[kwargs["extent"]])
 
     return ti.io.read_locations_gpd(locs, center=center, **kwargs)
 
