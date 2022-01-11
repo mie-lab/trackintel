@@ -113,7 +113,7 @@ class TestCalculate_distance_matrix:
 
         their_d_matrix = pairwise_distances(yx, metric="haversine") * 6371000
         # atol = 1mm
-        assert np.allclose(our_d_matrix, their_d_matrix, atol=0.001)  
+        assert np.allclose(our_d_matrix, their_d_matrix, atol=0.001)
 
     def test_trajectory_distance_dtw(self, geolife_tpls):
         """Calculate Linestring length using dtw, single and multi core."""
