@@ -518,6 +518,22 @@ class TestLocations:
         finally:
             del_table(conn, table)
 
+    def test_read_extent(self, example_locations, conn_postgis):
+        """Test if extent geometry can be read correctly."""
+        conn_string, conn = conn_postgis
+        table = "locations"
+        sql = f"SELECT * FROM {table}"
+        coords = [[8.45, 47.6], [8.45, 47.4], [8.55, 47.4], [8.55, 47.6], [8.45, 47.6]]
+        extent = Polygon(coords)
+        example_locations["extent"] = extent  # broadcasting
+        example_locations["extent"] = gpd.GeoSeries(example_locations["extent"])  # dtype
+        try:
+            example_locations.as_locations.to_postgis(table, conn_string)
+            locs_db = ti.io.read_locations_postgis(sql, conn_string, extent="extent", index_col="id")
+            assert_geodataframe_equal(example_locations, locs_db)
+        finally:
+            del_table(conn, table)
+
     def test_non_standard_column_names(self, example_locations, conn_postgis):
         """Test renaming handled by read_locations_gpd()."""
         locs = example_locations.copy()
