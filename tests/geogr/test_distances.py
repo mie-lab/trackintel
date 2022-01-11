@@ -99,6 +99,7 @@ class TestCalculate_distance_matrix:
         assert np.array_equal(d_euc, d_mink2)
 
     def test_compare_haversine_to_scikit_xy(self):
+        """Test the results using our haversine function and scikit function."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
         our_d_matrix = calculate_distance_matrix(X=sp, Y=sp, dist_metric="haversine")
@@ -111,7 +112,8 @@ class TestCalculate_distance_matrix:
         yx = np.concatenate((y_rad.reshape(-1, 1), x_rad.reshape(-1, 1)), axis=1)
 
         their_d_matrix = pairwise_distances(yx, metric="haversine") * 6371000
-        assert np.allclose(np.abs(our_d_matrix - their_d_matrix), 0, atol=0.001)  # atol = 1mm
+        # atol = 10mm
+        assert np.allclose(our_d_matrix, their_d_matrix, atol=0.01)
 
     def test_trajectory_distance_dtw(self, geolife_tpls):
         """Calculate Linestring length using dtw, single and multi core."""
