@@ -43,6 +43,9 @@ def example_triplegs():
         11.526663056213618,
         10.65636700582968,
     ]
+    # convert to ms
+    correct_mean_pfs = np.array(correct_mean_pfs) / 3.6
+
     correct_simple_speed = [
         2.829121178320859,
         3.915482482569027,
@@ -75,7 +78,7 @@ def load_positionfixes():
     """Load test positionfixes"""
     pfs = ti.io.file.read_positionfixes_csv(os.path.join("tests", "data", "positionfixes.csv"), sep=";", index_col="id")
     # the correct speeds were computed manually in Python
-    correct_speeds = np.array([8.82100607, 8.82100607, 0.36585538, 1.93127652, 19.60643425, 2.07086017])
+    correct_speeds = np.array([8.82100607, 8.82100607, 0.36585538, 1.93127652, 19.60643425, 2.07086017]) / 3.6
     return pfs, correct_speeds
 
 
@@ -83,28 +86,28 @@ class TestSpeedPositionfixes:
     def test_positionfixes_stable(self, load_positionfixes):
         """Test whether the positionfixes stay the same apart from the new speed column"""
         pfs, _ = load_positionfixes
-        speed_pfs = ti.model.util.speed_positionfixes(pfs)
+        speed_pfs = ti.model.util.get_speed_positionfixes(pfs)
         assert_geodataframe_equal(pfs, speed_pfs.drop(columns=["speed"]))
 
     def test_accessor(self, load_positionfixes):
         """Test whether the positionfixes stay the same apart from the new speed column"""
         pfs, _ = load_positionfixes
-        speed_pfs = pfs.as_positionfixes.speed_positionfixes()
+        speed_pfs = pfs.as_positionfixes.get_speed()
         assert_geodataframe_equal(pfs, speed_pfs.drop(columns=["speed"]))
 
     def test_speed_correct(self, load_positionfixes):
         """Test whether the correct speed values are computed"""
         pfs, correct_speeds = load_positionfixes
         # assert first two are the same
-        speed_pfs = ti.model.util.speed_positionfixes(pfs)
+        speed_pfs = ti.model.util.get_speed_positionfixes(pfs)
         assert speed_pfs.loc[speed_pfs.index[0], "speed"] == speed_pfs.loc[speed_pfs.index[1], "speed"]
-        assert np.all(np.isclose(speed_pfs["speed"].values, correct_speeds))
+        assert np.all(np.isclose(speed_pfs["speed"].values, correct_speeds, rtol=1e-06))
 
     def test_one_speed(self, load_positionfixes):
         """Test for each individual speed whether is is correct"""
         pfs, correct_speeds = load_positionfixes
         # compute speeds
-        speed_pfs = ti.model.util.speed_positionfixes(pfs)
+        speed_pfs = ti.model.util.get_speed_positionfixes(pfs)
         computed_speeds = speed_pfs["speed"].values
         # test for each row whether the speed is correct
         for ind in range(1, len(correct_speeds)):
@@ -113,55 +116,68 @@ class TestSpeedPositionfixes:
             point1 = pfs.loc[ind_prev, "geom"]
             point2 = pfs.loc[ind, "geom"]
             dist = ti.geogr.point_distances.haversine_dist(point1.x, point1.y, point2.x, point2.y)[0]
-            assert np.isclose(3.6 * dist / time_diff, computed_speeds[ind])
-            assert np.isclose(3.6 * dist / time_diff, correct_speeds[ind])
+            assert np.isclose(dist / time_diff, computed_speeds[ind], rtol=1e-06)
+            assert np.isclose(dist / time_diff, correct_speeds[ind], rtol=1e-06)
 
 
 class TestPfsMeanSpeedTriplegs:
     def test_triplegs_stable(self, example_triplegs):
         """Test whether the triplegs stay the same apart from the new speed column"""
         pfs, tpls, _, _ = example_triplegs
-        tpls_speed = ti.model.util.pfs_mean_speed_triplegs(tpls, pfs)
-        assert_geodataframe_equal(tpls, tpls_speed.drop(columns=["mean_pfs_speed"]))
+        tpls_speed = ti.model.util.get_speed_triplegs(tpls, pfs, method="pfs_mean_speed")
+        assert_geodataframe_equal(tpls, tpls_speed.drop(columns=["speed"]))
 
     def test_tripleg_id_assertion(self, load_positionfixes):
         """Test whether an error is triggered if wrong posistionfixes are used as input"""
-        pfs, _ = load_positionfixes
+        pfs, tpls = load_positionfixes
         with pytest.raises(Exception) as e_info:
-            _ = ti.model.util.pfs_mean_speed_triplegs(None, pfs)
+            _ = ti.model.util.get_speed_triplegs(tpls, pfs, method="pfs_mean_speed")
             assert e_info == "Positionfixes must include column tripleg_id"
+
+    def test_pfs_exist_assertion(self, load_positionfixes):
+        """Test whether an error is triggered if wrong posistionfixes are used as input"""
+        _, tpls = load_positionfixes
+        with pytest.raises(Exception) as e_info:
+            _ = ti.model.util.get_speed_triplegs(tpls, None, method="pfs_mean_speed")
+            assert e_info == "Method pfs_mean_speed requires positionfixes as input"
 
     def test_tripleg_speed_correct(self, example_triplegs):
         """Test whether the computed mean speed values correspond to the one yielded from linestrings"""
         pfs, tpls, ground_truth_speed, _ = example_triplegs
-        tpls_speed = ti.model.util.pfs_mean_speed_triplegs(tpls, pfs)
-        assert np.all(np.isclose(tpls_speed["mean_pfs_speed"].values, ground_truth_speed))
+        tpls_speed = ti.model.util.get_speed_triplegs(tpls, pfs, method="pfs_mean_speed")
+        assert np.all(np.isclose(tpls_speed["speed"].values, ground_truth_speed, rtol=1e-06))
 
     def test_accessor(self, example_triplegs):
         """Test whether the computed mean speed values correspond to the one yielded from linestrings"""
         pfs, tpls, ground_truth_speed, _ = example_triplegs
-        tpls_speed = tpls.as_triplegs.pfs_mean_speed_triplegs(pfs)
-        assert np.all(np.isclose(tpls_speed["mean_pfs_speed"].values, ground_truth_speed))
+        tpls_speed = tpls.as_triplegs.get_speed(pfs, method="pfs_mean_speed")
+        assert np.all(np.isclose(tpls_speed["speed"].values, ground_truth_speed, rtol=1e-06))
 
 
 class TestSimpleSpeedTriplegs:
     def test_triplegs_stable(self, example_triplegs):
         """Test whether the triplegs stay the same apart from the new speed column"""
         _, tpls, _, _ = example_triplegs
-        tpls_speed = ti.model.util.speed_triplegs(tpls)
+        tpls_speed = ti.model.util.get_speed_triplegs(tpls)
         assert_geodataframe_equal(tpls, tpls_speed.drop(columns=["speed"]))
 
     def test_tripleg_speed_correct(self, example_triplegs):
         """Test whether the computed mean speed values correspond to the one yielded from linestrings"""
         _, tpls, _, ground_truth_speed = example_triplegs
-        tpls_speed = ti.model.util.speed_triplegs(tpls)
-        assert np.all(np.isclose(tpls_speed["speed"].values, ground_truth_speed))
+        tpls_speed = ti.model.util.get_speed_triplegs(tpls)
+        assert np.all(np.isclose(tpls_speed["speed"].values, ground_truth_speed, rtol=1e-06))
 
     def test_accessor(self, example_triplegs):
         """Test whether the computed mean speed values correspond to the one yielded from linestrings"""
         _, tpls, _, ground_truth_speed = example_triplegs
-        tpls_speed = tpls.as_triplegs.speed_triplegs()
-        assert np.all(np.isclose(tpls_speed["speed"].values, ground_truth_speed))
+        tpls_speed = tpls.as_triplegs.get_speed()
+        assert np.all(np.isclose(tpls_speed["speed"].values, ground_truth_speed, rtol=1e-06))
+
+    def test_method_error(self):
+        """Test whether an error is triggered if wrong posistionfixes are used as input"""
+        with pytest.raises(Exception) as e_info:
+            _ = ti.model.util.get_speed_triplegs(None, None, method="wrong_method")
+            assert e_info == "Method wrong_method not known for speed computation."
 
 
 class Test_copy_docstring:

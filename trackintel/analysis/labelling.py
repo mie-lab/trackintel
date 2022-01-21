@@ -3,7 +3,7 @@ import datetime
 import numpy as np
 
 from trackintel.geogr.distances import check_gdf_planar, calculate_haversine_length
-from trackintel.model.util import speed_triplegs
+from trackintel.model.util import get_speed_triplegs
 
 
 def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.0, activity_column_name="activity"):

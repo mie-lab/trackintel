@@ -5,9 +5,9 @@ import pandas as pd
 from trackintel.geogr.distances import calculate_haversine_length
 
 
-def speed_positionfixes(positionfixes):
+def get_speed_positionfixes(positionfixes):
     """
-    Compute speed per positionfix
+    Compute speed per positionfix (in m/s)
 
     Parameters
     ----------
@@ -17,7 +17,7 @@ def speed_positionfixes(positionfixes):
     Returns
     -------
     pfs: GeoDataFrame (as trackintel positionfixes)
-        The original positionfixes with a new column ``[`speed`]``. The speed is given in km/h
+        The original positionfixes with a new column ``[`speed`]``. The speed is given in m/s
 
     Notes
     -----
@@ -42,8 +42,8 @@ def speed_positionfixes(positionfixes):
     pfs["dist"] = pfs.apply(dist_function, axis=1)
     pfs["time_diff"] = pfs.apply(lambda x: x.tracked_at - x.prev_tracked_at, axis=1).dt.total_seconds()
 
-    # compute speed and convert to kmh
-    pfs["speed"] = 3.6 * pfs["dist"] / pfs["time_diff"]
+    # compute speed (in m/s)
+    pfs["speed"] = pfs["dist"] / pfs["time_diff"]
     # The first point speed is imputed
     pfs.loc[pfs.index[0], "speed"] = pfs.iloc[1]["speed"]
 
@@ -52,50 +52,58 @@ def speed_positionfixes(positionfixes):
     return pfs
 
 
-def speed_triplegs(triplegs):
-    tpls = triplegs.copy()
-    if_planar_crs = ti.geogr.distances.check_gdf_planar(tpls)
-
-    if not if_planar_crs:
-        tpls_distance = calculate_haversine_length(triplegs)
-    else:
-        tpls_distance = triplegs.length
-    duration = (tpls["finished_at"] - tpls["started_at"]).apply(lambda x: x.total_seconds())
-    # The unit of the speed is m/s
-    tpls["speed"] = tpls_distance / duration
-    return tpls
-
-
-def pfs_mean_speed_triplegs(triplegs, positionfixes):
+def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
     """
-    Compute the average speed per positionfix for each tripleg (in km/h)
+    Compute the average speed per positionfix for each tripleg (in m/s)
 
     Parameters
     ----------
     triplegs: GeoDataFrame (as trackintel triplegs)
         The generated triplegs as returned by ti.preprocessing.positionfixes.generate_triplegs
 
-    positionfixes: GeoDataFrame (as trackintel positionfixes)
-        The positionfixes as returned by ti.preprocessing.positionfixes.generate_triplegs.
-        In addition the standard columns it must include the column ``[`tripleg_id`]``.
+    positionfixes (Optional): GeoDataFrame (as trackintel positionfixes)
+        The positionfixes as returned by ti.preprocessing.positionfixes.generate_triplegs. Only required if the method
+        is 'pfs_mean_speed'. In addition the standard columns it must include the column ``[`tripleg_id`]``.
+
+    method: str
+        Method how the speed is computed, one of {tpls_speed, pfs_mean_speed}. The 'tpls_speed' method simply divides
+        the overall tripleg distance by its duration, while the 'pfs_mean_speed' method is the mean pfs speed.
 
     Returns
     -------
     tpls: GeoDataFrame (as trackintel triplegs)
-        The original triplegs with a new column ``[`mean_speed`]``. The speed is given in km/h.
+        The original triplegs with a new column ``[`speed`]``. The speed is given in m/s.
     """
-    assert "tripleg_id" in positionfixes.columns, "Positionfixes must include column tripleg_id"
-    # group positionfixes by triplegs and compute average speed for each collection of positionfixes
-    grouped_pfs = positionfixes.groupby("tripleg_id").apply(_single_tripleg_mean_speed)
-    # add the speed values to the triplegs column
-    tpls = pd.merge(triplegs, grouped_pfs.rename("mean_pfs_speed"), left_index=True, right_index=True)
-    tpls.index = tpls.index.astype("int64")
-    return tpls
+    # Simple method: Divide overall tripleg distance by overall duration
+    if method == "tpls_speed":
+        tpls = triplegs.copy()
+        # check what distance function we need to compute tripleg distance
+        if_planar_crs = ti.geogr.distances.check_gdf_planar(tpls)
+        if not if_planar_crs:
+            tpls_distance = calculate_haversine_length(triplegs)
+        else:
+            tpls_distance = triplegs.length
+        duration = (tpls["finished_at"] - tpls["started_at"]).apply(lambda x: x.total_seconds())
+        # The unit of the speed is m/s
+        tpls["speed"] = tpls_distance / duration
+        return tpls
+    # Pfs-based method: compute speed per positionfix and average then
+    elif method == "pfs_mean_speed":
+        assert positionfixes is not None, "Method pfs_mean_speed requires positionfixes as input"
+        assert "tripleg_id" in positionfixes.columns, "Positionfixes must include column tripleg_id"
+        # group positionfixes by triplegs and compute average speed for each collection of positionfixes
+        grouped_pfs = positionfixes.groupby("tripleg_id").apply(_single_tripleg_mean_speed)
+        # add the speed values to the triplegs column
+        tpls = pd.merge(triplegs, grouped_pfs.rename("speed"), left_index=True, right_index=True)
+        tpls.index = tpls.index.astype("int64")
+        return tpls
+    else:
+        raise AttributeError(f"Method {method} not known for speed computation.")
 
 
 def _single_tripleg_mean_speed(positionfixes):
     pfs_sorted = positionfixes.sort_values(by="tracked_at")
-    pfs_speed = speed_positionfixes(pfs_sorted)
+    pfs_speed = get_speed_positionfixes(pfs_sorted)
     return np.mean(pfs_speed["speed"].values[1:])
 
 
