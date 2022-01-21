@@ -145,7 +145,7 @@ def _predict_transport_mode_simple_coarse(triplegs_in, categories):
             if speed < bound:
                 return categories[bound]
 
-    triplegs_speed = speed_triplegs(triplegs)
+    triplegs_speed = get_speed_triplegs(triplegs)
 
     triplegs["mode"] = triplegs_speed["speed"].apply(category_by_speed)
     return triplegs
