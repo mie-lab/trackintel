@@ -6,6 +6,7 @@ from trackintel.io.postgis import write_positionfixes_postgis
 from trackintel.model.util import _copy_docstring
 from trackintel.preprocessing.positionfixes import generate_staypoints, generate_triplegs
 from trackintel.visualization.positionfixes import plot_positionfixes
+from trackintel.model.util import get_speed_positionfixes
 
 
 @pd.api.extensions.register_dataframe_accessor("as_positionfixes")
@@ -130,3 +131,12 @@ class PositionfixesAccessor(object):
         See :func:`trackintel.geogr.distances.calculate_distance_matrix`.
         """
         return ti.geogr.distances.calculate_distance_matrix(self._obj, *args, **kwargs)
+
+    @_copy_docstring(get_speed_positionfixes)
+    def get_speed(self, *args, **kwargs):
+        """
+        Compute speed per positionfix (in m/s)
+
+        See :func:`trackintel.model.util.get_speed_positionfixes`.
+        """
+        return ti.model.util.get_speed_positionfixes(self._obj, *args, **kwargs)

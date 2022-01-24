@@ -7,7 +7,7 @@ from trackintel.analysis.tracking_quality import temporal_tracking_quality
 from trackintel.geogr.distances import calculate_distance_matrix
 from trackintel.io.file import write_triplegs_csv
 from trackintel.io.postgis import write_triplegs_postgis
-from trackintel.model.util import _copy_docstring
+from trackintel.model.util import _copy_docstring, get_speed_triplegs
 from trackintel.preprocessing.filter import spatial_filter
 from trackintel.preprocessing.triplegs import generate_trips
 from trackintel.visualization.triplegs import plot_triplegs
@@ -164,3 +164,12 @@ class TriplegsAccessor(object):
         See :func:`trackintel.analysis.tracking_quality.temporal_tracking_quality`.
         """
         return ti.analysis.tracking_quality.temporal_tracking_quality(self._obj, *args, **kwargs)
+
+    @_copy_docstring(get_speed_triplegs)
+    def get_speed(self, *args, **kwargs):
+        """
+        Compute the average speed for each tripleg, given by overall distance and duration (in m/s)
+
+        See :func:`trackintel.model.util.get_speed_triplegs`.
+        """
+        return ti.model.util.get_speed_triplegs(self._obj, *args, **kwargs)

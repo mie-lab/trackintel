@@ -3,6 +3,7 @@ import datetime
 import numpy as np
 
 from trackintel.geogr.distances import check_gdf_planar, calculate_haversine_length
+from trackintel.model.util import get_speed_triplegs
 
 
 def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.0, activity_column_name="is_activity"):
@@ -125,40 +126,28 @@ def _predict_transport_mode_simple_coarse(triplegs_in, categories):
         raise ValueError("the categories must be in increasing order")
 
     triplegs = triplegs_in.copy()
-    if_planer_crs = check_gdf_planar(triplegs)
-    #
-    if not if_planer_crs:
-        triplegs["distance"] = calculate_haversine_length(triplegs)
-    else:
-        triplegs["distance"] = triplegs.length
 
-    def identify_mode(tripleg, categories):
+    def category_by_speed(speed):
         """
         Identify the mode based on the (overall) tripleg speed.
 
         Parameters
         ----------
-        tripleg : trackintel triplegs GeoDataFrame
-            the tripleg to analyse
-        wgs : bool
-            whether the tripleg is in WGS84 or not.
-        categories : dict
-            the upper boundaries (as keys) and the names of the categories as values.
+        speed : float
+            the speed of one tripleg
 
         Returns
         -------
         str
             the identified mode.
         """
-
-        duration = (tripleg["finished_at"] - tripleg["started_at"]).total_seconds()
-        speed = tripleg["distance"] / duration  # The unit of the speed is m/s
-
         for bound in categories:
             if speed < bound:
                 return categories[bound]
 
-    triplegs["mode"] = triplegs.apply(identify_mode, args=((categories,)), axis=1)
+    triplegs_speed = get_speed_triplegs(triplegs)
+
+    triplegs["mode"] = triplegs_speed["speed"].apply(category_by_speed)
     return triplegs
 
 
