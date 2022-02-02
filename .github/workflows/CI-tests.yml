@@ -16,9 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        postgis: [false]
-        dev: [false]
-        python-version: ["3.7"]
+        python-version: ["3.7", "3.8", "3.9"]
       
     steps:
     - uses: actions/checkout@v2
@@ -52,3 +50,27 @@ jobs:
     - name: Codecov report
       if: contains(matrix.python-version, '3.8') && contains(matrix.os, 'ubuntu')
       uses: codecov/codecov-action@v1
+
+  other-latest:
+    name: ${{ matrix.os }}, ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}   
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+        python-version: ["3.8"]
+      
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python environment
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+          activate-environment: test
+          environment-file: .github/envs/conda-forge-env.yaml
+          python-version: ${{ matrix.python-version }}
+          auto-activate-base: false
+
+    - name: Test with pytest
+      shell: bash -l {0}
+      run: |
+        pytest -v -r s -n auto --color=yes --cov=trackintel --cov-append --cov-report term-missing --cov-report xml tests/
