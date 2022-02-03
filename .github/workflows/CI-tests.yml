@@ -30,10 +30,10 @@ jobs:
           auto-activate-base: false
           
     - name: Check Environment
-        run: |
-          python -V
-          python -c "import geopandas; geopandas.show_versions();"
-          conda info
+      run: |
+        python -V
+        python -c "import geopandas; geopandas.show_versions();"
+        conda info
 
     - name: Test with pytest
       shell: bash -l {0}
