@@ -1,23 +1,42 @@
 name: test
 channels:
   - conda-forge
-  - defaults
 dependencies:
-- matplotlib
-- numpy
-- pandas<=1.2.5
-- geopandas
-- scikit-learn
-- networkx 
-- pint
-- pip 
-- geoalchemy2 
-- osmnx 
-- psycopg2
-- pytest
-- pytest-cov
-- pytest-xdist
-- tqdm
-- similaritymeasures
-- pygeos
-- jupyter
+  - notebook
+  # geopandas related
+  - pandas=1.3.2
+  - shapely=1.7.1
+  - fiona=1.8.20
+  - pyproj=3.2.1
+  - rtree=0.9.7
+  - geopy=2.2.0
+  - geopandas
+  # specify additional dependencies to reduce solving for conda
+  - gdal=3.3.2
+  - libgdal=3.3.2
+  - proj=8.0.1
+  - geos=3.9.1
+  - nbsphinx=0.8.7
+  - jupyter_client=7.0.3
+  - myst-parser=0.15.2
+  - folium=0.12.0
+  - libpysal=4.5.1
+  - pygeos=0.10.2
+  - xyzservices=2021.9.1
+
+  # other envs
+  - numpy
+  - scikit-learn
+  - matplotlib
+  - pip
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - geoalchemy2 
+  - osmnx 
+  - psycopg2
+  - tqdm
+  - similaritymeasures
+  - scikit-learn
+  - networkx 
+  - pint
