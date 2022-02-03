@@ -2,37 +2,25 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - notebook
-  # other envs
-  - numpy
-  - scikit-learn
-  - matplotlib
-  - pip
-  - pytest
-  - pytest-cov
-  - pytest-xdist
-  - geoalchemy2 
-  - osmnx 
-  - psycopg2
-  - tqdm
-  - similaritymeasures
-  - scikit-learn
-  - networkx 
-  - pint  
-  # required
-  - pandas
-  - shapely
-  - fiona
-  - pyproj
-  - pygeos
-  - packaging
-  - geopandas
-  - rtree
-  - mapclassify
-  - folium
-  - xyzservices
-  - scipy
-  - geopy
-  - SQLalchemy
-  - libspatialite
-  - pyarrow
+- matplotlib
+- numpy
+- pandas<=1.2.5
+- geopandas
+- scikit-learn
+- networkx 
+- pint
+- pip 
+- geoalchemy2 
+- osmnx 
+- psycopg2
+- tqdm
+- similaritymeasures
+- pygeos
+- jupyter
+
+# tests
+- pytest
+- pytest-cov
+- pytest-xdist
+
+  
