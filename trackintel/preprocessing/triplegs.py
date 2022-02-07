@@ -247,7 +247,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     tpls = _explode_agg("tpls", "trip_id", tpls, trips)
 
     # assign trip_id to sp, for non-activity sp
-    trips = _explode_agg("sp", "trip_id", sp, trips)
+    sp = _explode_agg("sp", "trip_id", sp, trips)
 
     # fill missing points and convert to MultiPoint
     # for all trips with missing 'origin_staypoint_id' we now assign the startpoint of the first tripleg of the trip.

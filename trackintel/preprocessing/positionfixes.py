@@ -7,7 +7,7 @@ import pandas as pd
 from shapely.geometry import LineString, Point
 
 from trackintel.geogr.distances import haversine_dist
-from trackintel.preprocessing.util import applyParallel
+from trackintel.preprocessing.util import applyParallel, _explode_agg
 
 
 def generate_staypoints(
@@ -140,30 +140,11 @@ def generate_staypoints(
         ).reset_index(drop=True)
 
         # index management
-        sp["id"] = np.arange(len(sp))
-        sp.set_index("id", inplace=True)
+        sp["staypoint_id"] = sp.index
+        sp.index.name = "id"
 
-        # Assign staypoint_id to ret_pfs if sp is detected
-        if not sp.empty:
-            sp2pfs_map = sp[["pfs_id"]].to_dict()["pfs_id"]
-
-            ls = []
-            for key, values in sp2pfs_map.items():
-                for value in values:
-                    ls.append([value, key])
-            temp = pd.DataFrame(ls, columns=["id", "staypoint_id"]).set_index("id")
-            # pfs with no sp receives nan in 'staypoint_id'
-            pfs = pfs.join(temp, how="left")
-            sp.drop(columns={"pfs_id"}, inplace=True)
-
-        # if no staypoint at all is identified
-        else:
-            pfs["staypoint_id"] = np.nan
-
-    pfs = gpd.GeoDataFrame(pfs, geometry=geo_col, crs=pfs.crs)
+        pfs = _explode_agg("pfs_id", "staypoint_id", pfs, sp)
     sp = gpd.GeoDataFrame(sp, columns=sp_column, geometry=geo_col, crs=pfs.crs)
-    # rearange column order
-    sp = sp[sp_column]
 
     if len(sp) > 0:
         sp.as_staypoints
