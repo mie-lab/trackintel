@@ -143,6 +143,8 @@ def generate_staypoints(
         sp["staypoint_id"] = sp.index
         sp.index.name = "id"
 
+        if "pfs_id" not in sp.columns:
+            sp["pfs_id"] = None
         pfs = _explode_agg("pfs_id", "staypoint_id", pfs, sp)
     sp = gpd.GeoDataFrame(sp, columns=sp_column, geometry=geo_col, crs=pfs.crs)
 
