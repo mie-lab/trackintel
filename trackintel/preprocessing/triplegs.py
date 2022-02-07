@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import MultiPoint, Point
 
+from trackintel.preprocessing.util import _explode_agg
+
 
 def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
     """
@@ -242,16 +244,10 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
 
     # now handle the data that is aggregated in the trips
     # assign trip_id to tpls
-    temp = trips.explode("tpls")
-    temp.index = temp["tpls"]
-    temp = temp[temp["tpls"].notna()]
-    tpls = tpls.join(temp["trip_id"], how="left")
+    tpls = _explode_agg("tpls", "trip_id", tpls, trips)
 
     # assign trip_id to sp, for non-activity sp
-    temp = trips.explode("sp")
-    temp.index = temp["sp"]
-    temp = temp[temp["sp"].notna()]
-    sp = sp.join(temp["trip_id"], how="left")
+    trips = _explode_agg("sp", "trip_id", sp, trips)
 
     # fill missing points and convert to MultiPoint
     # for all trips with missing 'origin_staypoint_id' we now assign the startpoint of the first tripleg of the trip.
