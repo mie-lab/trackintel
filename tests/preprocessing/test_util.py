@@ -41,6 +41,7 @@ class TestCalc_temp_overlap:
 
 class TestExplodeAgg:
     """Test util method _explode_agg"""
+
     def test_empty_agg(self):
         """Test function with empty agg DataFrame"""
         orig = [
