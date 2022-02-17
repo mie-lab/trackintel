@@ -414,8 +414,16 @@ def _generate_staypoints_sliding_user(
         dist_func = haversine_dist
     else:
         raise AttributeError("distance_metric unknown. We only support ['haversine']. " f"You passed {distance_metric}")
+    
+    # transform times to pandas Timedelta to simplify comparisons
+    gap_threshold = pd.Timedelta(gap_threshold, unit="minutes")
 
-    df = df.sort_index(kind="mergesort").sort_values(by=["tracked_at"], kind="mergesort")
+    df = df.sort_index(kind="stable").sort_values(by=["tracked_at"], kind="stable")
+    # precalculate all gap times
+    gap_times = df["tracked_at"] - df["tracked_at"].shift(1)
+    gap_times.iloc[0] = pd.Timedelta(0)  # get rid of NaT in first entry
+    gap_times = gap_times > gap_threshold
+
     # pfs id should be in index, create separate idx for storing the matching
     pfs = df.to_dict("records")
     idx = df.index.to_list()
@@ -424,13 +432,11 @@ def _generate_staypoints_sliding_user(
     start = 0
 
     # as start begin from 0, curr begin from 1
-    for i in range(1, len(pfs)):
-        curr = i
+    for curr in range(1, len(pfs)):
 
         # the duration of gap in the last two pfs
-        gap_t = (pfs[curr]["tracked_at"] - pfs[curr - 1]["tracked_at"]).total_seconds()
         # the gap of two consecutive positionfixes should not be too long
-        if gap_t > gap_threshold * 60:
+        if gap_times.iloc[curr]:
             start = curr
             continue
 
@@ -442,7 +448,7 @@ def _generate_staypoints_sliding_user(
 
             # we want the staypoint to have long duration,
             # but the gap of two consecutive positionfixes should not be too long
-            if (delta_t >= (time_threshold * 60)) and (gap_t < gap_threshold * 60):
+            if (delta_t >= (time_threshold * 60)):
                 new_sp = __create_new_staypoints(start, curr, pfs, idx, elevation_flag, geo_col)
                 # add staypoint
                 ret_sp.append(new_sp)
