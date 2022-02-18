@@ -420,19 +420,14 @@ def _generate_staypoints_sliding_user(
 
     df = df.sort_index(kind="stable").sort_values(by=["tracked_at"], kind="stable")
     # precalculate all gap times
-    gap_times = df["tracked_at"] - df["tracked_at"].shift(1)
-    gap_times.iloc[0] = pd.Timedelta(0)  # get rid of NaT in first entry
-    gap_times = gap_times > gap_threshold
+    gap_times = (df["tracked_at"] - df["tracked_at"].shift(1)) > gap_threshold
 
     # pfs id should be in index, create separate idx for storing the matching
-    pfs = df.to_dict("records")
-    idx = df.index.to_list()
-
     ret_sp = []
     start = 0
 
     # as start begin from 0, curr begin from 1
-    for curr in range(1, len(pfs)):
+    for curr in range(1, len(df)):
 
         # the duration of gap in the last two pfs
         # the gap of two consecutive positionfixes should not be too long
@@ -440,16 +435,16 @@ def _generate_staypoints_sliding_user(
             start = curr
             continue
 
-        delta_dist = dist_func(pfs[start][geo_col].x, pfs[start][geo_col].y, pfs[curr][geo_col].x, pfs[curr][geo_col].y)
+        delta_dist = dist_func(df[geo_col].iloc[start].x, df[geo_col].iloc[start].y, df[geo_col].iloc[curr].x, df[geo_col].iloc[curr].y)
 
         if delta_dist >= dist_threshold:
             # the total duration of the staypoints
-            delta_t = (pfs[curr]["tracked_at"] - pfs[start]["tracked_at"]).total_seconds()
+            delta_t = (df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]).total_seconds()
 
             # we want the staypoint to have long duration,
             # but the gap of two consecutive positionfixes should not be too long
             if (delta_t >= (time_threshold * 60)):
-                new_sp = __create_new_staypoints(start, curr, pfs, idx, elevation_flag, geo_col)
+                new_sp = __create_new_staypoints(start, curr, df, elevation_flag, geo_col)
                 # add staypoint
                 ret_sp.append(new_sp)
 
@@ -458,11 +453,11 @@ def _generate_staypoints_sliding_user(
             start = curr
 
         # if we arrive at the last positionfix, and want to include the last staypoint
-        if (curr == len(pfs) - 1) and include_last:
+        if (curr == len(df) - 1) and include_last:
             # additional control: we want to create staypoints with duration larger than time_threshold
-            delta_t = (pfs[curr]["tracked_at"] - pfs[start]["tracked_at"]).total_seconds()
+            delta_t = (df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]).total_seconds()
             if delta_t >= (time_threshold * 60):
-                new_sp = __create_new_staypoints(start, curr, pfs, idx, elevation_flag, geo_col, last_flag=True)
+                new_sp = __create_new_staypoints(start, curr, df, elevation_flag, geo_col, last_flag=True)
 
                 # add staypoint
                 ret_sp.append(new_sp)
@@ -472,27 +467,27 @@ def _generate_staypoints_sliding_user(
     return ret_sp
 
 
-def __create_new_staypoints(start, end, pfs, idx, elevation_flag, geo_col, last_flag=False):
+def __create_new_staypoints(start, end, pfs, elevation_flag, geo_col, last_flag=False):
     """Create a staypoint with relevant infomation from start to end pfs."""
     new_sp = {}
 
     # Here we consider pfs[end] time for stp 'finished_at', but only include
     # pfs[end - 1] for stp geometry and pfs linkage.
-    new_sp["started_at"] = pfs[start]["tracked_at"]
-    new_sp["finished_at"] = pfs[end]["tracked_at"]
+    new_sp["started_at"] = pfs["tracked_at"].iloc[start]
+    new_sp["finished_at"] = pfs["tracked_at"].iloc[end]
 
     # if end is the last pfs, we want to include the info from it as well
     if last_flag:
         end = len(pfs)
 
     new_sp[geo_col] = Point(
-        np.median([pfs[k][geo_col].x for k in range(start, end)]),
-        np.median([pfs[k][geo_col].y for k in range(start, end)]),
+        pfs[geo_col].iloc[start:end].x.median(),
+        pfs[geo_col].iloc[start:end].y.median()
     )
     if elevation_flag:
-        new_sp["elevation"] = np.median([pfs[k]["elevation"] for k in range(start, end)])
+        new_sp["elevation"] = pfs["elevation"].iloc[start:end].median()
     # store matching, index should be the id of pfs
-    new_sp["pfs_id"] = [idx[k] for k in range(start, end)]
+    new_sp["pfs_id"] = pfs.index[start:end].to_list()
 
     return new_sp
 
