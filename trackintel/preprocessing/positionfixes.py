@@ -183,10 +183,7 @@ def generate_staypoints(
 
 
 def generate_triplegs(
-    positionfixes,
-    staypoints=None,
-    method="between_staypoints",
-    gap_threshold=15,
+    positionfixes, staypoints=None, method="between_staypoints", gap_threshold=15,
 ):
     """Generate triplegs from positionfixes.
 
@@ -414,7 +411,7 @@ def _generate_staypoints_sliding_user(
         dist_func = haversine_dist
     else:
         raise AttributeError("distance_metric unknown. We only support ['haversine']. " f"You passed {distance_metric}")
-    
+
     df = df.sort_index(kind="stable").sort_values(by=["tracked_at"], kind="stable")
     # transform times to pandas Timedelta to simplify comparisons
     gap_threshold = pd.Timedelta(gap_threshold, unit="minutes")
@@ -444,7 +441,7 @@ def _generate_staypoints_sliding_user(
 
             # we want the staypoint to have long duration,
             # but the gap of two consecutive positionfixes should not be too long
-            if (delta_t >= time_threshold):
+            if delta_t >= time_threshold:
                 # add new staypoint
                 ret_sp.append(__create_new_staypoints(start, curr, df, elevation_flag, geo_col))
             # distance large enough but time is too short -> not a staypoint
@@ -457,7 +454,6 @@ def _generate_staypoints_sliding_user(
             delta_t = (df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]).total_seconds()
             if delta_t >= time_threshold:
                 new_sp = __create_new_staypoints(start, curr, df, elevation_flag, geo_col, last_flag=True)
-                # add staypoint
                 ret_sp.append(new_sp)
 
     ret_sp = pd.DataFrame(ret_sp)
@@ -478,13 +474,9 @@ def __create_new_staypoints(start, end, pfs, elevation_flag, geo_col, last_flag=
     if last_flag:
         end = len(pfs)
 
-    new_sp[geo_col] = Point(
-        pfs[geo_col].iloc[start:end].x.median(),
-        pfs[geo_col].iloc[start:end].y.median()
-    )
+    new_sp[geo_col] = Point(pfs[geo_col].iloc[start:end].x.median(), pfs[geo_col].iloc[start:end].y.median())
     if elevation_flag:
         new_sp["elevation"] = pfs["elevation"].iloc[start:end].median()
-    # store matching, index should be the id of pfs
     new_sp["pfs_id"] = pfs.index[start:end].to_list()
 
     return new_sp
