@@ -41,8 +41,7 @@ jobs:
     - name: Set up Python environment
       uses: conda-incubator/setup-miniconda@v2
       with:
-          environment-file: .github/envs/conda-forge-env.yaml
-          python-version: ${{ matrix.python-version }}
+          environment-file: ${{ matrix.env }}
           miniforge-version: latest
           miniforge-variant: Mambaforge
           use-mamba: true
