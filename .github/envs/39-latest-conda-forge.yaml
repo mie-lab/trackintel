@@ -1,0 +1,29 @@
+name: test
+channels:
+  - conda-forge
+dependencies:
+- python=3.9
+
+# required
+- matplotlib
+- numpy
+- pandas
+- scikit-learn
+- networkx 
+- pint
+- pip 
+- geoalchemy2 
+- osmnx 
+- psycopg2
+- tqdm
+- similaritymeasures
+- pygeos
+- jupyter
+- geopandas
+
+# tests
+- pytest
+- pytest-cov
+- pytest-xdist
+
+  

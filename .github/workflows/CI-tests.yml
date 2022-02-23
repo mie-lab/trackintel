@@ -11,15 +11,29 @@ on:
 
 jobs:
   ubuntu-latest:
-    name: ${{ matrix.os }}, ${{ matrix.python-version }}
+    name: ${{ matrix.os }}, ${{ matrix.env }}
     runs-on: ${{ matrix.os }}   
     defaults:
       run:
         shell: bash -l {0}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.8", "3.9"]
+        os: [ubuntu-latest]
+        env: 
+          - .github/envs/37-latest-conda-forge.yaml
+          - .github/envs/38-latest-conda-forge.yaml
+          - .github/envs/39-latest-conda-forge.yaml
+          - .github/envs/37-latest-defaults.yaml
+        include:
+          - env: .github/envs/37-latest-conda-forge.yaml
+            os: macos-latest
+          - env: .github/envs/38-latest-conda-forge.yaml
+            os: macos-latest
+          - env: .github/envs/37-latest-conda-forge.yaml
+            os: windows-latest
+          - env: .github/envs/38-latest-conda-forge.yaml
+            os: windows-latest
       
     steps:
     - uses: actions/checkout@v2
@@ -45,7 +59,7 @@ jobs:
 
   
     - name: Test with PostGIS
-      if: contains(matrix.python-version, '3.8') && contains(matrix.os, 'ubuntu')
+      if: contains(matrix.env, '38-latest-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
       env:
         PGUSER: postgres
         PGPASSWORD: postgres
@@ -56,5 +70,5 @@ jobs:
         pytest -v -r s --color=yes --cov=trackintel --cov-append --cov-report term-missing --cov-report xml tests/io/test_postgis.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
     - name: Codecov report
-      if: contains(matrix.python-version, '3.8') && contains(matrix.os, 'ubuntu')
+      if: contains(matrix.env, '38-latest-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
       uses: codecov/codecov-action@v1
