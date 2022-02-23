@@ -19,21 +19,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         env: 
-          - .github/envs/37-latest-conda-forge.yaml
-          - .github/envs/38-latest-conda-forge.yaml
           - .github/envs/39-latest-conda-forge.yaml
-          - .github/envs/37-latest-defaults.yaml
-        include:
-          - env: .github/envs/37-latest-conda-forge.yaml
-            os: macos-latest
-          - env: .github/envs/38-latest-conda-forge.yaml
-            os: macos-latest
-          - env: .github/envs/37-latest-conda-forge.yaml
-            os: windows-latest
-          - env: .github/envs/38-latest-conda-forge.yaml
-            os: windows-latest
+          - .github/envs/39-latest-defaults.yaml
       
     steps:
     - uses: actions/checkout@v2
