@@ -9,7 +9,7 @@ from shapely import wkt
 from shapely.geometry import Point
 
 
-def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs=None, **kwargs):
+def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), geom_col="geom", crs=None, **kwargs):
     """
     Read positionfixes from csv file.
 
@@ -34,6 +34,9 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs
     index_col : str, optional
         column name to be used as index. If None the default index is assumed
         as unique identifier.
+
+    geom_col : str, default "geom"
+        Name of the column containing the geometry as WKT.
 
     crs : pyproj.crs or str, optional
         Set coordinate reference system. The value can be anything accepted
@@ -94,7 +97,7 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), crs
             df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
 
     df = df.drop(["longitude", "latitude"], axis=1)
-    pfs = gpd.GeoDataFrame(df, geometry="geom")
+    pfs = gpd.GeoDataFrame(df, geometry=geom_col)
     if crs:
         pfs.set_crs(crs, inplace=True)
 
@@ -217,7 +220,7 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), geom_col
         if not pd.api.types.is_datetime64tz_dtype(df[col]):
             df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
 
-    tpls = gpd.GeoDataFrame(df, geometry="geom")
+    tpls = gpd.GeoDataFrame(df, geometry=geom_col)
     if crs:
         tpls.set_crs(crs, inplace=True)
 
@@ -334,7 +337,7 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), geom_c
         if not pd.api.types.is_datetime64tz_dtype(df[col]):
             df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
 
-    sp = gpd.GeoDataFrame(df, geometry="geom")
+    sp = gpd.GeoDataFrame(df, geometry=geom_col)
     if crs:
         sp.set_crs(crs, inplace=True)
 
