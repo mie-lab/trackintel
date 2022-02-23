@@ -22,7 +22,6 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         env: 
           - .github/envs/39-latest-conda-forge.yaml
-        include:
 
       
     steps:
