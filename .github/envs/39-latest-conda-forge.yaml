@@ -17,9 +17,9 @@ dependencies:
 - psycopg2
 - tqdm
 - similaritymeasures
-- pygeos
 - jupyter
 - geopandas
+- shapely
 
 # tests
 - pytest
