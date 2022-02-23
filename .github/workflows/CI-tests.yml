@@ -22,7 +22,8 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         env: 
           - .github/envs/39-latest-conda-forge.yaml
-          - .github/envs/39-latest-defaults.yaml
+        include:
+
       
     steps:
     - uses: actions/checkout@v2
