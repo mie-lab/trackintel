@@ -40,10 +40,10 @@ def haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000):
     https://en.wikipedia.org/wiki/Haversine_formula
     https://stackoverflow.com/questions/19413259/efficient-way-to-calculate-distance-matrix-given-latitude-and-longitude-data-in
     """
-    lon_1 = np.asarray(lon_1).ravel() * np.pi / 180
-    lat_1 = np.asarray(lat_1).ravel() * np.pi / 180
-    lon_2 = np.asarray(lon_2).ravel() * np.pi / 180
-    lat_2 = np.asarray(lat_2).ravel() * np.pi / 180
+    lon_1 = np.deg2rad(lon_1).ravel()
+    lat_1 = np.deg2rad(lat_1).ravel()
+    lon_2 = np.deg2rad(lon_2).ravel()
+    lat_2 = np.deg2rad(lat_2).ravel()
 
     cos_lat1 = np.cos(lat_1)
     cos_lat2 = np.cos(lat_2)
