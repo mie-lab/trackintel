@@ -1,12 +1,13 @@
 name: test
 channels:
   - conda-forge
-  - defaults
 dependencies:
+- python=3.9
+
+# required
 - matplotlib
 - numpy
-- pandas<=1.2.5
-- geopandas
+- pandas
 - scikit-learn
 - networkx 
 - pint
@@ -14,10 +15,15 @@ dependencies:
 - geoalchemy2 
 - osmnx 
 - psycopg2
+- tqdm
+- similaritymeasures
+- jupyter
+- geopandas
+- shapely
+
+# tests
 - pytest
 - pytest-cov
 - pytest-xdist
-- tqdm
-- similaritymeasures
-- pygeos
-- jupyter
+
+  
