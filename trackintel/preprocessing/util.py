@@ -108,3 +108,29 @@ def applyParallel(dfGrouped, func, n_jobs, print_progress, **kwargs):
         delayed(func)(group, **kwargs) for _, group in tqdm(dfGrouped, disable=not print_progress)
     )
     return pd.concat(df_ls)
+
+
+def _explode_agg(column, agg, orig_df, agg_df):
+    """
+    Assign new aggrated information back to the original dataframe.
+
+    Parameters
+    ----------
+    column : IndexLabel
+        Column(s) to explode. Should be index column of orig_df.
+    agg : IndexLabel
+        Aggregate column to join back to original df.
+    orig_df : pd.DataFrame
+        Original Dataframe without the aggregate column.
+    agg_df : pd.DataFrame
+        Dataframe with the aggregate column.
+
+    Returns
+    -------
+    pd.DataFrame
+        Original Dataframe with additional colum from aggregated DataFrame.
+    """
+    temp = agg_df.explode(column)
+    temp.index = temp[column]
+    temp = temp[temp[column].notna()]
+    return orig_df.join(temp[agg], how="left")
