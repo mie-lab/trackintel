@@ -1,11 +1,13 @@
 name: test
 channels:
-  - conda-forge
+  - defaults
 dependencies:
+- python=3.7
+
+# required
 - matplotlib
 - numpy
 - pandas
-- geopandas
 - scikit-learn
 - networkx 
 - pint
@@ -17,6 +19,7 @@ dependencies:
 - similaritymeasures
 - pygeos
 - jupyter
+- geopandas
 
 # tests
 - pytest
