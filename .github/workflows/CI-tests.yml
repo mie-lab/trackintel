@@ -47,7 +47,7 @@ jobs:
 
   
     - name: Test with PostGIS
-      if: contains(matrix.env, '38-latest-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
+      if: contains(matrix.env, '39-latest-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
       env:
         PGUSER: postgres
         PGPASSWORD: postgres
@@ -58,5 +58,5 @@ jobs:
         pytest -v -r s --color=yes --cov=trackintel --cov-append --cov-report term-missing --cov-report xml tests/io/test_postgis.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
     - name: Codecov report
-      if: contains(matrix.env, '38-latest-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
+      if: contains(matrix.env, '39-latest-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
       uses: codecov/codecov-action@v1
