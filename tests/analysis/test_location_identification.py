@@ -418,22 +418,22 @@ class TestOsna_Method:
         example_osna.loc[example_osna["location_id"] == 1, "purpose"] = "work"
         assert_geodataframe_equal(example_osna, result)
 
-    # def test_multiple_users_with_only_one_location(self):
-    #     """Test that function can handle multiple users with only one location."""
-    #     t_leis = pd.Timestamp("2021-07-14 01:00:00", tz="utc")
-    #     t_work = pd.Timestamp("2021-07-14 18:00:00", tz="utc")
-    #     h = pd.Timedelta("1h")
-    #     list_dict = [
-    #         {"user_id": 0, "location_id": 0, "started_at": t_leis, "finished_at": t_leis + h},
-    #         {"user_id": 0, "location_id": 1, "started_at": t_work, "finished_at": t_work + h},
-    #         {"user_id": 1, "location_id": 0, "started_at": t_leis, "finished_at": t_leis + h},
-    #         {"user_id": 2, "location_id": 0, "started_at": t_work, "finished_at": t_work + h},
-    #     ]
-    #     sp = pd.DataFrame(list_dict)
-    #     sp.index.name = "id"
-    #     result = osna_method(sp)
-    #     sp["purpose"] = ["home", "work", "home", "work"]
-    #     assert_frame_equal(sp, result)
+    def test_multiple_users_with_only_one_location(self):
+        """Test that function can handle multiple users with only one location."""
+        t_leis = pd.Timestamp("2021-07-14 01:00:00", tz="utc")
+        t_work = pd.Timestamp("2021-07-14 18:00:00", tz="utc")
+        h = pd.Timedelta("1h")
+        list_dict = [
+            {"user_id": 0, "location_id": 0, "started_at": t_leis, "finished_at": t_leis + h},
+            {"user_id": 0, "location_id": 1, "started_at": t_work, "finished_at": t_work + h},
+            {"user_id": 1, "location_id": 0, "started_at": t_leis, "finished_at": t_leis + h},
+            {"user_id": 2, "location_id": 0, "started_at": t_work, "finished_at": t_work + h},
+        ]
+        sp = pd.DataFrame(list_dict)
+        sp.index.name = "id"
+        result = osna_method(sp)
+        sp["purpose"] = ["home", "work", "home", "work"]
+        assert_frame_equal(sp, result)
 
 
 class Test_osna_label_timeframes:

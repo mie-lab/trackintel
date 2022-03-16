@@ -306,8 +306,12 @@ def osna_method(staypoints):
 
     # create a pivot table -> labels "home" and "work" as columns. ("user_id", "location_id" still in index.)
     sp_pivot = sp_agg.unstack()
+    # this line is here to circumvent a bug in pandas .idxmax should return NA if all values in column are
+    # empty but that doesn't work for pd.NaT -> therefor we cast to float64 
+    sp_pivot /= pd.Timedelta("1ns")
     # get index of maximum for columns "work" and "home"
-    sp_idxmax = sp_pivot.groupby(["user_id"]).idxmax()
+    # looks over locations to find maximum for columns
+    sp_idxmax = sp_pivot.groupby(["user_id"]).idxmax(axis="index")
     # first assign labels
     for col in sp_idxmax.columns:
         sp_pivot.loc[sp_idxmax[col].dropna(), "purpose"] = col
@@ -317,7 +321,7 @@ def osna_method(staypoints):
     if all(col in sp_idxmax.columns for col in ["work", "home"]):
         redo_work = sp_idxmax[sp_idxmax["home"] == sp_idxmax["work"]]
         sp_pivot.loc[redo_work["work"], "purpose"] = "home"
-        sp_pivot.loc[redo_work["work"], "work"] = pd.NaT
+        sp_pivot.loc[redo_work["work"], "work"] = np.nan
         sp_idxmax_work = sp_pivot.groupby(["user_id"])["work"].idxmax()
         sp_pivot.loc[sp_idxmax_work.dropna(), "purpose"] = "work"
 
