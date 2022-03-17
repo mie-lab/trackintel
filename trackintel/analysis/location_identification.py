@@ -307,7 +307,7 @@ def osna_method(staypoints):
     # create a pivot table -> labels "home" and "work" as columns. ("user_id", "location_id" still in index.)
     sp_pivot = sp_agg.unstack()
     # this line is here to circumvent a bug in pandas .idxmax should return NA if all values in column are
-    # empty but that doesn't work for pd.NaT -> therefor we cast to float64 
+    # empty but that doesn't work for pd.NaT -> therefor we cast to float64
     sp_pivot /= pd.Timedelta("1ns")
     # get index of maximum for columns "work" and "home"
     # looks over locations to find maximum for columns
