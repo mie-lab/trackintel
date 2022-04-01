@@ -115,7 +115,7 @@ class TestGenerate_trips:
 
         # Check start and destination points of all rows
         for i, row in trips.iterrows():
-            start_point_trips = row["geom"][0]  # get origin Point in generated trips
+            start_point_trips = row["geom"].geoms[0]  # get origin Point in generated trips
             if not pd.isna(row["origin_staypoint_id"]):
                 # compare to the Point in the staypoints
                 correct_start_point = sp.loc[row["origin_staypoint_id"], "geom"]
@@ -124,11 +124,11 @@ class TestGenerate_trips:
                 # get all triplegs on this trip
                 tpls_on_trip = tpls[tpls["trip_id"] == row.name]
                 # correct point is the first point on the tripleg
-                correct_start_point, _ = tpls_on_trip.iloc[0]["geom"].boundary
+                correct_start_point, _ = tpls_on_trip.iloc[0]["geom"].boundary.geoms
 
             assert correct_start_point == start_point_trips
 
-            dest_point_trips = row["geom"][1]  # get destination Point in generated trips
+            dest_point_trips = row["geom"].geoms[1]  # get destination Point in generated trips
             if not pd.isna(row["destination_staypoint_id"]):
                 correct_dest_point = sp.loc[row["destination_staypoint_id"], "geom"]
                 # compare to the Point in the staypoints
@@ -137,7 +137,7 @@ class TestGenerate_trips:
                 # get all triplegs on this trip
                 tpls_on_trip = tpls[tpls["trip_id"] == row.name]
                 # correct point is the first point on the tripleg
-                _, correct_dest_point = tpls_on_trip.iloc[-1]["geom"].boundary
+                _, correct_dest_point = tpls_on_trip.iloc[-1]["geom"].boundary.geoms
 
             assert correct_dest_point == dest_point_trips
 
@@ -364,7 +364,7 @@ class TestGenerate_trips:
         sp, tpls, trips = ti.preprocessing.triplegs.generate_trips(sp, tpls, gap_threshold=15)
 
         # test if start of first trip is (0,0)
-        assert trips.loc[0, "geom"][0] == Point(0, 0)
+        assert trips.loc[0, "geom"].geoms[0] == Point(0, 0)
 
 
 def _create_debug_sp_tpls_data(sp, tpls, gap_threshold):
