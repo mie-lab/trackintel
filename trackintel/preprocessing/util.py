@@ -131,6 +131,6 @@ def _explode_agg(column, agg, orig_df, agg_df):
         Original Dataframe with additional colum from aggregated DataFrame.
     """
     temp = agg_df.explode(column)
-    temp.index = temp[column]
     temp = temp[temp[column].notna()]
+    temp.index = temp[column]
     return orig_df.join(temp[agg], how="left")

@@ -71,3 +71,15 @@ class TestExplodeAgg:
         returned_df = _explode_agg("id", "c", orig_df, agg_df)
         solution_df = pd.DataFrame(orig)
         assert_frame_equal(returned_df, solution_df)
+
+    def test_index_dtype_with_None(self):
+        """Test if dtype of index isn't changed with None values."""
+        orig = [
+            {"a": 1, "c": 0},
+        ]
+        agg = [{"id": [0, 1], "c": 0}, {"id": [], "c": 1}]
+        orig_df = pd.DataFrame(orig, columns=["a"])
+        agg_df = pd.DataFrame(agg)
+        returned_df = _explode_agg("id", "c", orig_df, agg_df)
+        solution_df = pd.DataFrame(orig)
+        assert_frame_equal(returned_df, solution_df)
