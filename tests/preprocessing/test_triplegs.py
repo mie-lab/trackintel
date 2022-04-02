@@ -372,9 +372,9 @@ def _create_debug_sp_tpls_data(sp, tpls, gap_threshold):
     # create table with relevant information from triplegs and staypoints.
     tpls["type"] = "tripleg"
     sp["type"] = "staypoint"
-    sp_tpls = sp[
-        ["started_at", "finished_at", "user_id", "type", "is_activity", "trip_id", "prev_trip_id", "next_trip_id"]
-    ].append(tpls[["started_at", "finished_at", "user_id", "type", "trip_id"]])
+    cols_sp = ["started_at", "finished_at", "user_id", "type", "is_activity", "trip_id", "prev_trip_id", "next_trip_id"]
+    cols_tpls = ["started_at", "finished_at", "user_id", "type", "trip_id"]
+    sp_tpls = pd.concat((sp[cols_sp], tpls[cols_tpls]))
 
     # transform nan to bool
     sp_tpls["is_activity"] = sp_tpls["is_activity"] == True
