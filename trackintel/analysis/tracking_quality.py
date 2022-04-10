@@ -262,7 +262,7 @@ def _split_overlaps(source, granularity="day", max_iter=60):
         new_df.loc[change_flag, "started_at"] = df.loc[change_flag, "finished_at"]
         new_df.loc[change_flag, "finished_at"] = finished_at_temp
 
-        df = df.append(new_df, ignore_index=True, sort=True)
+        df = pd.concat((df, new_df), ignore_index=True, sort=True)
 
         change_flag = __get_split_index(df, granularity=granularity)
         iter_count += 1

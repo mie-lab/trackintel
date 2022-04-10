@@ -308,7 +308,7 @@ class TestOsna_Method:
         ]
         sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
         sp.index.name = "id"
-        sp = example_osna.append(sp)
+        sp = pd.concat((example_osna, sp))
 
         result = osna_method(sp).iloc[:-2]
         example_osna.loc[example_osna["location_id"] == 0, "purpose"] = "home"
@@ -339,7 +339,7 @@ class TestOsna_Method:
 
     def test_two_users(self, example_osna):
         """Test if two users are handled correctly."""
-        two_user = example_osna.append(example_osna)
+        two_user = pd.concat((example_osna, example_osna))
         two_user.iloc[len(example_osna) :, 0] = 1  # second user gets id 1
         result = osna_method(two_user)
         two_user.loc[two_user["location_id"] == 0, "purpose"] = "home"
