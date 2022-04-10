@@ -284,22 +284,22 @@ class TestGenerate_trips:
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
         assert_frame_equal(sp_tpls_loaded, sp_tpls, check_dtype=False)
 
-    # def test_generate_trips_id_management(self, example_triplegs_higher_gap_threshold):
-    #     """Test if we can generate the example trips based on example data."""
-    #     sp_tpls_loaded = pd.read_csv(os.path.join("tests", "data", "geolife_long", "sp_tpls.csv"), index_col="id")
-    #     sp_tpls_loaded["started_at"] = pd.to_datetime(sp_tpls_loaded["started_at"])
-    #     sp_tpls_loaded["started_at_next"] = pd.to_datetime(sp_tpls_loaded["started_at_next"])
-    #     sp_tpls_loaded["finished_at"] = pd.to_datetime(sp_tpls_loaded["finished_at"])
+    def test_generate_trips_id_management(self, example_triplegs_higher_gap_threshold):
+        """Test if we can generate the example trips based on example data."""
+        sp_tpls_loaded = pd.read_csv(os.path.join("tests", "data", "geolife_long", "sp_tpls.csv"), index_col="id")
+        sp_tpls_loaded["started_at"] = pd.to_datetime(sp_tpls_loaded["started_at"])
+        sp_tpls_loaded["started_at_next"] = pd.to_datetime(sp_tpls_loaded["started_at_next"])
+        sp_tpls_loaded["finished_at"] = pd.to_datetime(sp_tpls_loaded["finished_at"])
 
-    #     sp, tpls = example_triplegs_higher_gap_threshold
+        sp, tpls = example_triplegs_higher_gap_threshold
 
-    #     # generate trips and a joint staypoint/triplegs dataframe
-    #     gap_threshold = 15
-    #     sp, tpls, _ = generate_trips(sp, tpls, gap_threshold=gap_threshold)
-    #     sp_tpls = _create_debug_sp_tpls_data(sp, tpls, gap_threshold=gap_threshold)
+        # generate trips and a joint staypoint/triplegs dataframe
+        gap_threshold = 15
+        sp, tpls, _ = generate_trips(sp, tpls, gap_threshold=gap_threshold)
+        sp_tpls = _create_debug_sp_tpls_data(sp, tpls, gap_threshold=gap_threshold)
 
-    #     # test if generated staypoints/triplegs are equal (especially important for trip ids)
-    #     assert_frame_equal(sp_tpls_loaded, sp_tpls, check_dtype=False)
+        # test if generated staypoints/triplegs are equal (especially important for trip ids)
+        assert_frame_equal(sp_tpls_loaded, sp_tpls, check_dtype=False)
 
     def test_only_staypoints_in_trip(self):
         """Test that trips with only staypoints (non-activities) are deleted."""
@@ -372,9 +372,9 @@ def _create_debug_sp_tpls_data(sp, tpls, gap_threshold):
     # create table with relevant information from triplegs and staypoints.
     tpls["type"] = "tripleg"
     sp["type"] = "staypoint"
-    sp_tpls = sp[
-        ["started_at", "finished_at", "user_id", "type", "is_activity", "trip_id", "prev_trip_id", "next_trip_id"]
-    ].append(tpls[["started_at", "finished_at", "user_id", "type", "trip_id"]])
+    cols_sp = ["started_at", "finished_at", "user_id", "type", "is_activity", "trip_id", "prev_trip_id", "next_trip_id"]
+    cols_tpls = ["started_at", "finished_at", "user_id", "type", "trip_id"]
+    sp_tpls = pd.concat((sp[cols_sp], tpls[cols_tpls]))
 
     # transform nan to bool
     sp_tpls["is_activity"] = sp_tpls["is_activity"] == True

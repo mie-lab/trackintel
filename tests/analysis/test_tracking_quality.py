@@ -19,7 +19,7 @@ def testdata_sp_tpls_geolife_long():
 
     tpls["type"] = "tripleg"
     sp["type"] = "staypoint"
-    sp_tpls = sp.append(tpls, ignore_index=True).sort_values(by="started_at")
+    sp_tpls = pd.concat((sp, tpls), ignore_index=True).sort_values(by="started_at")
     return sp_tpls
 
 

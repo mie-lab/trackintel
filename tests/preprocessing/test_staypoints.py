@@ -201,7 +201,7 @@ class TestGenerate_locations:
         )
 
         # create locations as grouped staypoints, another way to create locations
-        other_locs = pd.DataFrame(columns=["user_id", "id", "center"])
+        other_locs = []
         grouped_df = sp.groupby(["user_id", "location_id"])
         for combined_id, group in grouped_df:
             user_id, location_id = combined_id
@@ -214,9 +214,9 @@ class TestGenerate_locations:
 
                 # point geometry of place
                 temp_loc["center"] = Point(group.geometry.x.mean(), group.geometry.y.mean())
-                other_locs = other_locs.append(temp_loc, ignore_index=True)
+                other_locs.append(temp_loc)
 
-        other_locs = gpd.GeoDataFrame(other_locs, geometry="center", crs=sp.crs)
+        other_locs = gpd.GeoDataFrame(other_locs, columns=["user_id", "id", "center"], geometry="center", crs=sp.crs)
         other_locs.set_index("id", inplace=True)
 
         assert all(other_locs["center"] == locs["center"])
@@ -228,12 +228,12 @@ class TestGenerate_locations:
         sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
         # take the first row and duplicate once
         sp = sp.head(1)
-        sp = sp.append(sp, ignore_index=True)
+        sp = pd.concat([sp, sp], ignore_index=True)
         # assign a different user_id to the second row
         sp.iloc[1, 4] = 1
 
         # duplicate for a certain number
-        sp = sp.append([sp] * 5, ignore_index=True)
+        sp = pd.concat([sp] * 6, ignore_index=True)
         _, locs_ds = sp.as_staypoints.generate_locations(
             method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
         )

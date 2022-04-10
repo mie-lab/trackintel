@@ -257,7 +257,9 @@ def _split_overlaps(source, granularity="day", max_iter=60):
 
         # create new entries with remaining timestamp
         new_df.loc[change_flag, "started_at"] = df.loc[change_flag, "finished_at"]
-        df = df.append(new_df, ignore_index=True, sort=True)
+        new_df.loc[change_flag, "finished_at"] = finished_at_temp
+
+        df = pd.concat((df, new_df), ignore_index=True, sort=True)
 
         change_flag = _get_split_index(df, granularity=granularity)
         iter_count += 1
