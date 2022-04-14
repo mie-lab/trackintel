@@ -4,10 +4,9 @@ from inspect import signature
 
 import geopandas as gpd
 import pandas as pd
-import pytz
 from geopandas.geodataframe import GeoDataFrame
 from shapely import wkt
-from shapely.geometry import Point
+from trackintel.io.from_geopandas import read_positionfixes_gpd, _localize_timestamp
 
 
 def _index_warning_default_none(func):
@@ -54,7 +53,7 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, geom_co
         as unique identifier.
 
     geom_col : str, default "geom"
-        Name of the column containing the geometry as WKT.
+        Name of the column containing the geometry.
 
     crs : pyproj.crs or str, optional
         Set coordinate reference system. The value can be anything accepted
@@ -89,32 +88,14 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, geom_co
     4     2008-10-23 02:53:25+00:00        0  POINT (116.31826 39.98465)
     """
     columns = {} if columns is None else columns
-    if index_col is not None:
-        kwargs["index_col"] = index_col
 
-    df = pd.read_csv(*args, **kwargs)
-    df = df.rename(columns=columns)
+    df = pd.read_csv(*args, index_col=index_col, **kwargs)
+    df.rename(columns=columns, inplace=True)
 
-    # construct geom column from lon and lat
-    df["geom"] = list(zip(df["longitude"], df["latitude"]))
-    df["geom"] = df["geom"].apply(Point)
-
-    # transform to datatime
     df["tracked_at"] = pd.to_datetime(df["tracked_at"])
-
-    # set timezone if none is recognized
-    for col in ["tracked_at"]:
-        if not pd.api.types.is_datetime64tz_dtype(df[col]):
-            df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
-
-    df = df.drop(["longitude", "latitude"], axis=1)
-    pfs = gpd.GeoDataFrame(df, geometry=geom_col)
-    if crs:
-        pfs.set_crs(crs, inplace=True)
-
-    # assert validity of positionfixes
-    pfs.as_positionfixes
-    return pfs
+    df[geom_col] = gpd.points_from_xy(df["longitude"], df["latitude"])
+    df.drop(columns=["longitude", "latitude"], inplace=True)
+    return read_positionfixes_gpd(df, geom_col=geom_col, crs=crs, tz=tz)
 
 
 def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
@@ -148,9 +129,9 @@ def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
     >>> ps.as_positionfixes.to_csv("export_pfs.csv")
     """
     gdf = positionfixes.copy()
-    gdf["longitude"] = positionfixes.geometry.apply(lambda p: p.coords[0][0])
-    gdf["latitude"] = positionfixes.geometry.apply(lambda p: p.coords[0][1])
-    df = gdf.drop(gdf.geometry.name, axis=1)
+    gdf["longitude"] = positionfixes.geometry.x
+    gdf["latitude"] = positionfixes.geometry.y
+    df = gdf.drop(columns=[gdf.geometry.name])
 
     df.to_csv(filename, index=True, *args, **kwargs)
 
@@ -674,31 +655,3 @@ def write_tours_csv(tours, filename, *args, **kwargs):
     >>> tours.as_tours.to_csv("export_tours.csv")
     """
     tours.to_csv(filename, index=True, *args, **kwargs)
-
-
-def _localize_timestamp(dt_series, pytz_tzinfo, col_name):
-    """
-    Add timezone info to timestamp.
-
-    Parameters
-    ----------
-    dt_series : pandas.Series
-        a pandas datetime series
-
-    pytz_tzinfo : str
-        pytz compatible timezone string. If none UTC will be assumed
-
-    col_name : str
-        Column name for informative warning message
-
-    Returns
-    -------
-    pd.Series
-        a timezone aware pandas datetime series
-    """
-    if pytz_tzinfo is None:
-        warnings.warn("Assuming UTC timezone for column {}".format(col_name))
-        pytz_tzinfo = "utc"
-
-    timezone = pytz.timezone(pytz_tzinfo)
-    return dt_series.apply(pd.Timestamp, tz=timezone)

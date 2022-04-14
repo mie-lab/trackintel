@@ -1,7 +1,7 @@
+import warnings
 import pandas as pd
 import geopandas as gpd
-
-from trackintel.io.file import _localize_timestamp
+import pytz
 
 
 def read_positionfixes_gpd(
@@ -425,3 +425,31 @@ def _trackintel_model(gdf, set_names=None, geom_col=None, crs=None, tz_cols=None
         gdf = gdf.set_crs(crs)
 
     return gdf
+
+
+def _localize_timestamp(dt_series, pytz_tzinfo, col_name):
+    """
+    Add timezone info to timestamp.
+
+    Parameters
+    ----------
+    dt_series : pandas.Series
+        a pandas datetime series
+
+    pytz_tzinfo : str
+        pytz compatible timezone string. If none UTC will be assumed
+
+    col_name : str
+        Column name for informative warning message
+
+    Returns
+    -------
+    pd.Series
+        a timezone aware pandas datetime series
+    """
+    if pytz_tzinfo is None:
+        warnings.warn("Assuming UTC timezone for column {}".format(col_name))
+        pytz_tzinfo = "utc"
+
+    timezone = pytz.timezone(pytz_tzinfo)
+    return dt_series.apply(pd.Timestamp, tz=timezone)
