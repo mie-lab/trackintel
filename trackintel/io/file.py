@@ -1,7 +1,8 @@
 import warnings
+from functools import wraps
+from inspect import signature
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
 import pytz
 from geopandas.geodataframe import GeoDataFrame
@@ -9,7 +10,24 @@ from shapely import wkt
 from shapely.geometry import Point
 
 
-def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), geom_col="geom", crs=None, **kwargs):
+def _index_warning_default_none(func):
+    """Decorator function that warns if index_col None is not set explicit."""
+
+    @wraps(func)  # copy all metadata
+    def wrapper(*args, **kwargs):
+        bound_values = signature(func).bind(*args, **kwargs)  # binds only available args and kwargs
+        if "index_col" not in bound_values.arguments:
+            warnings.warn(
+                "Assuming default index as unique identifier. "
+                "Pass 'index_col=None' as explicit argument to avoid a warning when reading csv files."
+            )
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@_index_warning_default_none
+def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, geom_col="geom", crs=None, **kwargs):
     """
     Read positionfixes from csv file.
 
@@ -71,14 +89,7 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), geo
     4     2008-10-23 02:53:25+00:00        0  POINT (116.31826 39.98465)
     """
     columns = {} if columns is None else columns
-
-    # Warning if no 'index_col' parameter is provided
-    if type(index_col) == object:
-        warnings.warn(
-            "Assuming default index as unique identifier. Pass 'index_col=None' as explicit"
-            + "argument to avoid a warning when reading csv files."
-        )
-    elif index_col is not None:
+    if index_col is not None:
         kwargs["index_col"] = index_col
 
     df = pd.read_csv(*args, **kwargs)
@@ -144,7 +155,8 @@ def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
     df.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), geom_col="geom", crs=None, **kwargs):
+@_index_warning_default_none
+def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, geom_col="geom", crs=None, **kwargs):
     """
     Read triplegs from csv file.
 
@@ -195,14 +207,7 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), geom_col
     1         1 2015-11-27 12:00:00+00:00 2015-11-27 14:00:00+00:00  LINESTRING (8.56340 47.95600, 8.64560 47.23345...
     """
     columns = {} if columns is None else columns
-
-    # Warning if no 'index_col' parameter is provided
-    if type(index_col) == object:
-        warnings.warn(
-            "Assuming default index as unique identifier. Pass 'index_col=None' as explicit"
-            + "argument to avoid a warning when reading csv files."
-        )
-    elif index_col is not None:
+    if index_col is not None:
         kwargs["index_col"] = index_col
 
     df = pd.read_csv(*args, **kwargs)
@@ -260,7 +265,8 @@ def write_triplegs_csv(triplegs, filename, *args, **kwargs):
     df.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), geom_col="geom", crs=None, **kwargs):
+@_index_warning_default_none
+def read_staypoints_csv(*args, columns=None, tz=None, index_col=None, geom_col="geom", crs=None, **kwargs):
     """
     Read staypoints from csv file.
 
@@ -312,14 +318,7 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), geom_c
     1         1 2015-11-27 12:00:00+00:00 2015-11-27 14:00:00+00:00  POINT (8.54340 47.95600)
     """
     columns = {} if columns is None else columns
-
-    # Warning if no 'index_col' parameter is provided
-    if type(index_col) == object:
-        warnings.warn(
-            "Assuming default index as unique identifier. Pass 'index_col=None' as explicit"
-            + "argument to avoid a warning when reading csv files."
-        )
-    elif index_col is not None:
+    if index_col is not None:
         kwargs["index_col"] = index_col
 
     df = pd.read_csv(*args, **kwargs)
@@ -377,7 +376,8 @@ def write_staypoints_csv(staypoints, filename, *args, **kwargs):
     df.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_locations_csv(*args, columns=None, index_col=object(), geom_col="geom", crs=None, **kwargs):
+@_index_warning_default_none
+def read_locations_csv(*args, columns=None, index_col=None, crs=None, **kwargs):
     """
     Read locations from csv file.
 
@@ -422,14 +422,7 @@ def read_locations_csv(*args, columns=None, index_col=object(), geom_col="geom",
     1         1  POINT (8.56340 47.95600)  POLYGON ((8.5634 47.956, 8.6456 47.23345, 8.45...
     """
     columns = {} if columns is None else columns
-
-    # Warning if no 'index_col' parameter is provided
-    if type(index_col) == object:
-        warnings.warn(
-            "Assuming default index as unique identifier. Pass 'index_col=None' as explicit"
-            + "argument to avoid a warning when reading csv files."
-        )
-    elif index_col is not None:
+    if index_col is not None:
         kwargs["index_col"] = index_col
 
     df = pd.read_csv(*args, **kwargs)
@@ -481,7 +474,8 @@ def write_locations_csv(locations, filename, *args, **kwargs):
     df.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_trips_csv(*args, columns=None, tz=None, index_col=object(), geom_col=None, crs=None, **kwargs):
+@_index_warning_default_none
+def read_trips_csv(*args, columns=None, tz=None, index_col=None, geom_col=None, crs=None, **kwargs):
     """
     Read trips from csv file.
 
@@ -542,13 +536,7 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), geom_col=No
     1   MULTIPOINT (116.29873 39.98402, 116.32480 40.009269)
     """
     columns = {} if columns is None else columns
-
-    if type(index_col) == object:
-        warnings.warn(
-            "Assuming default index as unique identifier. Pass 'index_col=None' as explicit"
-            + "argument to avoid a warning when reading csv files."
-        )
-    elif index_col is not None:
+    if index_col is not None:
         kwargs["index_col"] = index_col
 
     trips = pd.read_csv(*args, **kwargs)
@@ -605,7 +593,8 @@ def write_trips_csv(trips, filename, *args, **kwargs):
     df.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_tours_csv(*args, columns=None, index_col=object(), tz=None, **kwargs):
+@_index_warning_default_none
+def read_tours_csv(*args, columns=None, index_col=None, tz=None, **kwargs):
     """
     Read tours from csv file.
 
@@ -620,6 +609,9 @@ def read_tours_csv(*args, columns=None, index_col=object(), tz=None, **kwargs):
 
     columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
+
+    index_col : str, optional
+        column name to be used as index. If None the default index is assumed as unique identifier.
 
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
@@ -637,13 +629,7 @@ def read_tours_csv(*args, columns=None, index_col=object(), tz=None, **kwargs):
     >>> trackintel.read_tours_csv('data.csv', columns={'uuid':'user_id'})
     """
     columns = {} if columns is None else columns
-
-    if type(index_col) == object:
-        warnings.warn(
-            "Assuming default index as unique identifier. Pass 'index_col=None' as explicit"
-            + "argument to avoid a warning when reading csv files."
-        )
-    elif index_col is not None:
+    if index_col is not None:
         kwargs["index_col"] = index_col
 
     tours = pd.read_csv(*args, **kwargs)
