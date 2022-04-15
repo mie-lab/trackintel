@@ -6,7 +6,7 @@ import geopandas as gpd
 import pandas as pd
 from geopandas.geodataframe import GeoDataFrame
 from shapely import wkt
-from trackintel.io.from_geopandas import read_locations_gpd, read_positionfixes_gpd, _localize_timestamp, read_staypoints_gpd, read_triplegs_gpd, read_trips_gpd
+from trackintel.io.from_geopandas import read_locations_gpd, read_positionfixes_gpd, _localize_timestamp, read_staypoints_gpd, read_tours_gpd, read_triplegs_gpd, read_trips_gpd
 
 
 def _index_warning_default_none(func):
@@ -545,24 +545,13 @@ def read_tours_csv(*args, columns=None, index_col=None, tz=None, **kwargs):
     >>> trackintel.read_tours_csv('data.csv', columns={'uuid':'user_id'})
     """
     columns = {} if columns is None else columns
-    if index_col is not None:
-        kwargs["index_col"] = index_col
+    tours = pd.read_csv(*args, index_col=index_col, **kwargs)
+    tours.rename(columns=columns, inplace=True)
 
-    tours = pd.read_csv(*args, **kwargs)
-    tours = tours.rename(columns=columns)
-
-    # transform to datatime
     tours["started_at"] = pd.to_datetime(tours["started_at"])
     tours["finished_at"] = pd.to_datetime(tours["finished_at"])
 
-    # check and/or set timezone
-    for col in ["started_at", "finished_at"]:
-        if not pd.api.types.is_datetime64tz_dtype(tours[col]):
-            tours[col] = _localize_timestamp(dt_series=tours[col], pytz_tzinfo=tz, col_name=col)
-
-    # assert validity of tours
-    tours.as_tours
-    return tours
+    return read_tours_gpd(tours, tz=tz)
 
 
 def write_tours_csv(tours, filename, *args, **kwargs):
