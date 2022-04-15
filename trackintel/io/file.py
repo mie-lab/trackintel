@@ -6,7 +6,7 @@ import geopandas as gpd
 import pandas as pd
 from geopandas.geodataframe import GeoDataFrame
 from shapely import wkt
-from trackintel.io.from_geopandas import read_positionfixes_gpd, _localize_timestamp, read_staypoints_gpd, read_triplegs_gpd
+from trackintel.io.from_geopandas import read_locations_gpd, read_positionfixes_gpd, _localize_timestamp, read_staypoints_gpd, read_triplegs_gpd
 
 
 def _index_warning_default_none(func):
@@ -365,24 +365,13 @@ def read_locations_csv(*args, columns=None, index_col=None, crs=None, **kwargs):
     1         1  POINT (8.56340 47.95600)  POLYGON ((8.5634 47.956, 8.6456 47.23345, 8.45...
     """
     columns = {} if columns is None else columns
-    if index_col is not None:
-        kwargs["index_col"] = index_col
+    df = pd.read_csv(*args, index_col=index_col, **kwargs)
+    df.rename(columns=columns, inplace=True)
 
-    df = pd.read_csv(*args, **kwargs)
-    df = df.rename(columns=columns)
-
-    # construct center and extent columns
-    df["center"] = df["center"].apply(wkt.loads)
+    df["center"] = gpd.GeoSeries.from_wkt(df["center"])
     if "extent" in df.columns:
-        df["extent"] = df["extent"].apply(wkt.loads)
-
-    locs = gpd.GeoDataFrame(df, geometry="center")
-    if crs:
-        locs.set_crs(crs, inplace=True)
-
-    # assert validity of locations
-    locs.as_locations
-    return locs
+        df["extent"] = gpd.GeoSeries.from_wkt(df["extent"])
+    return read_locations_gpd(df, crs=crs)
 
 
 def write_locations_csv(locations, filename, *args, **kwargs):
