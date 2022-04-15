@@ -481,6 +481,9 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=None, geom_col=None, 
     trips["started_at"] = pd.to_datetime(trips["started_at"])
     trips["finished_at"] = pd.to_datetime(trips["finished_at"])
 
+    if geom_col is not None:
+        trips[geom_col] = gpd.GeoSeries.from_wkt(trips[geom_col])
+
     return read_trips_gpd(trips, geom_col=geom_col, crs=crs, tz=tz)
 
 
