@@ -6,7 +6,7 @@ import geopandas as gpd
 import pandas as pd
 from geopandas.geodataframe import GeoDataFrame
 from shapely import wkt
-from trackintel.io.from_geopandas import read_locations_gpd, read_positionfixes_gpd, _localize_timestamp, read_staypoints_gpd, read_triplegs_gpd
+from trackintel.io.from_geopandas import read_locations_gpd, read_positionfixes_gpd, _localize_timestamp, read_staypoints_gpd, read_triplegs_gpd, read_trips_gpd
 
 
 def _index_warning_default_none(func):
@@ -468,29 +468,13 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=None, geom_col=None, 
     1   MULTIPOINT (116.29873 39.98402, 116.32480 40.009269)
     """
     columns = {} if columns is None else columns
-    if index_col is not None:
-        kwargs["index_col"] = index_col
+    trips = pd.read_csv(*args, index_col=index_col, **kwargs)
+    trips.rename(columns=columns, inplace=True)
 
-    trips = pd.read_csv(*args, **kwargs)
-    trips = trips.rename(columns=columns)
-
-    # transform to datatime
     trips["started_at"] = pd.to_datetime(trips["started_at"])
     trips["finished_at"] = pd.to_datetime(trips["finished_at"])
 
-    # check and/or set timezone
-    for col in ["started_at", "finished_at"]:
-        if not pd.api.types.is_datetime64tz_dtype(trips[col]):
-            trips[col] = _localize_timestamp(dt_series=trips[col], pytz_tzinfo=tz, col_name=col)
-
-    # convert to geodataframe
-    if geom_col is not None:
-        trips[geom_col] = trips[geom_col].apply(wkt.loads)
-        trips = gpd.GeoDataFrame(trips, geometry=geom_col, crs=crs)
-
-    # assert validity of trips
-    trips.as_trips
-    return trips
+    return read_trips_gpd(trips, geom_col=geom_col, crs=crs, tz=tz)
 
 
 def write_trips_csv(trips, filename, *args, **kwargs):
@@ -521,7 +505,7 @@ def write_trips_csv(trips, filename, *args, **kwargs):
     df = trips.copy()
     if isinstance(df, GeoDataFrame):
         geom_col_name = df.geometry.name
-        df[geom_col_name] = df[geom_col_name].apply(wkt.dumps)
+        df[geom_col_name] = df[geom_col_name].to_wkt()
     df.to_csv(filename, index=True, *args, **kwargs)
 
 
