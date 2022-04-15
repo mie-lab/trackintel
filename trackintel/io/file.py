@@ -6,7 +6,7 @@ import geopandas as gpd
 import pandas as pd
 from geopandas.geodataframe import GeoDataFrame
 from shapely import wkt
-from trackintel.io.from_geopandas import read_positionfixes_gpd, _localize_timestamp
+from trackintel.io.from_geopandas import read_positionfixes_gpd, _localize_timestamp, read_staypoints_gpd, read_triplegs_gpd
 
 
 def _index_warning_default_none(func):
@@ -188,31 +188,12 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, geom_col="ge
     1         1 2015-11-27 12:00:00+00:00 2015-11-27 14:00:00+00:00  LINESTRING (8.56340 47.95600, 8.64560 47.23345...
     """
     columns = {} if columns is None else columns
-    if index_col is not None:
-        kwargs["index_col"] = index_col
-
-    df = pd.read_csv(*args, **kwargs)
-    df = df.rename(columns=columns)
-
-    # construct geom column
-    df[geom_col] = df[geom_col].apply(wkt.loads)
-
-    # transform to datatime
+    df = pd.read_csv(*args, index_col=index_col, **kwargs)
+    df.rename(columns=columns, inplace=True)
     df["started_at"] = pd.to_datetime(df["started_at"])
     df["finished_at"] = pd.to_datetime(df["finished_at"])
-
-    # set timezone if none is recognized
-    for col in ["started_at", "finished_at"]:
-        if not pd.api.types.is_datetime64tz_dtype(df[col]):
-            df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
-
-    tpls = gpd.GeoDataFrame(df, geometry=geom_col)
-    if crs:
-        tpls.set_crs(crs, inplace=True)
-
-    # assert validity of triplegs
-    tpls.as_triplegs
-    return tpls
+    df[geom_col] = gpd.GeoSeries.from_wkt(df[geom_col])
+    return read_triplegs_gpd(df, geom_col=geom_col, crs=crs, tz=tz,  mapper=columns)
 
 
 def write_triplegs_csv(triplegs, filename, *args, **kwargs):
@@ -299,31 +280,12 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=None, geom_col="
     1         1 2015-11-27 12:00:00+00:00 2015-11-27 14:00:00+00:00  POINT (8.54340 47.95600)
     """
     columns = {} if columns is None else columns
-    if index_col is not None:
-        kwargs["index_col"] = index_col
-
-    df = pd.read_csv(*args, **kwargs)
-    df = df.rename(columns=columns)
-
-    # construct geom column
-    df[geom_col] = df[geom_col].apply(wkt.loads)
-
-    # transform to datatime
+    df = pd.read_csv(*args, index_col=index_col, **kwargs)
+    df.rename(columns=columns, inplace=True)
     df["started_at"] = pd.to_datetime(df["started_at"])
     df["finished_at"] = pd.to_datetime(df["finished_at"])
-
-    # set timezone if none is recognized
-    for col in ["started_at", "finished_at"]:
-        if not pd.api.types.is_datetime64tz_dtype(df[col]):
-            df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
-
-    sp = gpd.GeoDataFrame(df, geometry=geom_col)
-    if crs:
-        sp.set_crs(crs, inplace=True)
-
-    # assert validity of staypoints
-    sp.as_staypoints
-    return sp
+    df[geom_col] = gpd.GeoSeries.from_wkt(df[geom_col])
+    return read_staypoints_gpd(df, geom_col=geom_col, crs=crs, tz=tz)
 
 
 def write_staypoints_csv(staypoints, filename, *args, **kwargs):
