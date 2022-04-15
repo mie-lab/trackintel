@@ -6,7 +6,14 @@ import geopandas as gpd
 import pandas as pd
 from geopandas.geodataframe import GeoDataFrame
 from shapely import wkt
-from trackintel.io.from_geopandas import read_locations_gpd, read_positionfixes_gpd, _localize_timestamp, read_staypoints_gpd, read_tours_gpd, read_triplegs_gpd, read_trips_gpd
+from trackintel.io.from_geopandas import (
+    read_locations_gpd,
+    read_positionfixes_gpd,
+    read_staypoints_gpd,
+    read_tours_gpd,
+    read_triplegs_gpd,
+    read_trips_gpd,
+)
 
 
 def _index_warning_default_none(func):
@@ -193,7 +200,7 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, geom_col="ge
     df["started_at"] = pd.to_datetime(df["started_at"])
     df["finished_at"] = pd.to_datetime(df["finished_at"])
     df[geom_col] = gpd.GeoSeries.from_wkt(df[geom_col])
-    return read_triplegs_gpd(df, geom_col=geom_col, crs=crs, tz=tz,  mapper=columns)
+    return read_triplegs_gpd(df, geom_col=geom_col, crs=crs, tz=tz, mapper=columns)
 
 
 def write_triplegs_csv(triplegs, filename, *args, **kwargs):
