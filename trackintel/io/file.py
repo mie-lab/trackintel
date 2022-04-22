@@ -1,15 +1,39 @@
 import warnings
+from functools import wraps
+from inspect import signature
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
-import pytz
 from geopandas.geodataframe import GeoDataFrame
 from shapely import wkt
-from shapely.geometry import Point
+from trackintel.io.from_geopandas import (
+    read_locations_gpd,
+    read_positionfixes_gpd,
+    read_staypoints_gpd,
+    read_tours_gpd,
+    read_triplegs_gpd,
+    read_trips_gpd,
+)
 
 
-def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), geom_col="geom", crs=None, **kwargs):
+def _index_warning_default_none(func):
+    """Decorator function that warns if index_col None is not set explicit."""
+
+    @wraps(func)  # copy all metadata
+    def wrapper(*args, **kwargs):
+        bound_values = signature(func).bind(*args, **kwargs)  # binds only available args and kwargs
+        if "index_col" not in bound_values.arguments:
+            warnings.warn(
+                "Assuming default index as unique identifier. "
+                "Pass 'index_col=None' as explicit argument to avoid a warning when reading csv files."
+            )
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@_index_warning_default_none
+def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, geom_col="geom", crs=None, **kwargs):
     """
     Read positionfixes from csv file.
 
@@ -36,7 +60,7 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), geo
         as unique identifier.
 
     geom_col : str, default "geom"
-        Name of the column containing the geometry as WKT.
+        Name of the column containing the geometry.
 
     crs : pyproj.crs or str, optional
         Set coordinate reference system. The value can be anything accepted
@@ -72,38 +96,13 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=object(), geo
     """
     columns = {} if columns is None else columns
 
-    # Warning if no 'index_col' parameter is provided
-    if type(index_col) == object:
-        warnings.warn(
-            "Assuming default index as unique identifier. Pass 'index_col=None' as explicit"
-            + "argument to avoid a warning when reading csv files."
-        )
-    elif index_col is not None:
-        kwargs["index_col"] = index_col
+    df = pd.read_csv(*args, index_col=index_col, **kwargs)
+    df.rename(columns=columns, inplace=True)
 
-    df = pd.read_csv(*args, **kwargs)
-    df = df.rename(columns=columns)
-
-    # construct geom column from lon and lat
-    df["geom"] = list(zip(df["longitude"], df["latitude"]))
-    df["geom"] = df["geom"].apply(Point)
-
-    # transform to datatime
     df["tracked_at"] = pd.to_datetime(df["tracked_at"])
-
-    # set timezone if none is recognized
-    for col in ["tracked_at"]:
-        if not pd.api.types.is_datetime64tz_dtype(df[col]):
-            df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
-
-    df = df.drop(["longitude", "latitude"], axis=1)
-    pfs = gpd.GeoDataFrame(df, geometry=geom_col)
-    if crs:
-        pfs.set_crs(crs, inplace=True)
-
-    # assert validity of positionfixes
-    pfs.as_positionfixes
-    return pfs
+    df[geom_col] = gpd.points_from_xy(df["longitude"], df["latitude"])
+    df.drop(columns=["longitude", "latitude"], inplace=True)
+    return read_positionfixes_gpd(df, geom_col=geom_col, crs=crs, tz=tz)
 
 
 def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
@@ -137,14 +136,15 @@ def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
     >>> ps.as_positionfixes.to_csv("export_pfs.csv")
     """
     gdf = positionfixes.copy()
-    gdf["longitude"] = positionfixes.geometry.apply(lambda p: p.coords[0][0])
-    gdf["latitude"] = positionfixes.geometry.apply(lambda p: p.coords[0][1])
-    df = gdf.drop(gdf.geometry.name, axis=1)
+    gdf["longitude"] = positionfixes.geometry.x
+    gdf["latitude"] = positionfixes.geometry.y
+    df = gdf.drop(columns=[gdf.geometry.name])
 
     df.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), geom_col="geom", crs=None, **kwargs):
+@_index_warning_default_none
+def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, geom_col="geom", crs=None, **kwargs):
     """
     Read triplegs from csv file.
 
@@ -195,38 +195,12 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=object(), geom_col
     1         1 2015-11-27 12:00:00+00:00 2015-11-27 14:00:00+00:00  LINESTRING (8.56340 47.95600, 8.64560 47.23345...
     """
     columns = {} if columns is None else columns
-
-    # Warning if no 'index_col' parameter is provided
-    if type(index_col) == object:
-        warnings.warn(
-            "Assuming default index as unique identifier. Pass 'index_col=None' as explicit"
-            + "argument to avoid a warning when reading csv files."
-        )
-    elif index_col is not None:
-        kwargs["index_col"] = index_col
-
-    df = pd.read_csv(*args, **kwargs)
-    df = df.rename(columns=columns)
-
-    # construct geom column
-    df[geom_col] = df[geom_col].apply(wkt.loads)
-
-    # transform to datatime
+    df = pd.read_csv(*args, index_col=index_col, **kwargs)
+    df.rename(columns=columns, inplace=True)
     df["started_at"] = pd.to_datetime(df["started_at"])
     df["finished_at"] = pd.to_datetime(df["finished_at"])
-
-    # set timezone if none is recognized
-    for col in ["started_at", "finished_at"]:
-        if not pd.api.types.is_datetime64tz_dtype(df[col]):
-            df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
-
-    tpls = gpd.GeoDataFrame(df, geometry=geom_col)
-    if crs:
-        tpls.set_crs(crs, inplace=True)
-
-    # assert validity of triplegs
-    tpls.as_triplegs
-    return tpls
+    df[geom_col] = gpd.GeoSeries.from_wkt(df[geom_col])
+    return read_triplegs_gpd(df, geom_col=geom_col, crs=crs, tz=tz, mapper=columns)
 
 
 def write_triplegs_csv(triplegs, filename, *args, **kwargs):
@@ -260,7 +234,8 @@ def write_triplegs_csv(triplegs, filename, *args, **kwargs):
     df.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), geom_col="geom", crs=None, **kwargs):
+@_index_warning_default_none
+def read_staypoints_csv(*args, columns=None, tz=None, index_col=None, geom_col="geom", crs=None, **kwargs):
     """
     Read staypoints from csv file.
 
@@ -312,38 +287,12 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=object(), geom_c
     1         1 2015-11-27 12:00:00+00:00 2015-11-27 14:00:00+00:00  POINT (8.54340 47.95600)
     """
     columns = {} if columns is None else columns
-
-    # Warning if no 'index_col' parameter is provided
-    if type(index_col) == object:
-        warnings.warn(
-            "Assuming default index as unique identifier. Pass 'index_col=None' as explicit"
-            + "argument to avoid a warning when reading csv files."
-        )
-    elif index_col is not None:
-        kwargs["index_col"] = index_col
-
-    df = pd.read_csv(*args, **kwargs)
-    df = df.rename(columns=columns)
-
-    # construct geom column
-    df[geom_col] = df[geom_col].apply(wkt.loads)
-
-    # transform to datatime
+    df = pd.read_csv(*args, index_col=index_col, **kwargs)
+    df.rename(columns=columns, inplace=True)
     df["started_at"] = pd.to_datetime(df["started_at"])
     df["finished_at"] = pd.to_datetime(df["finished_at"])
-
-    # set timezone if none is recognized
-    for col in ["started_at", "finished_at"]:
-        if not pd.api.types.is_datetime64tz_dtype(df[col]):
-            df[col] = _localize_timestamp(dt_series=df[col], pytz_tzinfo=tz, col_name=col)
-
-    sp = gpd.GeoDataFrame(df, geometry=geom_col)
-    if crs:
-        sp.set_crs(crs, inplace=True)
-
-    # assert validity of staypoints
-    sp.as_staypoints
-    return sp
+    df[geom_col] = gpd.GeoSeries.from_wkt(df[geom_col])
+    return read_staypoints_gpd(df, geom_col=geom_col, crs=crs, tz=tz)
 
 
 def write_staypoints_csv(staypoints, filename, *args, **kwargs):
@@ -377,7 +326,8 @@ def write_staypoints_csv(staypoints, filename, *args, **kwargs):
     df.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_locations_csv(*args, columns=None, index_col=object(), geom_col="geom", crs=None, **kwargs):
+@_index_warning_default_none
+def read_locations_csv(*args, columns=None, index_col=None, crs=None, **kwargs):
     """
     Read locations from csv file.
 
@@ -422,31 +372,13 @@ def read_locations_csv(*args, columns=None, index_col=object(), geom_col="geom",
     1         1  POINT (8.56340 47.95600)  POLYGON ((8.5634 47.956, 8.6456 47.23345, 8.45...
     """
     columns = {} if columns is None else columns
+    df = pd.read_csv(*args, index_col=index_col, **kwargs)
+    df.rename(columns=columns, inplace=True)
 
-    # Warning if no 'index_col' parameter is provided
-    if type(index_col) == object:
-        warnings.warn(
-            "Assuming default index as unique identifier. Pass 'index_col=None' as explicit"
-            + "argument to avoid a warning when reading csv files."
-        )
-    elif index_col is not None:
-        kwargs["index_col"] = index_col
-
-    df = pd.read_csv(*args, **kwargs)
-    df = df.rename(columns=columns)
-
-    # construct center and extent columns
-    df["center"] = df["center"].apply(wkt.loads)
+    df["center"] = gpd.GeoSeries.from_wkt(df["center"])
     if "extent" in df.columns:
-        df["extent"] = df["extent"].apply(wkt.loads)
-
-    locs = gpd.GeoDataFrame(df, geometry="center")
-    if crs:
-        locs.set_crs(crs, inplace=True)
-
-    # assert validity of locations
-    locs.as_locations
-    return locs
+        df["extent"] = gpd.GeoSeries.from_wkt(df["extent"])
+    return read_locations_gpd(df, crs=crs)
 
 
 def write_locations_csv(locations, filename, *args, **kwargs):
@@ -481,7 +413,8 @@ def write_locations_csv(locations, filename, *args, **kwargs):
     df.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_trips_csv(*args, columns=None, tz=None, index_col=object(), geom_col=None, crs=None, **kwargs):
+@_index_warning_default_none
+def read_trips_csv(*args, columns=None, tz=None, index_col=None, geom_col=None, crs=None, **kwargs):
     """
     Read trips from csv file.
 
@@ -542,35 +475,16 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=object(), geom_col=No
     1   MULTIPOINT (116.29873 39.98402, 116.32480 40.009269)
     """
     columns = {} if columns is None else columns
+    trips = pd.read_csv(*args, index_col=index_col, **kwargs)
+    trips.rename(columns=columns, inplace=True)
 
-    if type(index_col) == object:
-        warnings.warn(
-            "Assuming default index as unique identifier. Pass 'index_col=None' as explicit"
-            + "argument to avoid a warning when reading csv files."
-        )
-    elif index_col is not None:
-        kwargs["index_col"] = index_col
-
-    trips = pd.read_csv(*args, **kwargs)
-    trips = trips.rename(columns=columns)
-
-    # transform to datatime
     trips["started_at"] = pd.to_datetime(trips["started_at"])
     trips["finished_at"] = pd.to_datetime(trips["finished_at"])
 
-    # check and/or set timezone
-    for col in ["started_at", "finished_at"]:
-        if not pd.api.types.is_datetime64tz_dtype(trips[col]):
-            trips[col] = _localize_timestamp(dt_series=trips[col], pytz_tzinfo=tz, col_name=col)
-
-    # convert to geodataframe
     if geom_col is not None:
-        trips[geom_col] = trips[geom_col].apply(wkt.loads)
-        trips = gpd.GeoDataFrame(trips, geometry=geom_col, crs=crs)
+        trips[geom_col] = gpd.GeoSeries.from_wkt(trips[geom_col])
 
-    # assert validity of trips
-    trips.as_trips
-    return trips
+    return read_trips_gpd(trips, geom_col=geom_col, crs=crs, tz=tz)
 
 
 def write_trips_csv(trips, filename, *args, **kwargs):
@@ -601,11 +515,12 @@ def write_trips_csv(trips, filename, *args, **kwargs):
     df = trips.copy()
     if isinstance(df, GeoDataFrame):
         geom_col_name = df.geometry.name
-        df[geom_col_name] = df[geom_col_name].apply(wkt.dumps)
+        df[geom_col_name] = df[geom_col_name].to_wkt()
     df.to_csv(filename, index=True, *args, **kwargs)
 
 
-def read_tours_csv(*args, columns=None, index_col=object(), tz=None, **kwargs):
+@_index_warning_default_none
+def read_tours_csv(*args, columns=None, index_col=None, tz=None, **kwargs):
     """
     Read tours from csv file.
 
@@ -620,6 +535,9 @@ def read_tours_csv(*args, columns=None, index_col=object(), tz=None, **kwargs):
 
     columns : dict, optional
         The column names to rename in the format {'old_name':'trackintel_standard_name'}.
+
+    index_col : str, optional
+        column name to be used as index. If None the default index is assumed as unique identifier.
 
     tz : str, optional
         pytz compatible timezone string. If None UTC is assumed.
@@ -637,30 +555,13 @@ def read_tours_csv(*args, columns=None, index_col=object(), tz=None, **kwargs):
     >>> trackintel.read_tours_csv('data.csv', columns={'uuid':'user_id'})
     """
     columns = {} if columns is None else columns
+    tours = pd.read_csv(*args, index_col=index_col, **kwargs)
+    tours.rename(columns=columns, inplace=True)
 
-    if type(index_col) == object:
-        warnings.warn(
-            "Assuming default index as unique identifier. Pass 'index_col=None' as explicit"
-            + "argument to avoid a warning when reading csv files."
-        )
-    elif index_col is not None:
-        kwargs["index_col"] = index_col
-
-    tours = pd.read_csv(*args, **kwargs)
-    tours = tours.rename(columns=columns)
-
-    # transform to datatime
     tours["started_at"] = pd.to_datetime(tours["started_at"])
     tours["finished_at"] = pd.to_datetime(tours["finished_at"])
 
-    # check and/or set timezone
-    for col in ["started_at", "finished_at"]:
-        if not pd.api.types.is_datetime64tz_dtype(tours[col]):
-            tours[col] = _localize_timestamp(dt_series=tours[col], pytz_tzinfo=tz, col_name=col)
-
-    # assert validity of tours
-    tours.as_tours
-    return tours
+    return read_tours_gpd(tours, tz=tz)
 
 
 def write_tours_csv(tours, filename, *args, **kwargs):
@@ -688,31 +589,3 @@ def write_tours_csv(tours, filename, *args, **kwargs):
     >>> tours.as_tours.to_csv("export_tours.csv")
     """
     tours.to_csv(filename, index=True, *args, **kwargs)
-
-
-def _localize_timestamp(dt_series, pytz_tzinfo, col_name):
-    """
-    Add timezone info to timestamp.
-
-    Parameters
-    ----------
-    dt_series : pandas.Series
-        a pandas datetime series
-
-    pytz_tzinfo : str
-        pytz compatible timezone string. If none UTC will be assumed
-
-    col_name : str
-        Column name for informative warning message
-
-    Returns
-    -------
-    pd.Series
-        a timezone aware pandas datetime series
-    """
-    if pytz_tzinfo is None:
-        warnings.warn("Assuming UTC timezone for column {}".format(col_name))
-        pytz_tzinfo = "utc"
-
-    timezone = pytz.timezone(pytz_tzinfo)
-    return dt_series.apply(pd.Timestamp, tz=timezone)
