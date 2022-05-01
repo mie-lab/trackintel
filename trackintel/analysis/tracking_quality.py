@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 
-def temporal_tracking_quality(source, granularity="all", max_iter=60):
+def temporal_tracking_quality(source, granularity="all"):
     """
     Calculate per-user temporal tracking quality (temporal coverage).
 
@@ -19,13 +19,6 @@ def temporal_tracking_quality(source, granularity="all", max_iter=60):
         the overall tracking quality; "day" the tracking quality by days; "week" the quality
         by weeks; "weekday" the quality by day of the week (e.g, Mondays, Tuesdays, etc.) and
         "hour" the quality by hours.
-
-    max_iter: int, default 60
-        The maximum iteration when spliting the df per granularity to calculate tracking quality.
-        The unit is the same as the "granularity", e.g., if "max_iter" = 60 and "granularity" = "day",
-        df that contains records with a duration more than 60 days cannot be processed and the quality
-        result is likely to be wrong. if "max_iter" is reached, consider pre-filter the df instead of
-        changing the "max_iter" parameter.
 
     Returns
     -------
@@ -99,7 +92,7 @@ def temporal_tracking_quality(source, granularity="all", max_iter=60):
         return quality
 
     # split records that span several days
-    df = _split_overlaps(df, granularity="day", max_iter=max_iter)
+    df = _split_overlaps(df, granularity="day")
     if granularity == "day":
         grouper = pd.Grouper(key="started_at", freq="D")
         column_name = "day"
@@ -183,84 +176,57 @@ def _get_tracking_quality_user(df, granularity="all"):
     return pd.Series([tracked_duration / extent], index=["quality"])
 
 
-def _split_overlaps(source, granularity="day", max_iter=60):
+def _split_overlaps(source, granularity="day"):
     """
     Split input df that have a duration of several days or hours.
 
     Parameters
     ----------
     source : GeoDataFrame (as trackintel datamodels)
-        The source to perform the split
+        The GeoDataFrame to perform the split on.
 
     granularity : {'day', 'hour'}, default 'day'
         The criteria of splitting. "day" splits records that have duration of several
         days and "hour" splits records that have duration of several hours.
-
-    max_iter: int, default 60
-        The maximum iteration when spliting the source per granularity.
-        See :func:`trackintel.analysis.tracking_quality.temporal_tracking_quality` for a more detailed explaination.
 
     Returns
     -------
     GeoDataFrame (as trackintel datamodels)
         The GeoDataFrame object after the splitting
     """
-    if granularity == "hour":
-        # every split over hour splits also over day
-        # this way to split of an entry over a month takes 30+24 iterations instead of 30*24.
-        df = _split_overlaps(source, granularity="day", max_iter=max_iter)
-    else:
-        df = source.copy()
-
-    change_flag = _get_split_index(df, granularity=granularity)
-    iter_count = 0
-
-    freq = "D" if granularity == "day" else "H"
-    # Iteratively split one day/hour from multi day/hour entries until no entry spans over multiple days/hours
-    while change_flag.sum() > 0:
-        # calculate new finished_at timestamp (00:00 midnight)
-        new_df = df.loc[change_flag].copy()
-        df.loc[change_flag, "finished_at"] = (df.loc[change_flag, "started_at"] + pd.Timestamp.resolution).dt.ceil(freq)
-
-        # create new entries with remaining timestamp
-        new_df.loc[change_flag, "started_at"] = df.loc[change_flag, "finished_at"]
-
-        df = pd.concat((df, new_df), ignore_index=True, sort=True)
-
-        change_flag = _get_split_index(df, granularity=granularity)
-        iter_count += 1
-        if iter_count >= max_iter:
-            warnings.warn(
-                f"Maximum iteration {max_iter} reached when splitting the input dataframe by {granularity}. "
-                "Consider checking the timeframe of the input or parsing a higher 'max_iter' parameter."
-            )
-            break
-
-    if "duration" in df.columns:
-        df["duration"] = df["finished_at"] - df["started_at"]
-    return df
+    freq = "H" if granularity == "hour" else "D"
+    gdf = source.copy()
+    gdf[["started_at", "finished_at"]] = gdf.apply(_get_times, axis="columns", result_type="expand", freq=freq)
+    # must call DataFrame.explode directly because GeoDataFrame.explode cannot be used on multiple columns
+    gdf = super(type(gdf), gdf).explode(["started_at", "finished_at"], ignore_index=True)
+    if "duration" in gdf.columns:
+        gdf["duration"] = gdf["finished_at"] - gdf["started_at"]
+    return gdf
 
 
-def _get_split_index(df, granularity="day"):
+def _get_times(row, freq="D"):
     """
-    Get the index that needs to be splitted.
+    Returns the times for splitting range (start-finish) at frequency borders.
+
+    Use it with `.apply()` for a single row of a DataFrame. Set result_type="expand".
 
     Parameters
     ----------
-    df : GeoDataFrame (as trackintel datamodels)
-        The source to perform the split.
+    row : Series
+        Row of dataframe with columns ["started_at", "finished_at"].
 
-    granularity : {'day', 'hour'}, default 'day'
-        The criteria of spliting. "day" splits records that have duration of several
-        days and "hour" splits records that have duration of several hours.
+    freq : str or DateOffset, default 'D'
+        Pandas frequency string.
 
     Returns
     -------
-    change_flag: pd.Series
-        Boolean index indicating which records needs to be splitted
+    Tuple of lists
+        Tuple of (start, end) times.
     """
-    freq = "D" if granularity == "day" else "H"
-    cond1 = df["started_at"].dt.floor(freq) != (df["finished_at"] - pd.Timedelta.resolution).dt.floor(freq)
-    # catch corner case where both on same border and subtracting would lead to error
-    cond2 = df["started_at"] != df["finished_at"]
-    return cond1 & cond2
+    result = []
+    if row["started_at"] != row["started_at"].ceil(freq):
+        result.append(row["started_at"])  # is not on border -> not included in date_range
+    result.extend(pd.date_range(row["started_at"].ceil(freq), row["finished_at"], freq=freq).to_list())
+    if (row["finished_at"] != result[-1]) or (len(result) == 1):  # len check for started_at == finished_at
+        result.append(row["finished_at"])  # is not on border -> not included in data_range
+    return result[:-1], result[1:]
