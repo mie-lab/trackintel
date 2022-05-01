@@ -140,39 +140,6 @@ def temporal_tracking_quality(source, granularity="all", max_iter=60):
     return quality
 
 
-def _get_all_quality(df, raw_quality, granularity):
-    """
-    Add tracking quality values for empty bins.
-
-    raw_quality is calculated using `groupby` and does not report bins (=granularties) with
-    quality = 0. This function adds these values.
-
-    Parameters
-    ----------
-    df : GeoDataFrame (as trackintel datamodels)
-
-    raw_quality: DataFrame
-        The calculated raw tracking quality directly from the groupby operations.
-
-    granularity : {"all", "day", "weekday", "week", "hour"}
-        Used for accessing the column in raw_quality.
-
-    Returns
-    -------
-    quality: pandas.Series
-        A pandas.Series object containing the tracking quality
-    """
-    all_users = df["user_id"].unique()
-    all_granularity = np.arange(df[granularity].max() + 1)
-    # construct array containing all user and granularity combinations
-    all_combi = np.array(np.meshgrid(all_users, all_granularity)).T.reshape(-1, 2)
-    # the records with no corresponding raw_quality is nan, and transformed into 0
-    all_combi = pd.DataFrame(all_combi, columns=["user_id", granularity])
-    quality = all_combi.merge(raw_quality, how="left", on=["user_id", granularity], validate="one_to_one")
-    quality.fillna(0, inplace=True)
-    return quality
-
-
 def _get_tracking_quality_user(df, granularity="all"):
     """
     Tracking quality per-user per-granularity.
