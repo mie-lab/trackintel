@@ -4,7 +4,6 @@ import os
 import pandas as pd
 import pytest
 from geopandas.testing import assert_geodataframe_equal
-from pandas.testing import assert_frame_equal
 from shapely.geometry import Point
 
 import trackintel as ti
@@ -171,21 +170,16 @@ class TestGeolife_add_modes_to_triplegs:
         triplegs, labels_raw = matching_data
 
         # add one record to the labels_raw: mode bus which are 1 min shorter than mode bike
-        labels_raw = (
-            labels_raw.reset_index()
-            .append(
-                [
-                    {
-                        "id": 2,
-                        # this record started 1 minute later than id=1 record - the final match ratio will be lower
-                        "started_at": labels_raw.iloc[-1]["started_at"] + datetime.timedelta(minutes=1),
-                        "finished_at": labels_raw.iloc[-1]["finished_at"],
-                        "mode": "bus",
-                    },
-                ]
-            )
-            .set_index("id")
-        )
+        labels_raw.reset_index(inplace=True)
+        entry = {
+            "id": 2,
+            # this record started 1 minute later than id=1 record - the final match ratio will be lower
+            "started_at": labels_raw.iloc[-1]["started_at"] + datetime.timedelta(minutes=1),
+            "finished_at": labels_raw.iloc[-1]["finished_at"],
+            "mode": "bus",
+        }
+        entry = pd.DataFrame([entry])
+        labels_raw = pd.concat((labels_raw, entry)).set_index("id")
         labels = {0: labels_raw}
 
         # the correct behaviour is to only choose one mode per tripleg id based on overlapping ratio

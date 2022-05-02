@@ -98,7 +98,8 @@ class Test_Trackintel_Model:
             pd.Timestamp("2021-08-01 16:00:00", tz="Asia/Muscat"),
             pd.Timestamp("2021-08-01 16:00:00", tz="Pacific/Niue"),
         ]
-        pfs = _trackintel_model(example_positionfixes, tz_cols=["tracked_at"])
+        with pytest.warns(UserWarning, match="Assuming UTC timezone for column tracked_at"):
+            pfs = _trackintel_model(example_positionfixes, tz_cols=["tracked_at"])
         example_positionfixes["tracked_at"] = pd.to_datetime(example_positionfixes["tracked_at"], utc=True)
         assert_geodataframe_equal(pfs, example_positionfixes)
 
@@ -314,7 +315,8 @@ class TestRead_Trips_Gpd:
             pd.Timestamp("2021-08-01 16:00:00", tz="Asia/Muscat"),
             pd.Timestamp("2021-08-01 16:00:00", tz="Pacific/Niue"),
         ]
-        trips = read_trips_gpd(example_trips)
+        with pytest.warns(UserWarning, match="Assuming UTC timezone for column started_at"):
+            trips = read_trips_gpd(example_trips)
         example_trips["started_at"] = pd.to_datetime(example_trips["started_at"], utc=True)
         assert_geodataframe_equal(example_trips, trips)
 

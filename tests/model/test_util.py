@@ -24,7 +24,8 @@ def example_triplegs():
 @pytest.fixture
 def load_positionfixes():
     """Load test positionfixes"""
-    pfs = ti.io.file.read_positionfixes_csv(os.path.join("tests", "data", "positionfixes.csv"), sep=";", index_col="id")
+    path = os.path.join("tests", "data", "positionfixes.csv")
+    pfs = ti.read_positionfixes_csv(path, sep=";", index_col="id", crs="EPSG:4326")
     # the correct speeds were computed manually in Python
     correct_speeds = np.array([8.82100607, 8.82100607, 0.36585538, 1.93127652, 19.60643425, 2.07086017]) / 3.6
     return pfs, correct_speeds

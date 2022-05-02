@@ -7,6 +7,7 @@ import geopandas as gpd
 from shapely.geometry import Point
 
 import trackintel as ti
+from trackintel.analysis.tracking_quality import _get_split_index
 
 
 @pytest.fixture
@@ -18,7 +19,7 @@ def testdata_sp_tpls_geolife_long():
 
     tpls["type"] = "tripleg"
     sp["type"] = "staypoint"
-    sp_tpls = sp.append(tpls, ignore_index=True).sort_values(by="started_at")
+    sp_tpls = pd.concat((sp, tpls), ignore_index=True).sort_values(by="started_at")
     return sp_tpls
 
 
@@ -279,7 +280,7 @@ class TestSplit_overlaps:
         splitted = ti.analysis.tracking_quality._split_overlaps(sp_tpls, granularity="day")
 
         # no record spans several days after the split
-        multi_day_records = (splitted["finished_at"] - pd.to_timedelta("1s")).dt.day - splitted["started_at"].dt.day
+        multi_day_records = (splitted["finished_at"] - pd.Timestamp.resolution).dt.day - splitted["started_at"].dt.day
         assert (multi_day_records == 0).all()
 
     def test_split_overlaps_hours(self, testdata_sp_tpls_geolife_long):
@@ -295,23 +296,22 @@ class TestSplit_overlaps:
         splitted = ti.analysis.tracking_quality._split_overlaps(sp_tpls, granularity="hour")
 
         # no record spans several hours after the split
-        hour_diff = (splitted["finished_at"] - pd.to_timedelta("1s")).dt.hour - splitted["started_at"].dt.hour
+        hour_diff = (splitted["finished_at"] - pd.Timestamp.resolution).dt.hour - splitted["started_at"].dt.hour
         assert (hour_diff == 0).all()
 
     def test_split_overlaps_hours_case2(self, testdata_sp_tpls_geolife_long):
         """Test if _split_overlaps() function can split record that have the same hour but different days."""
-        sp_tpls = testdata_sp_tpls_geolife_long
-
         # get the first two records
-        head2 = sp_tpls.head(2).copy()
+        head2 = testdata_sp_tpls_geolife_long.head(2)
+
         # construct the finished_at exactly one day after started_at
-        head2["finished_at"] = head2.apply(lambda x: x["started_at"].replace(day=x["started_at"].day + 1), axis=1)
+        head2["finished_at"] = head2["started_at"] + pd.Timedelta("1d")
 
         # the records have the same hour
-        hour_diff = (head2["finished_at"] - pd.to_timedelta("1s")).dt.hour - head2["started_at"].dt.hour
+        hour_diff = (head2["finished_at"] - pd.Timestamp.resolution).dt.hour - head2["started_at"].dt.hour
         assert (hour_diff == 0).all()
         # but have different days
-        day_diff = (head2["finished_at"] - pd.to_timedelta("1s")).dt.day - head2["started_at"].dt.day
+        day_diff = (head2["finished_at"] - pd.Timestamp.resolution).dt.day - head2["started_at"].dt.day
         assert (day_diff > 0).all()
 
         # split the records according to hour
@@ -319,7 +319,7 @@ class TestSplit_overlaps:
         splitted = ti.analysis.tracking_quality._split_overlaps(head2, granularity="hour")
 
         # no record has different days after the split
-        day_diff = (splitted["finished_at"] - pd.to_timedelta("1s")).dt.day - splitted["started_at"].dt.day
+        day_diff = (splitted["finished_at"] - pd.Timestamp.resolution).dt.day - splitted["started_at"].dt.day
         assert (day_diff == 0).all()
 
     def test_split_overlaps_duration(self, testdata_sp_tpls_geolife_long):
@@ -354,3 +354,46 @@ class TestSplit_overlaps:
 
         with pytest.warns(UserWarning):
             ti.analysis.tracking_quality._split_overlaps(sp, granularity="day")
+
+    def test_exact_midnight_split(self):
+        """Test if split finishes and starts on midnight on the ns (pandas resolution)."""
+        midnight = pd.Timestamp("2022-03-18 00:00:00", tz="utc")
+        start = midnight - pd.Timestamp.resolution
+        end = midnight + pd.Timestamp.resolution
+        data = [
+            {"user_id": 0, "started_at": start, "finished_at": end, "geom": Point(0.0, 0.0)},
+            {"user_id": 1, "started_at": start, "finished_at": midnight, "geom": Point(0.0, 0.0)},
+            {"user_id": 2, "started_at": midnight, "finished_at": end, "geom": Point(0.0, 0.0)},
+            {"user_id": 3, "started_at": midnight, "finished_at": midnight, "geom": Point(0.0, 0.0)},
+        ]
+        sp = gpd.GeoDataFrame(data=data, geometry="geom", crs="EPSG:4326")
+        sp_res = ti.analysis.tracking_quality._split_overlaps(sp, granularity="hour")
+        sp_res.sort_values(by="user_id", inplace=True, kind="stable")
+        assert (sp_res["started_at"] == [start, midnight, start, midnight, midnight]).all()
+        assert (sp_res["finished_at"] == [midnight, end, midnight, end, midnight]).all()
+
+
+class TestGet_split_index:
+    """Test if __get_split_index splits correctly"""
+
+    def test_midnight_ns(self):
+        """Test datetimes 1 ns around midnight."""
+        # 9 possibilities, 3 per starts before, on and after an hour point
+        #     h1          h2
+        # --  | -- ... -- |  --
+        # s1 s2 s3 ... e1 e2 e3
+        midnight = pd.Timestamp("2022-03-18 00:00:00", tz="utc")
+        start1 = midnight - pd.Timestamp.resolution
+        start2 = midnight
+        start3 = midnight + pd.Timestamp.resolution
+        starts = [start1, start2, start3]
+        ends = [s + pd.Timedelta("1h") for s in starts]
+
+        data = [
+            {"started_at": start, "finished_at": end, "res": (start == starts[0]) or (end == ends[2])}
+            for start in starts
+            for end in ends
+        ]
+        df = pd.DataFrame(data=data)
+        calculated_result = _get_split_index(df, "hour")
+        assert (calculated_result == df["res"]).all()

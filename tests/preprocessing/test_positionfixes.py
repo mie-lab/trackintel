@@ -493,7 +493,7 @@ class TestGenerate_triplegs:
 
         sp = sp[["started_at", "finished_at", "user_id"]]
         tpls = tpls[["started_at", "finished_at", "user_id"]]
-        sp_tpls = sp.append(tpls)
+        sp_tpls = pd.concat((sp, tpls))
         sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
 
         for user_id_this in sp["user_id"].unique():

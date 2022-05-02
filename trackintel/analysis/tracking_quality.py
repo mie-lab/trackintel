@@ -1,8 +1,8 @@
-import datetime
-
-import pandas as pd
-import numpy as np
 import warnings
+
+import geopandas as gpd
+import numpy as np
+import pandas as pd
 
 
 def temporal_tracking_quality(source, granularity="all", max_iter=60):
@@ -238,35 +238,31 @@ def _split_overlaps(source, granularity="day", max_iter=60):
     GeoDataFrame (as trackintel datamodels)
         The GeoDataFrame object after the splitting
     """
-    df = source.copy()
-    change_flag = __get_split_index(df, granularity=granularity)
+    if granularity == "hour":
+        # every split over hour splits also over day
+        # this way to split of an entry over a month takes 30+24 iterations instead of 30*24.
+        df = _split_overlaps(source, granularity="day", max_iter=max_iter)
+    else:
+        df = source.copy()
 
+    change_flag = _get_split_index(df, granularity=granularity)
     iter_count = 0
 
+    freq = "D" if granularity == "day" else "H"
     # Iteratively split one day/hour from multi day/hour entries until no entry spans over multiple days/hours
     while change_flag.sum() > 0:
-
         # calculate new finished_at timestamp (00:00 midnight)
-        finished_at_temp = df.loc[change_flag, "finished_at"].copy()
-        if granularity == "day":
-            df.loc[change_flag, "finished_at"] = df.loc[change_flag, "started_at"].apply(
-                lambda x: x.replace(hour=23, minute=59, second=59) + datetime.timedelta(seconds=1)
-            )
-        elif granularity == "hour":
-            df.loc[change_flag, "finished_at"] = df.loc[change_flag, "started_at"].apply(
-                lambda x: x.replace(minute=59, second=59) + datetime.timedelta(seconds=1)
-            )
+        new_df = df.loc[change_flag].copy()
+        df.loc[change_flag, "finished_at"] = (df.loc[change_flag, "started_at"] + pd.Timestamp.resolution).dt.ceil(freq)
 
         # create new entries with remaining timestamp
-        new_df = df.loc[change_flag].copy()
         new_df.loc[change_flag, "started_at"] = df.loc[change_flag, "finished_at"]
-        new_df.loc[change_flag, "finished_at"] = finished_at_temp
 
-        df = df.append(new_df, ignore_index=True, sort=True)
+        df = pd.concat((df, new_df), ignore_index=True, sort=True)
 
-        change_flag = __get_split_index(df, granularity=granularity)
+        change_flag = _get_split_index(df, granularity=granularity)
         iter_count += 1
-        if iter_count > max_iter:
+        if iter_count >= max_iter:
             warnings.warn(
                 f"Maximum iteration {max_iter} reached when splitting the input dataframe by {granularity}. "
                 "Consider checking the timeframe of the input or parsing a higher 'max_iter' parameter."
@@ -275,11 +271,10 @@ def _split_overlaps(source, granularity="day", max_iter=60):
 
     if "duration" in df.columns:
         df["duration"] = df["finished_at"] - df["started_at"]
-
     return df
 
 
-def __get_split_index(df, granularity="day"):
+def _get_split_index(df, granularity="day"):
     """
     Get the index that needs to be splitted.
 
@@ -297,10 +292,8 @@ def __get_split_index(df, granularity="day"):
     change_flag: pd.Series
         Boolean index indicating which records needs to be splitted
     """
-    change_flag = df["started_at"].dt.date != (df["finished_at"] - pd.to_timedelta("1s")).dt.date
-    if granularity == "hour":
-        hour_flag = df["started_at"].dt.hour != (df["finished_at"] - pd.to_timedelta("1s")).dt.hour
-        # union of day and hour change flag
-        change_flag = change_flag | hour_flag
-
-    return change_flag
+    freq = "D" if granularity == "day" else "H"
+    cond1 = df["started_at"].dt.floor(freq) != (df["finished_at"] - pd.Timedelta.resolution).dt.floor(freq)
+    # catch corner case where both on same border and subtracting would lead to error
+    cond2 = df["started_at"] != df["finished_at"]
+    return cond1 & cond2
