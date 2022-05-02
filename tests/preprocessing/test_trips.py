@@ -124,8 +124,8 @@ def example_nested_tour(example_trip_data):
 
     # construct trips that lie between trips 6 and 15 and form a tour on their own
     # define start and end points of these trips
-    first_trip_subtour = MultiPoint((trips.loc[15, "geom"][0], Point(9.5067847, 47.20001)))
-    second_trip_subtour = MultiPoint((Point(9.5067847, 47.20001), trips.loc[15, "geom"][0]))
+    first_trip_subtour = MultiPoint((trips.loc[15, "geom"].geoms[0], Point(9.5067847, 47.20001)))
+    second_trip_subtour = MultiPoint((Point(9.5067847, 47.20001), trips.loc[15, "geom"].geoms[0]))
     # define time of start and time at the intermediate point
     start_time_subtour = pd.Timestamp("1971-01-02 08:45:00", tz="utc")
     middle_time = pd.Timestamp("1971-01-02 08:55:00", tz="utc")
