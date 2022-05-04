@@ -12,7 +12,7 @@ class ToursAccessor(object):
     The 'index' of the DataFrame will be treated as unique identifier of the `Tours`
 
     For several usecases, the following additional columns are required:
-    ['location_id', 'journey', 'context', 'origin_staypoint_id', 'destination_staypoint_id']
+    ['location_id', 'journey', 'origin_staypoint_id', 'destination_staypoint_id']
 
     Notes
     -----

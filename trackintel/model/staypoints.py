@@ -24,14 +24,14 @@ class StaypointsAccessor(object):
     of the `Staypoints`.
 
     For several usecases, the following additional columns are required:
-    ['elevation', 'radius', 'context', 'purpose', 'is_activity', 'next_trip_id', 'prev_trip_id', 'trip_id',
+    ['elevation', 'purpose', 'is_activity', 'next_trip_id', 'prev_trip_id', 'trip_id',
     location_id]
 
     Notes
     -----
     `Staypoints` are defined as location were a person did not move for a while.
     Under consideration of location uncertainty this means that a person stays within
-    a certain radius for a certain amount of time.
+    a close proximity for a certain amount of time.
     The exact definition is use-case dependent.
 
     'started_at' and 'finished_at' are timezone aware pandas datetime objects.

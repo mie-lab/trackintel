@@ -19,7 +19,7 @@ class LocationsAccessor(object):
     ['user_id', 'center']
 
     For several usecases, the following additional columns are required:
-    ['elevation', 'context', 'extent']
+    ['elevation', 'extent']
 
     Notes
     -----

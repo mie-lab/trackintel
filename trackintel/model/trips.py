@@ -23,7 +23,7 @@ class TripsAccessor(object):
     Trips have an optional geometry of type MultiPoint which describes the start and the end point of the trip
 
     For several usecases, the following additional columns are required:
-    ['context', 'origin_purpose', 'destination_purpose', 'modes', 'primary_mode', 'tour_id']
+    ['origin_purpose', 'destination_purpose', 'modes', 'primary_mode', 'tour_id']
 
     Notes
     -----

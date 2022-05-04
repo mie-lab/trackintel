@@ -23,7 +23,7 @@ class PositionfixesAccessor(object):
     of the `Positionfixes`.
 
     For several usecases, the following additional columns are required:
-    ['elevation', 'accuracy', 'tracking_tech', 'context', 'staypoint_id', 'tripleg_id']
+    ['elevation', 'accuracy' 'staypoint_id', 'tripleg_id']
 
     Notes
     -----
