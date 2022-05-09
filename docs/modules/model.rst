@@ -123,13 +123,6 @@ a user, but also (potentially, if this link has already been made) to a tripleg 
         -- Temporal attributes.
         tracked_at timestamp with time zone NOT NULL,
 
-        -- Specific attributes.
-        accuracy double precision,
-        tracking_tech character(12),
-        -- The context contains additional information that might be filled in by trackintel.
-        -- This could include things such as the temperature, public transport stops in vicinity, etc.
-        context json,
-
         -- Spatial attributes.
         elevation double precision,
         geom geometry(Point, 4326),
@@ -163,14 +156,6 @@ i.e., a meaningful destination of movement::
         validated_at timestamp with time zone,
         activity boolean,
 
-        -- Specific attributes.
-        -- The radius is an approximation of how far the positionfixes that made up this staypoint
-        -- are scattered around the center (geom) of it.
-        radius double precision,
-        -- The context contains additional information that might be filled in by trackintel.
-        -- This could include things such as the temperature, public transport stops in vicinity, etc.
-        context json,
-
         -- Spatial attributes.
         elevation double precision,
         geom geometry(Point, 4326),
@@ -201,11 +186,6 @@ and if applicable, a public transport case::
         validated boolean,
         validated_at timestamp with time zone,
 
-        -- Specific attributes.
-        -- The context contains additional information that might be filled in by trackintel.
-        -- This could include things such as the temperature, public transport stops in vicinity, etc.
-        context json,
-
         -- Spatial attributes.
         -- The raw geometry is unprocessed, directly made up from the positionfixes. The column
         -- 'geom' contains processed (e.g., smoothened, map matched, etc.) data.
@@ -223,11 +203,6 @@ staypoints) meaningful locations::
         -- Common to all tables.
         id bigint NOT NULL,
         user_id bigint,
-
-        -- Specific attributes.
-        -- The context contains additional information that might be filled in by trackintel.
-        -- This could include things such as the temperature, public transport stops in vicinity, etc.
-        context json,
         
         -- Spatial attributes.
         elevation double precision,
@@ -253,11 +228,6 @@ activity (staypoint with ``activity==True``) to another. They are simply linked 
         -- Temporal attributes.
         started_at timestamp with time zone NOT NULL,
         finished_at timestamp with time zone NOT NULL,
-        
-        -- Specific attributes.
-        -- The context contains additional information that might be filled in by trackintel.
-        -- This could include things such as the temperature, public transport stops in vicinity, etc.
-        context json,
 
         -- Constraints.
         CONSTRAINT trips_pkey PRIMARY KEY (id)
@@ -281,9 +251,6 @@ They are linked to a user::
         
         -- Specific attributes.
         journey bool,
-        -- The context contains additional information that might be filled in by trackintel.
-        -- This could include things such as the temperature, public transport stops in vicinity, etc.
-        context json,
 
         -- Constraints.
         CONSTRAINT tours_pkey PRIMARY KEY (id)
