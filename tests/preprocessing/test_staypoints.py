@@ -161,7 +161,7 @@ class TestGenerate_locations:
 
         # haversine calculation
         _, loc_har = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=100, num_samples=0, distance_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=100, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
         # WGS_1984
         sp.crs = "epsg:4326"
@@ -170,7 +170,7 @@ class TestGenerate_locations:
 
         # euclidean calculation
         _, loc_eu = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=100, num_samples=0, distance_metric="euclidean", agg_level="dataset"
+            method="dbscan", epsilon=100, num_samples=1, distance_metric="euclidean", agg_level="dataset"
         )
 
         assert len(loc_har) == len(loc_eu)
@@ -182,12 +182,12 @@ class TestGenerate_locations:
 
         # haversine calculation using sklearn.metrics.pairwise_distances
         sp, locs = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
 
         # calculate pairwise haversine matrix and fed to dbscan
         sp_distance_matrix = calculate_distance_matrix(sp, dist_metric="haversine")
-        db = DBSCAN(eps=10, min_samples=0, metric="precomputed")
+        db = DBSCAN(eps=10, min_samples=1, metric="precomputed")
         labels = db.fit_predict(sp_distance_matrix)
 
         assert len(set(locs.index)) == len(set(labels))
@@ -197,7 +197,7 @@ class TestGenerate_locations:
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
         sp, locs = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
 
         # create locations as grouped staypoints, another way to create locations
@@ -235,10 +235,10 @@ class TestGenerate_locations:
         # duplicate for a certain number
         sp = pd.concat([sp] * 6, ignore_index=True)
         _, locs_ds = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
         _, locs_us = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="user"
+            method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="user"
         )
         loc_dataset_num = len(locs_ds.index.unique())
         loc_user_num = len(locs_us.index.unique())
@@ -253,10 +253,10 @@ class TestGenerate_locations:
             method="sliding", gap_threshold=1e6, dist_threshold=0, time_threshold=0
         )
         _, locs_user = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=1e-18, num_samples=0, agg_level="user"
+            method="dbscan", epsilon=1e-18, num_samples=1, agg_level="user"
         )
         _, locs_data = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=1e-18, num_samples=0, agg_level="dataset"
+            method="dbscan", epsilon=1e-18, num_samples=1, agg_level="dataset"
         )
         # With small hyperparameters, clustering should not reduce the number
         assert len(locs_user) == len(sp)
@@ -321,7 +321,7 @@ class TestGenerate_locations:
         sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
         #
         sp, locs = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
         assert sp["user_id"].dtype == locs["user_id"].dtype
         assert sp["location_id"].dtype == "Int64"
@@ -329,7 +329,7 @@ class TestGenerate_locations:
         # change the user_id to string
         sp["user_id"] = sp["user_id"].apply(lambda x: str(x))
         sp, locs = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
         assert sp["user_id"].dtype == locs["user_id"].dtype
         assert sp["location_id"].dtype == "Int64"
@@ -345,7 +345,7 @@ class TestGenerate_locations:
         for distance_metric in distance_metric_ls:
             for agg_level in agg_level_ls:
                 _, locations = sp.as_staypoints.generate_locations(
-                    method="dbscan", epsilon=10, num_samples=0, distance_metric=distance_metric, agg_level=agg_level
+                    method="dbscan", epsilon=10, num_samples=1, distance_metric=distance_metric, agg_level=agg_level
                 )
                 assert (locations.index == np.arange(len(locations))).any()
 
