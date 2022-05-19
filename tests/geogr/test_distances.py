@@ -219,6 +219,15 @@ class TestCheck_gdf_planar:
         sp = sp.to_crs("EPSG:2056")
         assert check_gdf_planar(sp) == True
 
+    def test_none_crs_transform(self):
+        """Check if crs gets set to WGS84."""
+        file = os.path.join("tests", "data", "positionfixes.csv")
+        pfs = ti.read_positionfixes_csv(file, sep=";", crs=None, index_col=None)
+        bool, pfs_4326 = check_gdf_planar(pfs, transform=True)
+        assert not bool
+        pfs.crs = "EPSG:4326"
+        assert_geodataframe_equal(pfs, pfs_4326)
+
 
 class TestMetersToDecimalDegrees:
     """Tests for the meters_to_decimal_degrees() function."""

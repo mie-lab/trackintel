@@ -220,16 +220,15 @@ def check_gdf_planar(gdf, transform=False):
     """
     wgs84 = "EPSG:4326"
     if gdf.crs != wgs84:
-
         if transform:
             gdf = gdf.set_crs(wgs84) if gdf.crs is None else gdf.to_crs(wgs84)
-            return False, gdf
 
     if gdf.crs is None:
         warnings.warn("The CRS of your data is not defined.")
-        return False
 
-    return not gdf.crs.is_geographic
+    if transform:
+        return False, gdf
+    return (gdf.crs is None) or (not gdf.crs.is_geographic)
 
 
 def calculate_haversine_length(gdf):
