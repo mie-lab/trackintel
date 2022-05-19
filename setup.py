@@ -49,7 +49,7 @@ install_requires = [
     "tqdm",
     "geopandas>=0.9.0",
     "similaritymeasures",
-    "pygeos"
+    "pygeos",
 ]
 
 # What packages are optional?
