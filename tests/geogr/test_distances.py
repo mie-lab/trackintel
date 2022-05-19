@@ -1,18 +1,16 @@
 import os
-import datetime
+from math import radians
 
 import geopandas as gpd
 import pandas as pd
 import numpy as np
 import pytest
 
-from math import radians
 from shapely import wkt
 from shapely.geometry import LineString, MultiLineString
 from sklearn.metrics import pairwise_distances
 from geopandas.testing import assert_geodataframe_equal
 from shapely.geometry import Point
-
 
 import trackintel as ti
 from trackintel.geogr.distances import (
@@ -20,8 +18,8 @@ from trackintel.geogr.distances import (
     meters_to_decimal_degrees,
     calculate_distance_matrix,
     calculate_haversine_length,
-    _calculate_haversine_length_single,
 )
+from trackintel.geogr.point_distances import haversine_dist
 
 
 @pytest.fixture
@@ -243,15 +241,8 @@ class Testcalc_haversine_length:
     def test_length(self, gdf_lineStrings):
         """Check if `calculate_haversine_length` runs without errors."""
         length = calculate_haversine_length(gdf_lineStrings)
-
         assert length[0] < length[1]
-
-
-class Test_calculate_haversine_length_single:
-    """Tests for the _calculate_haversine_length_single() function."""
-
-    def Test_length(self, single_linestring):
-        """Check if the length of a longer linestring is calculated correctly up to some meters."""
-        length = _calculate_haversine_length_single(single_linestring)
-
-        assert 1020 < length < 1030
+        ls1, ls2 = gdf_lineStrings.geometry
+        ls1, ls2 = np.array(ls1.coords), np.array(ls2.coords)
+        assert length[0] == np.sum(haversine_dist(ls1[:-1, 0], ls1[:-1, 1], ls1[1:, 0], ls1[1:, 1]))
+        assert length[1] == np.sum(haversine_dist(ls2[:-1, 0], ls2[:-1, 1], ls2[1:, 0], ls2[1:, 1]))
