@@ -31,7 +31,7 @@ def calc_temp_overlap(start_1, end_1, start_2, end_2):
     """
     start = max(start_1, start_2)
     end = min(end_1, end_2)
-    temp_overlap = max(timedelta(0), end-start)
+    temp_overlap = max(timedelta(0), end - start)
 
     dur = end_1 - start_1
     if dur <= timedelta(0):
