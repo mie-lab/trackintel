@@ -228,7 +228,7 @@ def check_gdf_planar(gdf, transform=False):
 
     if transform:
         return False, gdf
-    return (gdf.crs is None) or (not gdf.crs.is_geographic)
+    return not (gdf.crs is None or gdf.crs.is_geographic)
 
 
 def calculate_haversine_length(gdf):
