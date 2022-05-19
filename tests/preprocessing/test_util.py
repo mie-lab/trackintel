@@ -38,6 +38,11 @@ class TestCalc_temp_overlap:
         ratio = calc_temp_overlap(time_1, time_1 + one_hour, time_1 + one_hour, time_1 + 2 * one_hour)
         assert ratio == 0
 
+    def test_no_duration(self, time_1, one_hour):
+        """Check if function can handle if first time has duration 0"""
+        ratio = calc_temp_overlap(time_1, time_1, time_1, time_1 + one_hour)
+        assert ratio == 0
+
 
 class TestExplodeAgg:
     """Test util method _explode_agg"""
