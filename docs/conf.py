@@ -57,8 +57,8 @@ autodoc_mock_imports = [
 # -- Project information -----------------------------------------------------
 
 project = "trackintel"
-copyright = "2019 - 2021, Dominik Bucher, Henry Martin, Ye Hong"
-author = "Dominik Bucher, Henry Martin, Ye Hong"
+copyright = "2019 - 2022, Dominik Bucher, Henry Martin, Ye Hong, Nina Wiedemann"
+author = "Dominik Bucher, Henry Martin, Ye Hong, Nina Wiedemann"
 
 
 def setup(app):
@@ -75,7 +75,7 @@ def setup(app):
 # The full version, including alpha/beta/rc tags
 # release = version
 
-version = "1.1.6"
+version = "1.1.7"
 release = version
 
 
