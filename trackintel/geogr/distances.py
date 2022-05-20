@@ -208,7 +208,7 @@ def check_gdf_planar(gdf, transform=False):
 
     Returns
     -------
-    if_planer : bool
+    is_planer : bool
         True if the returned gdf has planar crs.
 
     gdf : GeoDataFrame
@@ -219,31 +219,17 @@ def check_gdf_planar(gdf, transform=False):
     >>> from trackintel.geogr.distances import check_gdf_planar
     >>> check_gdf_planar(triplegs, transform=False)
     """
-    is_planar = False
-    if gdf.crs is None:  # projection is not defined
-        is_planar = False
+    wgs84 = "EPSG:4326"
+    if gdf.crs != wgs84:
         if transform:
-            gdf.crs = "EPSG:4326"
-        else:
-            warnings.warn("The CRS of your data is not defined.")
+            gdf = gdf.set_crs(wgs84) if gdf.crs is None else gdf.to_crs(wgs84)
 
-    elif gdf.crs == "EPSG:4326":  # if projection is defined as WGS84
-        is_planar = False
-
-    else:  # if projection is defined but not as WGS84
-        if gdf.crs.is_geographic:  # if projection is a geographic crs
-            is_planar = False
-        else:
-            is_planar = True
-
-        if transform:
-            is_planar = False
-            gdf = gdf.to_crs("EPSG:4326")
+    if gdf.crs is None:
+        warnings.warn("The CRS of your data is not defined.")
 
     if transform:
-        return is_planar, gdf
-    else:
-        return is_planar
+        return False, gdf
+    return not (gdf.crs is None or gdf.crs.is_geographic)
 
 
 def calculate_haversine_length(gdf):
