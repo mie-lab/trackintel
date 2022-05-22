@@ -52,7 +52,7 @@ def calculate_modal_split(tpls, freq=None, metric="count", per_user=False, norm=
         tpls[metric] = _calculate_length(tpls)
     elif metric == "duration":
         tpls[metric] = (tpls["finished_at"] - tpls["started_at"]).dt.total_seconds()
-    else: # metric == "count"
+    else:  # metric == "count"
         agg = metric
         metric = "mode"  # count on mode
 
