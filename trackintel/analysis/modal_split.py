@@ -1,5 +1,3 @@
-from itertools import count
-import numpy as np
 import pandas as pd
 
 from trackintel.geogr.distances import check_gdf_planar, calculate_haversine_length
