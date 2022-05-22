@@ -83,7 +83,9 @@ class TestPlot_modal_split:
         modal_split = calculate_modal_split(triplegs_with_modes, freq="d", norm=True)
         xlabel, ylabel, title = "xlabel", "ylabel", "title"
         dateformat = "%d"
-        _, ax = plot_modal_split(modal_split, date_fmt_x_axis=dateformat, x_label=xlabel, y_label=ylabel, title=title, axis=axis)
+        _, ax = plot_modal_split(
+            modal_split, date_fmt_x_axis=dateformat, x_label=xlabel, y_label=ylabel, title=title, axis=axis
+        )
         assert axis is ax
         assert ax.get_xlabel() == xlabel
         assert ax.get_ylabel() == ylabel
