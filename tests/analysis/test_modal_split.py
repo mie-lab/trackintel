@@ -4,10 +4,12 @@ import os
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+from pandas.testing import assert_series_equal
 import pytest
 from shapely.geometry import LineString
 
-from trackintel.analysis.modal_split import calculate_modal_split
+from trackintel.analysis.modal_split import _calculate_length, calculate_modal_split
+from trackintel.geogr.distances import calculate_haversine_length
 from trackintel.io.dataset_reader import read_geolife, geolife_add_modes_to_triplegs
 
 
@@ -203,3 +205,18 @@ class TestModalSplit:
         assert modal_split.loc[(0, w_1), "walk"] == 1
         assert modal_split.loc[(0, w_2), "walk"] == 1
         assert modal_split.loc[(1, w_1), "walk"] == 2
+
+
+class Test_calculate_length:
+    """Test help function calculate_length"""
+
+    def test_planar(self, test_triplegs_modal_split):
+        """Test planar length calculation"""
+        test_triplegs_modal_split = test_triplegs_modal_split.to_crs("EPSG:2056")
+        res = _calculate_length(test_triplegs_modal_split)
+        assert_series_equal(test_triplegs_modal_split.length, res)
+
+    def test_non_planar(self, test_triplegs_modal_split):
+        """Test haversine length calculation."""
+        res = pd.Series(calculate_haversine_length(test_triplegs_modal_split))
+        assert_series_equal(res, _calculate_length(test_triplegs_modal_split))

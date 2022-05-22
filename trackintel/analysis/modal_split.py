@@ -85,4 +85,4 @@ def _calculate_length(tpls):
     """
     if check_gdf_planar(tpls):
         return tpls.length  # if planar use geopandas function
-    return calculate_haversine_length(tpls)
+    return pd.Series(calculate_haversine_length(tpls), index=tpls.index)
