@@ -152,11 +152,10 @@ class TestModalSplit:
         """Check counts without users and without temporal binning"""
         tpls = test_triplegs_modal_split
         modal_split = calculate_modal_split(tpls, metric="count", per_user=False)
-
         # if the user get merged, walk would be larger than bike
-        assert modal_split.loc[0, "bike"] == 1
-        assert modal_split.loc[0, "car"] == 1
-        assert modal_split.loc[0, "walk"] == 4
+        assert modal_split.iloc[0].loc["bike"] == 1
+        assert modal_split.iloc[0].loc["car"] == 1
+        assert modal_split.iloc[0].loc["walk"] == 4
 
     def test_modal_split_total_distance(self, test_triplegs_modal_split):
         """Check distances per user and mode without temporal binning"""
@@ -185,12 +184,11 @@ class TestModalSplit:
         t_1 = pd.Timestamp("1970-01-01 00:00:00", tz="utc")
         t_2 = pd.Timestamp("1970-01-02 00:00:00", tz="utc")
         t_8 = pd.Timestamp("1970-01-08 00:00:00", tz="utc")
-
-        assert modal_split.loc[[(0, t_1)], "bike"][0] == 1
-        assert modal_split.loc[[(0, t_1)], "car"][0] == 1
-        assert modal_split.loc[[(0, t_2)], "walk"][0] == 1
-        assert modal_split.loc[[(0, t_8)], "walk"][0] == 1
-        assert modal_split.loc[[(1, t_1)], "walk"][0] == 2
+        assert modal_split.loc[(0, t_1), "bike"] == 1
+        assert modal_split.loc[(0, t_1), "car"] == 1
+        assert modal_split.loc[(0, t_2), "walk"] == 1
+        assert modal_split.loc[(0, t_8), "walk"] == 1
+        assert modal_split.loc[(1, t_1), "walk"] == 2
 
     def test_modal_split_weekly_count(self, test_triplegs_modal_split):
         """Check counts per user and mode binned by week"""
@@ -200,8 +198,8 @@ class TestModalSplit:
         w_1 = pd.Timestamp("1970-01-05 00:00:00", tz="utc")  # data is aggregated to the next monday
         w_2 = pd.Timestamp("1970-01-12 00:00:00", tz="utc")
 
-        assert modal_split.loc[[(0, w_1)], "bike"][0] == 1
-        assert modal_split.loc[[(0, w_1)], "car"][0] == 1
-        assert modal_split.loc[[(0, w_1)], "walk"][0] == 1
-        assert modal_split.loc[[(0, w_2)], "walk"][0] == 1
-        assert modal_split.loc[[(1, w_1)], "walk"][0] == 2
+        assert modal_split.loc[(0, w_1), "bike"] == 1
+        assert modal_split.loc[(0, w_1), "car"] == 1
+        assert modal_split.loc[(0, w_1), "walk"] == 1
+        assert modal_split.loc[(0, w_2), "walk"] == 1
+        assert modal_split.loc[(1, w_1), "walk"] == 2
