@@ -79,11 +79,12 @@ class TestPlot_modal_split:
 
     def test_ax_arg(self, triplegs_with_modes):
         """Test if ax is augmented if passed to function."""
-        _, ax = regular_figure()
+        _, axis = regular_figure()
         modal_split = calculate_modal_split(triplegs_with_modes, freq="d", norm=True)
         xlabel, ylabel, title = "xlabel", "ylabel", "title"
         dateformat = "%d"
-        _, ax = plot_modal_split(modal_split, date_fmt_x_axis=dateformat, x_label=xlabel, y_label=ylabel, title=title)
+        _, ax = plot_modal_split(modal_split, date_fmt_x_axis=dateformat, x_label=xlabel, y_label=ylabel, title=title, axis=axis)
+        assert axis is ax
         assert ax.get_xlabel() == xlabel
         assert ax.get_ylabel() == ylabel
         assert ax.get_title() == title
