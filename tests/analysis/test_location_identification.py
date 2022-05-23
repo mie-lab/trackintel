@@ -253,6 +253,15 @@ class TestLocation_Identifier:
         osna = osna_method(example_osna)
         assert_geodataframe_equal(li, osna)
 
+    def test_pre_filter_index(self, example_freq):
+        """Test if pre_filter=False works with non-serial index"""
+        # issue-#403
+        example_freq.index = *reversed(example_freq.index[1:]), example_freq.index[0]
+        example_freq.index += 100  # move it so that there is no overlap to a range index
+        li = location_identifier(example_freq, method="FREQ", pre_filter=False)
+        fr = freq_method(example_freq)
+        assert_geodataframe_equal(li, fr)
+
 
 @pytest.fixture
 def example_osna():
