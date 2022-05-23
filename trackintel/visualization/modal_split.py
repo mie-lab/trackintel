@@ -8,6 +8,7 @@ def plot_modal_split(
     df_modal_split_in,
     out_path=None,
     date_fmt_x_axis="%W",
+    fig=None,
     axis=None,
     title=None,
     x_label=None,
@@ -33,19 +34,21 @@ def plot_modal_split(
     title : str, optional
     x_label : str, optional
     y_label : str, optional
+    fig : matplotlib.figure
+        Only used if axis is provided as well.
     axis : matplotlib axes
     x_pad : float, default: 10
-        used to set ax.xaxis.labelpad
+        Used to set ax.xaxis.labelpad
     y_pad : float, default: 10
-        used to set ax.yaxis.labelpad
+        Used to set ax.yaxis.labelpad
     title_pad : float, default: 1.02
-        passed on to `matplotlib.pyplot.title`
-    skip_xticks : int, default: 0
-        if larger than 0, every nth x-tick label is skipped.
+        Passed on to `matplotlib.pyplot.title`
+    skip_xticks : int, default: 1
+        Every nth x-tick label is kept.
     n_col_legend : int
-        passed on as `ncol` to matplotlib.pyplot.legend()
+        Passed on as `ncol` to matplotlib.pyplot.legend()
     borderaxespad : float
-        passed on to matplotlib.pyplot.legend()
+        Passed on to matplotlib.pyplot.legend()
 
     Returns
     -------
@@ -86,7 +89,7 @@ def plot_modal_split(
     # skip ticks for X axis
     if skip_xticks > 0:
         for i, tick in enumerate(ax.xaxis.get_major_ticks()):
-            if i % skip_xticks == 0:
+            if i % skip_xticks != 0:
                 tick.set_visible(False)
 
     # We use a nice trick to put the legend out of the plot and to scale it automatically
@@ -105,11 +108,13 @@ def plot_modal_split(
     )
 
     if title is not None:
-        plt.title(title, y=title_pad)
+        ax.set_title(title, y=title_pad)
 
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
-    fig.autofmt_xdate()
+
+    if fig is not None:
+        fig.autofmt_xdate()
 
     plt.tight_layout()
 
