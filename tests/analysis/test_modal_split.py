@@ -206,6 +206,13 @@ class TestModalSplit:
         assert modal_split.loc[(0, w_2), "walk"] == 1
         assert modal_split.loc[(1, w_1), "walk"] == 2
 
+    def test_unknown_metric_error(self, test_triplegs_modal_split):
+        """Check if error is raised if unknown metric is passed."""
+        metric = "unknown_metric"
+        error_msg = f"Metric {metric} unknown, only metrics {{'count', 'distance', 'duration'}} are supported."
+        with pytest.raises(AttributeError, match=error_msg):
+            calculate_modal_split(test_triplegs_modal_split, metric=metric)
+
 
 class Test_calculate_length:
     """Test help function calculate_length"""
