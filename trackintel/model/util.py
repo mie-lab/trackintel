@@ -3,6 +3,7 @@ import trackintel as ti
 import numpy as np
 import pandas as pd
 from trackintel.geogr.distances import calculate_haversine_length
+from trackintel.geogr.point_distances import haversine_dist
 
 
 def get_speed_positionfixes(positionfixes):
@@ -25,30 +26,23 @@ def get_speed_positionfixes(positionfixes):
     positionfix, the speed is set to the same value as for the second one.
     """
     pfs = positionfixes.copy()
-    if_planar_crs = ti.geogr.distances.check_gdf_planar(pfs)
+    is_planar_crs = ti.geogr.distances.check_gdf_planar(pfs)
 
-    # get next location and time
-    pfs["prev_geom"] = pfs["geom"].shift(1)
-    pfs.loc[pfs.index[0], "prev_geom"] = pfs.loc[pfs.index[0], "geom"]
-    pfs["prev_tracked_at"] = pfs["tracked_at"].shift(1)
-
+    g = pfs.geometry
     # get distance and time difference
-    if if_planar_crs:
-        dist_function = lambda point: point.geom.distance(point.prev_geom)
+    if is_planar_crs:
+        dist = g.distance(g.shift(1)).to_numpy()
     else:
-        dist_function = lambda point: ti.geogr.point_distances.haversine_dist(
-            point.geom.x, point.geom.y, point.prev_geom.x, point.prev_geom.y
-        )[0]
-    pfs["dist"] = pfs.apply(dist_function, axis=1)
-    pfs["time_diff"] = pfs.apply(lambda x: x.tracked_at - x.prev_tracked_at, axis=1).dt.total_seconds()
+        x = g.x.to_numpy()
+        y = g.y.to_numpy()
+        dist = np.zeros(len(pfs), dtype=np.float64)
+        dist[1:] = haversine_dist(x[:-1], y[:-1], x[1:], y[1:])
 
+    time_delta = (pfs["tracked_at"] - pfs["tracked_at"].shift(1)).dt.total_seconds().to_numpy()
     # compute speed (in m/s)
-    pfs["speed"] = pfs["dist"] / pfs["time_diff"]
-    # The first point speed is imputed
-    pfs.loc[pfs.index[0], "speed"] = pfs.iloc[1]["speed"]
-
-    pfs.drop(columns=["prev_geom", "prev_tracked_at", "dist", "time_diff"], inplace=True)
-
+    speed = dist / time_delta
+    speed[0] = speed[1]  # The first point speed is imputed
+    pfs["speed"] = speed
     return pfs
 
 

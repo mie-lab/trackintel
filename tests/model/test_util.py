@@ -1,12 +1,16 @@
 import os
 from functools import WRAPPER_ASSIGNMENTS
-import pytest
-import trackintel as ti
-import numpy as np
-from geopandas.testing import assert_geodataframe_equal
 
-from trackintel.model.util import _copy_docstring
+from geopandas import GeoDataFrame
+import numpy as np
+from pandas import Timestamp, Timedelta
+import pytest
+from geopandas.testing import assert_geodataframe_equal
+from shapely.geometry import Point
+
+import trackintel as ti
 from trackintel.io.postgis import read_trips_postgis
+from trackintel.model.util import _copy_docstring, get_speed_positionfixes
 
 
 @pytest.fixture
@@ -35,21 +39,21 @@ class TestSpeedPositionfixes:
     def test_positionfixes_stable(self, load_positionfixes):
         """Test whether the positionfixes stay the same apart from the new speed column"""
         pfs, _ = load_positionfixes
-        speed_pfs = ti.model.util.get_speed_positionfixes(pfs)
+        speed_pfs = get_speed_positionfixes(pfs)
         assert_geodataframe_equal(pfs, speed_pfs.drop(columns=["speed"]))
 
     def test_accessor(self, load_positionfixes):
         """Test whether the accessor yields the same output as the function"""
         pfs, _ = load_positionfixes
         speed_pfs_acc = pfs.as_positionfixes.get_speed()
-        speed_pfs_normal = ti.model.util.get_speed_positionfixes(pfs)
+        speed_pfs_normal = get_speed_positionfixes(pfs)
         assert_geodataframe_equal(speed_pfs_acc, speed_pfs_normal)
 
     def test_speed_correct(self, load_positionfixes):
         """Test whether the correct speed values are computed"""
         pfs, correct_speeds = load_positionfixes
         # assert first two are the same
-        speed_pfs = ti.model.util.get_speed_positionfixes(pfs)
+        speed_pfs = get_speed_positionfixes(pfs)
         assert speed_pfs.loc[speed_pfs.index[0], "speed"] == speed_pfs.loc[speed_pfs.index[1], "speed"]
         assert np.all(np.isclose(speed_pfs["speed"].values, correct_speeds, rtol=1e-06))
 
@@ -57,7 +61,7 @@ class TestSpeedPositionfixes:
         """Test for each individual speed whether is is correct"""
         pfs, correct_speeds = load_positionfixes
         # compute speeds
-        speed_pfs = ti.model.util.get_speed_positionfixes(pfs)
+        speed_pfs = get_speed_positionfixes(pfs)
         computed_speeds = speed_pfs["speed"].values
         # test for each row whether the speed is correct
         for ind in range(1, len(correct_speeds)):
@@ -68,6 +72,30 @@ class TestSpeedPositionfixes:
             dist = ti.geogr.point_distances.haversine_dist(point1.x, point1.y, point2.x, point2.y)[0]
             assert np.isclose(dist / time_diff, computed_speeds[ind], rtol=1e-06)
             assert np.isclose(dist / time_diff, correct_speeds[ind], rtol=1e-06)
+
+    def test_geometry_name(self, load_positionfixes):
+        """Test if the geometry name can be set freely."""
+        pfs, _ = load_positionfixes
+        pfs.rename(columns={"geom": "freely_chosen_geometry_name"}, inplace=True)
+        pfs.set_geometry("freely_chosen_geometry_name", inplace=True)
+        get_speed_positionfixes(pfs)
+
+    def test_planar_geometry(self):
+        """Test function for geometry that is planar."""
+        start_time = Timestamp("2022-05-26 23:59:59")
+        second = Timedelta("1s")
+        p1 = Point(0.0, 0.0)
+        p2 = Point(1.0, 1.0)  # distance of sqrt(2)
+        p3 = Point(4.0, 5.0)  # distance of 5
+        d = [
+            {"tracked_at": start_time, "g": p1},
+            {"tracked_at": start_time + second, "g": p2},
+            {"tracked_at": start_time + 3 * second, "g": p3},
+        ]
+        pfs = GeoDataFrame(d, geometry="g", crs="EPSG:2056")
+        pfs = get_speed_positionfixes(pfs)
+        correct_speed = np.array((np.sqrt(2), np.sqrt(2), 5 / 2))
+        assert np.all(np.isclose(pfs["speed"].to_numpy(), correct_speed, rtol=1e-6))
 
 
 class TestPfsMeanSpeedTriplegs:
@@ -98,7 +126,7 @@ class TestPfsMeanSpeedTriplegs:
         # compute speed for one tripleg manually
         test_tpl = tpls.index[0]
         test_pfs = pfs[pfs["tripleg_id"] == test_tpl]
-        pfs_speed = ti.model.util.get_speed_positionfixes(test_pfs)
+        pfs_speed = get_speed_positionfixes(test_pfs)
         test_tpl_speed = np.mean(pfs_speed["speed"].values[1:])
         # compare to the one computed in the function
         computed_tpls_speed = tpls_speed.loc[test_tpl]["speed"]
