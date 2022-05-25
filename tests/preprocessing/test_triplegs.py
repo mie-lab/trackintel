@@ -8,12 +8,11 @@ import pytest
 from geopandas.testing import assert_geodataframe_equal
 from pandas.testing import assert_frame_equal, assert_series_equal, assert_index_equal
 
-from shapely import geometry
 from shapely.geometry import LineString, Point
 from tqdm import tqdm
 
 import trackintel as ti
-from trackintel.preprocessing.triplegs import generate_trips
+from trackintel.preprocessing.triplegs import generate_trips, smoothen_triplegs
 
 
 @pytest.fixture
@@ -46,7 +45,7 @@ class TestSmoothen_triplegs:
     def test_smoothen_triplegs(self):
         tpls_file = os.path.join("tests", "data", "triplegs_with_too_many_points_test.csv")
         tpls = ti.read_triplegs_csv(tpls_file, sep=";", index_col=None)
-        tpls_smoothed = ti.preprocessing.triplegs.smoothen_triplegs(tpls, tolerance=0.0001)
+        tpls_smoothed = smoothen_triplegs(tpls, tolerance=0.0001)
         line1 = tpls.iloc[0].geom
         line1_smoothed = tpls_smoothed.iloc[0].geom
         line2 = tpls.iloc[1].geom
@@ -58,6 +57,12 @@ class TestSmoothen_triplegs:
         assert len(line2.coords) == 7
         assert len(line1_smoothed.coords) == 4
         assert len(line2_smoothed.coords) == 3
+
+    def test_geometry_name(self, example_triplegs):
+        """Test if the geometry name can be set freely."""
+        _, tpls = example_triplegs
+        tpls["freely_set_geometry_name"] = LineString([[1, 1], [2, 2]])
+        smoothen_triplegs(tpls)
 
 
 class TestGenerate_trips:
