@@ -5,6 +5,7 @@ from math import cos, pi
 
 import numpy as np
 import pandas as pd
+import pygeos
 from scipy.spatial.distance import cdist
 from sklearn.metrics import pairwise_distances
 import similaritymeasures
@@ -207,7 +208,7 @@ def check_gdf_planar(gdf, transform=False):
 
     Returns
     -------
-    if_planer : bool
+    is_planer : bool
         True if the returned gdf has planar crs.
 
     gdf : GeoDataFrame
@@ -218,31 +219,17 @@ def check_gdf_planar(gdf, transform=False):
     >>> from trackintel.geogr.distances import check_gdf_planar
     >>> check_gdf_planar(triplegs, transform=False)
     """
-    is_planar = False
-    if gdf.crs is None:  # projection is not defined
-        is_planar = False
+    wgs84 = "EPSG:4326"
+    if gdf.crs != wgs84:
         if transform:
-            gdf.crs = "EPSG:4326"
-        else:
-            warnings.warn("The CRS of your data is not defined.")
+            gdf = gdf.set_crs(wgs84) if gdf.crs is None else gdf.to_crs(wgs84)
 
-    elif gdf.crs == "EPSG:4326":  # if projection is defined as WGS84
-        is_planar = False
-
-    else:  # if projection is defined but not as WGS84
-        if gdf.crs.is_geographic:  # if projection is a geographic crs
-            is_planar = False
-        else:
-            is_planar = True
-
-        if transform:
-            is_planar = False
-            gdf = gdf.to_crs("EPSG:4326")
+    if gdf.crs is None:
+        warnings.warn("The CRS of your data is not defined.")
 
     if transform:
-        return is_planar, gdf
-    else:
-        return is_planar
+        return False, gdf
+    return not (gdf.crs is None or gdf.crs.is_geographic)
 
 
 def calculate_haversine_length(gdf):
@@ -256,7 +243,7 @@ def calculate_haversine_length(gdf):
 
     Returns
     -------
-    length: Pandas Series
+    length: np.array
         The length of each linestring in meters
 
     Examples
@@ -264,37 +251,9 @@ def calculate_haversine_length(gdf):
     >>> from trackintel.geogr.distances import calculate_haversine_length
     >>> triplegs['length'] = calculate_haversine_length(triplegs)
     """
-    assert all(gdf.geom_type == "LineString")
-
-    length = gdf.geometry.apply(_calculate_haversine_length_single)
-    return length
-
-
-def _calculate_haversine_length_single(linestring):
-    """
-    calculate the length of a single linestring using the haversine distance.
-
-    Parameters
-    ----------
-    linestring : 'shapely.geometry.linestring.LineString'
-        Coordinates of the linestring are expected to be in WGS84
-
-    Returns
-    -------
-    int
-        length of the linestring in meter
-
-    Examples
-    --------
-    >>> from shapely.geometry import LineString
-    >>> from trackintel.geogr.distances import _calculate_haversine_length_single
-    >>> ls = LineString([(13.476808430, 48.573711823), (11.5675446, 48.1485459), (8.5067847, 47.4084269)])
-    >>> _calculate_haversine_length_single(ls)
-    """
-    coords_df = pd.DataFrame(linestring.xy, index=["x_0", "y_0"]).transpose()
-    coords_df["x_1"] = coords_df["x_0"].shift(-1)
-    coords_df["y_1"] = coords_df["y_0"].shift(-1)
-    coords_df.dropna(axis=0, inplace=True)
-
-    distances = haversine_dist(coords_df.x_0, coords_df.y_0, coords_df.x_1, coords_df.y_1)
-    return np.sum(distances)
+    geom = pygeos.from_shapely(gdf.geometry)
+    assert np.any(pygeos.get_type_id(geom) == 1)  # 1 is LineStrings
+    geom, index = pygeos.get_coordinates(geom, return_index=True)
+    no_mix = index[:-1] == index[1:]  # mask where LineStrings are not overlapping
+    dist = haversine_dist(geom[:-1, 0], geom[:-1, 1], geom[1:, 0], geom[1:, 1])
+    return np.bincount((index[:-1])[no_mix], weights=dist[no_mix])

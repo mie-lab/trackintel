@@ -15,13 +15,6 @@ CREATE TABLE positionfixes (
     -- Temporal attributes.
     tracked_at timestamp without time zone NOT NULL,
 
-    -- Specific attributes.
-    accuracy double precision,
-    tracking_tech character(12),
-    -- The context contains additional information that might be filled in by trackintel.
-    -- This could include things such as the temperature, public transport stops in vicinity, etc.
-    context json,
-
     -- Spatial attributes.
     elevation double precision,
     geom geometry(Point, 4326),
@@ -50,14 +43,6 @@ CREATE TABLE staypoints (
     validated_at timestamp without time zone,
     activity boolean,
 
-    -- Specific attributes.
-    -- The radius is an approximation of how far the positionfixes that made up this staypoint
-    -- are scattered around the center (geom) of it.
-    radius double precision,
-    -- The context contains additional information that might be filled in by trackintel.
-    -- This could include things such as the temperature, public transport stops in vicinity, etc.
-    context json,
-
     -- Spatial attributes.
     elevation double precision,
     geom geometry(Point, 4326),
@@ -84,11 +69,6 @@ CREATE TABLE triplegs (
     validated boolean,
     validated_at timestamp without time zone,
 
-    -- Specific attributes.
-    -- The context contains additional information that might be filled in by trackintel.
-    -- This could include things such as the temperature, public transport stops in vicinity, etc.
-    context json,
-
     -- Spatial attributes.
     -- The raw geometry is unprocessed, directly made up from the positionfixes. The column
     -- 'geom' contains processed (e.g., smoothened, map matched, etc.) data.
@@ -103,11 +83,6 @@ CREATE TABLE locations (
     -- Common to all tables.
     id bigint NOT NULL,
     user_id bigint,
-
-    -- Specific attributes.
-    -- The context contains additional information that might be filled in by trackintel.
-    -- This could include things such as the temperature, public transport stops in vicinity, etc.
-    context json,
     
     -- Spatial attributes.
     elevation double precision,
@@ -130,11 +105,6 @@ CREATE TABLE trips (
     -- Temporal attributes.
     started_at timestamp without time zone NOT NULL,
     finished_at timestamp without time zone NOT NULL,
-    
-    -- Specific attributes.
-    -- The context contains additional information that might be filled in by trackintel.
-    -- This could include things such as the temperature, public transport stops in vicinity, etc.
-    context json,
 
     -- Constraints.
     CONSTRAINT trips_pkey PRIMARY KEY (id)
@@ -151,10 +121,6 @@ CREATE TABLE tours (
     -- Temporal attributes.
     started_at timestamp without time zone NOT NULL,
     finished_at timestamp without time zone NOT NULL,
-    
-    -- The context contains additional information that might be filled in by trackintel.
-    -- This could include things such as the temperature, public transport stops in vicinity, etc.
-    context json,
 
     -- Constraints.
     CONSTRAINT tours_pkey PRIMARY KEY (id)

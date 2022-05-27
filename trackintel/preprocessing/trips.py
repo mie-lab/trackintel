@@ -257,8 +257,8 @@ def _generate_tours_user(
             else:
                 # If no locations are available, check whether the distance is smaller than max_dist
                 end_start_at_same_loc = _check_max_dist(
-                    user_trip_df.loc[start_candidates[-1], geom_col][1],  # destination point of previous trip
-                    row[geom_col][0],  # start point of current trip
+                    user_trip_df.loc[start_candidates[-1], geom_col].geoms[1],  # destination point of previous trip
+                    row[geom_col].geoms[0],  # start point of current trip
                     max_dist,
                     crs_is_projected,
                 )
@@ -318,8 +318,8 @@ def _generate_tours_user(
             else:
                 # if no locations are available, check whether the distance is smaller than max_dist
                 end_start_at_same_loc = _check_max_dist(
-                    user_trip_df.loc[cand, geom_col][0],  # start point of first trip
-                    row[geom_col][1],  # destination point of current trip
+                    user_trip_df.loc[cand, geom_col].geoms[0],  # start point of first trip
+                    row[geom_col].geoms[1],  # destination point of current trip
                     max_dist,
                     crs_is_projected=crs_is_projected,
                 )

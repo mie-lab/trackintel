@@ -7,7 +7,7 @@ import geopandas as gpd
 from shapely.geometry import Point
 
 import trackintel as ti
-from trackintel.analysis.tracking_quality import _get_split_index
+from trackintel.analysis.tracking_quality import _get_times
 
 
 @pytest.fixture
@@ -179,7 +179,7 @@ class TestTemporal_tracking_quality:
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
         sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
         _, locs = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=10, num_samples=0, distance_metric="haversine", agg_level="dataset"
+            method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
         with pytest.raises(KeyError):
             ti.analysis.tracking_quality.temporal_tracking_quality(locs)
@@ -302,7 +302,7 @@ class TestSplit_overlaps:
     def test_split_overlaps_hours_case2(self, testdata_sp_tpls_geolife_long):
         """Test if _split_overlaps() function can split record that have the same hour but different days."""
         # get the first two records
-        head2 = testdata_sp_tpls_geolife_long.head(2)
+        head2 = testdata_sp_tpls_geolife_long.head(2).copy()
 
         # construct the finished_at exactly one day after started_at
         head2["finished_at"] = head2["started_at"] + pd.Timedelta("1d")
@@ -339,22 +339,6 @@ class TestSplit_overlaps:
         assert splitted_day["duration"].sum() == sp_tpls["duration"].sum()
         assert splitted_hour["duration"].sum() == sp_tpls["duration"].sum()
 
-    def test_max_iter_warning(self):
-        """Test if a warning is raised when maximum iteration is reached."""
-        p1 = Point(8.5067847, 47.4)
-        # construct time that is far apart - exceeding the default max_iter
-        t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
-        t2 = pd.Timestamp("1981-01-01 00:00:00", tz="utc")
-
-        list_dict = [
-            {"user_id": 0, "started_at": t1, "finished_at": t2, "geom": p1},
-        ]
-        sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
-        sp.index.name = "id"
-
-        with pytest.warns(UserWarning):
-            ti.analysis.tracking_quality._split_overlaps(sp, granularity="day")
-
     def test_exact_midnight_split(self):
         """Test if split finishes and starts on midnight on the ns (pandas resolution)."""
         midnight = pd.Timestamp("2022-03-18 00:00:00", tz="utc")
@@ -373,27 +357,21 @@ class TestSplit_overlaps:
         assert (sp_res["finished_at"] == [midnight, end, midnight, end, midnight]).all()
 
 
-class TestGet_split_index:
-    """Test if __get_split_index splits correctly"""
+class TestGet_times:
+    """Test if _get_times splits correctly"""
 
     def test_midnight_ns(self):
         """Test datetimes 1 ns around midnight."""
-        # 9 possibilities, 3 per starts before, on and after an hour point
-        #     h1          h2
-        # --  | -- ... -- |  --
-        # s1 s2 s3 ... e1 e2 e3
+        #  Create 3 ranges for this split t1-t2, t2-t3, t3-t4
+        #     mn         mn + h
+        # --  | -- ... --  |  --
+        # t1 t2 -- ... -- t3 t4
         midnight = pd.Timestamp("2022-03-18 00:00:00", tz="utc")
-        start1 = midnight - pd.Timestamp.resolution
-        start2 = midnight
-        start3 = midnight + pd.Timestamp.resolution
-        starts = [start1, start2, start3]
-        ends = [s + pd.Timedelta("1h") for s in starts]
-
-        data = [
-            {"started_at": start, "finished_at": end, "res": (start == starts[0]) or (end == ends[2])}
-            for start in starts
-            for end in ends
-        ]
-        df = pd.DataFrame(data=data)
-        calculated_result = _get_split_index(df, "hour")
-        assert (calculated_result == df["res"]).all()
+        time1 = midnight - pd.Timestamp.resolution
+        time2 = midnight
+        time3 = midnight + pd.Timedelta("1h")
+        time4 = time3 + pd.Timestamp.resolution
+        times = [time1, time2, time3, time4]
+        result = (times[:-1], times[1:])
+        row = pd.Series({"index": 0, "started_at": times[0], "finished_at": times[-1]})
+        assert _get_times(row, freq="H") == result

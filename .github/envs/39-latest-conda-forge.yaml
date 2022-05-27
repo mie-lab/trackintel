@@ -18,8 +18,9 @@ dependencies:
 - tqdm
 - similaritymeasures
 - jupyter
-- geopandas
+- geopandas>=0.9.0
 - shapely
+- pygeos
 
 # tests
 - pytest

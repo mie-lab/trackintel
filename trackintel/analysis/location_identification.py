@@ -62,7 +62,7 @@ def location_identifier(staypoints, method="FREQ", pre_filter=True, **pre_filter
     if pre_filter:
         f = pre_filter_locations(sp, **pre_filter_kwargs)
     else:
-        f = pd.Series(np.full(len(sp.index), True))
+        f = pd.Series(np.full(len(sp.index), True), index=sp.index)
 
     if method == "FREQ":
         method_val = freq_method(sp[f], "home", "work")

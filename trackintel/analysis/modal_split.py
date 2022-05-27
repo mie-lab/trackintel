@@ -1,15 +1,14 @@
-import numpy as np
 import pandas as pd
 
 from trackintel.geogr.distances import check_gdf_planar, calculate_haversine_length
 
 
-def calculate_modal_split(tpls_in, freq=None, metric="count", per_user=False, norm=False):
+def calculate_modal_split(tpls, freq=None, metric="count", per_user=False, norm=False):
     """Calculate the modal split of triplegs
 
     Parameters
     ----------
-    tpls_in : GeoDataFrame (as trackintel triplegs)
+    tpls : GeoDataFrame (as trackintel triplegs)
         triplegs require the column `mode`.
     freq : str
         frequency string passed on as `freq` keyword to the pandas.Grouper class. If `freq=None` the modal split is
@@ -44,62 +43,49 @@ def calculate_modal_split(tpls_in, freq=None, metric="count", per_user=False, no
     >>> tripleg.calculate_modal_split(freq='W-MON', metric='distance')
 
     """
-    tpls = tpls_in.copy()
+    tpls = tpls.copy()  # copy as we add additional columns on tpls
 
-    # precalculate distance and duration if required
+    # count on mode, sum on length and duration
+    agg = "sum"
+    # calculate distance and duration if required
     if metric == "distance":
-        if_planer_crs = check_gdf_planar(tpls)
-        if not if_planer_crs:
-            tpls["distance"] = calculate_haversine_length(tpls)
-        else:
-            tpls["distance"] = tpls.length
+        tpls[metric] = _calculate_length(tpls)
     elif metric == "duration":
-        tpls["duration"] = tpls["finished_at"] - tpls["started_at"]
-
-    # create grouper
-    if freq is None:
-        if per_user:
-            tpls_grouper = tpls.groupby(["user_id", "mode"])
-        else:
-            tpls_grouper = tpls.groupby(["mode"])
+        tpls[metric] = (tpls["finished_at"] - tpls["started_at"]).dt.total_seconds()
+    elif metric == "count":
+        agg = "count"
+        metric = "mode"  # count on mode
     else:
+        error_msg = f"Metric {metric} unknown, only metrics {{'count', 'distance', 'duration'}} are supported."
+        raise AttributeError(error_msg)
+
+    group = []
+    if per_user:
+        group = ["user_id"]
+
+    if freq is not None:
         tpls.set_index("started_at", inplace=True)
         tpls.index.name = "timestamp"
-        if per_user:
-            tpls_grouper = tpls.groupby(["user_id", "mode", pd.Grouper(freq=freq)])
-        else:
-            tpls_grouper = tpls.groupby(["mode", pd.Grouper(freq=freq)])
+        group.append(pd.Grouper(freq=freq))
 
-    # aggregate
-    if metric == "count":
-        modal_split = tpls_grouper["mode"].count()
+    modal_split = pd.pivot_table(tpls, index=group, columns=["mode"], aggfunc={metric: agg}, fill_value=0)
+    if group:  # non-empty group creates MultiIndex that we need to handle
+        modal_split.columns = modal_split.columns.droplevel(0)
 
-    elif metric == "distance":
-        modal_split = tpls_grouper["distance"].sum()
-
-    elif metric == "duration":
-        modal_split = tpls_grouper["duration"].sum()
-        modal_split = modal_split.dt.total_seconds()
-
-    # move 'mode' to columns
-    modal_split.name = "modal_split"
-    modal_split = pd.DataFrame(modal_split)
-
-    # if mode is the only index, we replace it with zeros so that everything gets aggregated into a single row
-    modal_split["mode"] = modal_split.index.get_level_values("mode")
-    if modal_split.index.nlevels == 1:
-        modal_split.index = 0 * np.arange(0, modal_split.shape[0])
-    else:
-        modal_split = modal_split.droplevel("mode")
-
-    # transform Dataframe such that:
-    # - unique mode names are column names
-    # - time/user_id are the indices
-    modal_split = modal_split.pivot_table(index=modal_split.index, columns="mode", values="modal_split")
-    modal_split.fillna(0, inplace=True)
-
-    if norm:
-        # norm rows to 1
-        modal_split = modal_split.div(modal_split.sum(axis=1), axis=0)
-
+    if norm:  # norm rows to 1
+        return modal_split.div(modal_split.sum(axis=1), axis=0)
     return modal_split
+
+
+def _calculate_length(tpls):
+    """Help function to calculate length of tripleg.
+
+    Checks if crs is planar or if not. If not uses ``calculate_haversine_length``.
+
+    Parameters
+    ----------
+    tpls : GeoDataFrame (as trackintel triplegs)
+    """
+    if check_gdf_planar(tpls):
+        return tpls.length  # if planar use geopandas function
+    return pd.Series(calculate_haversine_length(tpls), index=tpls.index)

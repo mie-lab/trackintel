@@ -4,7 +4,7 @@ channels:
   - defaults
 dependencies:
 # - python=3.8
-- geopandas
+- geopandas>=0.9.0
 - pip:
   - numpy
   - matplotlib
@@ -19,3 +19,4 @@ dependencies:
   - sphinx_rtd_theme
   - tqdm
   - similaritymeasures
+  - pygeos
