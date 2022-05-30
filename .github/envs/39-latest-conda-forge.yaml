@@ -20,7 +20,7 @@ dependencies:
 - jupyter
 - geopandas>=0.9.0
 - shapely
-- pygeos
+- pygeos>=0.10.0
 
 # tests
 - pytest

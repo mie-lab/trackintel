@@ -33,7 +33,7 @@ REQUIRED = [
     "scikit-learn",
     "tqdm",
     "similaritymeasures",
-    "pygeos",
+    "pygeos>=0.10.0",
 ]
 
 install_requires = [
@@ -49,7 +49,7 @@ install_requires = [
     "tqdm",
     "geopandas>=0.9.0",
     "similaritymeasures",
-    "pygeos",
+    "pygeos>=0.10.0",
 ]
 
 # What packages are optional?

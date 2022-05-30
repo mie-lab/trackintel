@@ -10,4 +10,4 @@ osmnx
 psycopg2
 tqdm
 similaritymeasures
-pygeos
+pygeos>=0.10.0
