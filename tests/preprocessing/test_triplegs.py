@@ -366,6 +366,32 @@ class TestGenerate_trips:
         # test if start of first trip is (0,0)
         assert trips.loc[0, "geom"].geoms[0] == Point(0, 0)
 
+    def test_keeping_all_columns_sp_tpls(self, example_triplegs):
+        """Test if function does not drop columns in staypoints or triplegs."""
+        sp_pre, tpls_pre = example_triplegs
+        # these are the columns that are currently used in the code
+        cols_sp = ["type", "sp_tpls_id", "temp_trip_id", "sp", "tpls", "prev_trip_id", "next_trip_id", "trip_id"]
+        cols_tpls = cols_sp + ["is_activity"]
+        sp_pre[cols_sp] = 11.06
+        tpls_pre[cols_tpls] = 12.06
+        sp_pre.as_staypoints
+        tpls_pre.as_triplegs
+
+        # catch warnings for overwriting columns
+        with pytest.warns(UserWarning):
+            sp_post, tpls_post, _ = generate_trips(sp_pre, tpls_pre, gap_threshold=15)
+
+        assert_index_equal(sp_pre.columns, sp_pre.columns.intersection(sp_post.columns))
+        assert_index_equal(tpls_pre.columns, tpls_pre.columns.intersection(tpls_post.columns))
+
+    def test_missing_is_activity_column(self, example_triplegs):
+        """Tests is AttributeError is raised on missing "is_activity" column of staypoints."""
+        sp, tpls = example_triplegs
+        sp.drop(columns="is_activity", inplace=True)
+        error_msg = "staypoints need the column 'is_activity' to be able to generate trips"
+        with pytest.raises(AttributeError, match=error_msg):
+            generate_trips(sp, tpls)
+
 
 def _create_debug_sp_tpls_data(sp, tpls, gap_threshold):
     """Preprocess sp and tpls for "test_generate_trips_*."""

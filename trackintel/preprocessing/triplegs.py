@@ -98,45 +98,8 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     >>> staypoints, triplegs, trips = triplegs.as_triplegs.generate_trips(staypoints)
 
     """
-
-    assert "is_activity" in staypoints.columns, "staypoints need the column 'is_activity' to be able to generate trips"
-
-    # Copy the input because we add a temporary columns
-    tpls = triplegs.copy()
-    sp = staypoints.copy()
     gap_threshold = pd.to_timedelta(gap_threshold, unit="min")
-
-    # If the triplegs already have a column "trip_id", we drop it
-    if "trip_id" in tpls:
-        tpls.drop(columns="trip_id", inplace=True)
-        warnings.warn("Deleted existing column 'trip_id' from tpls.")
-
-    # if the staypoints already have any of the columns "trip_id", "prev_trip_id", "next_trip_id", we drop them
-    for col in ["trip_id", "prev_trip_id", "next_trip_id"]:
-        if col in sp:
-            sp.drop(columns=col, inplace=True)
-            warnings.warn(f"Deleted column '{col}' from staypoints.")
-
-    tpls["type"] = "tripleg"
-    sp["type"] = "staypoint"
-
-    # create table with relevant information from triplegs and staypoints.
-    sp_tpls = pd.concat(
-        [
-            sp[["started_at", "finished_at", "user_id", "type", "is_activity"]],
-            tpls[["started_at", "finished_at", "user_id", "type"]],
-        ]
-    )
-    if add_geometry:
-        sp_tpls["geom"] = pd.concat([sp.geometry, tpls.geometry])
-
-    # transform nan to bool
-    sp_tpls["is_activity"].fillna(False, inplace=True)
-
-    # create ID field from index
-    sp_tpls["sp_tpls_id"] = sp_tpls.index
-
-    sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
+    sp_tpls = _concat_staypoints_triplegs(staypoints, triplegs, add_geometry)
 
     # conditions for new trip
     # start new trip if the user changes
@@ -217,12 +180,6 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     # add prev_trip_id and next_trip_id for is_activity staypoints
     trips_with_act["prev_trip_id"] = trips_with_act["trip_id"].shift(1)
     trips_with_act["next_trip_id"] = trips_with_act["trip_id"].shift(-1)
-    activity_staypoints = trips_with_act[trips_with_act["type"] == "staypoint"].copy()
-
-    activity_staypoints.index = activity_staypoints["sp_tpls_id"]
-    # containing None changes dtype -> revert to original dtype.
-    activity_staypoints.index = activity_staypoints.index.astype(sp.index.dtype)
-    sp = sp.join(activity_staypoints[["prev_trip_id", "next_trip_id"]], how="left")
 
     # transform column to binary
     trips_with_act["is_activity"].fillna(False, inplace=True)
@@ -243,10 +200,18 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     )
 
     # now handle the data that is aggregated in the trips
-    # assign trip_id to tpls
-    tpls = _explode_agg("tpls", "trip_id", tpls, trips)
+    # assign trip_id to tpls, override "trip_id" -> warning in _create_sp_tpls
+    cols = triplegs.columns.difference(["trip_id"])
+    tpls = _explode_agg("tpls", "trip_id", triplegs[cols], trips)  # creates copy of triplegs
 
-    # assign trip_id to sp, for non-activity sp
+    # first assign prev_trip_id, next_trip_id for activity staypoints
+    activity_staypoints = trips_with_act[trips_with_act["type"] == "staypoint"].copy()
+    # containing None changes dtype -> cast to original dtype.
+    activity_staypoints.index = activity_staypoints["sp_tpls_id"].astype(staypoints.index.dtype)
+    # override ["prev_trip_id", "next_trip_id", "trip_id"] -> warning in _create_sp_tpls
+    cols = staypoints.columns.difference(["prev_trip_id", "next_trip_id", "trip_id"])
+    sp = staypoints[cols].join(activity_staypoints[["prev_trip_id", "next_trip_id"]], how="left")
+    # second assign trip_id to all staypoints
     sp = _explode_agg("sp", "trip_id", sp, trips)
 
     # fill missing points and convert to MultiPoint
@@ -272,8 +237,6 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
         trips.drop(["origin_geom", "destination_geom"], inplace=True, axis=1)
 
     # final cleaning
-    tpls.drop(columns=["type"], inplace=True)
-    sp.drop(columns=["type"], inplace=True)
     trips.drop(columns=["tpls", "sp", "trip_id"], inplace=True)
 
     # dtype consistency
@@ -290,6 +253,58 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     trips["user_id"] = trips["user_id"].astype(tpls["user_id"].dtype)
 
     return sp, tpls, trips
+
+
+def _concat_staypoints_triplegs(staypoints, triplegs, add_geometry):
+    """Concatenate staypoints and triplegs to sp_tpls with new columns ["type", "is_activity", "sp_tpls_id"].
+
+    Parameters
+    ----------
+    staypoints : GeoDataFrame (as trackintel staypoints)
+    triplegs : GeoDataFrame (as trackintel triplegs)
+    add_geometry : bool
+
+    Returns
+    -------
+    sp_tpls : GeoDataFrame
+        "type": either "staypoint" or "tripleg"
+        "is_activity": True for staypoints that are activity staypoints
+        "sp_tpls_id": id of the corresponding staypoint or tripleg
+
+    Raises
+    ------
+    AttributeError
+        Raised if staypoints don't have column "is_activity"
+    """
+    if "is_activity" not in staypoints:
+        raise AttributeError("staypoints need the column 'is_activity' to be able to generate trips")
+    # Copy the input because we add temporary column "type"
+    tpls = triplegs.copy()
+    sp = staypoints.copy()
+
+    # write warnings for columns that we replace
+    if "trip_id" in tpls:
+        warnings.warn(f"Override column 'trip_id' in copy of triplegs.")
+
+    intersection = sp.columns.intersection(["trip_id", "prev_trip_id", "next_trip_id"])
+    if len(intersection):
+        warnings.warn(f"Override column(s) {intersection} in copy of staypoints.")
+
+    tpls["is_activity"] = False  # in case "is_activity" is already a column of tpls
+    tpls["type"] = "tripleg"
+    sp["type"] = "staypoint"
+
+    # create table with relevant information from triplegs and staypoints.
+    sp_cols = ["started_at", "finished_at", "user_id", "type", "is_activity"]
+    tpls_cols = ["started_at", "finished_at", "user_id", "type"]
+    sp_tpls = pd.concat([sp[sp_cols], tpls[tpls_cols]])
+    sp_tpls["is_activity"].fillna(False, inplace=True)
+    sp_tpls["sp_tpls_id"] = sp_tpls.index  # store id for later reassignment
+    if add_geometry:
+        sp_tpls["geom"] = pd.concat([sp.geometry, tpls.geometry])
+
+    sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
+    return sp_tpls
 
 
 def _get_activity_masks(df):
