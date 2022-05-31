@@ -2,7 +2,7 @@ from functools import partial, update_wrapper
 import trackintel as ti
 import numpy as np
 import pandas as pd
-from trackintel.geogr.distances import calculate_haversine_length
+from trackintel.geogr.distances import calculate_haversine_length, check_gdf_planar
 from trackintel.geogr.point_distances import haversine_dist
 
 
@@ -70,27 +70,29 @@ def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
     """
     # Simple method: Divide overall tripleg distance by overall duration
     if method == "tpls_speed":
-        tpls = triplegs.copy()
-        # check what distance function we need to compute tripleg distance
-        if_planar_crs = ti.geogr.distances.check_gdf_planar(tpls)
-        if not if_planar_crs:
-            tpls_distance = calculate_haversine_length(triplegs)
+        if check_gdf_planar(triplegs):
+            distance = triplegs.length
         else:
-            tpls_distance = triplegs.length
-        duration = (tpls["finished_at"] - tpls["started_at"]).apply(lambda x: x.total_seconds())
+            distance = calculate_haversine_length(triplegs)
+        duration = (triplegs["finished_at"] - triplegs["started_at"]).dt.total_seconds()
         # The unit of the speed is m/s
-        tpls["speed"] = tpls_distance / duration
+        tpls = triplegs.copy()
+        tpls["speed"] = distance / duration
         return tpls
+
     # Pfs-based method: compute speed per positionfix and average then
     elif method == "pfs_mean_speed":
-        assert positionfixes is not None, "Method pfs_mean_speed requires positionfixes as input"
-        assert "tripleg_id" in positionfixes.columns, "Positionfixes must include column tripleg_id"
+        if positionfixes is None:
+            raise AttributeError('Method "pfs_mean_speed" requires positionfixes as input.')
+        if "tripleg_id" not in positionfixes:
+            raise AttributeError('Positionfixes mut include column "tripleg_id"')
         # group positionfixes by triplegs and compute average speed for each collection of positionfixes
         grouped_pfs = positionfixes.groupby("tripleg_id").apply(_single_tripleg_mean_speed)
         # add the speed values to the triplegs column
         tpls = pd.merge(triplegs, grouped_pfs.rename("speed"), left_index=True, right_index=True)
         tpls.index = tpls.index.astype("int64")
         return tpls
+
     else:
         raise AttributeError(f"Method {method} not known for speed computation.")
 
