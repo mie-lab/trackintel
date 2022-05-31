@@ -7,17 +7,6 @@ dependencies:
 - geopandas
 - pygeos
 - pip:
-  - numpy
-  - matplotlib
-  - pandas
-  - scikit-learn
-  - networkx
-  - pint
-  - geoalchemy2
-  - osmnx
-  - psycopg2
   - sphinx
   - sphinx_rtd_theme
-  - tqdm
-  - similaritymeasures
   
