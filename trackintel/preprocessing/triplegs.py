@@ -33,10 +33,7 @@ def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
         The simplified triplegs GeoDataFrame
     """
     ret_tpls = triplegs.copy()
-    origin_geom = ret_tpls.geom
-    simplified_geom = origin_geom.simplify(tolerance, preserve_topology=preserve_topology)
-    ret_tpls.geom = simplified_geom
-
+    ret_tpls.geometry = ret_tpls.geometry.simplify(tolerance, preserve_topology=preserve_topology)
     return ret_tpls
 
 
