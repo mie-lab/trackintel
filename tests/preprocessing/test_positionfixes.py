@@ -121,8 +121,9 @@ class TestGenerate_staypoints:
         pfs_duplicate_all = pfs_duplicate_loc.copy()
         pfs_duplicate_all.loc[0, "tracked_at"] = pfs_duplicate_all.loc[1, "tracked_at"]
 
-        warn_string = ".* duplicates were dropped from your positionfixes."
-        with pytest.warns(None) as record:
+        warn_string = "duplicates were dropped from your positionfixes."
+        # generates warning for empty generation but not for duplicate pfs
+        with pytest.warns(UserWarning) as record:
             example_positionfixes.as_positionfixes.generate_staypoints()
             pfs_duplicate_loc.as_positionfixes.generate_staypoints()
             pfs_duplicate_t.as_positionfixes.generate_staypoints()
