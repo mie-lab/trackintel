@@ -85,7 +85,7 @@ def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
         if positionfixes is None:
             raise AttributeError('Method "pfs_mean_speed" requires positionfixes as input.')
         if "tripleg_id" not in positionfixes:
-            raise AttributeError('Positionfixes mut include column "tripleg_id"')
+            raise AttributeError('Positionfixes must include column "tripleg_id".')
         # group positionfixes by triplegs and compute average speed for each collection of positionfixes
         grouped_pfs = positionfixes.groupby("tripleg_id").apply(_single_tripleg_mean_speed)
         # add the speed values to the triplegs column
