@@ -19,6 +19,7 @@ def plot_modal_split(
     skip_xticks=0,
     n_col_legend=5,
     borderaxespad=0.5,
+    **kwargs
 ):
     """
     Plot modal split as returned by `trackintel.analysis.modal_split.calculate_modal_split`
@@ -48,7 +49,10 @@ def plot_modal_split(
     n_col_legend : int
         Passed on as `ncol` to matplotlib.pyplot.legend()
     borderaxespad : float
+        The pad between the axes and legend border, in font-size units.
         Passed on to matplotlib.pyplot.legend()
+    **kwargs : dict
+        Keyword arguments passed on to DataFrame.plot.bar()
 
     Returns
     -------
@@ -84,7 +88,7 @@ def plot_modal_split(
     df_modal_split.index = df_modal_split.index.map(lambda s: s.strftime(date_fmt_x_axis))
 
     # plotting
-    df_modal_split.plot.bar(stacked=True, ax=ax)
+    df_modal_split.plot.bar(stacked=True, ax=ax, **kwargs)
 
     # skip ticks for X axis
     if skip_xticks > 0:
