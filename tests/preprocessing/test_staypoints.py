@@ -399,6 +399,22 @@ class TestGenerate_locations:
 
         assert sp2.loc[[2, 7], "location_id"].isnull().all()
 
+    def test_agg_level_error(self, example_staypoints):
+        """Test if unknown "agg_level" raises AttributeError"""
+        agg_level = "unknown"
+        error_msg = f"agg_level '{agg_level}' is unknown. Supported values are ['user', 'dataset']."
+        with pytest.raises(AttributeError) as e:
+            example_staypoints.as_staypoints.generate_locations(method="dbscan", agg_level="unkown")
+            assert error_msg == str(e.value)
+
+    def test_method_error(self, example_staypoints):
+        """Test if unknown "method" raises AttributeError"""
+        method = "unknown"
+        error_msg = f"method '{method}' is unknown. Supported values are ['dbscan']."
+        with pytest.raises(AttributeError) as e:
+            example_staypoints.as_staypoints.generate_locations(method="unknown")
+            assert error_msg == str(e.value)
+
 
 class TestMergeStaypoints:
     def test_merge_staypoints(self, example_staypoints_merge):
