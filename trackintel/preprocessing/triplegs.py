@@ -8,35 +8,6 @@ from shapely.geometry import MultiPoint, Point
 from trackintel.preprocessing.util import _explode_agg
 
 
-def smoothen_triplegs(triplegs, tolerance=1.0, preserve_topology=True):
-    """
-    Reduce number of points while retaining structure of tripleg.
-
-    A wrapper function using shapely.simplify():
-    https://shapely.readthedocs.io/en/stable/manual.html#object.simplify
-
-    Parameters
-    ----------
-    triplegs: GeoDataFrame (as trackintel triplegs)
-        triplegs to be simplified
-
-    tolerance: float, default 1.0
-        a higher tolerance removes more points; the units of tolerance are the same as the
-        projection of the input geometry
-
-    preserve_topology: bool, default True
-        whether to preserve topology. If set to False the Douglas-Peucker algorithm is used.
-
-    Returns
-    -------
-    ret_tpls: GeoDataFrame (as trackintel triplegs)
-        The simplified triplegs GeoDataFrame
-    """
-    ret_tpls = triplegs.copy()
-    ret_tpls.geometry = ret_tpls.geometry.simplify(tolerance, preserve_topology=preserve_topology)
-    return ret_tpls
-
-
 def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     """Generate trips based on staypoints and triplegs.
 
