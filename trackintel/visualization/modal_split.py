@@ -19,7 +19,7 @@ def plot_modal_split(
     skip_xticks=0,
     n_col_legend=5,
     borderaxespad=0.5,
-    bar_kws=None
+    bar_kws=None,
 ):
     """
     Plot modal split as returned by `trackintel.analysis.modal_split.calculate_modal_split`
