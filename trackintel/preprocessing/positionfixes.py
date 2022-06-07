@@ -226,7 +226,7 @@ def generate_triplegs(
     # we need to ensure pfs is properly ordered
     pfs.sort_values(by=["user_id", "tracked_at"], inplace=True)
 
-    if method == "between_staypoints":
+    if method in ["between_staypoints", "overlap_staypoints"]:
 
         # get case:
         # Case 1: pfs have a column 'staypoint_id'
@@ -277,7 +277,9 @@ def generate_triplegs(
         # get all conditions that trigger a new tripleg.
         # condition 1: a positionfix belongs to a new tripleg if the user changes. For this we need to sort pfs.
         # The first positionfix of the new user is the start of a new tripleg (if it is no staypoint)
-        cond_new_user = ((pfs["user_id"] - pfs["user_id"].shift(1)) != 0) & pd.isna(pfs["staypoint_id"])
+        is_new_user = (pfs["user_id"] - pfs["user_id"].shift(1)) != 0
+        is_tpl = pd.isna(pfs["staypoint_id"])
+        cond_new_user = is_new_user & is_tpl
 
         # condition 2: Temporal gaps
         # if there is a gap that is longer than gap_threshold minutes, we start a new tripleg
@@ -351,11 +353,35 @@ def generate_triplegs(
         # assign back pd.NA to -1
         pfs.loc[pfs["tripleg_id"] == -1, "tripleg_id"] = pd.NA
 
+        # overlap triplegs with staypoints
+        pfs_geom_orig = pfs.geometry.values.copy()
+        if method == "overlap_staypoints":
+
+            # identify overlap indices in pfs to update, conditions:
+            # - not a new user
+            # - not a tripleg
+            # - not a gap at staypoint start
+            # - not a gap at staypoint end
+            cond_overlap = ~is_new_user & ~is_tpl & ~cond_gap & ~cond_gap.shift(-1).fillna(False)
+
+            # insert tripleg ids to overlap with staypoints
+            # Note: In case of a staypoint with 1 positionfix only the tripleg before overlaps the staypoint.
+            # TODO: Handle staypoints with only 1 positionfix; needs duplication of the positionfix.
+            pfs.loc[cond_overlap, "tripleg_id"] = pfs["tripleg_id"].shift(-1)[cond_overlap]
+            pfs.loc[cond_overlap, "tripleg_id"] = pfs["tripleg_id"].shift(2)[cond_overlap]
+
+            # temporarily set pfs geometries to staypoint geometries to ensure spatial overlap in tripleg generation
+            if staypoints is not None:
+                pfs.loc[cond_overlap, "geom"] = staypoints.loc[pfs.loc[cond_overlap, "staypoint_id"]].geometry.values
+
         posfix_grouper = pfs.groupby("tripleg_id")
 
         tpls = posfix_grouper.agg(
             {"user_id": ["mean"], "tracked_at": [min, max], pfs.geometry.name: list}
         )  # could add a "number of pfs": can be any column "count"
+
+        # restore original pfs geometries
+        pfs["geom"] = pfs_geom_orig
 
         # prepare dataframe: Rename columns; read/set geometry/crs;
         # Order of column has to correspond to the order of the groupby statement
