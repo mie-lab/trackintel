@@ -2,7 +2,7 @@ import numpy as np
 import math
 
 
-def haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000, float_calc=False):
+def haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000, float_flag=False):
     """
     Compute the great circle or haversine distance between two coordinates in WGS84.
 
@@ -26,7 +26,7 @@ def haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000, float_calc=False):
         Radius of the reference sphere for the calculation.
         The average Earth radius is 6'371'000 m.
 
-    float_calc : bool, default False
+    float_flag : bool, default False
         Optimization flag. Set to True if you are sure that you are only using floats as args.
 
     Returns
@@ -44,7 +44,7 @@ def haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000, float_calc=False):
     https://en.wikipedia.org/wiki/Haversine_formula
     https://stackoverflow.com/questions/19413259/efficient-way-to-calculate-distance-matrix-given-latitude-and-longitude-data-in
     """
-    if float_calc:
+    if float_flag:
         lon_1 = math.radians(lon_1)
         lat_1 = math.radians(lat_1)
         lon_2 = math.radians(lon_2)

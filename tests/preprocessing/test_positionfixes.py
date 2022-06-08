@@ -174,9 +174,10 @@ class TestGenerate_staypoints:
         """Test if using large thresholds, stp extraction yield no pfs."""
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
         warn_string = "No staypoints can be generated, returning empty sp."
+        max_time = pd.Timedelta.max.total_seconds() // 60
         with pytest.warns(UserWarning, match=warn_string):
             _, sp = pfs.as_positionfixes.generate_staypoints(
-                method="sliding", dist_threshold=sys.maxsize, time_threshold=sys.maxsize
+                method="sliding", dist_threshold=sys.maxsize, time_threshold=max_time
             )
         assert len(sp) == 0
 
@@ -184,12 +185,13 @@ class TestGenerate_staypoints:
         """Test nan is assigned for missing link between pfs and sp."""
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
         warn_string = "No staypoints can be generated, returning empty sp."
+        max_time = pd.Timedelta.max.total_seconds() // 60
         with pytest.warns(UserWarning, match=warn_string):
             pfs, _ = pfs.as_positionfixes.generate_staypoints(
-                method="sliding", dist_threshold=sys.maxsize, time_threshold=sys.maxsize
+                method="sliding", dist_threshold=sys.maxsize, time_threshold=max_time
             )
 
-        assert pd.isna(pfs["staypoint_id"]).any()
+        assert pd.isna(pfs["staypoint_id"]).all()
 
     def test_dtype_consistent(self, geolife_pfs_sp_long):
         """Test the dtypes for the generated columns."""
@@ -203,7 +205,7 @@ class TestGenerate_staypoints:
         """Test the generated index start from 0 for different methods."""
         _, sp = geolife_pfs_sp_long
 
-        assert (sp.index == np.arange(len(sp))).any()
+        assert (sp.index == np.arange(len(sp))).all()
 
     def test_include_last(self):
         """Test if the include_last arguement will include the last pfs as stp."""
