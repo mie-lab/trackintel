@@ -1,4 +1,5 @@
 from math import radians
+from matplotlib.pyplot import axis
 
 import numpy as np
 import geopandas as gpd
@@ -146,8 +147,9 @@ def generate_locations(
         # filter staypoints not belonging to locations
         locs = locs.loc[locs["location_id"] != -1]
 
-        # TODO: mean of degrees is not centroid of area (good enough for our purpose?)
-        locs["center"] = locs.geometry.centroid
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            locs["center"] = locs.geometry.centroid  # warning for geographic crs
 
         # extent is the convex hull of the geometry
         locs["extent"] = locs.geometry.convex_hull
@@ -161,7 +163,7 @@ def generate_locations(
                 lambda p: p["extent"].buffer(meters_to_decimal_degrees(epsilon, p["center"].y)), axis=1
             )
         else:
-            locs.loc[pointLine_idx, "extent"] = locs.loc[pointLine_idx].buffer(epsilon)
+            locs.loc[pointLine_idx, "extent"] = locs.loc[pointLine_idx, "extent"].buffer(epsilon)
 
         locs = locs.set_geometry("center")
         locs = locs[["user_id", "location_id", "center", "extent"]]
