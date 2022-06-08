@@ -294,6 +294,17 @@ class TestGenerate_staypoints:
         assert len(sp) == 1
 
 
+class Test_Generate_staypoints_sliding_user:
+    """Test for _generate_staypoints_sliding_user."""
+
+    def test_unknown_distance_metric(self, example_positionfixes):
+        """Test if the distance metric is unknown, an AttributeError will be raised."""
+        with pytest.raises(AttributeError):
+            example_positionfixes.as_positionfixes.generate_staypoints(
+                method="sliding", dist_threshold=100, time_threshold=5, distance_metric="unknown"
+            )
+
+
 class TestGenerate_triplegs:
     """Tests for generate_triplegs() method."""
 
