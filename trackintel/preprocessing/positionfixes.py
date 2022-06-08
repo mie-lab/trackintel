@@ -400,9 +400,6 @@ def _generate_staypoints_sliding_user(
 
     df = df.sort_index(kind="stable").sort_values(by=["tracked_at"], kind="stable")
 
-    # precalulate variables to not do that in for loop
-    last_curr = len(df.index) - 1
-
     # transform times to pandas Timedelta to simplify comparisons
     gap_threshold = pd.Timedelta(gap_threshold, unit="minutes")
     # to numpy as access time of numpy numpy is faster than pandas array
@@ -421,7 +418,7 @@ def _generate_staypoints_sliding_user(
             start = curr
             continue
 
-        delta_dist = dist_func(x[start], y[start], x[curr], y[curr])
+        delta_dist = dist_func(x[start], y[start], x[curr], y[curr], float_calc=True)
         if delta_dist >= dist_threshold:
             # the total duration (minutes) of the staypoints
             delta_t = (df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]).total_seconds() // 60
@@ -434,13 +431,13 @@ def _generate_staypoints_sliding_user(
             # also initializer when new sp is added
             start = curr
 
-        # if we arrive at the last positionfix, and want to include the last staypoint
-        if include_last and curr == last_curr:
-            # additional control: we want to create staypoints with duration larger than time_threshold
-            delta_t = (df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]).total_seconds() // 60
-            if delta_t >= time_threshold:
-                new_sp = __create_new_staypoints(start, curr, df, elevation_flag, geo_col, last_flag=True)
-                ret_sp.append(new_sp)
+    # when we arrive at the last positionfix, and want to aggregate remaining positionfixes
+    if include_last:
+        # additional control: we want to create staypoints with duration larger than time_threshold
+        delta_t = (df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]).total_seconds() // 60
+        if delta_t >= time_threshold:
+            new_sp = __create_new_staypoints(start, curr, df, elevation_flag, geo_col, last_flag=True)
+            ret_sp.append(new_sp)
 
     ret_sp = pd.DataFrame(ret_sp)
     ret_sp["user_id"] = df["user_id"].unique()[0]
