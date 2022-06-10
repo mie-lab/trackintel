@@ -252,15 +252,23 @@ def generate_triplegs(
                 # step 1
                 # All positionfixes with timestamp between staypoints are assigned the value 0
                 # Intersect all positionfixes of a user with all staypoints of the same user
-                intervals = pd.IntervalIndex.from_arrays(sp_user["started_at"], sp_user["finished_at"], closed="left")
-                is_in_interval = pfs_user["tracked_at"].apply(lambda x: intervals.contains(x).any()).astype("bool")
+                intervals = pd.IntervalIndex.from_arrays(
+                    sp_user["started_at"], sp_user["finished_at"], closed="left"
+                )
+                is_in_interval = (
+                    pfs_user["tracked_at"]
+                    .apply(lambda x: intervals.contains(x).any())
+                    .astype("bool")
+                )
                 pfs.loc[is_in_interval[is_in_interval].index, "staypoint_id"] = 0
 
                 # step 2
                 # Identify first positionfix after a staypoint
                 # find index of closest positionfix with equal or greater timestamp.
                 tracked_at_sorted = pfs_user["tracked_at"].sort_values()
-                insert_position_user = tracked_at_sorted.searchsorted(sp_user["finished_at"])
+                insert_position_user = tracked_at_sorted.searchsorted(
+                    sp_user["finished_at"]
+                )
                 insert_index_user = tracked_at_sorted.iloc[insert_position_user].index
 
                 # store the insert insert_position_user in an array
@@ -283,7 +291,9 @@ def generate_triplegs(
 
         # condition 2: Temporal gaps
         # if there is a gap that is longer than gap_threshold minutes, we start a new tripleg
-        cond_gap = pfs["tracked_at"] - pfs["tracked_at"].shift(1) > datetime.timedelta(minutes=gap_threshold)
+        cond_gap = pfs["tracked_at"] - pfs["tracked_at"].shift(1) > datetime.timedelta(
+            minutes=gap_threshold
+        )
 
         # condition 3: staypoint
         # By our definition the pf after a stp is the first pf of a tpl.
@@ -328,7 +338,9 @@ def generate_triplegs(
             # pfs ends with tpl
             # ignore the tpls after the last sp sp_tpls_diff
             ignore_index = tpls_place_in_sp == len(sp_starts)
-            sp_tpls_diff = sp_starts[tpls_place_in_sp[~ignore_index]] - tpls_starts[~ignore_index]
+            sp_tpls_diff = (
+                sp_starts[tpls_place_in_sp[~ignore_index]] - tpls_starts[~ignore_index]
+            )
 
             # tpls_lengths is the minimum of tpls_diff and sp_tpls_diff
             tpls_lengths = np.minimum(tpls_diff[: len(sp_tpls_diff)], sp_tpls_diff)
@@ -354,7 +366,7 @@ def generate_triplegs(
         pfs.loc[pfs["tripleg_id"] == -1, "tripleg_id"] = pd.NA
 
         # overlap triplegs with staypoints
-        pfs_geom_orig = pfs.geometry.values.copy()
+        pfs_geom_orig = None
         if method == "overlap_staypoints":
 
             # identify overlap indices in pfs to update, conditions:
@@ -362,17 +374,37 @@ def generate_triplegs(
             # - not a tripleg
             # - not a gap at staypoint start
             # - not a gap at staypoint end
-            cond_overlap = ~is_new_user & ~is_tpl & ~cond_gap & ~cond_gap.shift(-1).fillna(False)
+            cond_overlap = ~is_new_user & ~is_tpl
 
             # insert tripleg ids to overlap with staypoints
             # Note: In case of a staypoint with 1 positionfix only the tripleg before overlaps the staypoint.
             # TODO: Handle staypoints with only 1 positionfix; needs duplication of the positionfix.
-            pfs.loc[cond_overlap, "tripleg_id"] = pfs["tripleg_id"].shift(-1)[cond_overlap]
-            pfs.loc[cond_overlap, "tripleg_id"] = pfs["tripleg_id"].shift(2)[cond_overlap]
+            tpls_id_orig = pfs["tripleg_id"].copy()
+
+            # overlap tripleg with end of staypoint
+            cond_overlap_end = cond_overlap & ~cond_gap.shift(-1).fillna(False)
+            pfs.loc[cond_overlap_end, "tripleg_id"] = tpls_id_orig.shift(-1)[
+                cond_overlap_end
+            ]
+            pfs.loc[cond_overlap_end, "tripleg_id_end"] = tpls_id_orig.shift(-1)[
+                cond_overlap_end
+            ]
+
+            # overlap tripleg with start of staypoint
+            cond_overlap_start = cond_overlap & ~cond_gap & pd.isna(pfs["tripleg_id"])
+            pfs.loc[cond_overlap_start, "tripleg_id"] = tpls_id_orig.shift(1)[
+                cond_overlap_start
+            ]
+            pfs.loc[cond_overlap_start, "tripleg_id_start"] = tpls_id_orig.shift(1)[
+                cond_overlap_start
+            ]
 
             # temporarily set pfs geometries to staypoint geometries to ensure spatial overlap in tripleg generation
             if staypoints is not None:
-                pfs.loc[cond_overlap, "geom"] = staypoints.loc[pfs.loc[cond_overlap, "staypoint_id"]].geometry.values
+                pfs_geom_orig = pfs.geometry.values.copy()
+                pfs.loc[~is_tpl, pfs.geometry.name] = staypoints.loc[
+                    pfs.loc[~is_tpl, "staypoint_id"]
+                ].geometry.values
 
         posfix_grouper = pfs.groupby("tripleg_id")
 
@@ -380,8 +412,9 @@ def generate_triplegs(
             {"user_id": ["mean"], "tracked_at": [min, max], pfs.geometry.name: list}
         )  # could add a "number of pfs": can be any column "count"
 
-        # restore original pfs geometries
-        pfs["geom"] = pfs_geom_orig
+        # restore original pfs geometries if needed
+        if method == "overlap_staypoints" and pfs_geom_orig is not None:
+            pfs[pfs.geometry.name] = pfs_geom_orig
 
         # prepare dataframe: Rename columns; read/set geometry/crs;
         # Order of column has to correspond to the order of the groupby statement
@@ -412,17 +445,29 @@ def generate_triplegs(
         return pfs, tpls
 
     else:
-        raise AttributeError(f"Method unknown. We only support 'between_staypoints'. You passed {method}")
+        raise AttributeError(
+            f"Method unknown. We only support 'between_staypoints'. You passed {method}"
+        )
 
 
 def _generate_staypoints_sliding_user(
-    df, geo_col, elevation_flag, dist_threshold, time_threshold, gap_threshold, distance_metric, include_last=False
+    df,
+    geo_col,
+    elevation_flag,
+    dist_threshold,
+    time_threshold,
+    gap_threshold,
+    distance_metric,
+    include_last=False,
 ):
     """User level staypoint geenration using sliding method, see generate_staypoints() function for parameter meaning."""
     if distance_metric == "haversine":
         dist_func = haversine_dist
     else:
-        raise AttributeError("distance_metric unknown. We only support ['haversine']. " f"You passed {distance_metric}")
+        raise AttributeError(
+            "distance_metric unknown. We only support ['haversine']. "
+            f"You passed {distance_metric}"
+        )
 
     df = df.sort_index(kind="stable").sort_values(by=["tracked_at"], kind="stable")
 
@@ -432,7 +477,9 @@ def _generate_staypoints_sliding_user(
     # transform times to pandas Timedelta to simplify comparisons
     gap_threshold = pd.Timedelta(gap_threshold, unit="minutes")
     # to numpy as access time of numpy numpy is faster than pandas array
-    gap_times = pd.eval("((df.tracked_at - df.tracked_at.shift(1)) > gap_threshold)").to_numpy()
+    gap_times = pd.eval(
+        "((df.tracked_at - df.tracked_at.shift(1)) > gap_threshold)"
+    ).to_numpy()
 
     # put x and y into numpy arrays to speed up the access in the for loop (shapely is slow)
     x = df[geo_col].x.to_numpy()
@@ -450,12 +497,16 @@ def _generate_staypoints_sliding_user(
         delta_dist = dist_func(x[start], y[start], x[curr], y[curr])
         if delta_dist >= dist_threshold:
             # the total duration (minutes) of the staypoints
-            delta_t = (df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]).total_seconds() // 60
+            delta_t = (
+                df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]
+            ).total_seconds() // 60
 
             # we want the staypoint to have long duration
             if delta_t >= time_threshold:
                 # add new staypoint
-                ret_sp.append(__create_new_staypoints(start, curr, df, elevation_flag, geo_col))
+                ret_sp.append(
+                    __create_new_staypoints(start, curr, df, elevation_flag, geo_col)
+                )
             # distance large enough but time is too short -> not a staypoint
             # also initializer when new sp is added
             start = curr
@@ -463,9 +514,13 @@ def _generate_staypoints_sliding_user(
         # if we arrive at the last positionfix, and want to include the last staypoint
         if include_last and curr == last_curr:
             # additional control: we want to create staypoints with duration larger than time_threshold
-            delta_t = (df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]).total_seconds() // 60
+            delta_t = (
+                df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]
+            ).total_seconds() // 60
             if delta_t >= time_threshold:
-                new_sp = __create_new_staypoints(start, curr, df, elevation_flag, geo_col, last_flag=True)
+                new_sp = __create_new_staypoints(
+                    start, curr, df, elevation_flag, geo_col, last_flag=True
+                )
                 ret_sp.append(new_sp)
 
     ret_sp = pd.DataFrame(ret_sp)
@@ -486,7 +541,9 @@ def __create_new_staypoints(start, end, pfs, elevation_flag, geo_col, last_flag=
     if last_flag:
         end = len(pfs)
 
-    new_sp[geo_col] = Point(pfs[geo_col].iloc[start:end].x.median(), pfs[geo_col].iloc[start:end].y.median())
+    new_sp[geo_col] = Point(
+        pfs[geo_col].iloc[start:end].x.median(), pfs[geo_col].iloc[start:end].y.median()
+    )
     if elevation_flag:
         new_sp["elevation"] = pfs["elevation"].iloc[start:end].median()
     new_sp["pfs_id"] = pfs.index[start:end].to_list()
