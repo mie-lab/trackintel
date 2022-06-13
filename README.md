@@ -1,4 +1,4 @@
-# The trackintel Framework
+# The trackintel framework
 
 
 [![PyPI version](https://badge.fury.io/py/trackintel.svg)](https://badge.fury.io/py/trackintel)
@@ -8,11 +8,13 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 *trackintel* is a library for the analysis of spatio-temporal tracking data with a focus on human mobility. The core of *trackintel* is the hierachical data model for movement data that is used in GIS, transport planning and related fields [[1]](#1). We provide functionalities for the full life-cycle of human mobility data analysis: import and export of tracking data of different types (e.g, trackpoints, check-ins, trajectories), preprocessing, data quality assessment, semantic enrichment, quantitative analysis and mining tasks, and visualization of data and results.
-Trackintel is based on [Pandas](https://pandas.pydata.org/) and [GeoPandas](https://geopandas.org/#)
+Trackintel is based on [Pandas](https://pandas.pydata.org/) and [GeoPandas](https://geopandas.org/#). 
 
-You can find the documentation on the [trackintel documentation page](https://trackintel.readthedocs.io/en/latest).
+You can find the documentation on the [trackintel documentation page](https://trackintel.readthedocs.io/en/latest). 
 
 Try *trackintel* online in a MyBinder notebook: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/mie-lab/trackintel/HEAD?filepath=%2Fexamples%2Ftrackintel_basic_tutorial.ipynb)
+
+Please star this repo and [cite](#citelink) our paper if you find our work is helpful for you.
 
 ## Data model
 
@@ -125,6 +127,23 @@ You can find the development roadmap under `ROADMAP.md` and further development 
 
 *trackintel* is primarily maintained by the Mobility Information Engineering Lab at ETH Zurich ([mie-lab.ethz.ch](http://mie-lab.ethz.ch)).
 If you want to contribute, send a pull request and put yourself in the `AUTHORS.md` file.
+
+## <span id="citelink">Citation</span>
+
+If you find this code useful for your work or use it in your project, please consider citing:
+```
+@misc{Martin_2022_arxiv,
+  doi = {10.48550/ARXIV.2206.03593},
+  url = {https://arxiv.org/abs/2206.03593},
+  author = {Martin, Henry and Hong, Ye and Wiedemann, Nina and Bucher, Dominik and Raubal, Martin},
+  keywords = {Human mobility analysis, Open-source software, Transport planning, Data mining, Python, Tracking studies},
+  title = {Trackintel: An open-source Python library for human mobility analysis},
+  publisher = {arXiv},
+  year = {2022},
+  copyright = {Creative Commons Attribution 4.0 International}
+}
+```
+
 
 ## References
 <a id="1">[1]</a>
