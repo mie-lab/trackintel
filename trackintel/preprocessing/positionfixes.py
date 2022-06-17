@@ -381,6 +381,8 @@ def generate_triplegs(
             # TODO: Handle staypoints with only 1 positionfix; needs duplication of the positionfix.
             tpls_id_orig = pfs["tripleg_id"].copy()
 
+
+            # create spatial overlap: Create Triplegs from  median of the start staypoint to the median of the end staypoint
             # overlap tripleg with end of staypoint
             cond_overlap_end = cond_overlap & ~cond_gap.shift(-1).fillna(False)
             pfs.loc[cond_overlap_end, "tripleg_id"] = tpls_id_orig.shift(-1)[
@@ -406,19 +408,48 @@ def generate_triplegs(
                     pfs.loc[~is_tpl, "staypoint_id"]
                 ].geometry.values
 
-        posfix_grouper = pfs.groupby("tripleg_id")
+            # create geometry from triplegs
+            posfix_grouper = pfs.groupby("tripleg_id")
+            tpls_geom = posfix_grouper.agg(
+                {"user_id": ["mean"],  pfs.geometry.name: list}
+            )  # could add a "number of pfs": can be any column "count"
 
-        tpls = posfix_grouper.agg(
-            {"user_id": ["mean"], "tracked_at": [min, max], pfs.geometry.name: list}
-        )  # could add a "number of pfs": can be any column "count"
+            # restore original pfs geometries if needed
+            if method == "overlap_staypoints" and pfs_geom_orig is not None:
+                pfs[pfs.geometry.name] = pfs_geom_orig
 
-        # restore original pfs geometries if needed
-        if method == "overlap_staypoints" and pfs_geom_orig is not None:
-            pfs[pfs.geometry.name] = pfs_geom_orig
+            # restore original tripleg_id
+            pfs['tripleg_id'] = tpls_id_orig
 
-        # prepare dataframe: Rename columns; read/set geometry/crs;
+            # create temporal overlap
+            # overlap tripleg with start of staypoint
+            cond_overlap_start = cond_overlap & ~cond_gap & pd.isna(pfs["tripleg_id"])
+            pfs.loc[cond_overlap_start, "tripleg_id"] = tpls_id_orig.shift(1)[
+                cond_overlap_start
+            ]
+
+            posfix_grouper = pfs.groupby("tripleg_id")
+
+            tpls = posfix_grouper.agg(
+                {"user_id": ["mean"], "tracked_at": [min, max]}
+            )  # could add a "number of pfs": can be any column "count"
+            tpls.columns = ["user_id", "started_at", "finished_at"]
+
+            # add geometry column
+            tpls_geom.columns = ["user_id", "geom"]
+            tpls['geom'] = tpls_geom['geom']
+
+        else:
+            # between_staypoints
+            posfix_grouper = pfs.groupby("tripleg_id")
+            tpls = posfix_grouper.agg(
+                {"user_id": ["mean"], "tracked_at": [min, max], pfs.geometry.name: list}
+            )  # could add a "number of pfs": can be any column "count"
+
+            tpls.columns = ["user_id", "started_at", "finished_at", "geom"]
+
+        # prepare dataframe: read/set geometry/crs;
         # Order of column has to correspond to the order of the groupby statement
-        tpls.columns = ["user_id", "started_at", "finished_at", "geom"]
         tpls["geom"] = tpls["geom"].apply(LineString)
         tpls = tpls.set_geometry("geom")
         tpls.crs = pfs.crs
