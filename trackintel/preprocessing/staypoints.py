@@ -1,8 +1,6 @@
-from math import radians
 import numpy as np
 import geopandas as gpd
 import pandas as pd
-from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
 import warnings
 
@@ -138,9 +136,9 @@ def generate_locations(
         # filter staypoints not belonging to locations
         locs = locs.loc[locs["location_id"] != -1]
 
-        with warnings.catch_warnings():
+        with warnings.catch_warnings():  # TODO: fix bug for geographic crs #437
             warnings.simplefilter("ignore", category=UserWarning)
-            locs["center"] = locs.geometry.centroid  # warning for geographic crs
+            locs["center"] = locs.geometry.centroid  # creates warning for geographic crs
 
         # extent is the convex hull of the geometry
         locs["extent"] = locs.geometry.convex_hull
