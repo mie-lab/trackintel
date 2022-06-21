@@ -328,10 +328,10 @@ class TestGenerate_locations:
             num_samples=3, distance_metric="haversine", agg_level="dataset"
         )
         # get all location_ids with less than 3 staypoints
-        f = (sp1["location_id"].value_counts(dropna=False) < 3)
+        f = sp1["location_id"].value_counts(dropna=False) < 3
         f = f[f].index  # get set of locations with less than 3 staypoints
         locs1 = locs1.iloc[locs1.index.difference(f)]  # drop locations with less than 3 staypoints
-        locs1 = locs1.reset_index(drop=True) # reset index to remove offset
+        locs1 = locs1.reset_index(drop=True)  # reset index to remove offset
         locs1.index.name = "id"  # reset index name
         assert_geodataframe_equal(locs1, locs3)
         map_dict = {}
