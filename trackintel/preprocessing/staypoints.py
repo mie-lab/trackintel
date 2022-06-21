@@ -36,7 +36,8 @@ def generate_locations(
         - 'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
 
     epsilon : float, default 100
-        The epsilon for the 'dbscan' method. For any "distance_metric" the unit is meters.
+        The epsilon for the 'dbscan' method. if 'distance_metric' is 'haversine'
+        or 'euclidean', the unit is in meters.
 
     num_samples : int, default 1
         The minimal number of samples in a cluster.
