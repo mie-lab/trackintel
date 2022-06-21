@@ -12,7 +12,7 @@ from shapely.geometry import LineString, Point
 from tqdm import tqdm
 
 import trackintel as ti
-from trackintel.preprocessing.triplegs import generate_trips, smoothen_triplegs
+from trackintel.preprocessing.triplegs import generate_trips
 
 
 @pytest.fixture
@@ -39,30 +39,6 @@ def example_triplegs_higher_gap_threshold():
     sp = sp.as_staypoints.create_activity_flag(time_threshold=15)
     pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp)
     return sp, tpls
-
-
-class TestSmoothen_triplegs:
-    def test_smoothen_triplegs(self):
-        tpls_file = os.path.join("tests", "data", "triplegs_with_too_many_points_test.csv")
-        tpls = ti.read_triplegs_csv(tpls_file, sep=";", index_col=None)
-        tpls_smoothed = smoothen_triplegs(tpls, tolerance=0.0001)
-        line1 = tpls.iloc[0].geom
-        line1_smoothed = tpls_smoothed.iloc[0].geom
-        line2 = tpls.iloc[1].geom
-        line2_smoothed = tpls_smoothed.iloc[1].geom
-
-        assert line1.length == line1_smoothed.length
-        assert line2.length == line2_smoothed.length
-        assert len(line1.coords) == 10
-        assert len(line2.coords) == 7
-        assert len(line1_smoothed.coords) == 4
-        assert len(line2_smoothed.coords) == 3
-
-    def test_geometry_name(self, example_triplegs):
-        """Test if the geometry name can be set freely."""
-        _, tpls = example_triplegs
-        tpls["freely_set_geometry_name"] = LineString([[1, 1], [2, 2]])
-        smoothen_triplegs(tpls)
 
 
 class TestGenerate_trips:

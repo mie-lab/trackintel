@@ -392,7 +392,7 @@ def generate_triplegs(
 def _generate_staypoints_sliding_user(
     df, geo_col, elevation_flag, dist_threshold, time_threshold, gap_threshold, distance_metric, include_last=False
 ):
-    """User level staypoint geenration using sliding method, see generate_staypoints() function for parameter meaning."""
+    """User level staypoint generation using sliding method, see generate_staypoints() function for parameter meaning."""
     if distance_metric == "haversine":
         dist_func = haversine_dist
     else:
@@ -400,12 +400,10 @@ def _generate_staypoints_sliding_user(
 
     df = df.sort_index(kind="stable").sort_values(by=["tracked_at"], kind="stable")
 
-    # precalulate variables to not do that in for loop
-    last_curr = len(df.index) - 1
-
     # transform times to pandas Timedelta to simplify comparisons
     gap_threshold = pd.Timedelta(gap_threshold, unit="minutes")
-    # to numpy as access time of numpy numpy is faster than pandas array
+    time_threshold = pd.Timedelta(time_threshold, unit="minutes")
+    # to numpy as access time of numpy array is faster than pandas Series
     gap_times = pd.eval("((df.tracked_at - df.tracked_at.shift(1)) > gap_threshold)").to_numpy()
 
     # put x and y into numpy arrays to speed up the access in the for loop (shapely is slow)
@@ -421,26 +419,20 @@ def _generate_staypoints_sliding_user(
             start = curr
             continue
 
-        delta_dist = dist_func(x[start], y[start], x[curr], y[curr])
+        delta_dist = dist_func(x[start], y[start], x[curr], y[curr], float_flag=True)
         if delta_dist >= dist_threshold:
-            # the total duration (minutes) of the staypoints
-            delta_t = (df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]).total_seconds() // 60
-
-            # we want the staypoint to have long duration
-            if delta_t >= time_threshold:
-                # add new staypoint
+            # we want the staypoint to have long enough duration
+            if (df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]) >= time_threshold:
                 ret_sp.append(__create_new_staypoints(start, curr, df, elevation_flag, geo_col))
             # distance large enough but time is too short -> not a staypoint
             # also initializer when new sp is added
             start = curr
 
-        # if we arrive at the last positionfix, and want to include the last staypoint
-        if include_last and curr == last_curr:
-            # additional control: we want to create staypoints with duration larger than time_threshold
-            delta_t = (df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]).total_seconds() // 60
-            if delta_t >= time_threshold:
-                new_sp = __create_new_staypoints(start, curr, df, elevation_flag, geo_col, last_flag=True)
-                ret_sp.append(new_sp)
+    if include_last:  # aggregate remaining positionfixes
+        # additional control: we aggregate only if duration longer than time_threshold
+        if (df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]) >= time_threshold:
+            new_sp = __create_new_staypoints(start, curr, df, elevation_flag, geo_col, last_flag=True)
+            ret_sp.append(new_sp)
 
     ret_sp = pd.DataFrame(ret_sp)
     ret_sp["user_id"] = df["user_id"].unique()[0]

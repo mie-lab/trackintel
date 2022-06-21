@@ -1,6 +1,4 @@
 from math import radians
-from matplotlib.pyplot import axis
-
 import numpy as np
 import geopandas as gpd
 import pandas as pd
@@ -91,10 +89,9 @@ def generate_locations(
         if agg_level == "user":
             sp = applyParallel(
                 sp.groupby("user_id", as_index=False),
-                _generate_locations_per_user,
+                _gen_locs_dbscan,
                 n_jobs=n_jobs,
                 print_progress=print_progress,
-                geo_col=geo_col,
                 distance_metric=distance_metric,
                 db=db,
             )
@@ -122,14 +119,7 @@ def generate_locations(
             sp.sort_values(["user_id", "started_at"], inplace=True)
 
         else:
-            if distance_metric == "haversine":
-                # the input is converted to list of (lat, lon) tuples in radians unit
-                p = np.array([[radians(g.y), radians(g.x)] for g in sp.geometry])
-            else:
-                p = np.array([[g.x, g.y] for g in sp.geometry])
-            labels = db.fit_predict(p)
-
-            sp["location_id"] = labels
+            _gen_locs_dbscan(sp, db=db, distance_metric=distance_metric)
 
         ### create locations as grouped staypoints
         temp_sp = sp[["user_id", "location_id", sp.geometry.name]]
@@ -192,22 +182,26 @@ def generate_locations(
     return sp, locs
 
 
-def _generate_locations_per_user(user_staypoints, distance_metric, db, geo_col):
-    """function called after groupby: should only contain records of one user;
-    see generate_locations() function for parameter meaning."""
+def _gen_locs_dbscan(sp, distance_metric, db):
+    """Small helper function that takes staypoints and apply them to DBSCAN.
 
+    Parameters
+    ----------
+    sp : GeoDataFrame (as trackintel staypoints)
+    distance_metric : str
+    db : sklearn.cluster.DBSCAN
+
+    Returns
+    -------
+    sp : GeoDataFrame (as trackintel staypoints)
+        Staypoints with new column "location_id"
+    """
+    p = np.array([sp.geometry.x, sp.geometry.y]).transpose()
     if distance_metric == "haversine":
-        # the input is converted to list of (lat, lon) tuples in radians unit
-        p = np.array([[radians(q.y), radians(q.x)] for q in (user_staypoints[geo_col])])
-    else:
-        p = np.array([[q.x, q.y] for q in (user_staypoints[geo_col])])
+        p = np.deg2rad(p)  # haversine distance metric assumes input is in rad
     labels = db.fit_predict(p)
-
-    # add staypoint - location matching to original staypoints
-    user_staypoints["location_id"] = labels
-    user_staypoints = gpd.GeoDataFrame(user_staypoints, geometry=geo_col)
-
-    return user_staypoints
+    sp["location_id"] = labels
+    return sp
 
 
 def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
