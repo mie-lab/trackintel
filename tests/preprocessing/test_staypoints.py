@@ -315,6 +315,39 @@ class TestGenerate_locations:
         # (each user has overlap with the same user)
         assert sum([int(len(p & q) > 0) for p in loc_set for q in loc_set]) == len(loc_set)
 
+    def test_num_samples_3(self):
+        """Test with num_samples=3 to check if fully false pointLine_idx causes no error."""
+        sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        # generate locations with num_samples=1 and num_samples=3 creates the same locations
+        # but locations with only one or two staypoint are filtered out in the second run
+        sp1, locs1 = sp.as_staypoints.generate_locations(
+            num_samples=1, distance_metric="haversine", agg_level="dataset"
+        )
+        sp3, locs3 = sp.as_staypoints.generate_locations(
+            num_samples=3, distance_metric="haversine", agg_level="dataset"
+        )
+        # get all location_ids with less than 3 staypoints
+        f = sp1["location_id"].value_counts(dropna=False) < 3
+        f = f[f].index  # get set of locations with less than 3 staypoints
+        locs1 = locs1.iloc[locs1.index.difference(f)]  # drop locations with less than 3 staypoints
+        locs1 = locs1.reset_index(drop=True)  # reset index to remove offset
+        locs1.index.name = "id"  # reset index name
+        assert_geodataframe_equal(locs1, locs3)
+        map_dict = {}
+        next_loc_id = 0
+        for i, row in sp1.iterrows():
+            val = row["location_id"]
+            if val in f:  # means we have less than 3 staypoints
+                sp1.at[i, "location_id"] = np.nan
+            else:
+                # remove offset we have in counting more locations
+                if val not in map_dict:
+                    map_dict[val] = next_loc_id
+                    next_loc_id += 1
+                sp1.at[i, "location_id"] = map_dict[val]
+        assert_geodataframe_equal(sp1, sp3)
+
     def test_dtype_consistent(self):
         """Test the dtypes for the generated columns."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
@@ -398,6 +431,22 @@ class TestGenerate_locations:
         assert sp2.loc[1, "location_id"] != sp2.loc[5, "location_id"]
 
         assert sp2.loc[[2, 7], "location_id"].isnull().all()
+
+    def test_agg_level_error(self, example_staypoints):
+        """Test if unknown "agg_level" raises AttributeError"""
+        agg_level = "unknown"
+        error_msg = f"agg_level '{agg_level}' is unknown. Supported values are ['user', 'dataset']."
+        with pytest.raises(AttributeError) as e:
+            example_staypoints.as_staypoints.generate_locations(method="dbscan", agg_level="unkown")
+            assert error_msg == str(e.value)
+
+    def test_method_error(self, example_staypoints):
+        """Test if unknown "method" raises AttributeError"""
+        method = "unknown"
+        error_msg = f"method '{method}' is unknown. Supported values are ['dbscan']."
+        with pytest.raises(AttributeError) as e:
+            example_staypoints.as_staypoints.generate_locations(method="unknown")
+            assert error_msg == str(e.value)
 
 
 class TestMergeStaypoints:
