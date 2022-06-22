@@ -127,11 +127,11 @@ def generate_locations(
         else:
             ## generate user-location pairs with same geometries across users
             # get user-location pairs
-            locs = temp_sp.dissolve(by=["user_id", "location_id"], as_index=False).drop(columns={temp_sp.geometry.name})
+            locs = temp_sp[["user_id", "location_id"]].drop_duplicates(ignore_index=True)
             # get location geometries
-            geom_df = temp_sp.dissolve(by=["location_id"], as_index=False).drop(columns={"user_id"})
+            geom_gdf = temp_sp.dissolve(by=["location_id"], as_index=False).drop(columns={"user_id"})
             # merge pairs with location geometries
-            locs = locs.merge(geom_df, on="location_id", how="left")
+            locs = geom_gdf.merge(locs, on="location_id", how="right")
 
         # filter staypoints not belonging to locations
         locs = locs.loc[locs["location_id"] != -1]
