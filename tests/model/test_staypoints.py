@@ -31,7 +31,7 @@ class TestStaypoints:
         sp = testdata_sp.copy()
 
         # geometery
-        with pytest.raises(AttributeError, match="No geometry data set yet"):
+        with pytest.raises(AttributeError):
             sp.drop(["geom"], axis=1).as_staypoints
 
     def test_accessor_geometry_type(self, testdata_sp):
