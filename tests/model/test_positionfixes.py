@@ -27,11 +27,11 @@ class TestPositionfixes:
             pfs.drop(["user_id"], axis=1).as_positionfixes
 
     def test_accessor_geometry(self, testdata_geolife):
-        """Test if the as_positionfixes accessor requires geometry column."""
+        """Test if the as_positionfixes accessor accesses geometry column."""
         pfs = testdata_geolife.copy()
 
         # check geometry
-        with pytest.raises(AttributeError, match="No geometry data set yet"):
+        with pytest.raises(AttributeError):
             pfs.drop(["geom"], axis=1).as_positionfixes
 
     def test_accessor_geometry_type(self, testdata_geolife):

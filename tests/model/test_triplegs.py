@@ -34,7 +34,7 @@ class TestTriplegs:
         tpls = testdata_tpls.copy()
 
         # check geometry
-        with pytest.raises(AttributeError, match="No geometry data set yet"):
+        with pytest.raises(AttributeError):
             tpls.drop(["geom"], axis=1).as_triplegs
 
     def test_accessor_geometry_type(self, testdata_tpls):
