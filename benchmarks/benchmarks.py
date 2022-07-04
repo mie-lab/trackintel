@@ -1,8 +1,11 @@
 import os
 import pandas as pd
+
+import sys
+sys.path.append("/Users/nishant/Documents/GitHub/trackintel")
+os.chdir("/Users/nishant/Documents/GitHub/trackintel")
+
 import trackintel as ti
-
-
 
 class TimeSuite_Generate_Staypoints:
     """Run time tests for generate_staypoints() method."""
