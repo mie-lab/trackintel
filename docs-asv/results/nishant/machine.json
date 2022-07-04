@@ -1,0 +1,9 @@
+{
+    "arch": "x86_64",
+    "cpu": "2 GHz Quad-Core Intel Core i5",
+    "machine": "nishant",
+    "num_cpu": "4",
+    "os": "Macintosh OS-X 11.3",
+    "ram": "8",
+    "version": 1
+}
