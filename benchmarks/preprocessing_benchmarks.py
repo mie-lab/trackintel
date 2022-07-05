@@ -1,0 +1,123 @@
+import os
+import pandas as pd
+
+import sys
+
+sys.path.append("/Users/nishant/Documents/GitHub/trackintel")
+os.chdir("/Users/nishant/Documents/GitHub/trackintel")
+
+import trackintel as ti
+
+
+class BM_Read_PFS:
+    """Benchmarks for read positionfixes"""
+
+    def common_func(self):
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+
+    def time_read_pfs(self):
+        self.common_func()
+
+    def mem_read_pfs(self):
+        self.common_func()
+
+    def peakmem_read_pfs(self):
+        self.common_func()
+
+
+class BM_Generate_SP:
+    """Benchmarks for generate staypoints"""
+
+    def setup(self):
+        self.pfs, self._ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+
+    def common_func(self):
+        """Generate sp"""
+        pfs, sp = self.pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+        return sp
+
+    def time_gen_sp_geolife_long(self):
+        self.common_func()
+
+    def mem_gen_sp_geolife_long(self):
+        self.common_func()
+
+    def peakmem_gen_sp_geolife_long(self):
+        self.common_func()
+
+
+class BM_Generate_TPLS:
+    """Benchmarks for generate triplegs"""
+
+    def setup(self):
+        self.pfs, self._ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        self.pfs, self.sp = self.pfs.as_positionfixes.generate_staypoints(
+            method="sliding", dist_threshold=25, time_threshold=5
+        )
+
+    def common_func(self):
+        """Generate TPLS"""
+        _, tpls = self.pfs.as_positionfixes.generate_triplegs(self.sp, method="between_staypoints")
+        return tpls
+
+    def time_gen_tpls_geolife_long(self):
+        self.common_func()
+
+    def mem_gen_tpls_geolife_long(self):
+        self.common_func()
+
+    def peakmem_gen_tpls_geolife_long(self):
+        self.common_func()
+
+
+class BM_Generate_TRIPS:
+    """Benchmarks for generate trips"""
+
+    def setup(self):
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        pfs, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+        pfs, self.tpls = pfs.as_positionfixes.generate_triplegs(sp, method="between_staypoints")
+        self.sp = sp.as_staypoints.create_activity_flag(time_threshold=15)
+
+    def common_func(self):
+        """Generate Trips"""
+        _, _, trips = ti.preprocessing.triplegs.generate_trips(self.sp, self.tpls)
+        return trips
+
+    def time_gen_trips_geolife_long(self):
+        self.common_func()
+
+    def mem_gen_trips_geolife_long(self):
+        self.common_func()
+
+    def peakmem_gen_trips_geolife_long(self):
+        self.common_func()
+
+
+#
+class BM_Generate_TOURS:
+    """Benchmarks for generate tours"""
+
+    def setup(self):
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        pfs, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp, method="between_staypoints")
+        sp = sp.as_staypoints.create_activity_flag(time_threshold=15)
+        _, _, self.trips = ti.preprocessing.triplegs.generate_trips(sp, tpls)
+
+    def common_func(self):
+        """Generate Tours"""
+        trips_with_tours, tours = ti.preprocessing.trips.generate_tours(self.trips, max_dist=100)
+        return trips_with_tours, tours
+
+    def time_gen_tours_geolife_long(self):
+        self.common_func()
+
+    def mem_gen_tours_geolife_long(self):
+        self.common_func()
+
+    def peakmem_gen_tours_geolife_long(self):
+        self.common_func()
+
+
+# if __name__=="__main__":
