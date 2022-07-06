@@ -13,7 +13,7 @@ class BM_Read_PFS:
     """Benchmarks for read positionfixes"""
 
     def common_func(self):
-        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long_10_MB"))
 
     def time_read_pfs(self):
         self.common_func()
@@ -29,7 +29,7 @@ class BM_Generate_SP:
     """Benchmarks for generate staypoints"""
 
     def setup(self):
-        self.pfs, self._ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        self.pfs, self._ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long_10_MB"))
 
     def common_func(self):
         """Generate sp"""
@@ -50,7 +50,7 @@ class BM_Generate_TPLS:
     """Benchmarks for generate triplegs"""
 
     def setup(self):
-        self.pfs, self._ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        self.pfs, self._ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long_10_MB"))
         self.pfs, self.sp = self.pfs.as_positionfixes.generate_staypoints(
             method="sliding", dist_threshold=25, time_threshold=5
         )
@@ -74,7 +74,7 @@ class BM_Generate_TRIPS:
     """Benchmarks for generate trips"""
 
     def setup(self):
-        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long_10_MB"))
         pfs, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
         pfs, self.tpls = pfs.as_positionfixes.generate_triplegs(sp, method="between_staypoints")
         self.sp = sp.as_staypoints.create_activity_flag(time_threshold=15)
@@ -99,7 +99,7 @@ class BM_Generate_TOURS:
     """Benchmarks for generate tours"""
 
     def setup(self):
-        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long_10_MB"))
         pfs, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp, method="between_staypoints")
         sp = sp.as_staypoints.create_activity_flag(time_threshold=15)
