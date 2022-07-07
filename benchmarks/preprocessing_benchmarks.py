@@ -17,6 +17,7 @@ class BM_Read_PFS:
 
     def common_func(self):
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", bm_dataset))
+        return pfs
 
     def time_read_pfs(self):
         self.common_func()
