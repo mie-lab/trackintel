@@ -12,7 +12,6 @@ datasetlist = ["geolife_long", "geolife_long_10_MB"]
 bm_dataset = datasetlist[1]
 
 
-
 class BM_Read_PFS:
     """Benchmarks for read positionfixes"""
 
@@ -122,4 +121,3 @@ class BM_Generate_TOURS:
 
     def peakmem_gen_tours_geolife_long(self):
         self.common_func()
-
