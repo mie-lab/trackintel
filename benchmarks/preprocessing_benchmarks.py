@@ -1,11 +1,5 @@
 import os
 import pandas as pd
-
-import sys
-
-sys.path.append("/Users/nishant/Documents/GitHub/trackintel")
-os.chdir("/Users/nishant/Documents/GitHub/trackintel")
-
 import trackintel as ti
 
 datasetlist = ["geolife_long", "geolife_long_10_MB"]
