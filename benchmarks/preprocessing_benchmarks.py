@@ -44,7 +44,7 @@ class BM_Generate_SP:
         self.common_func()
 
     def mem_gen_sp_geolife_long(self):
-        self.common_func()
+        return self.common_func()
 
     def peakmem_gen_sp_geolife_long(self):
         self.common_func()
@@ -89,10 +89,10 @@ class BM_Generate_TRIPS:
         return trips
 
     def time_gen_trips_geolife_long(self):
-        return self.common_func()
+        self.common_func()
 
     def mem_gen_trips_geolife_long(self):
-        self.common_func()
+        return self.common_func()
 
     def peakmem_gen_trips_geolife_long(self):
         self.common_func()
