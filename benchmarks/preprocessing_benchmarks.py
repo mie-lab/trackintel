@@ -111,8 +111,8 @@ class BM_Generate_TOURS:
 
     def common_func(self):
         """Generate Tours"""
-        trips_with_tours, tours = ti.preprocessing.trips.generate_tours(self.trips, max_dist=100)
-        return trips_with_tours, tours
+        _, tours = ti.preprocessing.trips.generate_tours(self.trips, max_dist=100)
+        return tours
 
     def time_gen_tours_geolife_long(self):
         self.common_func()
