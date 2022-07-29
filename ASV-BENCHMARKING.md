@@ -63,7 +63,7 @@ git push -f origin gh-pages
 >>git log should show the last commit as "Generated from sources": 
 >>![](https://i.imgur.com/YKZkgAJ.png)
 
->>-f in git push is important because we are rewriting th gh-pages branch and it causes some conflicts with the remote. 
+>>-f in git push is important because we are rewriting the gh-pages branch and it causes some conflicts with the remote. 
  
  
  
