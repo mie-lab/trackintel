@@ -1,15 +1,20 @@
 import os
 import pandas as pd
 import trackintel as ti
+from pathlib import Path
 
 datasetlist = ["geolife_long", "geolife_long_10_MB"]
-bm_dataset = datasetlist[1]
+bm_dataset = datasetlist[0]
 
+
+
+trackintel_root = Path(__file__).parents[1]
 
 class BM_Read_PFS:
     """Benchmarks for read positionfixes"""
 
     def common_func(self):
+        os.chdir(trackintel_root)
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", bm_dataset))
         return pfs
 
@@ -27,6 +32,7 @@ class BM_Generate_SP:
     """Benchmarks for generate staypoints"""
 
     def setup(self):
+        os.chdir(trackintel_root)    
         self.pfs, self._ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", bm_dataset))
 
     def common_func(self):
@@ -48,6 +54,7 @@ class BM_Generate_TPLS:
     """Benchmarks for generate triplegs"""
 
     def setup(self):
+        os.chdir(trackintel_root)
         self.pfs, self._ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", bm_dataset))
         self.pfs, self.sp = self.pfs.as_positionfixes.generate_staypoints(
             method="sliding", dist_threshold=25, time_threshold=5
@@ -72,6 +79,7 @@ class BM_Generate_TRIPS:
     """Benchmarks for generate trips"""
 
     def setup(self):
+        os.chdir(trackintel_root)
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", bm_dataset))
         pfs, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
         pfs, self.tpls = pfs.as_positionfixes.generate_triplegs(sp, method="between_staypoints")
@@ -97,6 +105,7 @@ class BM_Generate_TOURS:
     """Benchmarks for generate tours"""
 
     def setup(self):
+        os.chdir(trackintel_root)
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", bm_dataset))
         pfs, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp, method="between_staypoints")
