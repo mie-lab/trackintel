@@ -7,8 +7,8 @@ datasetlist = ["geolife_long", "geolife_long_10_MB"]
 bm_dataset = datasetlist[0]
 
 
-
 trackintel_root = Path(__file__).parents[1]
+
 
 class BM_Read_PFS:
     """Benchmarks for read positionfixes"""
@@ -32,7 +32,7 @@ class BM_Generate_SP:
     """Benchmarks for generate staypoints"""
 
     def setup(self):
-        os.chdir(trackintel_root)    
+        os.chdir(trackintel_root)
         self.pfs, self._ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", bm_dataset))
 
     def common_func(self):
