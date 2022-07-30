@@ -60,13 +60,20 @@ git checkout gh-pages
 git log 
 git push -f origin gh-pages 
 ```
->>git log should show the last commit as "Generated from sources": 
+>>`git log` in the step above should show the last commit as "Generated from sources": 
 >>![](https://i.imgur.com/YKZkgAJ.png)
 
 >>-f in git push is important because we are rewriting the gh-pages branch and it causes some conflicts with the remote. 
  
  
  
+12. Finally, we revert back to the original branch (for which we might need to run benchmarks again) and pop the earlier stash.
+```
+git checkout asv-trackintel
+git stash pop
+```
+>> If master was being used to run benchmarks, we need to use `master`in place of `asv-trackintel` in the checkout above.
+
 **For testing purposes only**
  Once this is setup, the `branches` parameter name should be reset to master in the `asv.conf.json file`. Currently this is available only until the pull request is not approved. By default the asv looks for master branch, so throws an error: 
  ```asv.util.ProcessError: Command '/usr/bin/git rev-list --first-parent master' returned non-zero exit status 128```
