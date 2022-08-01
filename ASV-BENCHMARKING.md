@@ -5,7 +5,9 @@ Summarised below are the steps required to run the asv benchmark on a new comput
 >(**For testing purposes only,** clone the abcnishant007/trackintel and checkout to `asv-trackintel` branch). 
 *@Ye, we need to edit this line after pull request is approved. *
 
-2. Download the larger geolife data from [this branch](https://github.com/abcnishant007/trackintel/tree/benchmark-files) and place it inside `tests/data/geolife_long_10_MB`. This dataset will not be used by default. The dataset option is hardcoded in the benchmark files as shown [here](https://github.com/abcnishant007/trackintel/blob/7b8c2ee2f12d98b59578cd0519aae6a5240ade4c/benchmarks/preprocessing_benchmarks.py#L6). The hardcoding exists temporarily only to ensure that we can switch to the smaller dataset for asv testing purposes on a new computer. Once the whole setup is complete, we can start using the bigger dataset. The hardcoding can be removed (or retained for future setups) and only the `geolife_long_10_MB` data set should be used for actual benchmarks.
+2. Download the larger geolife data from [this branch](https://github.com/abcnishant007/trackintel/tree/benchmark-files) and place it inside `tests/data/geolife_long_10_MB`. This dataset will not be used by default. The dataset option is hardcoded in the benchmark files as shown below:
+ https://github.com/abcnishant007/trackintel/blob/7b8c2ee2f12d98b59578cd0519aae6a5240ade4c/benchmarks/preprocessing_benchmarks.py#L6-L7
+  The hardcoding exists temporarily only to ensure that we can switch to the smaller dataset for asv testing purposes on a new computer. Once the whole setup is complete, we can start using the bigger dataset. The hardcoding can be removed (or retained for future setups) and only the `geolife_long_10_MB` data set should be used for actual benchmarks.
 3. Create a new `conda` environment and install the requirements for trackintel. I tested using Ubuntu20 and there were some issues with the requirements. If you are using some other OS, you can skip these are proceed to Step 4
 
 > Some ubuntu specific tweaks:
