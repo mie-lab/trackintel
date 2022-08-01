@@ -40,12 +40,16 @@ git log | grep -B 1 'Merge' | grep 'commit' | sed 's/commit //g' | cut -c1-7 | h
 asv run HASHFILE:commits.txt
 ```
 >> If running for the first time, the asv will ask some questions about the computer being run. These are only for documentation purposes and do not affect the numerical value of benchmarks. If all went well, the asv will start setting up the enviroments for each `<benchmark> * <commit>` as shown below:
->>![](https://i.imgur.com/r6pYhNB.png)
+>> 
+>> <img src="https://i.imgur.com/r6pYhNB.png" width="360">
+ 
 >> If you are running for the first time, it is recommended to use the flag `-q` so that each benchmark is run just once so that you know it works (`asv run -q HASHFILE:commits.txt`). Finally if there are no issues, the benchmarks can be rerun without the `-q` option. 
->> If you see benchmarks failed as shown below:
->> ![](https://i.imgur.com/r3vIcgm.png)
+>> If the benchmarks show up as `failed` as shown below:
+>> 
+>> <img src="https://i.imgur.com/r3vIcgm.png" width="360">
+
 >>> Time for debugging → use the `-e` flag. The error message consists of the entire call stack as shown below:
->>>![](https://i.imgur.com/clGNgCJ.png)
+>>> <img src="https://i.imgur.com/clGNgCJ.png" width="360">
 
 
 8. If the benchmarks run successfully, more benchmarks can be run. On the same machine, asv remembers the old benchmarks and those can be ignored using the flag using: 
