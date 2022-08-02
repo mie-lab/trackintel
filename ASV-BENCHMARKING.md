@@ -85,10 +85,16 @@ git log
 ```
 git push -f origin gh-pages 
 ```
+>> Sometimes, the first line `asv gh-pages --no-push --rewrite` results in a warning and gets stuck after writing to the gh-pages branch as  shown below. If this happens, it should be terminated with `<Ctrl+C>`. As long as the message shows 100% completed writing to gh-pages, this can be terminated without any problems to the generated stats. 
+>> 
+>> <img src="https://user-images.githubusercontent.com/9101260/182346530-3cfa83dc-6efe-45ba-91a8-3586369f14fe.png" width="360">
+
+
 
 >>`git log` in the step above should show the last commit as "Generated from sources" as shown below: 
 >>
 >> <img src="https://i.imgur.com/YKZkgAJ.png" width="251">
+
 
 >>-f in git push is important because we are rewriting the gh-pages branch and it causes some conflicts with the remote. 
  
