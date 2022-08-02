@@ -31,7 +31,7 @@ pip install --upgrade --user pyqt5==5.12
 
 4. Install asv using `pip install asv`
 5. Change current directory to the root of trackintel. 
-6. Get the list of commits in short form (last 7 characters of commit id) which were merge commits in master using the shell command below: 
+6. Get the list of commits in short form (last 7 characters of commit id) which were merge commits in master. For example, if we want the last 3 merge commits, the command is given below: 
 ```
 git log | grep -B 1 'Merge' | grep 'commit' | sed 's/commit //g' | cut -c1-7 | head -n 3 > commits.txt
 ```
@@ -86,8 +86,9 @@ git log
 git push -f origin gh-pages 
 ```
 
->>`git log` in the step above should show the last commit as "Generated from sources": 
->>![](https://i.imgur.com/YKZkgAJ.png)
+>>`git log` in the step above should show the last commit as "Generated from sources" as shown below: 
+>>
+>> <img src="https://i.imgur.com/YKZkgAJ.png" width="251">
 
 >>-f in git push is important because we are rewriting the gh-pages branch and it causes some conflicts with the remote. 
  
