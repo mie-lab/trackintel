@@ -198,9 +198,10 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
             # from tpls table, get the last point of the last tripleg on the trip
             lambda x: Point(tpls.loc[x[-1], tpls.geometry.name].coords[-1])
         )
-        # convert to GeoDataFrame with MultiPoint column
+        # convert to GeoDataFrame with MultiPoint column and crs (not-None if possible)
         trips["geom"] = [MultiPoint([x, y]) for x, y in zip(trips.origin_geom, trips.destination_geom)]
-        trips = gpd.GeoDataFrame(trips, geometry="geom")
+        crs_trips = sp.crs if sp.crs else tpls.crs
+        trips = gpd.GeoDataFrame(trips, geometry="geom", crs=crs_trips)
         # cleanup
         trips.drop(["origin_geom", "destination_geom"], inplace=True, axis=1)
 
@@ -269,6 +270,14 @@ def _concat_staypoints_triplegs(staypoints, triplegs, add_geometry):
     sp_tpls["is_activity"].fillna(False, inplace=True)
     sp_tpls["sp_tpls_id"] = sp_tpls.index  # store id for later reassignment
     if add_geometry:
+        # Check if crs is set. Warn if None and set to EPSG:4326
+        if sp.crs is None:
+            warnings.warn("Staypoint crs is not set. Assuming same as for triplegs.")
+        if tpls.crs is None:
+            warnings.warn("Tripleg crs is not set. Assuming same as for staypoints.")
+        assert (
+            sp.crs == tpls.crs or sp.crs is None or tpls.crs is None
+        ), "CRS of staypoints and triplegs differ. Geometry cannot be joined safely."
         sp_tpls["geom"] = pd.concat([sp.geometry, tpls.geometry])
 
     sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
