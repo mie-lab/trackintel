@@ -1,4 +1,3 @@
-from ast import Assert
 import datetime
 import os
 
@@ -61,7 +60,7 @@ class TestGenerate_trips:
         """Test if we can generate the example trips based on example data."""
         # load pregenerated trips
         path = os.path.join("tests", "data", "geolife_long", "trips.csv")
-        trips_loaded = ti.read_trips_csv(path, index_col="id", geom_col="geom", crs="EPSG:4326")
+        trips_loaded = ti.read_trips_csv(path, index_col="id", geom_col="geom", crs=None)
 
         # create trips from geolife (based on positionfixes) - with gap_threshold 1e6
         sp, tpls = example_triplegs_higher_gap_threshold

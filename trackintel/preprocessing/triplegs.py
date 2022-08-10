@@ -270,7 +270,7 @@ def _concat_staypoints_triplegs(staypoints, triplegs, add_geometry):
     sp_tpls["is_activity"].fillna(False, inplace=True)
     sp_tpls["sp_tpls_id"] = sp_tpls.index  # store id for later reassignment
     if add_geometry:
-        # Check if crs is set. Warn if None and set to EPSG:4326
+        # Check if crs is set. Warn if None
         if sp.crs is None:
             warnings.warn("Staypoint crs is not set. Assuming same as for triplegs.")
         if tpls.crs is None:
