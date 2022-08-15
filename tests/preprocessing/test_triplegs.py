@@ -60,7 +60,7 @@ class TestGenerate_trips:
         """Test if we can generate the example trips based on example data."""
         # load pregenerated trips
         path = os.path.join("tests", "data", "geolife_long", "trips.csv")
-        trips_loaded = ti.read_trips_csv(path, index_col="id", geom_col="geom", crs=None)
+        trips_loaded = ti.read_trips_csv(path, index_col="id", geom_col="geom", crs="EPSG:4326")
 
         # create trips from geolife (based on positionfixes) - with gap_threshold 1e6
         sp, tpls = example_triplegs_higher_gap_threshold
@@ -371,6 +371,35 @@ class TestGenerate_trips:
         sp.drop(columns="is_activity", inplace=True)
         error_msg = "staypoints need the column 'is_activity' to be able to generate trips"
         with pytest.raises(AttributeError, match=error_msg):
+            generate_trips(sp, tpls)
+
+    def test_crs(self, example_triplegs):
+        """Test that the resulting GeoDataFrame has the correct crs or a warning or error is thrown if not set"""
+        sp, tpls = example_triplegs
+        # Case 1: sp crs None --> throw warning and set to tpls crs
+        sp.crs = None
+        with pytest.warns(UserWarning):
+            _, _, trips = generate_trips(sp, tpls)
+            assert trips.crs == tpls.crs
+        # Case 2: Both crs None --> warn and set to None
+        tpls.crs = None
+        with pytest.warns(UserWarning):
+            _, _, trips = generate_trips(sp, tpls)
+            assert trips.crs is None
+        # Case 3: tpls crs is None --> throw warning and set to sp crs
+        sp.crs = "EPSG:4326"
+        with pytest.warns(UserWarning):
+            _, _, trips = generate_trips(sp, tpls)
+            assert trips.crs == "EPSG:4326"
+        # Case 4: Both crs set and correspond
+        tpls.crs = "EPSG:2056"
+        sp.crs = "EPSG:2056"
+        _, _, trips = generate_trips(sp, tpls)
+        assert trips.crs == "EPSG:2056"
+        # Case 5: Both crs set but differ --> throw error
+        sp.crs = "EPSG:4326"
+        error_msg = "CRS of staypoints and triplegs differ. Geometry cannot be joined safely."
+        with pytest.raises(AssertionError, match=error_msg):
             generate_trips(sp, tpls)
 
 

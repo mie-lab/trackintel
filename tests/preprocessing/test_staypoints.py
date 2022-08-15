@@ -245,6 +245,12 @@ class TestGenerate_locations:
         assert loc_dataset_num == 1
         assert loc_user_num == 2
 
+    def test_crs(self, example_staypoints):
+        """Test whether the crs of the output locations is set correctly."""
+        sp = example_staypoints
+        sp, locs = sp.as_staypoints.generate_locations(method="dbscan", epsilon=20, num_samples=1)
+        assert locs.crs == sp.crs
+
     def test_dbscan_min(self):
         """Test with small epsilon parameter."""
         pfs_file = os.path.join("tests", "data", "positionfixes.csv")
