@@ -1,9 +1,6 @@
 Summarised below are the steps required to run the asv benchmark on a new computer.
 
-1. Clone trackintel and checkout to master. Add the trackintel root to python path 
-
->(**For testing purposes only,** clone the abcnishant007/trackintel and checkout to `asv-trackintel` branch). 
-*@Ye, we need to edit this line after pull request is approved. *
+1. Clone trackintel and checkout to master. Add the trackintel root to python path
 
 2. Download the larger geolife data from [this branch](https://github.com/abcnishant007/trackintel/tree/benchmark-files) and place it inside `tests/data/geolife_long_10_MB`. This dataset will not be used by default. The dataset option is hardcoded in the benchmark files as shown below:
  https://github.com/abcnishant007/trackintel/blob/7b8c2ee2f12d98b59578cd0519aae6a5240ade4c/benchmarks/preprocessing_benchmarks.py#L6-L7
@@ -102,17 +99,11 @@ git push -f origin gh-pages
  
 11. Finally, we revert back to the original branch (for which we might need to run benchmarks again) and pop the earlier stash.
 ```
-git checkout asv-trackintel
+git checkout master
 ```
 ```
 git stash pop
 ```
->> If master was being used to run benchmarks, we need to use `master`in place of `asv-trackintel` after the the checkout in the `git checkout ` command above.
 
-**For testing purposes only**
- Once this is setup, the `branches` parameter name should be reset to master in the `asv.conf.json file`. Currently this is available only until the pull request is not approved. By default the asv looks for master branch, so throws an error: 
- ```asv.util.ProcessError: Command '/usr/bin/git rev-list --first-parent master' returned non-zero exit status 128```
- *@Ye, we need to edit the following line after pull request is approved.*
- https://github.com/abcnishant007/trackintel/blob/a85eeb93b528571c773f00bf96a599b3162d569e/asv.conf.json#L33 
  
  
