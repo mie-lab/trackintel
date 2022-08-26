@@ -76,6 +76,21 @@ See [issue 117](https://github.com/mie-lab/trackintel/issues/117)
   - Trips: `(Geo)DataFrame (as trackintel trips)`
   - Tours: `DataFrame (as trackintel tours)` 
 
+
+### Performance benchmarking
+- We use [airspeed velocity](https://asv.readthedocs.io/en/stable/) to benchmark key trackintel functions. 
+- Benchmarks are written in the airspeed velocity format. 
+- Three types of benchmarks exist (sample at [benchmarks](https://github.com/mie-lab/trackintel/tree/master/benchmarks) folder))
+  - _mem__ which measures the memory of the data structure returned:
+    https://github.com/abcnishant007/trackintel/blob/19fcf965fce4a2bca2032f72b2759c7625c02b2f/benchmarks/preprocessing_benchmarks.py#L24
+
+  - _peakmem_ which measure the peak memory usage:
+    https://github.com/abcnishant007/trackintel/blob/19fcf965fce4a2bca2032f72b2759c7625c02b2f/benchmarks/preprocessing_benchmarks.py#L27
+
+  - _time__ which measure run time:
+    https://github.com/abcnishant007/trackintel/blob/19fcf965fce4a2bca2032f72b2759c7625c02b2f/benchmarks/preprocessing_benchmarks.py#L21
+- Detailed instructions for re-running existing benchmarks can be found in the ASV-BENCHMARKS.MD file [here](https://github.com/abcnishant007/trackintel/blob/benchmark-files/ASV-BENCHMARKING.md). 
+
 ### Others
 - We limit all lines to a maximum of 120 characters.
 - New release version tags use [semantic numbering](https://semver.org/).
