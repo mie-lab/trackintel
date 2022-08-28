@@ -30,7 +30,7 @@
 
     // List of branches to benchmark. If not provided, defaults to "master"
     // (for git) or "default" (for mercurial).
-    "branches": ["asv-trackintel"], // the branch name should be exactly the same as reflected on
+    "branches": ["master"], // the branch name should be exactly the same as reflected on
     // the local command prompt because sometimes, depending on the cloned repository, the branchname
     // is preceded by the username of the user who created that branch in a different fork 
  
