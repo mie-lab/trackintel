@@ -2,13 +2,11 @@
 
 import glob
 import os
-from collections import defaultdict
-from functools import partial
+from zipfile import ZipFile
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry import Point
 from sklearn.neighbors import NearestNeighbors
 from tqdm import tqdm
 
@@ -362,3 +360,150 @@ def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_thres
                 )
 
     return tpls_id_mode_list
+
+"""
+Points I wanna talk about.
+    1. How do we keep it with indexes.
+        - MZMV uses a combined key for most things (e.g. HHNR + WEGNR)
+          Should we create a new index on these?
+    2. So far I only extracted triplegs out of Etappen, 
+        should I extract staypoints out of Etappen as well or rather from Wege.
+        On the same note are stop points between Wege locations or staypoints?
+    3. The De-Normalization is horror. :D
+"""
+
+
+def read_mzmv(mzmv_path, read_verification_points=True):
+    """Read the data from "Mikrozensus Mobilität und Verkehr"
+
+    Parameters
+    ----------
+    mzmv_path : str
+        Path should contain zipped csv tables and zipped routes.
+    read_verification_points : bool, optional
+        Include incomplete triplegs from "Verifikationspunkte" if geometry from "Routes" is missing.
+        By default True
+
+    Returns
+    -------
+    tpls : GeoDataFrame (as trackintel triplegs)
+        Contains data from "Etappen", "Routen" and potentially "Segmente"
+    """
+    shp = os.path.join(mzmv_path, "5_Routen(Geometriefiles)\\CH_routen.zip")
+    db_csv = os.path.join(mzmv_path, "4_DB_csv\\CH_CSV.zip")
+
+    zf = ZipFile(db_csv)
+    with zf.open("etappen.csv") as f:
+        etappen = pd.read_csv(f, encoding="latin1")
+
+    # possible to use zip folder as it contains only one file
+    routen = gpd.read_file(shp)[["HHNR", "ETNR", "geometry"]]
+
+    etappen = pd.merge(etappen, routen, on=["HHNR", "ETNR"], how="left")
+
+    if read_verification_points:
+        vp = mzmv_verification_points(db_csv, "verifikationspunkte.csv")
+        etappen = pd.merge(etappen, vp, on=["HHNR", "ETNR"], how="left")
+        # TODO: do something smart to only join geometry back to missing ones
+        # additionally decide what to do with these points from vp (add start and end?)
+        # feels a bit misleading just to add them as linestrings as distance is hugely
+
+    columns = {"f51100time": "started_at", "f51400time": "finished_at", "HHNR": "user_id"}
+    etappen.rename(columns=columns)
+    etappen["started_at"] = mzmv_to_datetime(etappen["started_at"])
+    etappen["finished_at"] = mzmv_to_datetime(etappen["finished_at"])
+    etappen = gpd.GeoDataFrame(etappen, geometry="geometry", crs=CRS_WGS84)
+    # TODO: what should happen with etappen without geometry? Our model drops them so far.
+
+    with zf.open("wege.csv") as f:
+        wege = pd.read_csv(f, encoding="latin")
+    
+
+
+def mzmv_verification_points(zip_folder, filepath):
+    """Extracts verifications points in aggregated form.
+
+    Parameters
+    ----------
+    zip_folder : _type_
+        _description_
+    filepath : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
+    # only 6 points as we drop potential border points
+    num_points = 6
+
+    zf = ZipFile(zip_folder)
+    with zf.open(filepath) as f:
+        vp = pd.read_csv(f, encoding="latin1")
+
+    # insert nan to drop empty rows
+    na_997 = ["{}X", "{}Y", "{}X_CH1903", "{}Y_CH1903"]
+    na_997 = [c.format(f"R{i}_") for i in range(1, num_points + 1) for c in na_997]
+    na_97 = ["{}QAL", "{}BFS", "{}PLZ"]
+    na_97 = [c.format(f"R{i}_") for i in range(1, num_points + 1) for c in na_97]
+    for col in na_997:
+        vp.loc[vp[col] == -997, col] = np.nan
+    for col in na_97:
+        vp.loc[vp[col] == -97, col] = np.nan
+
+    # create splits that we can later union these tables
+    cols = [
+        "HHNR",
+        "ETNR",
+        "{}X",
+        "{}Y",
+        "{}X_CH1903",
+        "{}Y_CH1903",
+        "{}QAL",
+        "{}BFS",
+        "{}PLZ",
+        "{}STR",
+        "{}HNR",
+        "{}Vermo",
+        "{}LND",
+    ]
+    group = [[c.format(f"R{i}_") for c in cols] for i in range(1, num_points + 1)]
+    rename_to = [c.format("") for c in cols]
+    rename_maps = [{g_col: r_col for (g_col, r_col) in zip(g, rename_to)} for g in group]
+
+    # split by verification point number, drop empty df, rename to union it.
+    subset = ["X", "Y", "X_CH1903", "Y_CH1903", "QAL", "PLZ"]  # STR is sometimes empty string
+    vps = [vp[g].rename(columns=rm).dropna(subset=subset, how="all") for (g, rm) in zip(group, rename_maps)]
+    vp = pd.concat(vps)
+
+    vp["XY"] = gpd.points_from_xy(x=vp["X"], y=vp["Y"], crs="4236")
+    vp["XY_CH1903"] = gpd.points_from_xy(x=vp["X_CH1903"], y=vp["Y_CH1903"], crs=21781)
+    vp.drop(columns=["X", "Y", "X_CH1903", "Y_CH1903"], inplace=True)
+
+    # aggregate everything from same etappe into a list
+    aggfuncs = {col_name: list for col_name in (rename_to[6:] + ["XY", "XY_CH1903"])}
+    vp = vp.groupby(["HHNR", "ETNR"], as_index=False).agg(aggfuncs)  # groupby keeps inner order
+    # TODO: decide if to linestring or not
+    return vp
+
+
+def mzmv_to_datetime(col):
+    """Convert time from mzmv to pd.Timestamp on fix date 2015-09-01.
+
+    Parameters
+    ----------
+    col : pd.Series
+        Times stored as strings.
+
+    Returns
+    -------
+    pd.Series
+        Times stored as pd.Timestamp[ns]
+        
+    """
+    postfix = [" 2015-09-01"] * len(col)  # no broadcasting possible
+    midnight = col == "24:00:00"
+    col = col.str.cat(postfix)
+    col[midnight] = "00:00:00 2015-09-02"  # 24:00:00 is no valid time
+    return pd.to_datetime(col, format="%H:%M:%S %Y-%m-%d")
