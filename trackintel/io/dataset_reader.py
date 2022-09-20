@@ -633,24 +633,3 @@ def _mzmv_generate_sp(etappen, zf):
     added_cols = [b + c for b in ("S_", "Z_") for c in col[-6:]]
     etappen.drop(columns=added_cols, inplace=True)
     return sp
-
-
-def _mzmv_vp_linestrings(df):
-    """Create LineStrings from verification points, start, and end.
-
-    Parameters
-    ----------
-    df : DataFrame
-        Must have columns for X, Y of start and end (WGS84 and CH1903).
-        Also columns XY, XY_CH1903 with list of coordinates of verification points.
-
-    Returns
-    -------
-    DataFrame
-        DataFrame with columns `VP_XY` and `VP_XY_CH1903`
-    """
-    s_xy = gpd.points_from_xy(df["S_X"], df["S_Y"], crs=CRS_WGS84)
-    s_xy_ch1903 = gpd.points_from_xy(df["S_X_CH1903"], df["S_Y_CH1903"], crs=CRS_CH1903)
-    z_xy = gpd.points_from_xy(df["Z_X"], df["Z_Y"], crs=CRS_WGS84)
-    z_xy_ch1903 = gpd.points_from_xy(df["Z_X_CH1903"], df["Z_Y_CH1903"], crs=CRS_WGS84)
-    return df
