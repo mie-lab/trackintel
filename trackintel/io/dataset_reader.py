@@ -7,13 +7,15 @@ from zipfile import ZipFile
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+from shapely.geometry import LineString
 from sklearn.neighbors import NearestNeighbors
 from tqdm import tqdm
 
 from trackintel.preprocessing.util import calc_temp_overlap
 
 FEET2METER = 0.3048
-CRS_WGS84 = "epsg:4326"
+CRS_WGS84 = 4326
+CRS_CH1903 = 21781
 
 
 def read_geolife(geolife_path, print_progress=False):
@@ -370,13 +372,23 @@ def read_mzmv(mzmv_path, read_verification_points=True):
     mzmv_path : str
         Path should contain zipped csv tables and zipped routes.
     read_verification_points : bool, optional
-        Include incomplete triplegs from "Verifikationspunkte" if geometry from "Routes" is missing.
+        Include incomplete triplegs from "Verifikationspunkte" in own column.
         By default True
 
     Returns
     -------
+    trips : GeoDataFrame (as trackintel trips)
+    sp : GeoDataFrame (as trackintel staypoints)
     tpls : GeoDataFrame (as trackintel triplegs)
-        Contains data from "Etappen", "Routen" and potentially "Segmente"
+
+    Notes
+    -----
+    To fit into the trackintel model we rename `HHNR` to `user_id`, rename and cast
+    `f51100time` to `started_at` and `f51400time` to `finished_at`.
+    The column `geometry` contains all the available geometries from `Routen` in WGS84.
+    Also available is `XY_CH1903` geometry in CH1903.
+    Additionally there also exists for some triplegs verification points that are a included
+    in the column `VP_XY` and `VP_XY_CH1903`.
     """
     shp = os.path.join(mzmv_path, "5_Routen(Geometriefiles)\\CH_routen.zip")
     db_csv = os.path.join(mzmv_path, "4_DB_csv\\CH_CSV.zip")
@@ -395,31 +407,30 @@ def read_mzmv(mzmv_path, read_verification_points=True):
         etappen = pd.read_csv(f, encoding="latin1")
     etappen = pd.merge(etappen, trip_id_merge, on=["HHNR", "WEGNR"])
     etappen.sort_values(by=["HHNR", "ETNR"], inplace=True)
-    columns = {"f51100time": "started_at", "f51400time": "finished_at", "HHNR": "user_id"}
     etappen.rename(columns=columns, inplace=True)
     etappen["started_at"] = _mzmv_to_datetime(etappen["started_at"])
     etappen["finished_at"] = _mzmv_to_datetime(etappen["finished_at"])
-    etappen = gpd.GeoDataFrame(etappen, geometry="geometry", crs=CRS_WGS84)
-    etappen.index.name = "tripleg_id"
     sp = _mzmv_generate_sp(etappen, zf)
 
     # Read Geometry: #
     # possible to use zip folder as it contains only one file
     routen = gpd.read_file(shp)[["HHNR", "ETNR", "geometry"]]
-    etappen = pd.merge(etappen, routen, on=["HHNR", "ETNR"], how="left")
+    routen.rename(columns=columns, inplace=True)
+    etappen = pd.merge(etappen, routen, on=["user_id", "ETNR"], how="left")
     if read_verification_points:
-        vp = _mzmv_verification_points(db_csv, "verifikationspunkte.csv")
-        etappen = pd.merge(etappen, vp, on=["HHNR", "ETNR"], how="left")
-        # TODO: do something smart to only join geometry back to missing ones
-        # additionally decide what to do with these points from vp (add start and end?)
-        # feels a bit misleading just to add them as linestrings as distance is hugely different?
+        vp = _mzmv_verification_points(zf, "verifikationspunkte.csv", etappen)
+        etappen = pd.merge(etappen, vp, on=["user_id", "ETNR"], how="left")
 
     # TODO: what should happen with etappen without geometry? Our model drops them so far.
+    etappen = gpd.GeoDataFrame(etappen, geometry="geometry", crs=CRS_WGS84)
+    etappen.index.name = "tripleg_id"
     return wege, sp, etappen
 
 
-def _mzmv_verification_points(zf, filepath):
-    """Extracts verifications points in aggregated form.
+def _mzmv_verification_points(zf, filepath, etappen):
+    """Extracts verifications points as LineStrings.
+
+    Start and endpoint of tripleg is added from etappen to gain valid LineStrings.
 
     Parameters
     ----------
@@ -427,13 +438,15 @@ def _mzmv_verification_points(zf, filepath):
         ZipFile with which we can open filepath
     filepath : str
         path to verification points file within zf.
+    etappen : DataFrame
+        etappen with renamed columns.
 
     Returns
     -------
     pd.DataFrame
         Filled with aggregated verification points per tripleg.
     """
-    # only 6 points as we drop potential border points
+    # we drop border points -> only 6 points
     num_points = 6
 
     with zf.open(filepath) as f:
@@ -442,14 +455,10 @@ def _mzmv_verification_points(zf, filepath):
     # insert nan to drop empty rows
     na_997 = ["{}X", "{}Y", "{}X_CH1903", "{}Y_CH1903"]
     na_997 = [c.format(f"R{i}_") for i in range(1, num_points + 1) for c in na_997]
-    na_97 = ["{}QAL", "{}BFS", "{}PLZ"]
-    na_97 = [c.format(f"R{i}_") for i in range(1, num_points + 1) for c in na_97]
     for col in na_997:
         vp.loc[vp[col] == -997, col] = np.nan
-    for col in na_97:
-        vp.loc[vp[col] == -97, col] = np.nan
 
-    # create splits that we can later union these tables
+    # we only keep geometry information
     cols = [
         "HHNR",
         "ETNR",
@@ -457,37 +466,36 @@ def _mzmv_verification_points(zf, filepath):
         "{}Y",
         "{}X_CH1903",
         "{}Y_CH1903",
-        "{}QAL",
-        "{}BFS",
-        "{}PLZ",
-        "{}STR",
-        "{}HNR",
-        "{}Vermo",
-        "{}LND",
     ]
     group = [[c.format(f"R{i}_") for c in cols] for i in range(1, num_points + 1)]
     rename_to = [c.format("") for c in cols]
     rename_maps = [{g_col: r_col for (g_col, r_col) in zip(g, rename_to)} for g in group]
 
-    # split by verification point number, drop empty df, rename to union it.
-    subset = ["X", "Y", "X_CH1903", "Y_CH1903", "QAL", "PLZ"]
-    # STR is sometimes empty string instead of None
-    vps = [vp[g].rename(columns=rm).dropna(subset=subset, how="all") for (g, rm) in zip(group, rename_maps)]
+    # split by verification point number, rename for later concat, drop emtpy vp
+    gcol = ["X", "Y", "X_CH1903", "Y_CH1903"]
+    vps = [vp[g].rename(columns=rm).dropna(subset=gcol, how="all") for (g, rm) in zip(group, rename_maps)]
     vp = pd.concat(vps)
+    vp.rename(columns={"HHNR": "user_id"}, inplace=True)  # to be inline with etappen
+    # gather start and end from etappen and put them into the same format
+    sp = etappen[["user_id", "ETNR", "S_X", "S_Y", "S_X_CH1903", "S_Y_CH1903"]].copy()
+    ep = etappen[["user_id", "ETNR", "Z_X", "Z_Y", "Z_X_CH1903", "Z_Y_CH1903"]].copy()
+    sp.rename(columns={"S_X": "X", "S_Y": "Y", "S_X_CH1903": "X_CH1903", "S_Y_CH1903": "Y_CH1903"}, inplace=True)
+    ep.rename(columns={"Z_X": "X", "Z_Y": "Y", "Z_X_CH1903": "X_CH1903", "Z_Y_CH1903": "Y_CH1903"}, inplace=True)
+    vp = pd.concat((sp, vp, ep))  # right order is important
 
-    vp["XY"] = gpd.points_from_xy(x=vp["X"], y=vp["Y"], crs="4236")
-    vp["XY_CH1903"] = gpd.points_from_xy(x=vp["X_CH1903"], y=vp["Y_CH1903"], crs=21781)
+    vp["VP_XY"] = gpd.points_from_xy(x=vp["X"], y=vp["Y"], crs="4236")
+    vp["VP_XY_CH1903"] = gpd.points_from_xy(x=vp["X_CH1903"], y=vp["Y_CH1903"], crs=CRS_CH1903)
     vp.drop(columns=["X", "Y", "X_CH1903", "Y_CH1903"], inplace=True)
 
-    # aggregate everything from same etappe into a list
-    aggfuncs = {col_name: list for col_name in (rename_to[6:] + ["XY", "XY_CH1903"])}
-    vp = vp.groupby(["HHNR", "ETNR"], as_index=False).agg(aggfuncs)  # groupby keeps inner order
-    # TODO: decide if to linestring or not
+    # aggregate points in the same etappe into a linestring
+    aggfuncs = {"VP_XY": lambda xy: LineString(xy.to_list()), "VP_XY_CH1903": lambda xy: LineString(xy.to_list())}
+    # groupby keeps innner order!
+    vp = vp.groupby(["user_id", "ETNR"], as_index=False).agg(aggfuncs)
     return vp
 
 
 def _mzmv_to_datetime(col):
-    """Convert time from mzmv to pd.Timestamp on fix date 2015-09-01.
+    """Convert time from mzmv to pd.Timestamp on fix date 1970-01-01.
 
     Parameters
     ----------
@@ -500,10 +508,10 @@ def _mzmv_to_datetime(col):
         Times stored as pd.Timestamp[ns]
 
     """
-    postfix = [" 2015-09-01"] * len(col)  # no broadcasting possible
+    postfix = [" 1970-01-01"] * len(col)  # no broadcasting possible
     midnight = col == "24:00:00"
     col = col.str.cat(postfix)
-    col[midnight] = "00:00:00 2015-09-02"  # 24:00:00 is no valid time
+    col[midnight] = "00:00:00 1970-01-02"  # 24:00:00 is no valid time
     return pd.to_datetime(col, format="%H:%M:%S %Y-%m-%d")
 
 
@@ -529,10 +537,10 @@ def _mzmv_generate_sp(etappen, zf):
     assert "trip_id" in etappen.columns
     # etappen must be sorted by "user_id" and "WEGNR" ASC else this does not work
     first_tpls = etappen["ETNR"] == 1  # first tripleg of user (ETNR is unique per user)
-    last_tpls = first_tpls.shift(-1, fill_value=False)
+    last_tpls = first_tpls.shift(-1, fill_value=True)
     # we create staypoints from starts
     etappen["S_is_activity"] = (etappen[["user_id", "WEGNR"]] != etappen[["user_id", "WEGNR"]].shift(1)).any(axis=1)
-    # quick and dirty copy trip ids and delete most of in next step :D
+    # quick and dirty copy trip ids and delete most of in next step
     etappen["S_prev_trip_id"] = etappen["trip_id"].shift(1)
     etappen["S_next_trip_id"] = etappen["trip_id"]
     etappen["S_trip_id"] = etappen["trip_id"]  # to not overwrite it
@@ -582,7 +590,7 @@ def _mzmv_generate_sp(etappen, zf):
         "next_trip_id",
         "trip_id",
     ]
-    s_col = ["user_id", "WEGNR", "ETNR"] + ["S_" + c for c in col]
+    s_col = ["user_id", "WEGNR", "ETNR", "W_X_CH1903", "W_Y_CH1903"] + ["S_" + c for c in col]
     sp = etappen[s_col].copy()
     sp.rename(columns={"S_" + c: c for c in col}, inplace=True)
 
@@ -593,33 +601,29 @@ def _mzmv_generate_sp(etappen, zf):
     etappen["Z_trip_id"] = np.nan  # outside of trips
     etappen["Z_started_at"] = etappen["finished_at"]
     etappen["Z_finished_at"] = pd.NaT
-    z_col = ["user_id", "WEGNR", "ETNR"] + ["Z_" + c for c in col]
+    z_col = ["user_id", "WEGNR", "ETNR", "W_X_CH1903", "W_Y_CH1903"] + ["Z_" + c for c in col]
     sp_last = etappen.loc[last_tpls, z_col]
     sp_last.rename(columns={"Z_" + c: c for c in col}, inplace=True)
 
     sp = pd.concat((sp, sp_last))
-    # now we add column purpose to show if work or home
+    # now we add column purpose to show if work (home we got from etappen W_..)
     with zf.open("zielpersonen.csv") as f:
         usecols = ["HHNR", "A_X_CH1903", "A_Y_CH1903", "AU_X_CH1903", "AU_Y_CH1903"]
         zielpersonen = pd.read_csv(f, encoding="latin1", usecols=usecols).rename(columns={"HHNR": "user_id"})
-    with zf.open("haushalte.csv") as f:
-        haushalte = pd.read_csv(f, encoding="latin1", usecols=["HHNR", "W_X_CH1903", "W_Y_CH1903"]).rename(
-            columns={"HHNR": "user_id"}
-        )
     sp = pd.merge(sp, zielpersonen, how="left", on=["user_id"])
-    sp = pd.merge(sp, haushalte, how="left", on=["user_id"])
     work = ((sp["A_X_CH1903"] == sp["X_CH1903"]) & (sp["A_Y_CH1903"] == sp["Y_CH1903"])) | (
         (sp["AU_X_CH1903"] == sp["X_CH1903"]) & (sp["AU_Y_CH1903"] == sp["Y_CH1903"])
     )
     home = (sp["W_X_CH1903"] == sp["X_CH1903"]) & (sp["W_Y_CH1903"] == sp["Y_CH1903"])
     sp.loc[work, "purpose"] = "work"
     sp.loc[home, "purpose"] = "home"  # potentially overwrite work
+    # TODO: add purpose from other methods -> see notes
 
     sp.reset_index(drop=True, inplace=True)
     sp.index.name = "staypoint_id"
 
     sp["XY"] = gpd.points_from_xy(sp["X"], sp["Y"], crs=CRS_WGS84)
-    sp["XY_CH1904"] = gpd.points_from_xy(sp["X_CH1903"], sp["Y_CH1903"], crs="21781")
+    sp["XY_CH1904"] = gpd.points_from_xy(sp["X_CH1903"], sp["Y_CH1903"], crs=CRS_CH1903)
     sp = gpd.GeoDataFrame(sp, geometry="XY", crs=CRS_WGS84)
 
     # clean up
@@ -629,3 +633,24 @@ def _mzmv_generate_sp(etappen, zf):
     added_cols = [b + c for b in ("S_", "Z_") for c in col[-6:]]
     etappen.drop(columns=added_cols, inplace=True)
     return sp
+
+
+def _mzmv_vp_linestrings(df):
+    """Create LineStrings from verification points, start, and end.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Must have columns for X, Y of start and end (WGS84 and CH1903).
+        Also columns XY, XY_CH1903 with list of coordinates of verification points.
+
+    Returns
+    -------
+    DataFrame
+        DataFrame with columns `VP_XY` and `VP_XY_CH1903`
+    """
+    s_xy = gpd.points_from_xy(df["S_X"], df["S_Y"], crs=CRS_WGS84)
+    s_xy_ch1903 = gpd.points_from_xy(df["S_X_CH1903"], df["S_Y_CH1903"], crs=CRS_CH1903)
+    z_xy = gpd.points_from_xy(df["Z_X"], df["Z_Y"], crs=CRS_WGS84)
+    z_xy_ch1903 = gpd.points_from_xy(df["Z_X_CH1903"], df["Z_Y_CH1903"], crs=CRS_WGS84)
+    return df
