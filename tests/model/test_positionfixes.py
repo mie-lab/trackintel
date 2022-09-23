@@ -31,7 +31,7 @@ class TestPositionfixes:
         pfs = testdata_geolife.copy()
 
         # check geometry
-        with pytest.raises(AttributeError, match="No geometry data set yet"):
+        with pytest.raises(AttributeError):
             pfs.drop(["geom"], axis=1).as_positionfixes
 
     def test_accessor_geometry_type(self, testdata_geolife):

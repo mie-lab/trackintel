@@ -40,10 +40,7 @@ Triplegs
 ========
 
 Triplegs denote routes taken between two consecutive staypoint. Usually, these are traveled
-with a single mode of transport. Depending on the tracking data, they can be rather noisy,
-for which reason we often want to smoothen them.
-
-.. autofunction:: trackintel.preprocessing.triplegs.smoothen_triplegs
+with a single mode of transport.
 
 From staypoints and triplegs, we can generate trips that summarize all movement and 
 all non-essential actions (e.g., waiting) between two relevant activity staypoints.

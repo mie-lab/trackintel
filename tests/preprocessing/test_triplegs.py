@@ -12,7 +12,7 @@ from shapely.geometry import LineString, Point
 from tqdm import tqdm
 
 import trackintel as ti
-from trackintel.preprocessing.triplegs import generate_trips, smoothen_triplegs
+from trackintel.preprocessing.triplegs import generate_trips
 
 
 @pytest.fixture
@@ -41,30 +41,6 @@ def example_triplegs_higher_gap_threshold():
     return sp, tpls
 
 
-class TestSmoothen_triplegs:
-    def test_smoothen_triplegs(self):
-        tpls_file = os.path.join("tests", "data", "triplegs_with_too_many_points_test.csv")
-        tpls = ti.read_triplegs_csv(tpls_file, sep=";", index_col=None)
-        tpls_smoothed = smoothen_triplegs(tpls, tolerance=0.0001)
-        line1 = tpls.iloc[0].geom
-        line1_smoothed = tpls_smoothed.iloc[0].geom
-        line2 = tpls.iloc[1].geom
-        line2_smoothed = tpls_smoothed.iloc[1].geom
-
-        assert line1.length == line1_smoothed.length
-        assert line2.length == line2_smoothed.length
-        assert len(line1.coords) == 10
-        assert len(line2.coords) == 7
-        assert len(line1_smoothed.coords) == 4
-        assert len(line2_smoothed.coords) == 3
-
-    def test_geometry_name(self, example_triplegs):
-        """Test if the geometry name can be set freely."""
-        _, tpls = example_triplegs
-        tpls["freely_set_geometry_name"] = LineString([[1, 1], [2, 2]])
-        smoothen_triplegs(tpls)
-
-
 class TestGenerate_trips:
     """Tests for generate_trips() method."""
 
@@ -84,7 +60,7 @@ class TestGenerate_trips:
         """Test if we can generate the example trips based on example data."""
         # load pregenerated trips
         path = os.path.join("tests", "data", "geolife_long", "trips.csv")
-        trips_loaded = ti.read_trips_csv(path, index_col="id", geom_col="geom", crs=None)
+        trips_loaded = ti.read_trips_csv(path, index_col="id", geom_col="geom", crs="EPSG:4326")
 
         # create trips from geolife (based on positionfixes) - with gap_threshold 1e6
         sp, tpls = example_triplegs_higher_gap_threshold
@@ -370,6 +346,61 @@ class TestGenerate_trips:
 
         # test if start of first trip is (0,0)
         assert trips.loc[0, "geom"].geoms[0] == Point(0, 0)
+
+    def test_keeping_all_columns_sp_tpls(self, example_triplegs):
+        """Test if function does not drop columns in staypoints or triplegs."""
+        sp_pre, tpls_pre = example_triplegs
+        # these are the columns that are currently used in the code
+        cols_sp = ["type", "sp_tpls_id", "temp_trip_id", "sp", "tpls", "prev_trip_id", "next_trip_id", "trip_id"]
+        cols_tpls = cols_sp + ["is_activity"]
+        sp_pre[cols_sp] = 11.06
+        tpls_pre[cols_tpls] = 12.06
+        sp_pre.as_staypoints
+        tpls_pre.as_triplegs
+
+        # catch warnings for overwriting columns
+        with pytest.warns(UserWarning):
+            sp_post, tpls_post, _ = generate_trips(sp_pre, tpls_pre, gap_threshold=15)
+
+        assert_index_equal(sp_pre.columns, sp_pre.columns.intersection(sp_post.columns))
+        assert_index_equal(tpls_pre.columns, tpls_pre.columns.intersection(tpls_post.columns))
+
+    def test_missing_is_activity_column(self, example_triplegs):
+        """Tests is AttributeError is raised on missing "is_activity" column of staypoints."""
+        sp, tpls = example_triplegs
+        sp.drop(columns="is_activity", inplace=True)
+        error_msg = "staypoints need the column 'is_activity' to be able to generate trips"
+        with pytest.raises(AttributeError, match=error_msg):
+            generate_trips(sp, tpls)
+
+    def test_crs(self, example_triplegs):
+        """Test that the resulting GeoDataFrame has the correct crs or a warning or error is thrown if not set"""
+        sp, tpls = example_triplegs
+        # Case 1: sp crs None --> throw warning and set to tpls crs
+        sp.crs = None
+        with pytest.warns(UserWarning):
+            _, _, trips = generate_trips(sp, tpls)
+            assert trips.crs == tpls.crs
+        # Case 2: Both crs None --> warn and set to None
+        tpls.crs = None
+        with pytest.warns(UserWarning):
+            _, _, trips = generate_trips(sp, tpls)
+            assert trips.crs is None
+        # Case 3: tpls crs is None --> throw warning and set to sp crs
+        sp.crs = "EPSG:4326"
+        with pytest.warns(UserWarning):
+            _, _, trips = generate_trips(sp, tpls)
+            assert trips.crs == "EPSG:4326"
+        # Case 4: Both crs set and correspond
+        tpls.crs = "EPSG:2056"
+        sp.crs = "EPSG:2056"
+        _, _, trips = generate_trips(sp, tpls)
+        assert trips.crs == "EPSG:2056"
+        # Case 5: Both crs set but differ --> throw error
+        sp.crs = "EPSG:4326"
+        error_msg = "CRS of staypoints and triplegs differ. Geometry cannot be joined safely."
+        with pytest.raises(AssertionError, match=error_msg):
+            generate_trips(sp, tpls)
 
 
 def _create_debug_sp_tpls_data(sp, tpls, gap_threshold):

@@ -150,7 +150,7 @@ def generate_tours(
         "crs_is_projected": crs_is_projected,
     }
     if print_progress:
-        tqdm.pandas(desc="User trip generation")
+        tqdm.pandas(desc="User tour generation")
         tours = (
             trips_input.groupby(["user_id"], group_keys=False, as_index=False)
             .progress_apply(_generate_tours_user, **kwargs)
