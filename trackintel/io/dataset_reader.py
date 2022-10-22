@@ -530,7 +530,11 @@ def _mzmv_generate_sp(etappen, zf):
     staypoints : GeoDataFrame (as trackintel staypoints)
         staypoints with mandatory columns, all the columns for staypoints from mzmv,
         and additionally "prev_trip_id", "trip_id", "next_trip_id", "is_activity",
-        "purpose"
+        "purpose", "purpose_tpls"
+
+    Notes
+    -----
+    Encoding for values of "purpose_tpls" can be looked up in the documentation of MZMV.
     """
     assert "trip_id" in etappen.columns  # small regression test
     etappen.sort_values(by=["user_id", "ETNR"], inplace=True)
@@ -555,6 +559,9 @@ def _mzmv_generate_sp(etappen, zf):
     etappen["S_started_at"] = etappen["finished_at"].shift(1, fill_value=pd.NaT)
     # first weg -> we only know finish time for staypoints
     etappen.loc[first_tpls, "S_started_at"] = pd.NaT
+    # add purpose of triplegs to staypoints
+    etappen["S_purpose_tpls"] = etappen["f52900"].shift(1)
+    etappen.loc[first_tpls, "S_purpose_tpls"] = None
     # **all** the columns that are associated with the staypoints
     col = [
         "X",
@@ -588,6 +595,7 @@ def _mzmv_generate_sp(etappen, zf):
         "prev_trip_id",
         "next_trip_id",
         "trip_id",
+        "purpose_tpls"
     ]
     # W_X_CH1903, X coordinate of home, CH1903 as integers are better to join 
     s_col = ["user_id", "WEGNR", "ETNR", "W_X_CH1903", "W_Y_CH1903"] + ["S_" + c for c in col]
@@ -601,6 +609,7 @@ def _mzmv_generate_sp(etappen, zf):
     etappen["Z_trip_id"] = np.nan  # outside of trips
     etappen["Z_started_at"] = etappen["finished_at"]
     etappen["Z_finished_at"] = pd.NaT
+    etappen["Z_purpose_tpls"] = etappen["f52900"]
     z_col = ["user_id", "WEGNR", "ETNR", "W_X_CH1903", "W_Y_CH1903"] + ["Z_" + c for c in col]
     sp_last = etappen.loc[last_tpls, z_col]
     sp_last.rename(columns={"Z_" + c: c for c in col}, inplace=True)
@@ -630,6 +639,6 @@ def _mzmv_generate_sp(etappen, zf):
     sp_drop = ["X", "Y", "X_CH1903", "Y_CH1903"]
     sp_drop += ["W_X_CH1903", "W_Y_CH1903", "A_X_CH1903", "A_Y_CH1903", "AU_X_CH1903", "AU_Y_CH1903"]
     sp.drop(columns=sp_drop, inplace=True)
-    added_cols = [b + c for b in ("S_", "Z_") for c in col[-6:]]
+    added_cols = [b + c for b in ("S_", "Z_") for c in col[-7:]]
     etappen.drop(columns=added_cols, inplace=True)
     return sp
