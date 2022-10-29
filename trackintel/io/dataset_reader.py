@@ -371,7 +371,7 @@ def read_mzmv(mzmv_path):
     Parameters
     ----------
     mzmv_path : str
-        Path to unzipped data folder of MZMB (everything else should be left zipped).
+        Path to unzipped data folder of MZMV (everything else should be left zipped).
 
     Returns
     -------
@@ -389,6 +389,7 @@ def read_mzmv(mzmv_path):
     To fit the trackintel model, we rename `HHNR` to `user_id`, rename [`f51100time`, `f51400time`] to
     [`started_at`, `finished_at`].
     Since the MZMV data contains only time information and no date information, the data is set to 1970-01-01.
+    Additional geometry available are the verification points in the columns "VP_XY" and "VP_XY_CH1903"
     """
     shp = os.path.join(mzmv_path, "5_Routen(Geometriefiles)\\CH_routen.zip")
     db_csv = os.path.join(mzmv_path, "4_DB_csv\\CH_CSV.zip")
@@ -422,8 +423,18 @@ def read_mzmv(mzmv_path):
     vp = _mzmv_verification_points(zf, "verifikationspunkte.csv", etappen)
     etappen = pd.merge(etappen, vp, on=["user_id", "ETNR"], how="left")
 
-    etappen = gpd.GeoDataFrame(etappen, geometry="VP_XY", crs=CRS_WGS84)
+    etappen = gpd.GeoDataFrame(etappen, geometry="geometry", crs=CRS_WGS84)
     etappen.index.name = "tripleg_id"
+    # make invalid geometries valid (maybe replace with pygeos)
+    etappen.loc[~etappen["geometry"].is_valid, "geometry"] = LineString(None)
+
+    # get the mandatory colums for trips
+    """
+    prev_trip = sp.loc[sp["prev_trip_id"].notna(), "prev_trip_id"].reset_index(name="destination_staypoint_id")
+    next_trip = sp.loc[sp["next_trip_id"].notna(), "next_trip_id"].reset_index(name="origin_staypoint_id")
+    wege = pd.merge(wege, prev_trip, left_index=True, right=["prev_trip_id"])
+    wege = pd.merge(wege, next_trip, left_index=True, right=["next_trip_id"])
+    """
     return wege, sp, etappen
 
 
@@ -511,7 +522,7 @@ def _mzmv_to_datetime(col):
     # 24:00:00 is no valid time
     # to keep everything on same day loose 1 sec
     col[midnight] = "23:59:59 1970-01-01"
-    return pd.to_datetime(col, format="%H:%M:%S %Y-%m-%d")
+    return pd.to_datetime(col, format="%H:%M:%S %Y-%m-%d", utc=True)
 
 
 def _mzmv_generate_sp(etappen, zf):
@@ -596,9 +607,9 @@ def _mzmv_generate_sp(etappen, zf):
         "prev_trip_id",
         "next_trip_id",
         "trip_id",
-        "purpose_tpls"
+        "purpose_tpls",
     ]
-    # W_X_CH1903, X coordinate of home, CH1903 as integers are better to join 
+    # W_X_CH1903, X coordinate of home, CH1903 as integers are better to join
     s_col = ["user_id", "WEGNR", "ETNR", "W_X_CH1903", "W_Y_CH1903"] + ["S_" + c for c in col]
     sp = etappen[s_col].copy()
     sp.rename(columns={"S_" + c: c for c in col}, inplace=True)
