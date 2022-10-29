@@ -134,6 +134,7 @@ def example_nested_tour(example_trip_data):
     trips.loc[100] = [0, start_time_subtour, middle_time, 5, 7, first_trip_subtour]
     trips.loc[200] = [0, middle_time, trips.loc[15, "started_at"], 7, 5, second_trip_subtour]
     trips.sort_values(by=["user_id", "started_at", "origin_staypoint_id", "destination_staypoint_id"], inplace=True)
+    trips.set_geometry("geom", crs=4326, inplace=True)
     return trips
 
 
