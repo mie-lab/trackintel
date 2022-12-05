@@ -1,10 +1,13 @@
 import datetime
 
+import geopandas as gpd
+from geopandas.testing import assert_geoseries_equal
 import pandas as pd
-from pandas.testing import assert_frame_equal
 import pytest
+from pandas.testing import assert_frame_equal
+from shapely.geometry import MultiPoint, Point
 
-from trackintel.preprocessing.util import calc_temp_overlap, _explode_agg
+from trackintel.preprocessing.util import _explode_agg, calc_temp_overlap, angle_centroid_multipoints
 
 
 @pytest.fixture
@@ -88,3 +91,15 @@ class TestExplodeAgg:
         returned_df = _explode_agg("id", "c", orig_df, agg_df)
         solution_df = pd.DataFrame(orig)
         assert_frame_equal(returned_df, solution_df)
+
+
+class TestAngleCentroidMultipoints:
+    """Test util method angle_centroid_multipoints"""
+
+    a = Point((45, 130))
+    b = MultiPoint([[10, 160], [20, -170]])
+    c = MultiPoint([[0, 20], [10, 30], [20, 40]])
+    g = gpd.GeoSeries([a, b, c])
+    g_solution = gpd.GeoSeries([a, Point([15, 175]), Point([10, 30])])
+    g = angle_centroid_multipoints(g)
+    assert_geoseries_equal(g, g_solution, check_less_precise=True)

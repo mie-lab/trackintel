@@ -1,5 +1,9 @@
 from datetime import timedelta
+
+import geopandas as gpd
+import numpy as np
 import pandas as pd
+import pygeos
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
@@ -103,3 +107,30 @@ def _explode_agg(column, agg, orig_df, agg_df):
     temp = temp[temp[column].notna()]
     temp.index = temp[column]
     return orig_df.join(temp[agg], how="left")
+
+
+def angle_centroid_multipoints(geometry):
+    """Calculate the mean of angles of MultiPoints
+
+    Parameters
+    ----------
+    geometry : GeoSeries
+        Should contain only Points or MultiPoints any other lead to wrong results.
+
+    Returns
+    -------
+    GeoSeries
+        Centroid of geometries (Point)
+    """
+    geometry = pygeos.from_shapely(geometry)
+    geometry, index = pygeos.get_coordinates(geometry, return_index=True)
+    count = np.bincount(index)
+    x, y = geometry[:, 0], geometry[:, 1]
+    # calculate mean of x Coordinates -> no wrapping
+    x = np.bincount(index, weights=x) / count
+    # calculate mean of y Coordinates with wrapping
+    y_rad = np.deg2rad(y)
+    y_sin = np.bincount(index, weights=np.sin(y_rad)) / count
+    y_cos = np.bincount(index, weights=np.cos(y_rad)) / count
+    y = np.rad2deg(np.arctan2(y_sin, y_cos))
+    return gpd.GeoSeries(pygeos.points(x, y))

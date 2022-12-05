@@ -4,8 +4,8 @@ import pandas as pd
 from sklearn.cluster import DBSCAN
 import warnings
 
-from trackintel.geogr.distances import meters_to_decimal_degrees
-from trackintel.preprocessing.util import applyParallel
+from trackintel.geogr.distances import meters_to_decimal_degrees, check_gdf_planar
+from trackintel.preprocessing.util import applyParallel, angle_centroid_multipoints
 
 
 def generate_locations(
@@ -136,9 +136,11 @@ def generate_locations(
         # filter staypoints not belonging to locations
         locs = locs.loc[locs["location_id"] != -1]
 
-        with warnings.catch_warnings():  # TODO: fix bug for geographic crs #437
-            warnings.simplefilter("ignore", category=UserWarning)
-            locs["center"] = locs.geometry.centroid  # creates warning for geographic crs
+        if check_gdf_planar(locs):
+            locs["center"] = locs.geometry.centroid
+        else:
+            # error of wrapping e.g. mean([-180, +180]) -> own function needed
+            locs["center"] = angle_centroid_multipoints(locs.geometry)
 
         # extent is the convex hull of the geometry
         locs["extent"] = locs.geometry.convex_hull
