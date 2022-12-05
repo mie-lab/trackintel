@@ -96,10 +96,10 @@ class TestExplodeAgg:
 class TestAngleCentroidMultipoints:
     """Test util method angle_centroid_multipoints"""
 
-    a = Point((45, 130))
-    b = MultiPoint([[10, 160], [20, -170]])
-    c = MultiPoint([[0, 20], [10, 30], [20, 40]])
+    a = Point((130, 45))
+    b = MultiPoint([[160, 10], [-170, 20]])
+    c = MultiPoint([[20, 0], [30, 10], [40, 20]])
     g = gpd.GeoSeries([a, b, c])
-    g_solution = gpd.GeoSeries([a, Point([15, 175]), Point([10, 30])])
+    g_solution = gpd.GeoSeries([a, Point([175, 15]), Point([30, 10])])
     g = angle_centroid_multipoints(g)
     assert_geoseries_equal(g, g_solution, check_less_precise=True)

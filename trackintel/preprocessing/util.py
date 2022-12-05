@@ -122,15 +122,17 @@ def angle_centroid_multipoints(geometry):
     GeoSeries
         Centroid of geometries (Point)
     """
-    geometry = pygeos.from_shapely(geometry)
-    geometry, index = pygeos.get_coordinates(geometry, return_index=True)
+    g = pygeos.from_shapely(geometry)
+    g, index = pygeos.get_coordinates(g, return_index=True)
     count = np.bincount(index)
-    x, y = geometry[:, 0], geometry[:, 1]
+    x, y = g[:, 0], g[:, 1]
     # calculate mean of x Coordinates -> no wrapping
-    x = np.bincount(index, weights=x) / count
+    y = np.bincount(index, weights=y) / count
     # calculate mean of y Coordinates with wrapping
-    y_rad = np.deg2rad(y)
-    y_sin = np.bincount(index, weights=np.sin(y_rad)) / count
-    y_cos = np.bincount(index, weights=np.cos(y_rad)) / count
-    y = np.rad2deg(np.arctan2(y_sin, y_cos))
-    return gpd.GeoSeries(pygeos.points(x, y))
+    x_rad = np.deg2rad(x)
+    x_sin = np.bincount(index, weights=np.sin(x_rad)) / count
+    x_cos = np.bincount(index, weights=np.cos(x_rad)) / count
+    x = np.rad2deg(np.arctan2(x_sin, x_cos))
+    g = gpd.GeoSeries(gpd.points_from_xy(x, y, crs=geometry.crs))
+    g.index = geometry.index
+    return g
