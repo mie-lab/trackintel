@@ -381,11 +381,10 @@ def read_mzmv(mzmv_path):
 
     Notes
     -----
-    !important! As geometry (column `geom`) for triplegs we set verification points (VP_XY), the quality of these
-    points is low
-    but they are available for all entries (fit into trackintel model). In the worst case we have only start and end
-    points of the tripleg. Prefer whenever possible the column `geometry` this geometry is created by a routing tool
-    but it is not available for all entries.
+    !important! As geometry for triplegs we set the verification points (column `VP_XY`), the quality of these
+    points is low but they are available for all entries (required by trackintel model). In the worst case there are
+    only start and end points of the tripleg available. Prefer whenever possible the column `geometry` as this
+    geometry is created by a routing tool but it is not available for all entries.
 
     To fit the trackintel model, we rename `HHNR` to `user_id`, rename [`f51100time`, `f51400time`] to
     [`started_at`, `finished_at`].
