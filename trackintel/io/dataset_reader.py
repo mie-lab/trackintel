@@ -366,7 +366,7 @@ def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_thres
 
 
 def read_mzmv(mzmv_path):
-    """Read the data from "Mikrozensus Mobilität und Verkehr"
+    """Read the data from Swiss "Mikrozensus Mobilität und Verkehr"
 
     Parameters
     ----------
@@ -381,9 +381,11 @@ def read_mzmv(mzmv_path):
 
     Notes
     -----
-    !important! As geometry for triplegs we set verification points (VP_XY), the quality of these points is bad
-    but they are complete (fit into trackintel model). In the worst case we have only start and end points of
-    the tripleg. Prefer whenever possible 'geometry' this geometry is created by a routing tool but it is incomplete.
+    !important! As geometry (column `geom`) for triplegs we set verification points (VP_XY), the quality of these
+    points is low
+    but they are available for all entries (fit into trackintel model). In the worst case we have only start and end
+    points of the tripleg. Prefer whenever possible the column `geometry` this geometry is created by a routing tool
+    but it is not available for all entries.
 
     To fit the trackintel model, we rename `HHNR` to `user_id`, rename [`f51100time`, `f51400time`] to
     [`started_at`, `finished_at`].
