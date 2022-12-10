@@ -95,11 +95,13 @@ class TestExplodeAgg:
 
 class TestAngleCentroidMultipoints:
     """Test util method angle_centroid_multipoints"""
-
+    # test adapted from https://rosettacode.org/wiki/Averages/Mean_angle
     a = Point((130, 45))
-    b = MultiPoint([[160, 10], [-170, 20]])
-    c = MultiPoint([[20, 0], [30, 10], [40, 20]])
-    g = gpd.GeoSeries([a, b, c])
-    g_solution = gpd.GeoSeries([a, Point([175, 15]), Point([30, 10])])
-    g = angle_centroid_multipoints(g)
+    b = MultiPoint([(160, 10), (-170, 20)])
+    c = MultiPoint([(20, 0), (30, 10), (40, 20)])
+    d = MultiPoint([(350, 0), (10, 0)])
+    e = MultiPoint([(90, 0), (180, 0), (270, 0), (360, 0)])
+    g = gpd.GeoSeries([a, b, c, d, e])
+    g_solution = gpd.GeoSeries([a, Point([175, 15]), Point([30, 10]), Point(0, 0), Point(-90, 0)])
+    g = gpd.GeoSeries(angle_centroid_multipoints(g))
     assert_geoseries_equal(g, g_solution, check_less_precise=True)

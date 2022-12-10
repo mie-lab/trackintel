@@ -156,7 +156,7 @@ def generate_locations(
         else:
             locs.loc[pointLine_idx, "extent"] = locs.loc[pointLine_idx, "extent"].buffer(epsilon)
 
-        locs = locs.set_geometry("center")
+        locs = locs.set_geometry("center", crs=sp.crs)
         locs = locs[["user_id", "location_id", "center", "extent"]]
 
         # index management
