@@ -71,7 +71,7 @@ class TestGenerate_trips:
             ["user_id", "started_at", "finished_at", "origin_staypoint_id", "destination_staypoint_id", "geom"]
         ]
         # test if generated trips are equal
-        assert_geodataframe_equal(trips_loaded, trips)
+        assert_geodataframe_equal(trips_loaded, trips, check_less_precise=True)
 
     def test_trip_wo_geom(self, example_triplegs_higher_gap_threshold):
         """Test if the add_geometry parameter shows correct behavior"""
