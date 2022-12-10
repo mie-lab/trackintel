@@ -4,7 +4,7 @@ import warnings
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString, MultiPoint, Point
+from shapely.geometry import LineString
 
 from trackintel.geogr.distances import check_gdf_planar, haversine_dist
 from trackintel.preprocessing.util import _explode_agg, angle_centroid_multipoints, applyParallel
@@ -411,7 +411,7 @@ def _generate_staypoints_sliding_user(
     y = df[geo_col].y.to_numpy()
 
     ret_sp = []
-    start = 0
+    curr = start = 0
     for curr in range(1, len(df)):
 
         # the gap of two consecutive positionfixes should not be too long
