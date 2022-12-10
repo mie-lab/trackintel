@@ -95,6 +95,7 @@ class TestExplodeAgg:
 
 class TestAngleCentroidMultipoints:
     """Test util method angle_centroid_multipoints"""
+
     # test adapted from https://rosettacode.org/wiki/Averages/Mean_angle
     a = Point((130, 45))
     b = MultiPoint([(160, 10), (-170, 20)])
