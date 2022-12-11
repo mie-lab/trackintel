@@ -396,52 +396,52 @@ def read_mzmv(mzmv_path):
 
     zf = ZipFile(db_csv)
     with zf.open("wege.csv") as f:
-        wege = pd.read_csv(f, encoding="latin")
-    wege.index.name = "trip_id"
+        trips = pd.read_csv(f, encoding="latin")
+    trips.index.name = "trip_id"
     # make copy to merge trip_id to triplegs
     rename_columns = {"HHNR": "user_id", "f51100time": "started_at", "f51400time": "finished_at"}
-    wege.rename(columns=rename_columns, inplace=True)
+    trips.rename(columns=rename_columns, inplace=True)
     # string to times + add date
-    wege["started_at"] = _mzmv_to_datetime(wege["started_at"])
-    wege["finished_at"] = _mzmv_to_datetime(wege["finished_at"])
-    trip_id_merge = wege[["user_id", "WEGNR"]].reset_index()
+    trips["started_at"] = _mzmv_to_datetime(trips["started_at"])
+    trips["finished_at"] = _mzmv_to_datetime(trips["finished_at"])
+    trip_id_merge = trips[["user_id", "WEGNR"]].reset_index()
 
     with zf.open("etappen.csv") as f:
-        etappen = pd.read_csv(f, encoding=MZMV_encoding)
-    etappen.rename(columns=rename_columns, inplace=True)
-    etappen["started_at"] = _mzmv_to_datetime(etappen["started_at"])
-    etappen["finished_at"] = _mzmv_to_datetime(etappen["finished_at"])
-    etappen = pd.merge(etappen, trip_id_merge, on=["user_id", "WEGNR"])
-    sp = _mzmv_generate_sp(etappen, zf)
+        tpls = pd.read_csv(f, encoding=MZMV_encoding)
+    tpls.rename(columns=rename_columns, inplace=True)
+    tpls["started_at"] = _mzmv_to_datetime(tpls["started_at"])
+    tpls["finished_at"] = _mzmv_to_datetime(tpls["finished_at"])
+    tpls = pd.merge(tpls, trip_id_merge, on=["user_id", "WEGNR"])
+    sp = _mzmv_generate_sp(tpls, zf)
 
     # Read Geometry: #
     # possible to pass zip folder as argument as folder contains only one file
     routen = gpd.read_file(shp)[["HHNR", "ETNR", "geometry"]]  # takes long
     routen.rename(columns=rename_columns, inplace=True)
-    etappen = pd.merge(etappen, routen, on=["user_id", "ETNR"], how="left")
+    tpls = pd.merge(tpls, routen, on=["user_id", "ETNR"], how="left")
 
-    vp = _mzmv_verification_points(zf, "verifikationspunkte.csv", etappen)
-    etappen = pd.merge(etappen, vp, on=["user_id", "ETNR"], how="left")
+    vp = _mzmv_verification_points(zf, "verifikationspunkte.csv", tpls)
+    tpls = pd.merge(tpls, vp, on=["user_id", "ETNR"], how="left")
 
-    etappen = gpd.GeoDataFrame(etappen, geometry="geometry", crs=CRS_WGS84)
-    etappen.index.name = "tripleg_id"
+    tpls = gpd.GeoDataFrame(tpls, geometry="geometry", crs=CRS_WGS84)
+    tpls.index.name = "tripleg_id"
     # make invalid geometries valid (maybe replace with pygeos)
-    etappen.loc[~etappen["geometry"].is_valid, "geometry"] = LineString(None)
+    tpls.loc[~tpls["geometry"].is_valid, "geometry"] = LineString(None)
 
     # get the mandatory colums for trips
     """
     prev_trip = sp.loc[sp["prev_trip_id"].notna(), "prev_trip_id"].reset_index(name="destination_staypoint_id")
     next_trip = sp.loc[sp["next_trip_id"].notna(), "next_trip_id"].reset_index(name="origin_staypoint_id")
-    wege = pd.merge(wege, prev_trip, left_index=True, right=["prev_trip_id"])
-    wege = pd.merge(wege, next_trip, left_index=True, right=["next_trip_id"])
+    trips = pd.merge(trips, prev_trip, left_index=True, right=["prev_trip_id"])
+    trips = pd.merge(trips, next_trip, left_index=True, right=["next_trip_id"])
     """
-    return wege, sp, etappen
+    return trips, sp, tpls
 
 
-def _mzmv_verification_points(zf, filepath, etappen):
+def _mzmv_verification_points(zf, filepath, tpls):
     """Extracts verifications points as LineStrings.
 
-    Start and endpoint of tripleg is added from etappen to gain valid LineStrings.
+    Start and endpoint of tripleg is added from tpls to gain valid LineStrings.
 
     Parameters
     ----------
@@ -449,8 +449,8 @@ def _mzmv_verification_points(zf, filepath, etappen):
         ZipFile with which we can open filepath
     filepath : str
         path to verification points file within zf.
-    etappen : DataFrame
-        etappen with renamed columns.
+    tpls : DataFrame
+        tpls with renamed columns.
 
     Returns
     -------
@@ -464,7 +464,7 @@ def _mzmv_verification_points(zf, filepath, etappen):
 
     with zf.open(filepath) as f:
         vp = pd.read_csv(f, encoding=MZMV_encoding)
-    vp.rename(columns={"HHNR": "user_id"}, inplace=True)  # to be inline with etappen
+    vp.rename(columns={"HHNR": "user_id"}, inplace=True)  # to be inline with tpls
 
     # insert nan to later drop point w/o geometry
     geom_cols = ["{}X", "{}Y", "{}X_CH1903", "{}Y_CH1903"]
@@ -484,9 +484,9 @@ def _mzmv_verification_points(zf, filepath, etappen):
     vps = [vp[g].rename(columns=rm).dropna(subset=gcol, how="all") for (g, rm) in zip(group, rename_maps)]
     vp = pd.concat(vps)  # inner order: R1, R2, ..., R6
 
-    # gather start and end from etappen and put them into the same format
-    sp = etappen[["user_id", "ETNR", "S_X", "S_Y", "S_X_CH1903", "S_Y_CH1903"]].copy()
-    ep = etappen[["user_id", "ETNR", "Z_X", "Z_Y", "Z_X_CH1903", "Z_Y_CH1903"]].copy()
+    # gather start and end from tpls and put them into the same format
+    sp = tpls[["user_id", "ETNR", "S_X", "S_Y", "S_X_CH1903", "S_Y_CH1903"]].copy()
+    ep = tpls[["user_id", "ETNR", "Z_X", "Z_Y", "Z_X_CH1903", "Z_Y_CH1903"]].copy()
     sp.rename(columns={"S_X": "X", "S_Y": "Y", "S_X_CH1903": "X_CH1903", "S_Y_CH1903": "Y_CH1903"}, inplace=True)
     ep.rename(columns={"Z_X": "X", "Z_Y": "Y", "Z_X_CH1903": "X_CH1903", "Z_Y_CH1903": "Y_CH1903"}, inplace=True)
     vp = pd.concat((sp, vp, ep))  # right order is important (S, R1, ..., R6, E)
@@ -525,12 +525,12 @@ def _mzmv_to_datetime(col):
     return pd.to_datetime(col, format="%H:%M:%S %Y-%m-%d", utc=True)
 
 
-def _mzmv_generate_sp(etappen, zf):
-    """Generate staypoints only from etappen.
+def _mzmv_generate_sp(tpls, zf):
+    """Generate staypoints only from tpls.
 
     Parameters
     ----------
-    etappen : pd.DataFrame
+    tpls : pd.DataFrame
         DataFrame with renamed columns. Sorted by "user_id" and "WEGNR" ascending.
         Must contain column "trip_id".
     zf : zipfile.ZipFile
@@ -548,32 +548,32 @@ def _mzmv_generate_sp(etappen, zf):
     -----
     Encoding for values of "purpose_tpls" can be looked up in the documentation of MZMV.
     """
-    assert "trip_id" in etappen.columns  # small regression test
-    etappen.sort_values(by=["user_id", "ETNR"], inplace=True)
-    first_tpls = etappen["ETNR"] == 1  # first tripleg of user (ETNR is unique per user)
+    assert "trip_id" in tpls.columns  # small regression test
+    tpls.sort_values(by=["user_id", "ETNR"], inplace=True)
+    first_tpls = tpls["ETNR"] == 1  # first tripleg of user (ETNR is unique per user)
     last_tpls = first_tpls.shift(-1, fill_value=True)
     # create staypoints from starts
     # if previous staypoint is different user/trip -> staypoint is activity
-    etappen["S_is_activity"] = (etappen[["user_id", "WEGNR"]] != etappen[["user_id", "WEGNR"]].shift(1)).any(axis=1)
+    tpls["S_is_activity"] = (tpls[["user_id", "WEGNR"]] != tpls[["user_id", "WEGNR"]].shift(1)).any(axis=1)
     # quick and dirty copy trip ids and delete most of in next step
-    etappen["S_prev_trip_id"] = etappen["trip_id"].shift(1)
-    etappen["S_next_trip_id"] = etappen["trip_id"]
-    etappen["S_trip_id"] = etappen["trip_id"]  # to not overwrite it
+    tpls["S_prev_trip_id"] = tpls["trip_id"].shift(1)
+    tpls["S_next_trip_id"] = tpls["trip_id"]
+    tpls["S_trip_id"] = tpls["trip_id"]  # to not overwrite it
     # staypoints that aren't activity are in a trip (don't have prev or next)
-    etappen.loc[~etappen["S_is_activity"], "S_prev_trip_id"] = np.nan
-    etappen.loc[~etappen["S_is_activity"], "S_next_trip_id"] = np.nan
+    tpls.loc[~tpls["S_is_activity"], "S_prev_trip_id"] = np.nan
+    tpls.loc[~tpls["S_is_activity"], "S_next_trip_id"] = np.nan
     # activity is outside of trips -> no trip id
-    etappen.loc[etappen["S_is_activity"], "S_trip_id"] = np.nan
+    tpls.loc[tpls["S_is_activity"], "S_trip_id"] = np.nan
 
-    etappen["S_finished_at"] = etappen["started_at"]  # time you leave staypoint
-    # end of next etappe within same weg is *always* identical to start in previous one.
-    # end of weg within same user is *always* identical to start in previous one.
-    etappen["S_started_at"] = etappen["finished_at"].shift(1, fill_value=pd.NaT)
-    # first weg -> we only know finish time for staypoints
-    etappen.loc[first_tpls, "S_started_at"] = pd.NaT
+    tpls["S_finished_at"] = tpls["started_at"]  # time you leave staypoint
+    # end of next etappe within same trip is *always* identical to start in previous one.
+    # end of trip within same user is *always* identical to start in previous one.
+    tpls["S_started_at"] = tpls["finished_at"].shift(1, fill_value=pd.NaT)
+    # first trip -> we only know finish time for staypoints
+    tpls.loc[first_tpls, "S_started_at"] = pd.NaT
     # add purpose of triplegs to staypoints
-    etappen["S_purpose_tpls"] = etappen["f52900"].shift(1)
-    etappen.loc[first_tpls, "S_purpose_tpls"] = None
+    tpls["S_purpose_tpls"] = tpls["f52900"].shift(1)
+    tpls.loc[first_tpls, "S_purpose_tpls"] = None
     # **all** the columns that are associated with the staypoints
     col = [
         "X",
@@ -611,23 +611,23 @@ def _mzmv_generate_sp(etappen, zf):
     ]
     # W_X_CH1903, X coordinate of home, CH1903 as integers are better to join
     s_col = ["user_id", "WEGNR", "ETNR", "W_X_CH1903", "W_Y_CH1903"] + ["S_" + c for c in col]
-    sp = etappen[s_col].copy()
+    sp = tpls[s_col].copy()
     sp.rename(columns={"S_" + c: c for c in col}, inplace=True)
 
     # what now is missing is the last staypoint of the last trip
-    etappen["Z_is_activity"] = True  # we filter later
-    etappen["Z_prev_trip_id"] = etappen["trip_id"]
-    etappen["Z_next_trip_id"] = np.nan  # is always last trip
-    etappen["Z_trip_id"] = np.nan  # outside of trips
-    etappen["Z_started_at"] = etappen["finished_at"]
-    etappen["Z_finished_at"] = pd.NaT
-    etappen["Z_purpose_tpls"] = etappen["f52900"]
+    tpls["Z_is_activity"] = True  # we filter later
+    tpls["Z_prev_trip_id"] = tpls["trip_id"]
+    tpls["Z_next_trip_id"] = np.nan  # is always last trip
+    tpls["Z_trip_id"] = np.nan  # outside of trips
+    tpls["Z_started_at"] = tpls["finished_at"]
+    tpls["Z_finished_at"] = pd.NaT
+    tpls["Z_purpose_tpls"] = tpls["f52900"]
     z_col = ["user_id", "WEGNR", "ETNR", "W_X_CH1903", "W_Y_CH1903"] + ["Z_" + c for c in col]
-    sp_last = etappen.loc[last_tpls, z_col]
+    sp_last = tpls.loc[last_tpls, z_col]
     sp_last.rename(columns={"Z_" + c: c for c in col}, inplace=True)
 
     sp = pd.concat((sp, sp_last))
-    # now we add column purpose to show if work (home we got from etappen W_..)
+    # now we add column purpose to show if work (home we got from tpls W_..)
     with zf.open("zielpersonen.csv") as f:
         usecols = ["HHNR", "A_X_CH1903", "A_Y_CH1903", "AU_X_CH1903", "AU_Y_CH1903"]
         zielpersonen = pd.read_csv(f, encoding=MZMV_encoding, usecols=usecols).rename(columns={"HHNR": "user_id"})
@@ -640,7 +640,7 @@ def _mzmv_generate_sp(etappen, zf):
     sp.loc[work, "purpose"] = "work"
     sp.loc[home, "purpose"] = "home"  # potentially overwrite work
 
-    sp.reset_index(drop=True, inplace=True)  # drop etappen index
+    sp.reset_index(drop=True, inplace=True)  # drop tpls index
 
     sp["XY"] = gpd.points_from_xy(sp["X"], sp["Y"], crs=CRS_WGS84)
     sp["XY_CH1904"] = gpd.points_from_xy(sp["X_CH1903"], sp["Y_CH1903"], crs=CRS_CH1903)
@@ -652,5 +652,5 @@ def _mzmv_generate_sp(etappen, zf):
     sp_drop += ["W_X_CH1903", "W_Y_CH1903", "A_X_CH1903", "A_Y_CH1903", "AU_X_CH1903", "AU_Y_CH1903"]
     sp.drop(columns=sp_drop, inplace=True)
     added_cols = [b + c for b in ("S_", "Z_") for c in col[-7:]]
-    etappen.drop(columns=added_cols, inplace=True)
+    tpls.drop(columns=added_cols, inplace=True)
     return sp
