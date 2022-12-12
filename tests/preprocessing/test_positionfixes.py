@@ -305,6 +305,24 @@ class Test_Generate_staypoints_sliding_user:
             )
 
 
+class Test__create_new_staypoints:
+    """Test __create_new_staypoints."""
+
+    def test_planar_crs(self, geolife_pfs_sp_long):
+        """Test if planar crs are handled as well"""
+        pfs, _ = geolife_pfs_sp_long
+        _, sp_wgs84 = pfs.as_positionfixes.generate_staypoints(
+            method="sliding", dist_threshold=100, time_threshold=5.0, include_last=True
+        )
+        pfs = pfs.set_crs(2056, allow_override=True)
+        _, sp_lv95 = pfs.as_positionfixes.generate_staypoints(
+            method="sliding", dist_threshold=100, time_threshold=5.0, include_last=True
+        )
+        sp_lv95.set_crs(4326, allow_override=True, inplace=True)
+        # planar and non-planar differ only if we experience a wrap in coords like [+180, -180]
+        assert_geodataframe_equal(sp_wgs84, sp_lv95, check_less_precise=True)
+
+
 class TestGenerate_triplegs:
     """Tests for generate_triplegs() method."""
 

@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
-from geopandas.testing import assert_geodataframe_equal
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 import trackintel as ti
 from trackintel.geogr.distances import calculate_distance_matrix
@@ -219,8 +219,7 @@ class TestGenerate_locations:
         other_locs = gpd.GeoDataFrame(other_locs, columns=["user_id", "id", "center"], geometry="center", crs=sp.crs)
         other_locs.set_index("id", inplace=True)
 
-        assert all(other_locs["center"] == locs["center"])
-        assert all(other_locs.index == locs.index)
+        assert_geoseries_equal(other_locs["center"], locs["center"], check_less_precise=True)
 
     def test_dbscan_user_dataset(self):
         """Test user and dataset location generation."""
