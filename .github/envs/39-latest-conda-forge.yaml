@@ -19,7 +19,7 @@ dependencies:
 - similaritymeasures
 - jupyter
 - geopandas>=0.10.0
-- shapely
+- shapely<=2.0
 - pygeos>=0.10.0
 
 # tests
