@@ -89,7 +89,7 @@ def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
         # group positionfixes by triplegs and compute average speed for each collection of positionfixes
         grouped_pfs = positionfixes.groupby("tripleg_id").apply(_single_tripleg_mean_speed)
         # add the speed values to the triplegs column
-        tpls = pd.merge(triplegs, grouped_pfs.rename("speed"), left_index=True, right_index=True)
+        tpls = pd.merge(triplegs, grouped_pfs.rename("speed"), how="left", left_index=True, right_index=True)
         tpls.index = tpls.index.astype("int64")
         return tpls
 
