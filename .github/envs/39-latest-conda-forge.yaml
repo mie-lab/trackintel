@@ -2,7 +2,7 @@ name: test
 channels:
   - conda-forge
 dependencies:
-- python=3.9
+- python
 
 # required
 - matplotlib
@@ -19,7 +19,7 @@ dependencies:
 - similaritymeasures
 - jupyter
 - geopandas>=0.10.0
-- shapely
+- shapely<=1.8.5
 - pygeos>=0.10.0
 
 # tests

@@ -1,7 +1,7 @@
 numpy
 matplotlib
 pandas
-geopandas>=0.9.0
+geopandas>=0.10.0
 scikit-learn
 networkx 
 pint 
@@ -13,3 +13,4 @@ similaritymeasures
 pygeos>=0.10.0
 virtualenv
 pytest
+shapely<=1.8.5
