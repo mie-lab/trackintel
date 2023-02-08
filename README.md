@@ -133,14 +133,13 @@ If you want to contribute, send a pull request and put yourself in the `AUTHORS.
 
 If you find this code useful for your work or use it in your project, please consider citing:
 ```
-@misc{Martin_2022_arxiv,
-  doi = {10.48550/ARXIV.2206.03593},
+@article{Martin_2022_trackintel,
+  doi = {10.1016/j.compenvurbsys.2023.101938},
   url = {https://arxiv.org/abs/2206.03593},
-  author = {Martin, Henry and Hong, Ye and Wiedemann, Nina and Bucher, Dominik and Raubal, Martin},
+  author = {Henry Martin and Ye Hong and Nina Wiedemann and Dominik Bucher and Martin Raubal},
   keywords = {Human mobility analysis, Open-source software, Transport planning, Data mining, Python, Tracking studies},
   title = {Trackintel: An open-source Python library for human mobility analysis},
-  publisher = {arXiv},
-  year = {2022},
-  copyright = {Creative Commons Attribution 4.0 International}
+  journal = {Computers, Environment and Urban Systems},
+  year = {2023},
 }
 ```
