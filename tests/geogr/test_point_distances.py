@@ -12,7 +12,7 @@ class TestHaversineDist:
     def test_haversine_dist(self):
         """
         input_latlng saves different combinations of haversine-distances in meters and the longitude & latitudes from
-        two different points in WGS84
+        two different points in WGS84 
 
         References
         ------
