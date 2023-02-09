@@ -59,8 +59,8 @@ def read_positionfixes_postgis(
     sql : str
         SQL query e.g. "SELECT * FROM positionfixes"
 
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        active connection to PostGIS database.
 
     geom_col : str, default 'geom'
         The geometry column of the table.
@@ -158,8 +158,8 @@ def read_triplegs_postgis(
     sql : str
         SQL query e.g. "SELECT * FROM triplegs"
 
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        active connection to PostGIS database.
 
     geom_col : str, default 'geom'
         The geometry column of the table.
@@ -257,8 +257,8 @@ def read_staypoints_postgis(
     sql : str
         SQL query e.g. "SELECT * FROM staypoints"
 
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        active connection to PostGIS database.
 
     geom_col : str, default 'geom'
         The geometry column of the table.
@@ -358,8 +358,8 @@ def read_locations_postgis(
     sql : str
         SQL query e.g. "SELECT * FROM locations"
 
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        active connection to PostGIS database.
 
     center : str, default 'center'
         The geometry column of the table. For the center of the location.
@@ -475,8 +475,8 @@ def read_trips_postgis(
     sql : str
         SQL query e.g. "SELECT * FROM trips"
 
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        active connection to PostGIS database.
 
     geom_col : str, optional
         The geometry column of the table (if exists). Start and endpoint of the trip.
@@ -601,8 +601,8 @@ def read_tours_postgis(
     sql : str
         SQL query e.g. "SELECT * FROM tours"
 
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Active connection to PostGIS database.
 
     geom_col : str, optional
         The geometry column of the table (if exists).
@@ -705,8 +705,8 @@ __doc = """Stores {long} to PostGIS. Usually, this is directly called on a {long
     name : str
         The name of the table to write to.
 
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        active connection to PostGIS database.
 
     schema : str, optional
         The schema (if the database supports this) where the table resides.
