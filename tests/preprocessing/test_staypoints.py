@@ -38,7 +38,6 @@ def example_staypoints():
     t4 = pd.Timestamp("1971-01-02 08:00:00", tz="utc")
     t5 = pd.Timestamp("1971-01-02 09:00:00", tz="utc")
     t6 = pd.Timestamp("1971-01-02 10:00:00", tz="utc")
-    one_hour = datetime.timedelta(hours=1)
 
     list_dict = [
         {"id": 1, "user_id": 0, "started_at": t1, "finished_at": t2, "geom": p1},
@@ -74,7 +73,6 @@ def example_staypoints_merge():
     t45 = pd.Timestamp("1971-01-02 08:57:00", tz="utc")
     t5 = pd.Timestamp("1971-01-02 09:00:00", tz="utc")
     t6 = pd.Timestamp("1971-01-02 09:20:00", tz="utc")
-    one_hour = datetime.timedelta(hours=1)
 
     list_dict = [
         {"id": 1, "user_id": 0, "started_at": t1, "finished_at": t2, "geom": p1, "location_id": 1},
@@ -501,7 +499,7 @@ class TestMergeStaypoints:
         sp, tpls = example_staypoints_merge
         # check that an int as max time gap raises a TypeError
         with pytest.raises(Exception) as e_info:
-            merged_sp = sp.as_staypoints.merge_staypoints(tpls, max_time_gap=2)
+            sp.as_staypoints.merge_staypoints(tpls, max_time_gap=2)
             assert e_info == "Parameter max_time_gap must be either of type String or pd.Timedelta!"
         # check that an timedelta as max time gap works
         _ = sp.as_staypoints.merge_staypoints(tpls, max_time_gap=pd.to_timedelta("1h"))

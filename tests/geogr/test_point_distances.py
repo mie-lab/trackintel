@@ -58,7 +58,7 @@ class TestHaversineDist:
 
         D_theirs = haversine_distances(yx, yx) * 6371000
         d_theirs = D_theirs[ix_1, ix_2]
-        assert np.sum(np.abs(d_ours - d_theirs)) < 0.01  #  1cm for 58 should be good enough
+        assert np.sum(np.abs(d_ours - d_theirs)) < 0.01  # 1cm for 58 should be good enough
 
     def test_example_from_sklean(self):
         bsas = [-34.83333, -58.5166646]

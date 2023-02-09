@@ -4,9 +4,13 @@ repos:
   hooks:
   - id: black
     args: [
-        "-l 120",
+        "--line-length=120",
       ]
-# - repo: https://github.com/PyCQA/flake8
-#   rev: 6.0.0
-#   hooks:
-#   - id: flake8
+- repo: https://github.com/pycqa/flake8
+  rev: 6.0.0
+  hooks:
+  - id: flake8
+    args: [
+      "--ignore=E203,E266,E402,E501,W503,F403,F401",
+      "--max-line-length=120"
+    ]

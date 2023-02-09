@@ -413,7 +413,7 @@ def _create_debug_sp_tpls_data(sp, tpls, gap_threshold):
     sp_tpls = pd.concat((sp[cols_sp], tpls[cols_tpls]))
 
     # transform nan to bool
-    sp_tpls["is_activity"] = sp_tpls["is_activity"] == True
+    sp_tpls["is_activity"] = sp_tpls["is_activity"] is True
     sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
     sp_tpls["started_at_next"] = sp_tpls["started_at"].shift(-1)
     sp_tpls["activity_next"] = sp_tpls["is_activity"].shift(-1)
@@ -497,7 +497,7 @@ def _generate_trips_old(sp_input, tpls_input, gap_threshold=15, print_progress=F
     sp_tpls["id"] = sp_tpls.index
 
     # transform nan to bool
-    sp_tpls["is_activity"] = sp_tpls["is_activity"] == True
+    sp_tpls["is_activity"] = sp_tpls["is_activity"] is True
 
     sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
     sp_tpls["started_at_next"] = sp_tpls["started_at"].shift(-1)
@@ -731,9 +731,9 @@ def _create_trip_from_stack(temp_trip_stack, origin_activity, destination_activi
     assert origin_activity["user_id"] == last_trip_element["user_id"]
 
     # double check if trip requirements are fulfilled
-    assert origin_activity["is_activity"] == True
-    assert destination_activity["is_activity"] == True
-    assert first_trip_element["is_activity"] == False
+    assert origin_activity["is_activity"] is True
+    assert destination_activity["is_activity"] is True
+    assert first_trip_element["is_activity"] is False
 
     trip_dict_entry = {
         "user_id": origin_activity["user_id"],

@@ -253,7 +253,7 @@ def _concat_staypoints_triplegs(staypoints, triplegs, add_geometry):
 
     # write warnings for columns that we replace
     if "trip_id" in tpls:
-        warnings.warn(f"Override column 'trip_id' in copy of triplegs.")
+        warnings.warn("Override column 'trip_id' in copy of triplegs.")
 
     intersection = sp.columns.intersection(["trip_id", "prev_trip_id", "next_trip_id"])
     if len(intersection):
