@@ -413,7 +413,7 @@ def _create_debug_sp_tpls_data(sp, tpls, gap_threshold):
     sp_tpls = pd.concat((sp[cols_sp], tpls[cols_tpls]))
 
     # transform nan to bool
-    sp_tpls["is_activity"] = sp_tpls["is_activity"] is True
+    sp_tpls["is_activity"] = sp_tpls["is_activity"].__eq__(True)
     sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
     sp_tpls["started_at_next"] = sp_tpls["started_at"].shift(-1)
     sp_tpls["activity_next"] = sp_tpls["is_activity"].shift(-1)
@@ -497,7 +497,7 @@ def _generate_trips_old(sp_input, tpls_input, gap_threshold=15, print_progress=F
     sp_tpls["id"] = sp_tpls.index
 
     # transform nan to bool
-    sp_tpls["is_activity"] = sp_tpls["is_activity"] is True
+    sp_tpls["is_activity"] = sp_tpls["is_activity"].__eq__(True)
 
     sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
     sp_tpls["started_at_next"] = sp_tpls["started_at"].shift(-1)
