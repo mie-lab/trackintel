@@ -586,7 +586,6 @@ def _generate_trips_user(df, gap_threshold):
     trip_ls = []
 
     for _, row in df.iterrows():
-
         # check if we can start a new trip
         # (we make sure that we start the trip with the most recent activity)
         if in_trip is False:
@@ -610,7 +609,6 @@ def _generate_trips_user(df, gap_threshold):
             # check if trip ends regularly
             is_gap = row["started_at_next"] - row["finished_at"] > datetime.timedelta(minutes=gap_threshold)
             if row["is_activity"] is True:
-
                 # if there are no triplegs in the trip, set the current activity as origin and start over
                 if not _check_trip_stack_has_tripleg(temp_trip_stack):
                     origin_activity = row

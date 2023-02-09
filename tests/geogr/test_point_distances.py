@@ -61,7 +61,6 @@ class TestHaversineDist:
         assert np.sum(np.abs(d_ours - d_theirs)) < 0.01  #  1cm for 58 should be good enough
 
     def test_example_from_sklean(self):
-
         bsas = [-34.83333, -58.5166646]
         paris = [49.0083899664, 2.53844117956]
         bsas_in_radians = [radians(_) for _ in bsas]
