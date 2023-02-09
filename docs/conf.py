@@ -57,7 +57,7 @@ autodoc_mock_imports = [
 # -- Project information -----------------------------------------------------
 
 project = "trackintel"
-copyright = "2019 - 2022, Dominik Bucher, Henry Martin, Ye Hong, Nina Wiedemann"
+copyright = "2019 - 2023, Dominik Bucher, Henry Martin, Ye Hong, Nina Wiedemann"
 author = "Dominik Bucher, Henry Martin, Ye Hong, Nina Wiedemann"
 
 
