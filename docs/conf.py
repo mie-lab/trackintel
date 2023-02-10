@@ -75,7 +75,7 @@ def setup(app):
 # The full version, including alpha/beta/rc tags
 # release = version
 
-version = "1.1.12"
+version = "1.1.13"
 release = version
 
 
