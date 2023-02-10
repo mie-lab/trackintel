@@ -2,6 +2,7 @@
 
 
 [![PyPI version](https://badge.fury.io/py/trackintel.svg)](https://badge.fury.io/py/trackintel)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/trackintel.svg)](https://anaconda.org/conda-forge/trackintel)
 [![Actions Status](https://github.com/mie-lab/trackintel/workflows/Tests/badge.svg)](https://github.com/mie-lab/trackintel/actions?query=workflow%3ATests)
 [![Documentation Status](https://readthedocs.org/projects/trackintel/badge/?version=latest)](https://trackintel.readthedocs.io/en/latest/?badge=latest)
 [![codecov.io](https://codecov.io/gh/mie-lab/trackintel/coverage.svg?branch=master)](https://codecov.io/gh/mie-lab/trackintel)
