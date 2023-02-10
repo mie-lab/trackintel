@@ -96,7 +96,12 @@ For example, the plot below shows the generated staypoints and triplegs from the
 </p>
 
 ## Installation and Usage
-*trackintel* is on [pypi.org](https://pypi.org/project/trackintel/), you can install it in a `GeoPandas` available environment using: 
+*trackintel* is on [pypi.org](https://pypi.org/project/trackintel/) and [conda-forge](https://anaconda.org/conda-forge/trackintel). We recommend installing trackintel via conda-forge:
+```{python}
+conda install -c conda-forge trackintel
+```
+
+Alternatively, you can install it with pip in a `GeoPandas` available environment using: 
 ```{python}
 pip install trackintel
 ```
