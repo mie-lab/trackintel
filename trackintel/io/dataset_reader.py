@@ -337,7 +337,6 @@ def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_thres
         potential_label = labels_this.iloc[label_pos, :]
         # for every row, iterate all columns. Unused column index would indicate the nth column.
         for _, tpls_pos in row.iteritems():
-
             # skip if tripleg was prefiltered and set to nan
             if pd.isna(tpls_pos):
                 continue

@@ -413,7 +413,7 @@ def _create_debug_sp_tpls_data(sp, tpls, gap_threshold):
     sp_tpls = pd.concat((sp[cols_sp], tpls[cols_tpls]))
 
     # transform nan to bool
-    sp_tpls["is_activity"] = sp_tpls["is_activity"] == True
+    sp_tpls["is_activity"] = sp_tpls["is_activity"].__eq__(True)
     sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
     sp_tpls["started_at_next"] = sp_tpls["started_at"].shift(-1)
     sp_tpls["activity_next"] = sp_tpls["is_activity"].shift(-1)
@@ -497,7 +497,7 @@ def _generate_trips_old(sp_input, tpls_input, gap_threshold=15, print_progress=F
     sp_tpls["id"] = sp_tpls.index
 
     # transform nan to bool
-    sp_tpls["is_activity"] = sp_tpls["is_activity"] == True
+    sp_tpls["is_activity"] = sp_tpls["is_activity"].__eq__(True)
 
     sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
     sp_tpls["started_at_next"] = sp_tpls["started_at"].shift(-1)
@@ -586,7 +586,6 @@ def _generate_trips_user(df, gap_threshold):
     trip_ls = []
 
     for _, row in df.iterrows():
-
         # check if we can start a new trip
         # (we make sure that we start the trip with the most recent activity)
         if in_trip is False:
@@ -610,7 +609,6 @@ def _generate_trips_user(df, gap_threshold):
             # check if trip ends regularly
             is_gap = row["started_at_next"] - row["finished_at"] > datetime.timedelta(minutes=gap_threshold)
             if row["is_activity"] is True:
-
                 # if there are no triplegs in the trip, set the current activity as origin and start over
                 if not _check_trip_stack_has_tripleg(temp_trip_stack):
                     origin_activity = row
@@ -733,9 +731,9 @@ def _create_trip_from_stack(temp_trip_stack, origin_activity, destination_activi
     assert origin_activity["user_id"] == last_trip_element["user_id"]
 
     # double check if trip requirements are fulfilled
-    assert origin_activity["is_activity"] == True
-    assert destination_activity["is_activity"] == True
-    assert first_trip_element["is_activity"] == False
+    assert origin_activity["is_activity"] is True
+    assert destination_activity["is_activity"] is True
+    assert first_trip_element["is_activity"] is False
 
     trip_dict_entry = {
         "user_id": origin_activity["user_id"],

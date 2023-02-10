@@ -26,7 +26,7 @@ try:
     cur.execute(open("../sql/create_tables_pg.sql", "r").read())
     con.commit()
     con.close()
-except Exception as e:
+except Exception:
     print("I am unable to connect to the database")
     traceback.print_exc()
 
