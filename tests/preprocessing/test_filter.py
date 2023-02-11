@@ -11,7 +11,7 @@ def locs_from_geolife():
     """Create locations from geolife staypoints."""
     # read staypoints
     sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-    sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+    sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
 
     # cluster staypoints to locations
     _, locs = sp.as_staypoints.generate_locations(
@@ -30,11 +30,10 @@ class TestSpatial_filter:
         """Test if spatial_filter works for staypoints."""
         # read staypoints and area file
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
         extent = gpd.read_file(os.path.join("tests", "data", "area", "tsinghua.geojson"))
 
         # the projection needs to be defined: WGS84
-        sp.crs = "epsg:4326"
         within_sp = sp.as_staypoints.spatial_filter(areas=extent, method="within", re_project=True)
         intersects_sp = sp.as_staypoints.spatial_filter(areas=extent, method="intersects", re_project=True)
         crosses_sp = sp.as_staypoints.spatial_filter(areas=extent, method="crosses", re_project=True)
@@ -54,11 +53,10 @@ class TestSpatial_filter:
         """Test if spatial_filter works for triplegs."""
         # read triplegs and area file
         tpls_file = os.path.join("tests", "data", "geolife", "geolife_triplegs.csv")
-        tpls = ti.read_triplegs_csv(tpls_file, tz="utc", index_col="id")
+        tpls = ti.read_triplegs_csv(tpls_file, tz="utc", index_col="id", crs="epsg:4326")
         extent = gpd.read_file(os.path.join("tests", "data", "area", "tsinghua.geojson"))
 
         # the projection needs to be defined: WGS84
-        tpls.crs = "epsg:4326"
         within_tl = tpls.as_triplegs.spatial_filter(areas=extent, method="within", re_project=True)
         intersects_tl = tpls.as_triplegs.spatial_filter(areas=extent, method="intersects", re_project=True)
         crosses_tl = tpls.as_triplegs.spatial_filter(areas=extent, method="crosses", re_project=True)
@@ -81,7 +79,7 @@ class TestSpatial_filter:
     def test_filter_locations(self, locs_from_geolife):
         """Test if spatial_filter works for locations."""
         locs = locs_from_geolife
-        extent = gpd.read_file(os.path.join("tests", "data", "area", "tsinghua.geojson"))
+        extent = gpd.read_file(os.path.join("tests", "data", "area", "tsinghua.geojson"), crs="epsg:4326")
 
         # filter locations with the area
         within_loc = locs.as_locations.spatial_filter(areas=extent, method="within", re_project=True)

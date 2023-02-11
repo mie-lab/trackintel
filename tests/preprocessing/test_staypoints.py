@@ -155,7 +155,7 @@ class TestGenerate_locations:
     def test_dbscan_hav_euc(self):
         """Test if using haversine and euclidean distances will generate the same location result."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
 
         # haversine calculation
         _, loc_har = sp.as_staypoints.generate_locations(
@@ -176,7 +176,7 @@ class TestGenerate_locations:
     def test_dbscan_haversine(self):
         """Test haversine dbscan location result with manually calling the DBSCAN method."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
 
         # haversine calculation using sklearn.metrics.pairwise_distances
         sp, locs = sp.as_staypoints.generate_locations(
@@ -193,7 +193,7 @@ class TestGenerate_locations:
     def test_dbscan_loc(self):
         """Test haversine dbscan location result with manually grouping the locations method."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
         sp, locs = sp.as_staypoints.generate_locations(
             method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
@@ -222,7 +222,7 @@ class TestGenerate_locations:
     def test_dbscan_user_dataset(self):
         """Test user and dataset location generation."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
         # take the first row and duplicate once
         sp = sp.head(1)
         sp = pd.concat([sp, sp], ignore_index=True)
@@ -251,7 +251,7 @@ class TestGenerate_locations:
     def test_dbscan_min(self):
         """Test with small epsilon parameter."""
         pfs_file = os.path.join("tests", "data", "positionfixes.csv")
-        pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id")
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id", crs="epsg:4326")
         _, sp = pfs.as_positionfixes.generate_staypoints(
             method="sliding", gap_threshold=1e6, dist_threshold=0, time_threshold=0
         )
@@ -268,7 +268,7 @@ class TestGenerate_locations:
     def test_dbscan_max(self):
         """Test with large epsilon parameter."""
         pfs_file = os.path.join("tests", "data", "positionfixes.csv")
-        pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id")
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id", crs="epsg:4326")
         _, sp = pfs.as_positionfixes.generate_staypoints(
             method="sliding", gap_threshold=1e6, dist_threshold=0, time_threshold=0
         )
@@ -287,7 +287,7 @@ class TestGenerate_locations:
     def test_missing_link(self):
         """Test nan is assigned for missing link between sp and locs."""
         pfs_file = os.path.join("tests", "data", "positionfixes.csv")
-        pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id")
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id", crs="epsg:4326")
         _, sp = pfs.as_positionfixes.generate_staypoints(
             method="sliding", gap_threshold=1e6, dist_threshold=0, time_threshold=0
         )
@@ -302,7 +302,7 @@ class TestGenerate_locations:
     def test_num_samples_high(self):
         """Test higher values of num_samples for generate_locations."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
         sp_ns_5, _ = sp.as_staypoints.generate_locations(
             epsilon=50, distance_metric="haversine", agg_level="user", num_samples=2
         )
@@ -321,7 +321,7 @@ class TestGenerate_locations:
     def test_num_samples_3(self):
         """Test with num_samples=3 to check if fully false pointLine_idx causes no error."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
         # generate locations with num_samples=1 and num_samples=3 creates the same locations
         # but locations with only one or two staypoint are filtered out in the second run
         sp1, locs1 = sp.as_staypoints.generate_locations(
@@ -354,7 +354,7 @@ class TestGenerate_locations:
     def test_dtype_consistent(self):
         """Test the dtypes for the generated columns."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
         #
         sp, locs = sp.as_staypoints.generate_locations(
             method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
@@ -374,7 +374,10 @@ class TestGenerate_locations:
     def test_index_start(self):
         """Test the generated index start from 0 for different methods."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
+
+        # reproject to WGS_1984_UTM_Zone_49N
+        sp = sp.to_crs("epsg:32649")
 
         distance_metric_ls = ["haversine", "euclidean"]
         agg_level_ls = ["dataset", "user"]
@@ -388,7 +391,7 @@ class TestGenerate_locations:
     def test_print_progress_flag(self, capsys):
         """Test if the print_progress bar controls the printing behavior."""
         file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        staypoints = ti.read_staypoints_csv(file, tz="utc", index_col="id")
+        staypoints = ti.read_staypoints_csv(file, tz="utc", index_col="id", crs="epsg:4326")
 
         staypoints.as_staypoints.generate_locations(print_progress=True)
         captured_print = capsys.readouterr()
