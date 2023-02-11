@@ -88,8 +88,8 @@ def example_staypoints_merge():
     sp = sp.set_index("id")
     assert sp.as_staypoints
 
-    # generate example triplegs for the merge function
-    tpls = gpd.GeoDataFrame(columns=["user_id", "started_at", "finished_at"])
+    # generate empty triplegs for the merge function
+    tpls = pd.DataFrame([], columns=["user_id", "started_at", "finished_at"])
     return sp, tpls
 
 
@@ -113,7 +113,7 @@ def example_triplegs_merge(example_staypoints_merge):
         {"id": 1, "user_id": 0, "started_at": t21, "finished_at": t22},
     ]
     # geometry is not required for the merge operation, so we leave it away
-    tpls = gpd.GeoDataFrame(data=list_dict)
+    tpls = pd.DataFrame(data=list_dict)
     tpls = tpls.set_index("id")
     return sp, tpls
 
