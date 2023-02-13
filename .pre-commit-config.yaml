@@ -12,7 +12,7 @@ ci:
 
 
 repos: 
-- repo: https://github.com/ambv/black 
+- repo: https://github.com/psf/black 
   rev: 23.1.0 
   hooks:
   - id: black
