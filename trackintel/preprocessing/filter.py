@@ -8,15 +8,15 @@ def spatial_filter(source, areas, method="within", re_project=False):
     Parameters
     ----------
     source : GeoDataFrame (as trackintel datamodels)
-        The source feature to perform the spatial filtering 
+        The source feature to perform the spatial filtering
 
     areas : GeoDataFrame
-        The areas used to perform the spatial filtering. Note, you can have multiple Polygons 
+        The areas used to perform the spatial filtering. Note, you can have multiple Polygons
         and it will return all the features intersect with ANY of those geometries.
 
     method : {'within', 'intersects', 'crosses'}
         The method to filter the 'source' GeoDataFrame
-        
+
         - 'within'    : return instances in 'source' where no points of these instances lies in the \
             exterior of the 'areas' and at least one point of the interior of these instances lies \
             in the interior of 'areas'.
@@ -25,15 +25,15 @@ def spatial_filter(source, areas, method="within", re_project=False):
         - 'crosses'   : return instances in 'source' where the interior of these instances intersects \
             the interior of the 'areas' but does not contain it, and the dimension of the intersection \
             is less than the dimension of the one of the 'areas'.
-            
+
     re_project : bool, default False
-        If this is set to True, the 'source' will be projected to the coordinate reference system of 'areas' 
-    
+        If this is set to True, the 'source' will be projected to the coordinate reference system of 'areas'
+
     Returns
     -------
     ret_gdf: GeoDataFrame (as trackintel datamodels)
         A new GeoDataFrame containing the features after the spatial filtering.
-        
+
     Examples
     --------
     >>> sp.as_staypoints.spatial_filter(areas, method="within", re_project=False)

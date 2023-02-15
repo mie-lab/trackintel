@@ -84,7 +84,7 @@ def temporal_tracking_quality(source, granularity="all"):
     df = df.loc[df["duration"] > 0].copy()
     # ensure proper handle of empty dataframes
     if len(df) == 0:
-        warnings.warn(f"The input dataframe does not contain any record with positive duration. Please check.")
+        warnings.warn("The input dataframe does not contain any record with positive duration. Please check.")
         return None
 
     if granularity == "all":

@@ -30,7 +30,8 @@ You can find the corresponding scripts in `.travis.yml` and `appveyor.yml`.
 Adding [Coveralls](https://coveralls.io) is an open todo.
 
 ### Formatting
-We use [black](https://github.com/psf/black) as our code formatter, run `python -m black . -l 120` in the *trackintel* folder to format your code automatically into black style. Please be sure to format your code before making a pull request.
+We use [black](https://github.com/psf/black) as our code formatter, run `python -m black . -l 120` in the *trackintel* folder to format your code automatically into black style. We additionally use [Flake8](https://github.com/PyCQA/flake8) checker.
+Please be sure to format your code before making a pull request. If you wish, you can add pre-commit hooks for both flake8 and black to make all formatting easier.
 
 ## Coding conventions
 This is a place to collect conventions we agreed upon until we find the right place in the doc for them

@@ -227,7 +227,6 @@ def generate_triplegs(
     pfs.sort_values(by=["user_id", "tracked_at"], inplace=True)
 
     if method == "between_staypoints":
-
         # get case:
         # Case 1: pfs have a column 'staypoint_id'
         # Case 2: pfs do not have a column 'staypoint_id' but staypoint are provided
@@ -413,7 +412,6 @@ def _generate_staypoints_sliding_user(
     ret_sp = []
     curr = start = 0
     for curr in range(1, len(df)):
-
         # the gap of two consecutive positionfixes should not be too long
         if gap_times[curr]:
             start = curr

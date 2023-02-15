@@ -2,6 +2,7 @@
 
 
 [![PyPI version](https://badge.fury.io/py/trackintel.svg)](https://badge.fury.io/py/trackintel)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/trackintel.svg)](https://anaconda.org/conda-forge/trackintel)
 [![Actions Status](https://github.com/mie-lab/trackintel/workflows/Tests/badge.svg)](https://github.com/mie-lab/trackintel/actions?query=workflow%3ATests)
 [![Documentation Status](https://readthedocs.org/projects/trackintel/badge/?version=latest)](https://trackintel.readthedocs.io/en/latest/?badge=latest)
 [![codecov.io](https://codecov.io/gh/mie-lab/trackintel/coverage.svg?branch=master)](https://codecov.io/gh/mie-lab/trackintel)
@@ -95,7 +96,12 @@ For example, the plot below shows the generated staypoints and triplegs from the
 </p>
 
 ## Installation and Usage
-*trackintel* is on [pypi.org](https://pypi.org/project/trackintel/), you can install it in a `GeoPandas` available environment using: 
+*trackintel* is on [pypi.org](https://pypi.org/project/trackintel/) and [conda-forge](https://anaconda.org/conda-forge/trackintel). We recommend installing trackintel via conda-forge:
+```{python}
+conda install -c conda-forge trackintel
+```
+
+Alternatively, you can install it with pip in a `GeoPandas` available environment using: 
 ```{python}
 pip install trackintel
 ```
@@ -133,14 +139,14 @@ If you want to contribute, send a pull request and put yourself in the `AUTHORS.
 
 If you find this code useful for your work or use it in your project, please consider citing:
 ```
-@misc{Martin_2022_arxiv,
-  doi = {10.48550/ARXIV.2206.03593},
-  url = {https://arxiv.org/abs/2206.03593},
-  author = {Martin, Henry and Hong, Ye and Wiedemann, Nina and Bucher, Dominik and Raubal, Martin},
+@article{Martin_2023_trackintel,
+  doi = {10.1016/j.compenvurbsys.2023.101938},
+  volume = {101},
+  pages = {101938},
+  author = {Henry Martin and Ye Hong and Nina Wiedemann and Dominik Bucher and Martin Raubal},
   keywords = {Human mobility analysis, Open-source software, Transport planning, Data mining, Python, Tracking studies},
   title = {Trackintel: An open-source Python library for human mobility analysis},
-  publisher = {arXiv},
-  year = {2022},
-  copyright = {Creative Commons Attribution 4.0 International}
+  journal = {Computers, Environment and Urban Systems},
+  year = {2023},
 }
 ```

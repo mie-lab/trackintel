@@ -38,7 +38,7 @@ def gdf_lineStrings():
 def single_linestring():
     """Construct LineString that has ~1024 m in QGIS."""
     return wkt.loads(
-        """LineString(13.47671401745228259 
+        """LineString(13.47671401745228259
     48.57364142178052901, 13.47510901146785933
     48.5734004715611789, 13.47343656825720082
     48.57335585102421049, 13.47172366271079369
@@ -195,7 +195,7 @@ class TestCheck_gdf_planar:
         file = os.path.join("tests", "data", "positionfixes.csv")
         pfs = ti.read_positionfixes_csv(file, sep=";", crs=None, index_col=None)
         with pytest.warns(UserWarning):
-            assert check_gdf_planar(pfs) == False
+            assert check_gdf_planar(pfs) is False
 
     def test_if_planer(self):
         """Check if planer crs is successfully checked."""
@@ -207,16 +207,16 @@ class TestCheck_gdf_planar:
         ]
         # a geographic crs different than wgs1984
         sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4610")
-        assert check_gdf_planar(sp) == False
+        assert check_gdf_planar(sp) is False
 
         # wgs1984
         sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
-        assert check_gdf_planar(sp) == False
+        assert check_gdf_planar(sp) is False
 
         # wgs1984 to swiss planer
         sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
         sp = sp.to_crs("EPSG:2056")
-        assert check_gdf_planar(sp) == True
+        assert check_gdf_planar(sp) is True
 
     def test_none_crs_transform(self):
         """Check if crs gets set to WGS84."""
