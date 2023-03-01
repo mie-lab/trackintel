@@ -273,6 +273,8 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="CRS not set for some of the concatenation inputs.*")
 
+        # TODO: the warning relates to how we process when no triplegs is provided. In future versions,
+        # we want to seperate the two scenarios. See issue #463.
         sp_tpls = pd.concat([sp_merge, tpls_merge]).sort_values(by=["user_id", "started_at"])
     sp_tpls.index.rename(index_name, inplace=True)
     # get information whether the there is a tripleg after a staypoint

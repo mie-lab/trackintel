@@ -134,6 +134,9 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     # "staypoint_id" and "trip_id" from corrupting staypoints/trips.
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="CRS not set for some of the concatenation inputs.*")
+
+        # TODO: the warning might be caused from process within geopandas. Remember to check
+        # if the warning persists in later versions.
         trips_with_act = pd.concat((trips, sp_tpls_only_act, gaps, user_change), axis=0, ignore_index=True)
     trips_with_act.sort_values(["user_id", "started_at"], inplace=True)
 
