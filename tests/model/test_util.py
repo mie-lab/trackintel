@@ -139,14 +139,14 @@ class TestPfsMeanSpeedTriplegs:
         tpls_speed_normal = ti.model.util.get_speed_triplegs(tpls, pfs, method="pfs_mean_speed")
         assert_geodataframe_equal(tpls_speed_acc, tpls_speed_normal)
 
-    def test_pfs_exist_assertion(self, example_triplegs):
+    def test_pfs_input_assertion(self, example_triplegs):
         """Test whether an AttributeError is raised if no positionfixes are provided as input"""
         error_msg = 'Method "pfs_mean_speed" requires positionfixes as input.'
         _, tpls = example_triplegs
         with pytest.raises(AttributeError, match=error_msg):
             ti.model.util.get_speed_triplegs(tpls, None, method="pfs_mean_speed")
 
-    def test_tripleg_id_assertion(self, example_triplegs):
+    def test_pfs_tripleg_id_assertion(self, example_triplegs):
         """Test whether an AttributeError is raised if positionfixes do not provide column "tripleg_id"."""
         error_msg = 'Positionfixes must include column "tripleg_id".'
         pfs, tpls = example_triplegs

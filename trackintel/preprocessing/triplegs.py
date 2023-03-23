@@ -132,7 +132,12 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     trips.drop(columns=["type", "sp_tpls_id"], inplace=True)  # make space so no overlap with activity "sp_tpls_id"
     # Inserting `gaps` and `user_change` into the dataframe creates buffers that catch shifted
     # "staypoint_id" and "trip_id" from corrupting staypoints/trips.
-    trips_with_act = pd.concat((trips, sp_tpls_only_act, gaps, user_change), axis=0, ignore_index=True)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="CRS not set for some of the concatenation inputs.*")
+
+        # TODO: the warning might be caused from process within geopandas. Remember to check
+        # if the warning persists in later versions.
+        trips_with_act = pd.concat((trips, sp_tpls_only_act, gaps, user_change), axis=0, ignore_index=True)
     trips_with_act.sort_values(["user_id", "started_at"], inplace=True)
 
     # ID assignment #
@@ -142,8 +147,11 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
 
     # add geometry for start and end points
     if add_geometry:
-        trips_with_act["origin_geom"] = trips_with_act["geom"].shift(1)
-        trips_with_act["destination_geom"] = trips_with_act["geom"].shift(-1)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="CRS not set for some of the concatenation inputs.*")
+
+            trips_with_act["origin_geom"] = trips_with_act["geom"].shift(1)
+            trips_with_act["destination_geom"] = trips_with_act["geom"].shift(-1)
 
     # add prev_trip_id and next_trip_id for is_activity staypoints
     trips_with_act["prev_trip_id"] = trips_with_act["trip_id"].shift(1)
@@ -253,7 +261,7 @@ def _concat_staypoints_triplegs(staypoints, triplegs, add_geometry):
 
     # write warnings for columns that we replace
     if "trip_id" in tpls:
-        warnings.warn(f"Override column 'trip_id' in copy of triplegs.")
+        warnings.warn("Override column 'trip_id' in copy of triplegs.")
 
     intersection = sp.columns.intersection(["trip_id", "prev_trip_id", "next_trip_id"])
     if len(intersection):

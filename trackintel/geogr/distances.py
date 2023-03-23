@@ -113,7 +113,6 @@ def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kw
         return D
 
     elif geom_type == "LineString":
-
         if dist_metric in ["dtw", "frechet"]:
             # these are the preparation steps for all distance functions based only on coordinates
 

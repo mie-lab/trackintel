@@ -1,0 +1,30 @@
+ci:
+    autofix_commit_msg: |
+        [pre-commit.ci] auto fixes from pre-commit.com hooks
+
+        for more information, see https://pre-commit.ci
+    autofix_prs: true
+    autoupdate_branch: ''
+    autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+    autoupdate_schedule: weekly
+    skip: []
+    submodules: false
+
+
+repos: 
+- repo: https://github.com/psf/black 
+  rev: 23.1.0 
+  hooks:
+  - id: black
+    args: [
+        "--line-length=120",
+      ]
+- repo: https://github.com/pycqa/flake8
+  rev: 6.0.0
+  hooks:
+  - id: flake8
+    args: [
+      "--ignore=E203,E266,E402,E501,W503,F403,F401",
+      "--max-line-length=120"
+    ]
+

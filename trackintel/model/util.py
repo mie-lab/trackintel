@@ -2,6 +2,8 @@ from functools import partial, update_wrapper
 import trackintel as ti
 import numpy as np
 import pandas as pd
+import warnings
+
 from trackintel.geogr.distances import calculate_haversine_length, check_gdf_planar
 from trackintel.geogr.point_distances import haversine_dist
 
@@ -31,7 +33,10 @@ def get_speed_positionfixes(positionfixes):
     g = pfs.geometry
     # get distance and time difference
     if is_planar_crs:
-        dist = g.distance(g.shift(1)).to_numpy()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="CRS not set for some of the concatenation inputs.*")
+
+            dist = g.distance(g.shift(1)).to_numpy()
     else:
         x = g.x.to_numpy()
         y = g.y.to_numpy()

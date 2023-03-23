@@ -4,8 +4,8 @@ import pandas as pd
 from sklearn.cluster import DBSCAN
 import warnings
 
-from trackintel.geogr.distances import meters_to_decimal_degrees
-from trackintel.preprocessing.util import applyParallel
+from trackintel.geogr.distances import meters_to_decimal_degrees, check_gdf_planar
+from trackintel.preprocessing.util import applyParallel, angle_centroid_multipoints
 
 
 def generate_locations(
@@ -136,9 +136,11 @@ def generate_locations(
         # filter staypoints not belonging to locations
         locs = locs.loc[locs["location_id"] != -1]
 
-        with warnings.catch_warnings():  # TODO: fix bug for geographic crs #437
-            warnings.simplefilter("ignore", category=UserWarning)
-            locs["center"] = locs.geometry.centroid  # creates warning for geographic crs
+        if check_gdf_planar(locs):
+            locs["center"] = locs.geometry.centroid
+        else:
+            # error of wrapping e.g. mean([-180, +180]) -> own function needed
+            locs["center"] = angle_centroid_multipoints(locs.geometry)
 
         # extent is the convex hull of the geometry
         locs["extent"] = locs.geometry.convex_hull
@@ -154,7 +156,7 @@ def generate_locations(
         else:
             locs.loc[pointLine_idx, "extent"] = locs.loc[pointLine_idx, "extent"].buffer(epsilon)
 
-        locs = locs.set_geometry("center")
+        locs = locs.set_geometry("center", crs=sp.crs)
         locs = locs[["user_id", "location_id", "center", "extent"]]
 
         # index management
@@ -268,7 +270,12 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
 
     # a joined dataframe sp_tpls is constructed to add the columns 'type' and 'next_type' to the 'sp_merge' table
     # concat and sort by time
-    sp_tpls = pd.concat([sp_merge, tpls_merge]).sort_values(by=["user_id", "started_at"])
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="CRS not set for some of the concatenation inputs.*")
+
+        # TODO: the warning relates to how we process when no triplegs is provided. In future versions,
+        # we want to seperate the two scenarios. See issue #463.
+        sp_tpls = pd.concat([sp_merge, tpls_merge]).sort_values(by=["user_id", "started_at"])
     sp_tpls.index.rename(index_name, inplace=True)
     # get information whether the there is a tripleg after a staypoint
     sp_tpls["next_type"] = sp_tpls["type"].shift(-1)

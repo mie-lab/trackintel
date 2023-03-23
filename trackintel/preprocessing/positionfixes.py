@@ -4,10 +4,10 @@ import warnings
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString
 
-from trackintel.geogr.distances import haversine_dist
-from trackintel.preprocessing.util import applyParallel, _explode_agg
+from trackintel.geogr.distances import check_gdf_planar, haversine_dist
+from trackintel.preprocessing.util import _explode_agg, angle_centroid_multipoints, applyParallel
 
 
 def generate_staypoints(
@@ -227,7 +227,6 @@ def generate_triplegs(
     pfs.sort_values(by=["user_id", "tracked_at"], inplace=True)
 
     if method == "between_staypoints":
-
         # get case:
         # Case 1: pfs have a column 'staypoint_id'
         # Case 2: pfs do not have a column 'staypoint_id' but staypoint are provided
@@ -411,9 +410,8 @@ def _generate_staypoints_sliding_user(
     y = df[geo_col].y.to_numpy()
 
     ret_sp = []
-    start = 0
+    curr = start = 0
     for curr in range(1, len(df)):
-
         # the gap of two consecutive positionfixes should not be too long
         if gap_times[curr]:
             start = curr
@@ -451,8 +449,12 @@ def __create_new_staypoints(start, end, pfs, elevation_flag, geo_col, last_flag=
     # if end is the last pfs, we want to include the info from it as well
     if last_flag:
         end = len(pfs)
+    points = pfs[geo_col].iloc[start:end].unary_union
+    if check_gdf_planar(pfs):
+        new_sp[geo_col] = points.centroid
+    else:
+        new_sp[geo_col] = angle_centroid_multipoints(points)[0]
 
-    new_sp[geo_col] = Point(pfs[geo_col].iloc[start:end].x.median(), pfs[geo_col].iloc[start:end].y.median())
     if elevation_flag:
         new_sp["elevation"] = pfs["elevation"].iloc[start:end].median()
     new_sp["pfs_id"] = pfs.index[start:end].to_list()
