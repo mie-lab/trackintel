@@ -1,5 +1,7 @@
 import pandas as pd
 import trackintel as ti
+import warnings
+
 from trackintel.analysis.labelling import create_activity_flag
 from trackintel.analysis.tracking_quality import temporal_tracking_quality
 from trackintel.io.file import write_staypoints_csv
@@ -56,8 +58,10 @@ class StaypointsAccessor(object):
                 + "it must have the properties [%s], but it has [%s]."
                 % (", ".join(StaypointsAccessor.required_columns), ", ".join(obj.columns))
             )
+        geom_isna = obj.geometry.isna()
+
         # check geometry
-        assert obj.geometry.is_valid.all(), (
+        assert (geom_isna | obj.geometry.is_valid).all(), (
             "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
         )
         if obj.geometry.iloc[0].geom_type != "Point":
@@ -70,6 +74,17 @@ class StaypointsAccessor(object):
         assert pd.api.types.is_datetime64tz_dtype(
             obj["finished_at"]
         ), "dtype of finished_at is {} but has to be tz aware datetime64".format(obj["finished_at"].dtype)
+
+        # warnings
+        if geom_isna.sum() > 0:
+            warnings.warn(
+                "Dataframe contains missing geometries. Try x[~ x.geometry.isna()] where x is you GeoDataFrame"
+            )
+
+        if obj.geometry.is_empty.sum() > 0:
+            warnings.warn(
+                "Dataframe contains empty geometries. Try x[~ x.geometry.isempty] " "where x is you GeoDataFrame"
+            )
 
     @property
     def center(self):

@@ -57,6 +57,7 @@ class PositionfixesAccessor(object):
             )
 
         geom_isna = obj.geometry.isna()
+
         # check geometry
         assert (
             geom_isna | obj.geometry.is_valid
