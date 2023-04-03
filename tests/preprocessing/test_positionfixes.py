@@ -280,7 +280,7 @@ class TestGenerate_staypoints:
             },
         ]
         df = pd.DataFrame(pfs_dict)
-        pfs = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude))
+        pfs = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs="epsg:4326")
         pfs.as_positionfixes
 
         # using the default gap_threshold will generate no sp
