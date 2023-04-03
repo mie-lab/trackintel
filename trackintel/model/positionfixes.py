@@ -1,3 +1,5 @@
+import warnings
+
 import pandas as pd
 import trackintel as ti
 from trackintel.geogr.distances import calculate_distance_matrix
@@ -54,10 +56,11 @@ class PositionfixesAccessor(object):
                 % (", ".join(PositionfixesAccessor.required_columns), ", ".join(obj.columns))
             )
 
+        geom_isna = obj.geometry.isna()
         # check geometry
-        assert obj.geometry.is_valid.all(), (
-            "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
-        )
+        assert (
+            geom_isna | obj.geometry.is_valid
+        ).all(), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
 
         if obj.geometry.iloc[0].geom_type != "Point":
             raise AttributeError("The geometry must be a Point (only first checked).")
@@ -66,6 +69,17 @@ class PositionfixesAccessor(object):
         assert pd.api.types.is_datetime64tz_dtype(
             obj["tracked_at"]
         ), "dtype of tracked_at is {} but has to be datetime64 and timezone aware".format(obj["tracked_at"].dtype)
+
+        if geom_isna.sum() > 0:
+            warnings.warn(
+                "Dataframe contains positionfixes with missing geometries. Try x[~ x.geometry.isna()] "
+                "where x is you GeoDataFrame"
+            )
+
+        if obj.geometry.is_empty.sum() > 0:
+            warnings.warn(
+                "Dataframe contains empty geometries. Try x[~ x.geometry.isempty] " "where x is you GeoDataFrame"
+            )
 
     @property
     def center(self):
