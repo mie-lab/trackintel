@@ -18,6 +18,7 @@ def testdata_tpls():
 
     return tpls
 
+
 @pytest.fixture
 def example_triplegs():
     """Triplegs to load into the database."""
@@ -73,7 +74,6 @@ class TestTriplegs:
         with pytest.raises(AttributeError, match="The geometry must be a LineString"):
             tpls["geom"] = Point([(13.476808430, 48.573711823)])
             tpls.as_triplegs
-
 
     def test_accessor_empty_geometry(self, example_triplegs):
         """The accessor should accept empty geometries"""
