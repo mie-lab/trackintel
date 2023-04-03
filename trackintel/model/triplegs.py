@@ -1,5 +1,6 @@
 import pandas as pd
 import trackintel as ti
+import warnings
 
 from trackintel.analysis.labelling import predict_transport_mode
 from trackintel.analysis.modal_split import calculate_modal_split
@@ -56,12 +57,15 @@ class TriplegsAccessor(object):
                 + "it must have the properties [%s], but it has [%s]."
                 % (", ".join(TriplegsAccessor.required_columns), ", ".join(obj.columns))
             )
+
+        geom_isna = obj.geometry.isna()
+
         # check geometry
-        assert obj.geometry.is_valid.all(), (
+        assert (geom_isna | obj.geometry.is_valid).all(), (
             "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
         )
-        if obj.geometry.iloc[0].geom_type != "LineString":
-            raise AttributeError("The geometry must be a LineString (only first checked).")
+        if "LineString" not in obj.geometry.geom_type.values:
+            raise AttributeError("The geometry must be a LineString (checked for any occurrence).")
 
         # check timestamp dtypes
         assert pd.api.types.is_datetime64tz_dtype(
@@ -70,6 +74,17 @@ class TriplegsAccessor(object):
         assert pd.api.types.is_datetime64tz_dtype(
             obj["finished_at"]
         ), "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj["finished_at"].dtype)
+
+        # warnings
+        if geom_isna.sum() > 0:
+            warnings.warn(
+                "Dataframe contains missing geometries. Try x[~ x.geometry.isna()] where x is you GeoDataFrame"
+            )
+
+        if obj.geometry.is_empty.sum() > 0:
+            warnings.warn(
+                "Dataframe contains empty geometries. Try x[~ x.geometry.isempty] " "where x is you GeoDataFrame"
+            )
 
     @_copy_docstring(plot_triplegs)
     def plot(self, *args, **kwargs):

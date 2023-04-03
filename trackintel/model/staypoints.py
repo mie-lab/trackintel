@@ -58,14 +58,15 @@ class StaypointsAccessor(object):
                 + "it must have the properties [%s], but it has [%s]."
                 % (", ".join(StaypointsAccessor.required_columns), ", ".join(obj.columns))
             )
+
         geom_isna = obj.geometry.isna()
 
         # check geometry
         assert (geom_isna | obj.geometry.is_valid).all(), (
             "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
         )
-        if obj.geometry.iloc[0].geom_type != "Point":
-            raise AttributeError("The geometry must be a Point (only first checked).")
+        if "Point" not in obj.geometry.geom_type.values:
+            raise AttributeError("The geometry must be a Point (checked for any occurrence).")
 
         # check timestamp dtypes
         assert pd.api.types.is_datetime64tz_dtype(
