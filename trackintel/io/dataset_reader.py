@@ -413,33 +413,29 @@ def read_mzmv(mzmv_path):
     tpls = pd.merge(tpls, trip_id_merge, on=["user_id", "WEGNR"])
     sp = _mzmv_generate_sp(tpls, zf)
 
+    # todo: negative durations: change finished at to next day
+
     # Read Geometry: #
     # possible to pass zip folder as argument as folder contains only one file
-    geometry = gpd.read_file(shp)[["HHNR", "ETNR", "geometry"]]  # takes long
-    geometry.rename(columns=rename_columns, inplace=True)
-    tpls = pd.merge(tpls, geometry, on=["user_id", "ETNR"], how="left")
+    # geometry = gpd.read_file(shp)[["HHNR", "ETNR", "geometry"]]  # takes long
+    # geometry.rename(columns=rename_columns, inplace=True)
+    # tpls = pd.merge(tpls, geometry, on=["user_id", "ETNR"], how="left")
 
     vp = _mzmv_verification_points(zf, "verifikationspunkte.csv", tpls)
     tpls = pd.merge(tpls, vp, on=["user_id", "ETNR"], how="left")
 
-    # with the geometry we can build GeoDataFrame
-    tpls = gpd.GeoDataFrame(tpls, geometry="geometry", crs=CRS_WGS84)
+    # # with the geometry we can build GeoDataFrame
+    # tpls = gpd.GeoDataFrame(tpls, geometry="geometry", crs=CRS_WGS84)
     tpls.index.name = "tripleg_id"
-    # make invalid (empty) geometries valid
-    tpls.loc[~tpls["geometry"].is_valid, "geometry"] = LineString(None)
-    # TODO: decide what to do with geometry columns
-    # 1. Variant: LineString -> Adapt code that check for triplegs allows for empty geometry
-    # 2. Variant: VP -> handle somehow the invalid LineStrings (two identical points are invalid)
-    #                                                          -> start and end is identical
+    # # set invalid geometries as missing geometries
+    # tpls.loc[~tpls["geometry"].is_valid, "geometry"] = None
 
     # get the mandatory columns for trips
-    # TODO: get the rest work first
-    """
-    prev_trip = sp.loc[sp["prev_trip_id"].notna(), "prev_trip_id"].reset_index(name="destination_staypoint_id")
-    next_trip = sp.loc[sp["next_trip_id"].notna(), "next_trip_id"].reset_index(name="origin_staypoint_id")
-    trips = pd.merge(trips, prev_trip, left_index=True, right=["prev_trip_id"])
-    trips = pd.merge(trips, next_trip, left_index=True, right=["next_trip_id"])
-    """
+    prev_trip = sp.loc[sp["prev_trip_id"].notna(), ["prev_trip_id"]].reset_index(names="destination_staypoint_id")
+    next_trip = sp.loc[sp["next_trip_id"].notna(), ["next_trip_id"]].reset_index(names="origin_staypoint_id")
+    trips = trips.merge(prev_trip, left_index=True, right_on="prev_trip_id")
+    trips = trips.merge(next_trip, left_index=True, right_on="next_trip_id")
+
     return trips, sp, tpls
 
 
@@ -509,7 +505,7 @@ def _mzmv_verification_points(zf, filepath, tpls):
 
 
 def _mzmv_to_datetime(col):
-    """Convert time from mzmv to pd.Timestamp on fix date 1970-01-01.
+    """Convert time from mzmv to pd. Timestamp on fix date 1970-01-01.
 
     Parameters
     ----------
@@ -555,19 +551,25 @@ def _mzmv_generate_sp(tpls, zf):
     Encoding for values of "purpose_tpls" can be looked up in the documentation of MZMV.
     """
     assert "trip_id" in tpls.columns  # small regression test
+
     tpls.sort_values(by=["user_id", "ETNR"], inplace=True)
     first_tpls = tpls["ETNR"] == 1  # first tripleg of user (ETNR is unique per user)
     last_tpls = first_tpls.shift(-1, fill_value=True)
     # create staypoints from starts of tpls
     # if previous staypoint is different user/trip -> staypoint is activity
     tpls["S_is_activity"] = (tpls[["user_id", "WEGNR"]] != tpls[["user_id", "WEGNR"]].shift(1)).any(axis=1)
+
     # quick and dirty copy trip ids and delete most of in next step
     tpls["S_prev_trip_id"] = tpls["trip_id"].shift(1)
     tpls["S_next_trip_id"] = tpls["trip_id"]
     tpls["S_trip_id"] = tpls["trip_id"]  # to not overwrite it
+    # set prev_trip_id of first trips to nan
+    tpls.loc[first_tpls, "S_prev_trip_id"] = np.nan
+
     # staypoints that aren't activity are in a trip (don't have prev or next)
     tpls.loc[~tpls["S_is_activity"], "S_prev_trip_id"] = np.nan
     tpls.loc[~tpls["S_is_activity"], "S_next_trip_id"] = np.nan
+
     # activity is outside of trips -> no trip id
     tpls.loc[tpls["S_is_activity"], "S_trip_id"] = np.nan
 
@@ -575,10 +577,11 @@ def _mzmv_generate_sp(tpls, zf):
     # end of next etappe within same trip is *always* identical to start in previous one.
     # end of trip within same user is *always* identical to start in previous one.
     tpls["S_started_at"] = tpls["finished_at"].shift(1, fill_value=pd.NaT)
-    # first trip -> we only know finish time for staypoints
-    tpls.loc[first_tpls, "S_started_at"] = pd.NaT
-    # TODO: either we make zero length staypoints here for which we don't know the time
-    # or we adapt test of staypoints that don't allow for NaT
+
+    # first trip -> we only know finish time for staypoints --> create zero duration staypoint
+    tpls.loc[first_tpls, "S_started_at"] = tpls.loc[first_tpls, "S_finished_at"]
+
+
 
     # add purpose of triplegs to staypoints "f52900" is purpose column in MZMV at end of tripleg
     tpls["S_purpose_tpls"] = tpls["f52900"].shift(1)
