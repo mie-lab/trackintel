@@ -581,8 +581,6 @@ def _mzmv_generate_sp(tpls, zf):
     # first trip -> we only know finish time for staypoints --> create zero duration staypoint
     tpls.loc[first_tpls, "S_started_at"] = tpls.loc[first_tpls, "S_finished_at"]
 
-
-
     # add purpose of triplegs to staypoints "f52900" is purpose column in MZMV at end of tripleg
     tpls["S_purpose_tpls"] = tpls["f52900"].shift(1)
     tpls.loc[first_tpls, "S_purpose_tpls"] = None
