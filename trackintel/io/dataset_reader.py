@@ -439,8 +439,10 @@ def read_mzmv(mzmv_path):
     # # with the geometry we can build GeoDataFrame
     tpls = gpd.GeoDataFrame(tpls, geometry="geometry", crs=CRS_WGS84)
     tpls.index.name = "tripleg_id"
+
     # # set invalid geometries as missing geometries
     tpls.loc[~tpls["geometry"].is_valid, "geometry"] = None
+    tpls.loc[~tpls["VP_XY"].is_valid, "VP_XY"] = None
 
     # get the mandatory columns for trips
     prev_trip = sp.loc[sp["prev_trip_id"].notna(), ["prev_trip_id"]].reset_index(names="destination_staypoint_id")
@@ -669,6 +671,9 @@ def _mzmv_generate_sp(tpls, zf):
     sp["XY_CH1904"] = gpd.points_from_xy(sp["X_CH1903"], sp["Y_CH1903"], crs=CRS_CH1903)
     sp = gpd.GeoDataFrame(sp, geometry="XY", crs=CRS_WGS84)
     sp.index.name = "staypoint_id"
+
+    # fix datetime dtype
+    sp["finished_at"] = pd.to_datetime(sp.finished_at)
 
     # clean up
     sp_drop = ["X", "Y", "X_CH1903", "Y_CH1903"]
