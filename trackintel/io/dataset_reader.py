@@ -420,7 +420,7 @@ def read_mzmv(mzmv_path):
         by adding a day to the timestamp.
         """
         duration_neg = (df.finished_at - df.started_at).dt.total_seconds() < 0
-        df.loc[duration_neg, 'finished_at'] = df.loc[duration_neg, 'finished_at'] + pd.Timedelta("1 days 00:00:00")
+        df.loc[duration_neg, "finished_at"] = df.loc[duration_neg, "finished_at"] + pd.Timedelta("1 days 00:00:00")
 
     treat_negative_durations(tpls)
     treat_negative_durations(trips)
@@ -592,8 +592,6 @@ def _mzmv_generate_sp(tpls, zf):
 
     # first trip -> we only know finish time for staypoints --> create zero duration staypoint
     tpls.loc[first_tpls, "S_started_at"] = tpls.loc[first_tpls, "S_finished_at"]
-
-
 
     # add purpose of triplegs to staypoints "f52900" is purpose column in MZMV at end of tripleg
     tpls["S_purpose_tpls"] = tpls["f52900"].shift(1)
