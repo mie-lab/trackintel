@@ -411,24 +411,36 @@ def read_mzmv(mzmv_path):
     tpls["started_at"] = _mzmv_to_datetime(tpls["started_at"])
     tpls["finished_at"] = _mzmv_to_datetime(tpls["finished_at"])
     tpls = pd.merge(tpls, trip_id_merge, on=["user_id", "WEGNR"])
-    sp = _mzmv_generate_sp(tpls, zf)
 
-    # todo: negative durations: change finished at to next day
+    def treat_negative_durations(df):
+        """
+        correct negative durations
+
+        Negative durations can occur if a trip was started on day 1 and finished on the next day. This is corrected
+        by adding a day to the timestamp.
+        """
+        duration_neg = (df.finished_at - df.started_at).dt.total_seconds() < 0
+        df.loc[duration_neg, 'finished_at'] = df.loc[duration_neg, 'finished_at'] + pd.Timedelta("1 days 00:00:00")
+
+    treat_negative_durations(tpls)
+    treat_negative_durations(trips)
+
+    sp = _mzmv_generate_sp(tpls, zf)
 
     # Read Geometry: #
     # possible to pass zip folder as argument as folder contains only one file
-    # geometry = gpd.read_file(shp)[["HHNR", "ETNR", "geometry"]]  # takes long
-    # geometry.rename(columns=rename_columns, inplace=True)
-    # tpls = pd.merge(tpls, geometry, on=["user_id", "ETNR"], how="left")
+    geometry = gpd.read_file(shp)[["HHNR", "ETNR", "geometry"]]  # takes long
+    geometry.rename(columns=rename_columns, inplace=True)
+    tpls = pd.merge(tpls, geometry, on=["user_id", "ETNR"], how="left")
 
     vp = _mzmv_verification_points(zf, "verifikationspunkte.csv", tpls)
     tpls = pd.merge(tpls, vp, on=["user_id", "ETNR"], how="left")
 
     # # with the geometry we can build GeoDataFrame
-    # tpls = gpd.GeoDataFrame(tpls, geometry="geometry", crs=CRS_WGS84)
+    tpls = gpd.GeoDataFrame(tpls, geometry="geometry", crs=CRS_WGS84)
     tpls.index.name = "tripleg_id"
     # # set invalid geometries as missing geometries
-    # tpls.loc[~tpls["geometry"].is_valid, "geometry"] = None
+    tpls.loc[~tpls["geometry"].is_valid, "geometry"] = None
 
     # get the mandatory columns for trips
     prev_trip = sp.loc[sp["prev_trip_id"].notna(), ["prev_trip_id"]].reset_index(names="destination_staypoint_id")
