@@ -226,7 +226,6 @@ class TestGenerate_trips:
             sep=";",
             index_col="id",
             parse_dates=[0, 1],
-            infer_datetime_format=True,
             dayfirst=True,
         )
         sp_in["geom"] = Point(1, 1)
@@ -238,7 +237,6 @@ class TestGenerate_trips:
             sep=";",
             index_col="id",
             parse_dates=[0, 1],
-            infer_datetime_format=True,
             dayfirst=True,
         )
         tpls_in["geom"] = LineString([[1, 1], [2, 2]])
