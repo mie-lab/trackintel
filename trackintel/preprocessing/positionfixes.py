@@ -403,7 +403,7 @@ def _generate_staypoints_sliding_user(
     gap_threshold = pd.Timedelta(gap_threshold, unit="minutes")
     time_threshold = pd.Timedelta(time_threshold, unit="minutes")
     # to numpy as access time of numpy array is faster than pandas Series
-    gap_times = pd.eval("((df.tracked_at - df.tracked_at.shift(1)) > gap_threshold)").to_numpy()
+    gap_times = ((df.tracked_at - df.tracked_at.shift(1)) > gap_threshold).to_numpy()
 
     # put x and y into numpy arrays to speed up the access in the for loop (shapely is slow)
     x = df[geo_col].x.to_numpy()
