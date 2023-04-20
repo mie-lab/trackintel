@@ -107,7 +107,11 @@ def _explode_agg(column, agg, orig_df, agg_df):
     temp = agg_df.explode(column)
     temp = temp[temp[column].notna()]
     temp.index = temp[column]
-    return orig_df.join(temp[agg], how="left")
+
+    return_df = orig_df.join(temp[agg], how="left")
+    # ensure index dtype the same as input
+    return_df.index = return_df.index.astype(orig_df.index.dtype)
+    return return_df
 
 
 def angle_centroid_multipoints(geometry):
