@@ -276,7 +276,7 @@ def generate_triplegs(
         # get all conditions that trigger a new tripleg.
         # condition 1: a positionfix belongs to a new tripleg if the user changes. For this we need to sort pfs.
         # The first positionfix of the new user is the start of a new tripleg (if it is no staypoint)
-        cond_new_user = ((pfs["user_id"] - pfs["user_id"].shift(1)) != 0) & pd.isna(pfs["staypoint_id"])
+        cond_new_user = (pfs["user_id"] != pfs["user_id"].shift(1)) & pd.isna(pfs["staypoint_id"])
 
         # condition 2: Temporal gaps
         # if there is a gap that is longer than gap_threshold minutes, we start a new tripleg
