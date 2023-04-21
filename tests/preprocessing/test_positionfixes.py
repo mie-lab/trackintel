@@ -293,6 +293,15 @@ class TestGenerate_staypoints:
         _, sp = pfs.as_positionfixes.generate_staypoints(gap_threshold=1e8, include_last=True)
         assert len(sp) == 1
 
+    def test_str_userid(self, example_positionfixes):
+        """Staypoint generation should also run without error if the user_id is a string"""
+        # the pfs would not generate staypoints with the default parameters
+        pfs = example_positionfixes
+        pfs["user_id"] = pfs["user_id"].astype(str)
+        warn_string = "No staypoints can be generated, returning empty sp."
+        with pytest.warns(UserWarning, match=warn_string):
+            pfs, sp = pfs.as_positionfixes.generate_staypoints()
+
 
 class Test_Generate_staypoints_sliding_user:
     """Test for _generate_staypoints_sliding_user."""
@@ -536,3 +545,12 @@ class TestGenerate_triplegs:
 
             # all values have to greater or equal to zero. Otherwise there is an overlap
             assert all(diff >= np.timedelta64(datetime.timedelta()))
+
+    def test_str_userid(self, example_positionfixes_isolated):
+        """Tripleg generation should also work if the user IDs are strings"""
+        pfs = example_positionfixes_isolated
+        # remove isolated - not needed for this test
+        pfs = pfs[~pfs.index.isin([1, 2])].copy()
+        # set user ID to string
+        pfs["user_id"] = pfs["user_id"].astype(str)
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs()
