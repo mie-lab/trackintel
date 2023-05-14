@@ -251,7 +251,7 @@ def generate_triplegs(
             pfs["staypoint_id"] = pd.NA
             
             # check if print_progress is True.
-            if print_progress == True:
+            if print_progress:
                 # Determine the maximum value of iterations
                 max_value = len(pfs.groupby("user_id"),)
                 progress_bar = tqdm(total=max_value, desc="Assign staypoint ids to positionfixes", unit="user")
@@ -278,7 +278,7 @@ def generate_triplegs(
                 insert_index_ls.extend(list(insert_index_user))
                 
                 #update progress bar
-                if print_progress == True:
+                if print_progress:
                     progress_bar.update(1)
             #
             cond_staypoints_case2 = pd.Series(False, index=pfs.index)
