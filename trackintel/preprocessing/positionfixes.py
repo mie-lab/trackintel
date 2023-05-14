@@ -167,11 +167,7 @@ def generate_staypoints(
 
 
 def generate_triplegs(
-    positionfixes,
-    staypoints=None,
-    method="between_staypoints",
-    gap_threshold=15,
-    print_progress=False
+    positionfixes, staypoints=None, method="between_staypoints", gap_threshold=15, print_progress=False
 ):
     """Generate triplegs from positionfixes.
 
@@ -249,13 +245,15 @@ def generate_triplegs(
             # initialize the index list of pfs where a tpl will begin
             insert_index_ls = []
             pfs["staypoint_id"] = pd.NA
-            
+
             # check if print_progress is True.
             if print_progress == True:
                 # Determine the maximum value of iterations
-                max_value = len(pfs.groupby("user_id"),)
+                max_value = len(
+                    pfs.groupby("user_id"),
+                )
                 progress_bar = tqdm(total=max_value, desc="Assign staypoint ids to positionfixes", unit="user")
-            
+
             for user_id_this in pfs["user_id"].unique():
                 sp_user = staypoints[staypoints["user_id"] == user_id_this]
                 pfs_user = pfs[pfs["user_id"] == user_id_this]
@@ -276,8 +274,8 @@ def generate_triplegs(
 
                 # store the insert insert_position_user in an array
                 insert_index_ls.extend(list(insert_index_user))
-                
-                #update progress bar
+
+                # update progress bar
                 if print_progress == True:
                     progress_bar.update(1)
             #
