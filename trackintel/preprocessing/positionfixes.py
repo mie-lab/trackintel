@@ -249,9 +249,7 @@ def generate_triplegs(
             # check if print_progress is True.
             if print_progress:
                 # Determine the maximum value of iterations
-                max_value = len(
-                    pfs.groupby("user_id"),
-                )
+                max_value = len(pfs.groupby("user_id"))
                 progress_bar = tqdm(total=max_value, desc="Assign staypoint ids to positionfixes", unit="user")
 
             for user_id_this in pfs["user_id"].unique():
