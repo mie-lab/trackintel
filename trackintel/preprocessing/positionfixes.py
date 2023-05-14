@@ -274,8 +274,8 @@ def generate_triplegs(
 
                 # store the insert insert_position_user in an array
                 insert_index_ls.extend(list(insert_index_user))
-                
-                #update progress bar
+
+                # update progress bar
                 if print_progress:
                     progress_bar.update(1)
             #
