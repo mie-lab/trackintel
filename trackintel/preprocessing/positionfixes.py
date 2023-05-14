@@ -4,6 +4,7 @@ import warnings
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from shapely.geometry import LineString
 
 from trackintel.geogr.distances import check_gdf_planar, haversine_dist
@@ -170,6 +171,7 @@ def generate_triplegs(
     staypoints=None,
     method="between_staypoints",
     gap_threshold=15,
+    print_progress=False
 ):
     """Generate triplegs from positionfixes.
 
@@ -191,6 +193,9 @@ def generate_triplegs(
     gap_threshold: float, default 15 (minutes)
         Maximum allowed temporal gap size in minutes. If tracking data is missing for more than
         `gap_threshold` minutes, a new tripleg will be generated.
+
+    print_progress: boolean, default False
+        Show progress bar if set to true, only valid if pfs do not have a column 'staypoint_id' but staypoint are provided.
 
     Returns
     -------
@@ -244,6 +249,13 @@ def generate_triplegs(
             # initialize the index list of pfs where a tpl will begin
             insert_index_ls = []
             pfs["staypoint_id"] = pd.NA
+            
+            # check if print_progress is True.
+            if print_progress == True:
+                # Determine the maximum value of iterations
+                max_value = len(pfs.groupby("user_id"),)
+                progress_bar = tqdm(total=max_value, desc="Assign staypoint ids to positionfixes", unit="user")
+            
             for user_id_this in pfs["user_id"].unique():
                 sp_user = staypoints[staypoints["user_id"] == user_id_this]
                 pfs_user = pfs[pfs["user_id"] == user_id_this]
@@ -264,6 +276,10 @@ def generate_triplegs(
 
                 # store the insert insert_position_user in an array
                 insert_index_ls.extend(list(insert_index_user))
+                
+                #update progress bar
+                if print_progress == True:
+                    progress_bar.update(1)
             #
             cond_staypoints_case2 = pd.Series(False, index=pfs.index)
             cond_staypoints_case2.loc[insert_index_ls] = True
