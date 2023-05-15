@@ -4,6 +4,7 @@ import warnings
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from shapely.geometry import LineString
 
 from trackintel.geogr.distances import check_gdf_planar, haversine_dist
@@ -170,6 +171,7 @@ def generate_triplegs(
     staypoints=None,
     method="between_staypoints",
     gap_threshold=15,
+    print_progress=False,
 ):
     """Generate triplegs from positionfixes.
 
@@ -191,6 +193,9 @@ def generate_triplegs(
     gap_threshold: float, default 15 (minutes)
         Maximum allowed temporal gap size in minutes. If tracking data is missing for more than
         `gap_threshold` minutes, a new tripleg will be generated.
+
+    print_progress: boolean, default False
+        Show the progress bar for assigning staypoints to positionfixes if set to True.
 
     Returns
     -------
@@ -244,7 +249,11 @@ def generate_triplegs(
             # initialize the index list of pfs where a tpl will begin
             insert_index_ls = []
             pfs["staypoint_id"] = pd.NA
-            for user_id_this in pfs["user_id"].unique():
+
+            # initalize the variable 'disable' to control display of progress bar.
+            disable = not print_progress
+
+            for user_id_this in tqdm(pfs["user_id"].unique(), disable=disable):
                 sp_user = staypoints[staypoints["user_id"] == user_id_this]
                 pfs_user = pfs[pfs["user_id"] == user_id_this]
 
