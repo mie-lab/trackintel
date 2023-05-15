@@ -167,7 +167,7 @@ def generate_staypoints(
 
 
 def generate_triplegs(
-    positionfixes, 
+    positionfixes,
     staypoints=None,
     method="between_staypoints",
     gap_threshold=15,
