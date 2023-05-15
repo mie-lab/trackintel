@@ -167,7 +167,11 @@ def generate_staypoints(
 
 
 def generate_triplegs(
-    positionfixes, staypoints=None, method="between_staypoints", gap_threshold=15, print_progress=False
+    positionfixes, 
+    staypoints=None,
+    method="between_staypoints",
+    gap_threshold=15,
+    print_progress=False,
 ):
     """Generate triplegs from positionfixes.
 
@@ -191,7 +195,7 @@ def generate_triplegs(
         `gap_threshold` minutes, a new tripleg will be generated.
 
     print_progress: boolean, default False
-        Show progress bar if set to true, only valid if pfs do not have a column 'staypoint_id' but staypoint are provided.
+        Show the progress bar for assigning staypoints to positionfixes if set to True.
 
     Returns
     -------
