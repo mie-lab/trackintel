@@ -252,7 +252,7 @@ def generate_triplegs(
 
             # initalize the variable 'disable' to control display of progress bar.
             disable = not print_progress
-    
+
             for user_id_this in tqdm(pfs["user_id"].unique(), disable=disable):
                 sp_user = staypoints[staypoints["user_id"] == user_id_this]
                 pfs_user = pfs[pfs["user_id"] == user_id_this]
