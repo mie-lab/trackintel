@@ -250,7 +250,7 @@ def calculate_haversine_length(gdf):
     >>> from trackintel.geogr.distances import calculate_haversine_length
     >>> triplegs['length'] = calculate_haversine_length(triplegs)
     """
-    geom = shapely.from_shapely(gdf.geometry)
+    geom = gdf.geometry
     assert np.any(shapely.get_type_id(geom) == 1)  # 1 is LineStrings
     geom, index = shapely.get_coordinates(geom, return_index=True)
     no_mix = index[:-1] == index[1:]  # mask where LineStrings are not overlapping

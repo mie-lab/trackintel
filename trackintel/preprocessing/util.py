@@ -127,8 +127,7 @@ def angle_centroid_multipoints(geometry):
     geopandas.GeometryArray
         Centroid of geometries (shapely.Point)
     """
-    g = shapely.from_shapely(geometry)
-    g, index = shapely.get_coordinates(g, return_index=True)
+    g, index = shapely.get_coordinates(geometry, return_index=True)
     # number of coordinate pairs per MultiPoint
     count = np.bincount(index)
     x, y = g[:, 0], g[:, 1]
