@@ -9,5 +9,4 @@ osmnx
 psycopg2
 tqdm
 similaritymeasures
-pygeos>=0.10.0
 virtualenv
