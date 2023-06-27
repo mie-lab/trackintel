@@ -125,7 +125,6 @@ ti.print_version()
 * tqdm
 * OSMnx
 * similaritymeasures
-* pygeos
 
 ## Development
 You can find the development roadmap under `ROADMAP.md` and further development guidelines under `CONTRIBUTING.md`.

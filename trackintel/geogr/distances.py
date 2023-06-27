@@ -5,10 +5,10 @@ from math import cos, pi
 
 import numpy as np
 import pandas as pd
-import pygeos
+import shapely
+import similaritymeasures
 from scipy.spatial.distance import cdist
 from sklearn.metrics import pairwise_distances
-import similaritymeasures
 
 from trackintel.geogr.point_distances import haversine_dist
 
@@ -250,9 +250,9 @@ def calculate_haversine_length(gdf):
     >>> from trackintel.geogr.distances import calculate_haversine_length
     >>> triplegs['length'] = calculate_haversine_length(triplegs)
     """
-    geom = pygeos.from_shapely(gdf.geometry)
-    assert np.any(pygeos.get_type_id(geom) == 1)  # 1 is LineStrings
-    geom, index = pygeos.get_coordinates(geom, return_index=True)
+    geom = gdf.geometry
+    assert np.any(shapely.get_type_id(geom) == 1)  # 1 is LineStrings
+    geom, index = shapely.get_coordinates(geom, return_index=True)
     no_mix = index[:-1] == index[1:]  # mask where LineStrings are not overlapping
     dist = haversine_dist(geom[:-1, 0], geom[:-1, 1], geom[1:, 0], geom[1:, 1])
     return np.bincount((index[:-1])[no_mix], weights=dist[no_mix])

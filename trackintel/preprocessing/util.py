@@ -3,7 +3,7 @@ from datetime import timedelta
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-import pygeos
+import shapely
 from joblib import Parallel, delayed
 from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
@@ -127,8 +127,7 @@ def angle_centroid_multipoints(geometry):
     geopandas.GeometryArray
         Centroid of geometries (shapely.Point)
     """
-    g = pygeos.from_shapely(geometry)
-    g, index = pygeos.get_coordinates(g, return_index=True)
+    g, index = shapely.get_coordinates(geometry, return_index=True)
     # number of coordinate pairs per MultiPoint
     count = np.bincount(index)
     x, y = g[:, 0], g[:, 1]

@@ -50,7 +50,6 @@ autodoc_mock_imports = [
     "geoalchemy2",
     "tqdm",
     "similaritymeasures",
-    "pygeos",
 ]
 
 
