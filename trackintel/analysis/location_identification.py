@@ -48,9 +48,6 @@ def location_identifier(staypoints, method="FREQ", pre_filter=True, **pre_filter
     >>> from ti.analysis.location_identification import location_identifier
     >>> location_identifier(staypoints, pre_filter=True, method="FREQ")
     """
-    # assert validity of staypoints
-    staypoints.as_staypoints
-
     sp = staypoints.copy()
     if "location_id" not in sp.columns:
         raise KeyError(
@@ -125,9 +122,6 @@ def pre_filter_locations(
     >>> mask = pre_filter_locations(staypoints)
     >>> staypoints = staypoints[mask]
     """
-    # assert validity of staypoints
-    staypoints.as_staypoints
-
     sp = staypoints.copy()
     if isinstance(thresh_loc_time, str):
         thresh_loc_time = pd.to_timedelta(thresh_loc_time)
