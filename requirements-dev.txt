@@ -9,7 +9,6 @@ osmnx
 psycopg2
 tqdm
 similaritymeasures
-virtualenv
 # additional dependencies for development
 black   # linting
 jupyter # notebooks
