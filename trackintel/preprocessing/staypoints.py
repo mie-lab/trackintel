@@ -271,6 +271,7 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     # a joined dataframe sp_tpls is constructed to add the columns 'type' and 'next_type' to the 'sp_merge' table
     # concat and sort by time
     sp_tpls = pd.concat([sp_merge, tpls_merge]).sort_values(by=["user_id", "started_at"])
+    # TODO: we want to make tpls as argumtent optional and adapt this logic here. See issue #463.
     sp_tpls.index.rename(index_name, inplace=True)
     # get information whether the there is a tripleg after a staypoint
     sp_tpls["next_type"] = sp_tpls["type"].shift(-1)
