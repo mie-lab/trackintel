@@ -22,7 +22,7 @@ LICENSE = "MIT"
 # What packages are required for this module to be executed?
 REQUIRED = [
     "pandas",
-    "geopandas>=0.9.0",
+    "geopandas>=0.12.0",
     "matplotlib",
     "numpy",
     "pint",
@@ -40,13 +40,13 @@ install_requires = [
     "matplotlib",
     "numpy",
     "pint",
-    "shapely<=1.8.5",
+    "shapely",
     "networkx",
     "geoalchemy2",
     "osmnx",
     "scikit-learn",
     "tqdm",
-    "geopandas>=0.10.0",
+    "geopandas>=0.12.0",
     "similaritymeasures",
 ]
 

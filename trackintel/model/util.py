@@ -33,10 +33,7 @@ def get_speed_positionfixes(positionfixes):
     g = pfs.geometry
     # get distance and time difference
     if is_planar_crs:
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="CRS not set for some of the concatenation inputs.*")
-
-            dist = g.distance(g.shift(1)).to_numpy()
+        dist = g.distance(g.shift(1)).to_numpy()
     else:
         x = g.x.to_numpy()
         y = g.y.to_numpy()
