@@ -1,0 +1,18 @@
+numpy
+matplotlib
+geopandas>=0.10.0
+scikit-learn
+networkx 
+pint 
+geoalchemy2 
+osmnx 
+psycopg2
+tqdm
+similaritymeasures
+virtualenv
+# additional dependencies for development
+black   # linting
+jupyter # notebooks
+pytest  # testing
+sphinx  # documentation
+sphinx_rtd_theme
