@@ -63,7 +63,7 @@ asv publish
 asv preview
 ``` 
 
-9. . Now we need to push the html files to gh-pages branch to host it on the server. The documentation mentions that we can run `asv gh-pages` but it did not work for me. Instead, I push manually using the commands below:
+9. . Now we need to push the html files to gh-pages branch to host it on the server. The documentation mentions that we can run `asv gh-pages` but it did not work. Instead, we push manually using the commands below:
 ```
 asv gh-pages --no-push --rewrite
 ```
