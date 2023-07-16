@@ -66,7 +66,7 @@ def example_positionfixes():
     ]
     pfs = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     pfs.index.name = "id"
-    assert pfs.as_positionfixes
+    pfs.as_positionfixes
     return pfs
 
 
