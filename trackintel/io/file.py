@@ -1,3 +1,4 @@
+import ast
 import warnings
 from functools import wraps
 from inspect import signature
@@ -555,6 +556,10 @@ def read_tours_csv(*args, columns=None, index_col=None, tz=None, **kwargs):
     >>> trackintel.read_tours_csv('data.csv', columns={'uuid':'user_id'})
     """
     columns = {} if columns is None else columns
+    if "converters" not in kwargs:
+        kwargs["converters"] = {"trips": ast.literal_eval}
+    elif "trips" not in kwargs["converters"]:
+        kwargs["converters"]["trips"] = ast.literal_eval
     tours = pd.read_csv(*args, index_col=index_col, **kwargs)
     tours.rename(columns=columns, inplace=True)
 
