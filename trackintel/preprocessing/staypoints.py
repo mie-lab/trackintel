@@ -17,6 +17,7 @@ def generate_locations(
     agg_level="user",
     print_progress=False,
     n_jobs=1,
+    activities_only=False,
 ):
     """
     Generate locations from the staypoints.
@@ -56,6 +57,10 @@ def generate_locations(
         https://joblib.readthedocs.io/en/latest/parallel.html#parallel-reference-documentation
         for a detailed description
 
+    activities_only: bool, default False (requires "activity" column)
+        Flag to set if locations should be generated only from staypoints on which the value for "activity" is True.
+        Useful if activites represent more significant places.
+
     Returns
     -------
     sp: GeoDataFrame (as trackintel staypoints)
@@ -75,6 +80,10 @@ def generate_locations(
 
     # initialize the return GeoDataFrames
     sp = staypoints.copy()
+    non_activities = None
+    if activities_only:
+        non_activities = sp[~sp["activity"]]
+        sp = sp[sp["activity"]]
     sp = sp.sort_values(["user_id", "started_at"])
     geo_col = sp.geometry.name
 
@@ -165,6 +174,9 @@ def generate_locations(
 
         # staypoints not linked to a location receive np.nan in 'location_id'
         sp.loc[sp["location_id"] == -1, "location_id"] = np.nan
+
+    # merge non_activities back if "activities_only" flag is set
+    sp = pd.concat([sp, non_activities])
 
     if len(locs) > 0:
         locs.as_locations  # empty location is not valid
