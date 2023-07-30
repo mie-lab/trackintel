@@ -106,8 +106,8 @@ def read_positionfixes_postgis(
     --------
     >>> pfs = ti.io.read_positionfixes_postgis("SELECT * FROM positionfixes", con, geom_col="geom")
     >>> pfs = ti.io.read_positionfixes_postgis("SELECT * FROM positionfixes", con, geom_col="geom",
-    ...                                        index_col="id", user_id="USER",
-                                               read_gpd_kws={tracked_at: "time"})
+    ...                                        index_col="id",
+                                               read_gpd_kws={"user_id"="USER", "tracked_at": "time"})
     """
     pfs = gpd.GeoDataFrame.from_postgis(
         sql,
@@ -206,7 +206,7 @@ def read_triplegs_postgis(
     --------
     >>> tpls = ti.io.read_triplegs_postgis("SELECT * FROM triplegs", con, geom_col="geom")
     >>> tpls = ti.io.read_triplegs_postgis("SELECT * FROM triplegs", con, geom_col="geom", index_col="id",
-    ...                                    read_gpd_kws={user_id: "USER"})
+    ...                                    read_gpd_kws={"user_id": "USER"})
     """
     tpls = gpd.GeoDataFrame.from_postgis(
         sql,
@@ -306,7 +306,7 @@ def read_staypoints_postgis(
     --------
     >>> sp = ti.io.read_staypoints_postgis("SELECT * FROM staypoints", con, geom_col="geom")
     >>> sp = ti.io.read_staypoints_postgis("SELECT * FROM staypoints", con, geom_col="geom", index_col="id",
-    ...                                    read_gpd_kws={user_id: "USER"})
+    ...                                    read_gpd_kws={"user_id": "USER"})
     """
     sp = gpd.GeoDataFrame.from_postgis(
         sql,
@@ -410,7 +410,7 @@ def read_locations_postgis(
     --------
     >>> locs = ti.io.read_locations_postgis("SELECT * FROM locations", con, center="center")
     >>> locs = ti.io.read_locations_postgis("SELECT * FROM locations", con, center="geom", index_col="id",
-    ...                                     extent="extent, read_gpd_kws={user_id: "USER"})
+    ...                                     extent="extent, read_gpd_kws={"user_id": "USER"})
     )
     """
     locs = gpd.GeoDataFrame.from_postgis(
@@ -528,8 +528,8 @@ def read_trips_postgis(
     --------
     >>> trips = ti.io.read_trips_postgis("SELECT * FROM trips", con)
     >>> trips = ti.io.read_trips_postgis("SELECT * FROM trips", con, geom_col="geom", index_col="id",
-    ...                                  read_gpd_kws={user_id: "USER", origin_staypoint_id: "ORIGIN",
-                                                       destination_staypoint_id: "DEST"})
+    ...                                  read_gpd_kws={"user_id": "USER", "origin_staypoint_id": "ORIGIN",
+                                                       "destination_staypoint_id": "DEST"})
 
     """
     if geom_col is None:
@@ -653,7 +653,7 @@ def read_tours_postgis(
     --------
     >>> tours = ti.io.read_tours_postgis("SELECT * FROM tours", con)
     >>> tours = ti.io.read_tours_postgis("SELECT * FROM tours", con, index_col="id",
-                                         read_gpd_kws={user_id: "USER"})
+                                         read_gpd_kws={"user_id": "USER"})
     """
     if geom_col is None:
         tours = pd.read_sql(
