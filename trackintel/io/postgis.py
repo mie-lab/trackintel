@@ -7,6 +7,7 @@ from shapely import wkb
 import pandas as pd
 from geoalchemy2 import Geometry
 from sqlalchemy import create_engine
+from sqlalchemy.types import JSON
 
 import trackintel as ti
 
@@ -562,6 +563,9 @@ def read_trips_postgis(
 def write_trips_postgis(
     trips, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
+    if "trips" in trips.columns:
+        dtype = dtype or {}
+        dtype.setdefault("trips", JSON)
     if isinstance(trips, gpd.GeoDataFrame):
         trips.to_postgis(
             name,

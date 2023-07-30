@@ -716,6 +716,23 @@ class TestTours:
         finally:
             del_table(conn, table)
 
+    def test_trips_column(self, example_tours, conn_postgis):
+        """Test if list of trips is read correctly."""
+        tours = example_tours
+        tours["trips"] = [[1 + i, 10 + i, 100 + i] for i in range(len(tours))]
+        conn_string, conn = conn_postgis
+        table = "tours"
+        sql = f"SELECT * FROM {table}"
+
+        engine = create_engine(conn_string)
+        try:
+            tours.as_tours.to_postgis(table, engine)
+            with pytest.warns(UserWarning):
+                tours_db = ti.io.read_tours_postgis(sql, conn, index_col="id")
+            assert_frame_equal(tours, tours_db)
+        finally:
+            del_table(conn, table)
+
 
 class TestGetSrid:
     def test_srid(self, example_positionfixes):
