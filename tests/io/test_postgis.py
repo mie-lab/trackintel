@@ -312,7 +312,7 @@ class TestPositionfixes:
         try:
             pfs.as_positionfixes.to_postgis(table, conn_string)
             with pytest.warns(UserWarning):
-                pfs_db = ti.io.read_positionfixes_postgis(sql, conn, geom_col, index_col="id", **rename_dict)
+                pfs_db = ti.io.read_positionfixes_postgis(sql, conn, geom_col, index_col="id", read_gpd_kws=rename_dict)
             assert_geodataframe_equal(example_positionfixes, pfs_db)
         finally:
             del_table(conn, table)
@@ -406,7 +406,7 @@ class TestTriplegs:
         try:
             tpls.as_triplegs.to_postgis(table, conn_string)
             with pytest.warns(UserWarning):
-                tpls_db = ti.io.read_triplegs_postgis(sql, conn, geom_col, index_col="id", **rename_dict)
+                tpls_db = ti.io.read_triplegs_postgis(sql, conn, geom_col, index_col="id", read_gpd_kws=rename_dict)
             assert_geodataframe_equal(example_triplegs, tpls_db)
         finally:
             del_table(conn, table)
@@ -571,7 +571,7 @@ class TestLocations:
         try:
             locs.as_locations.to_postgis(table, conn_string)
             with pytest.warns(UserWarning):
-                tpls_db = ti.io.read_locations_postgis(sql, conn, geom_col, index_col="id", **rename_dict)
+                tpls_db = ti.io.read_locations_postgis(sql, conn, geom_col, index_col="id", read_gpd_kws=rename_dict)
             assert_geodataframe_equal(example_locations, tpls_db)
         finally:
             del_table(conn, table)
@@ -624,7 +624,7 @@ class TestTrips:
         try:
             trips.as_trips.to_postgis(table, create_engine(conn_string))
             with pytest.warns(UserWarning):
-                tpls_db = ti.io.read_trips_postgis(sql, conn, index_col="id", **rename_dict)
+                tpls_db = ti.io.read_trips_postgis(sql, conn, index_col="id", read_gpd_kws=rename_dict)
             assert_frame_equal(example_trips, tpls_db)
         finally:
             del_table(conn, table)
