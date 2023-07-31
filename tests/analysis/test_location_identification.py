@@ -182,6 +182,13 @@ class TestFreq_method:
         assert freq["purpose"].count() == example_freq["purpose"].count()
         assert_geodataframe_equal(example_freq, freq)
 
+    def test_empty_sp(self, example_freq):
+        """Test if empty sp also get purpose column."""
+        example_freq.drop(example_freq.index, inplace=True)
+        freq = freq_method(example_freq)
+        example_freq["purpose"] = None
+        assert_geodataframe_equal(example_freq, freq)
+
 
 class Test_Freq_Transform:
     """Test help function _freq_transform."""

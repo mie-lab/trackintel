@@ -197,6 +197,8 @@ def freq_method(staypoints, *labels):
             group["duration"] = group["finished_at"] - group["started_at"]
         # pandas keeps inner order of groups
         sp.loc[sp["user_id"] == name, "purpose"] = _freq_transform(group, *labels)
+    if "purpose" not in sp.columns:  # if empty sp
+        sp["purpose"] = None
     return sp
 
 
