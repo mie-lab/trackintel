@@ -454,6 +454,31 @@ class TestGenerate_locations:
             example_staypoints.as_staypoints.generate_locations(method="unknown")
             assert error_msg == str(e.value)
 
+    def test_activity_flag(self, example_staypoints):
+        """Test if only activity staypoints are used if flag is set."""
+        # take out staypoint 6 that should have been merged with 2, 15
+        sp = example_staypoints
+        data = [True, True, True, True, False, True, True, True]
+        idx = [1, 2, 3, 5, 6, 7, 15, 80]
+        activities = pd.Series(data, index=idx)
+        sp["activity"] = activities
+        sp, _ = sp.as_staypoints.generate_locations(
+            method="dbscan",
+            epsilon=10,
+            num_samples=2,
+            distance_metric="haversine",
+            agg_level="user",
+            activities_only=True,
+        )
+        assert sp.loc[1, "location_id"] == sp.loc[15, "location_id"]
+        assert sp.loc[2, "location_id"] is pd.NA
+
+    def test_activity_flag_missing_column(self, example_staypoints):
+        """Test if KeyError is raised if `activity` column is missing"""
+        msg = 'staypoints must contain column "activity" if "activities_only" flag is set.'
+        with pytest.raises(KeyError, match=msg):
+            example_staypoints.as_staypoints.generate_locations(activities_only=True)
+
 
 class TestMergeStaypoints:
     def test_merge_staypoints(self, example_staypoints_merge):
