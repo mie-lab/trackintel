@@ -473,6 +473,12 @@ class TestGenerate_locations:
         assert sp.loc[1, "location_id"] == sp.loc[15, "location_id"]
         assert sp.loc[2, "location_id"] is pd.NA
 
+    def test_activity_flag_missing_column(self, example_staypoints):
+        """Test if KeyError is raised if `activity` column is missing"""
+        msg = 'staypoints must contain column "activity" if "activities_only" flag is set.'
+        with pytest.raises(KeyError, match=msg):
+            example_staypoints.as_staypoints.generate_locations(activities_only=True)
+
 
 class TestMergeStaypoints:
     def test_merge_staypoints(self, example_staypoints_merge):

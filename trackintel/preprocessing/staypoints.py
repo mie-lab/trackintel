@@ -82,6 +82,8 @@ def generate_locations(
     sp = staypoints.copy()
     non_activities = None
     if activities_only:
+        if "activity" not in sp.columns:
+            raise KeyError('staypoints must contain column "activity" if "activities_only" flag is set.')
         non_activities = sp[~sp["activity"]]
         sp = sp[sp["activity"]]
     sp = sp.sort_values(["user_id", "started_at"])
