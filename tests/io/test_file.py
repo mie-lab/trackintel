@@ -2,6 +2,7 @@ import filecmp
 import os
 import pytest
 import pandas as pd
+from pandas.testing import assert_frame_equal
 
 import trackintel as ti
 
@@ -312,6 +313,25 @@ class TestTrips:
         assert gdf.index.name is None
 
 
+@pytest.fixture
+def example_tours():
+    """Tours to load into the database."""
+    t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+    t2 = pd.Timestamp("1971-01-01 05:00:00", tz="utc")
+    t3 = pd.Timestamp("1971-01-02 07:00:00", tz="utc")
+    h = pd.Timedelta(hours=1)
+
+    list_dict = [
+        {"user_id": 0, "started_at": t1, "finished_at": t1 + h, "trips": [0, 1, 2]},
+        {"user_id": 0, "started_at": t2, "finished_at": t2 + h, "trips": [2, 3, 4]},
+        {"user_id": 1, "started_at": t3, "finished_at": t3 + h, "trips": [4, 5, 6]},
+    ]
+    tours = pd.DataFrame(data=list_dict)
+    tours.index.name = "id"
+    tours.as_tours
+    return tours
+
+
 class TestTours:
     """Test for 'read_tours_csv' and 'write_tours_csv' functions."""
 
@@ -325,6 +345,14 @@ class TestTours:
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
+    def test_to_from_csv(self, example_tours):
+        """Test writing then reading functionality."""
+        tmp_file = os.path.join("tests", "data", "tours_test.csv")
+        example_tours.as_tours.to_csv(tmp_file)
+        read_tours = ti.read_tours_csv(tmp_file, index_col="id")
+        os.remove(tmp_file)
+        assert_frame_equal(example_tours, read_tours)
+
     def test_to_csv_accessor(self):
         """Test basic reading and writing functions."""
         orig_file = os.path.join("tests", "data", "geolife_long", "tours.csv")
@@ -334,7 +362,3 @@ class TestTours:
         tours.as_tours.to_csv(tmp_file)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
-
-    def test_from_to_postgis(self):
-        # TODO Implement some tests for reading and writing tours.
-        pass
