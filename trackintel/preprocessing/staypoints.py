@@ -15,9 +15,9 @@ def generate_locations(
     num_samples=1,
     distance_metric="haversine",
     agg_level="user",
+    activities_only=False,
     print_progress=False,
     n_jobs=1,
-    activities_only=False,
 ):
     """
     Generate locations from the staypoints.
@@ -48,6 +48,10 @@ def generate_locations(
         - 'user'      : locations are generated independently per-user.
         - 'dataset'   : shared locations are generated for all users.
 
+    activities_only: bool, default False (requires "activity" column)
+        Flag to set if locations should be generated only from staypoints on which the value for "activity" is True.
+        Useful if activites represent more significant places.
+
     print_progress : bool, default False
         If print_progress is True, the progress bar is displayed
 
@@ -56,10 +60,6 @@ def generate_locations(
         computing code is used at all, which is useful for debugging. See
         https://joblib.readthedocs.io/en/latest/parallel.html#parallel-reference-documentation
         for a detailed description
-
-    activities_only: bool, default False (requires "activity" column)
-        Flag to set if locations should be generated only from staypoints on which the value for "activity" is True.
-        Useful if activites represent more significant places.
 
     Returns
     -------
