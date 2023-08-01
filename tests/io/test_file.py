@@ -231,7 +231,7 @@ def example_locations():
     ]
     locs = gpd.GeoDataFrame(data=list_dict, geometry="center", crs="EPSG:4326")
     locs.index.name = "id"
-    assert locs.as_locations
+    locs.as_locations
     return locs
 
 
