@@ -19,7 +19,7 @@ class TestTrips:
     def test_accessor(self, testdata_trips):
         """Test if the as_trips accessor checks the required column for trips."""
         trips = testdata_trips.copy()
-        assert trips.as_trips
+        trips.as_trips
 
         # user_id
         with pytest.raises(AttributeError):

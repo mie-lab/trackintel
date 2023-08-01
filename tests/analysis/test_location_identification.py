@@ -39,7 +39,7 @@ def example_staypoints():
     ]
     sp = gpd.GeoDataFrame(data=list_dict, geometry="geometry", crs="EPSG:4326")
     sp.index.name = "id"
-    assert sp.as_staypoints
+    sp.as_staypoints
     assert "location_id" in sp.columns
     return sp
 
@@ -145,7 +145,7 @@ def example_freq():
     sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     sp.index.name = "id"
     assert "location_id" in sp.columns
-    assert sp.as_staypoints
+    sp.as_staypoints
     return sp
 
 
@@ -297,7 +297,7 @@ def example_osna():
     sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     sp.index.name = "id"
     assert "location_id" in sp.columns
-    assert sp.as_staypoints
+    sp.as_staypoints
     return sp
 
 

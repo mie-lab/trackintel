@@ -66,7 +66,7 @@ def example_positionfixes():
     ]
     pfs = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     pfs.index.name = "id"
-    assert pfs.as_positionfixes
+    pfs.as_positionfixes
     return pfs
 
 
@@ -89,7 +89,7 @@ def example_staypoints():
     ]
     sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     sp.index.name = "id"
-    assert sp.as_staypoints
+    sp.as_staypoints
     return sp
 
 
@@ -115,7 +115,7 @@ def example_triplegs():
     tpls = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     tpls.set_index("id", inplace=True)
 
-    assert tpls.as_triplegs
+    tpls.as_triplegs
     return tpls
 
 
@@ -133,7 +133,7 @@ def example_locations():
     ]
     locs = gpd.GeoDataFrame(data=list_dict, geometry="center", crs="EPSG:4326")
     locs.index.name = "id"
-    assert locs.as_locations
+    locs.as_locations
     return locs
 
 
@@ -158,7 +158,7 @@ def example_trips():
     ]
     trips = pd.DataFrame(data=list_dict)
     trips.index.name = "id"
-    assert trips.as_trips
+    trips.as_trips
     return trips
 
 
@@ -177,7 +177,7 @@ def example_tours():
     ]
     tours = pd.DataFrame(data=list_dict)
     tours.index.name = "id"
-    assert tours.as_tours
+    tours.as_tours
     return tours
 
 

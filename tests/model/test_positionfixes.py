@@ -20,7 +20,7 @@ class TestPositionfixes:
     def test_accessor_column(self, testdata_geolife):
         """Test if the as_positionfixes accessor checks the required column for positionfixes."""
         pfs = testdata_geolife.copy()
-        assert pfs.as_positionfixes
+        pfs.as_positionfixes
 
         # check user_id
         with pytest.raises(AttributeError, match="To process a DataFrame as a collection of positionfixes"):
