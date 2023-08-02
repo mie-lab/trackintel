@@ -1,8 +1,12 @@
 import filecmp
 import os
-import pytest
+
+import geopandas as gpd
 import pandas as pd
+import pytest
 from pandas.testing import assert_frame_equal
+from geopandas.testing import assert_geodataframe_equal
+from shapely.geometry import Point, Polygon
 
 import trackintel as ti
 
@@ -213,6 +217,24 @@ class TestStaypoints:
         assert pfs.index.name is None
 
 
+@pytest.fixture
+def example_locations():
+    """Locations to load into the database."""
+    p1 = Point(8.5067847, 47.4)
+    p2 = Point(8.5067847, 47.5)
+    p3 = Point(8.5067847, 47.6)
+
+    list_dict = [
+        {"user_id": 0, "center": p1},
+        {"user_id": 0, "center": p2},
+        {"user_id": 1, "center": p3},
+    ]
+    locs = gpd.GeoDataFrame(data=list_dict, geometry="center", crs="EPSG:4326")
+    locs.index.name = "id"
+    locs.as_locations
+    return locs
+
+
 class TestLocations:
     """Test for 'read_locations_csv' and 'write_locations_csv' functions."""
 
@@ -252,6 +274,15 @@ class TestLocations:
         assert pfs.index.name == ind_name
         pfs = ti.read_locations_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
+
+    def test_without_extent(self, example_locations):
+        """Test if without extent column data is correctly write/read."""
+        locs = example_locations
+        tmp_file = os.path.join("tests", "data", "locations_test.csv")
+        locs.as_locations.to_csv(tmp_file, sep=";")
+        locs_in = ti.read_locations_csv(tmp_file, sep=";", index_col="id", crs=4326)
+        assert_geodataframe_equal(locs, locs_in)
+        os.remove(tmp_file)
 
 
 class TestTrips:
