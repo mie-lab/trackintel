@@ -86,7 +86,7 @@ def example_staypoints_merge():
     ]
     sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     sp = sp.set_index("id")
-    assert sp.as_staypoints
+    sp.as_staypoints
 
     # generate empty triplegs for the merge function
     tpls = pd.DataFrame([], columns=["user_id", "started_at", "finished_at"])
