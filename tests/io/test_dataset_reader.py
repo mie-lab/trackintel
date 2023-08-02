@@ -100,8 +100,6 @@ class TestReadGeolife:
         captured_noprint = capsys.readouterr()
         assert captured_noprint.err == ""
 
-        assert True
-
     def test_label_reading(self):
         """Test data types of the labels returned by read_geolife."""
         _, labels = read_geolife(os.path.join("tests", "data", "geolife_modes"))
