@@ -46,9 +46,7 @@ class PositionfixesAccessor(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataF
     required_columns = ["user_id", "tracked_at"]
 
     def __init__(self, *args, validate=True, **kwargs):
-        # could be moved to super
         # could be moved to super class
-        # this validate kwarg ist a bit bad.
         # validate kwarg is necessary as the object is not fully initialised if we call it from _constructor
         # (geometry-link is missing). thus we need a way to stop validating too early.
         # maybe we have to think if and how we want to expose this kwarg to the outside.
