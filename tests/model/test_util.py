@@ -235,7 +235,10 @@ class Test_register_trackintel_accessor:
 
     def test_register(self):
         """Test if accessor is registered in DataFrame"""
-        foo = lambda val: val
+
+        def foo(val):
+            return val
+
         bar = _register_trackintel_accessor("foo")(foo)
         assert foo == bar
         assert "foo" in pd.DataFrame._accessors
@@ -246,7 +249,10 @@ class Test_register_trackintel_accessor:
 
     def test_duplicate_name_warning(self):
         """Test that duplicate name raises warning"""
-        foo = lambda val: val
+
+        def foo(val):
+            return val
+
         _register_trackintel_accessor("foo")(foo)
         with pytest.warns(UserWarning):
             _register_trackintel_accessor("foo")(foo)
