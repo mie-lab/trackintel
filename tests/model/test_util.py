@@ -220,7 +220,9 @@ class TestNonCachedAccessor:
 
     def test_accessor(self):
         """Test accessor on class object and class instance."""
-        foo = lambda val: val  # identity
+
+        def foo(val):
+            return val
 
         class A:
             nca = NonCachedAccessor("nca_test", foo)
