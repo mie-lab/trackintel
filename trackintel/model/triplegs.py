@@ -7,13 +7,13 @@ from trackintel.analysis.tracking_quality import temporal_tracking_quality
 from trackintel.geogr.distances import calculate_distance_matrix
 from trackintel.io.file import write_triplegs_csv
 from trackintel.io.postgis import write_triplegs_postgis
-from trackintel.model.util import _copy_docstring, get_speed_triplegs
+from trackintel.model.util import _copy_docstring, get_speed_triplegs, _register_trackintel_accessor
 from trackintel.preprocessing.filter import spatial_filter
 from trackintel.preprocessing.triplegs import generate_trips
 from trackintel.visualization.triplegs import plot_triplegs
 
 
-@pd.api.extensions.register_dataframe_accessor("as_triplegs")
+@_register_trackintel_accessor("as_triplegs")
 class TriplegsAccessor(object):
     """A pandas accessor to treat (Geo)DataFrames as collections of `Tripleg`.
 

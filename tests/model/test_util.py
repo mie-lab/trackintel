@@ -1,16 +1,22 @@
 import os
 from functools import WRAPPER_ASSIGNMENTS
 
-from geopandas import GeoDataFrame
 import numpy as np
-from pandas import Timestamp, Timedelta
+import pandas as pd
 import pytest
+from geopandas import GeoDataFrame
 from geopandas.testing import assert_geodataframe_equal
+from pandas import Timedelta, Timestamp
 from shapely.geometry import Point
 
 import trackintel as ti
 from trackintel.io.postgis import read_trips_postgis
-from trackintel.model.util import _copy_docstring, get_speed_positionfixes
+from trackintel.model.util import (
+    NonCachedAccessor,
+    _copy_docstring,
+    _register_trackintel_accessor,
+    get_speed_positionfixes,
+)
 
 
 @pytest.fixture
@@ -207,3 +213,51 @@ class Test_copy_docstring:
                 assert attr_bar != old_docs
             else:
                 assert attr_foo != attr_bar
+
+
+class TestNonCachedAccessor:
+    """Test if NonCachedAccessor works"""
+
+    def test_accessor(self):
+        """Test accessor on class object and class instance."""
+
+        def foo(val):
+            return val
+
+        class A:
+            nca = NonCachedAccessor("nca_test", foo)
+
+        a = A()
+        assert A.nca == foo  # class object
+        assert a.nca == a  # class instance
+
+
+class Test_register_trackintel_accessor:
+    """Test if accessors are correctly registered."""
+
+    def test_register(self):
+        """Test if accessor is registered in DataFrame"""
+
+        def foo(val):
+            return val
+
+        bar = _register_trackintel_accessor("foo")(foo)
+        assert foo == bar
+        assert "foo" in pd.DataFrame._accessors
+        assert foo == pd.DataFrame.foo
+        # remove accessor again to make tests independent
+        pd.DataFrame._accesors = pd.DataFrame._accessors.remove("foo")
+        del pd.DataFrame.foo
+
+    def test_duplicate_name_warning(self):
+        """Test that duplicate name raises warning"""
+
+        def foo(val):
+            return val
+
+        _register_trackintel_accessor("foo")(foo)
+        with pytest.warns(UserWarning):
+            _register_trackintel_accessor("foo")(foo)
+        # remove accessor again to make tests independent
+        pd.DataFrame._accesors = pd.DataFrame._accessors.remove("foo")
+        del pd.DataFrame.foo

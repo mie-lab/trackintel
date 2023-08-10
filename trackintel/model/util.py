@@ -108,3 +108,34 @@ def _single_tripleg_mean_speed(positionfixes):
 def _copy_docstring(wrapped, assigned=("__doc__",), updated=[]):
     """Thin wrapper for `functools.update_wrapper` to mimic `functools.wraps` but to only copy the docstring."""
     return partial(update_wrapper, wrapped=wrapped, assigned=assigned, updated=updated)
+
+
+class NonCachedAccessor:
+    def __init__(self, name: str, accessor) -> None:
+        self._name = name
+        self._accessor = accessor
+
+    def __get__(self, obj, cls):
+        if obj is None:
+            # we're accessing the attribute of the class, i.e., Dataset.geo
+            return self._accessor
+        # copied code from pandas accessor, minus the caching
+        return self._accessor(obj)
+
+
+def _register_trackintel_accessor(name: str):
+    from pandas import DataFrame
+
+    def decorator(accessor):
+        if hasattr(DataFrame, name):
+            warnings.warn(
+                f"registration of accessor {repr(accessor)} under name "
+                f"{repr(name)} for type {repr(DataFrame)} is overriding a preexisting "
+                f"attribute with the same name.",
+                UserWarning,
+            )
+        setattr(DataFrame, name, NonCachedAccessor(name, accessor))
+        DataFrame._accessors.add(name)
+        return accessor
+
+    return decorator
