@@ -1,14 +1,14 @@
 from trackintel.analysis.tracking_quality import temporal_tracking_quality
 from trackintel.io.postgis import write_trips_postgis
 from trackintel.io.file import write_trips_csv
-from trackintel.model.util import _copy_docstring
+from trackintel.model.util import _copy_docstring, _register_trackintel_accessor
 import pandas as pd
 import geopandas as gpd
 
 import trackintel as ti
 
 
-@pd.api.extensions.register_dataframe_accessor("as_trips")
+@_register_trackintel_accessor("as_trips")
 class TripsAccessor(object):
     """A pandas accessor to treat (Geo)DataFrames as collections of trips.
 

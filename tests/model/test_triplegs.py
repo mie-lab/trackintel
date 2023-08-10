@@ -23,7 +23,7 @@ class TestTriplegs:
         """Test if the as_triplegs accessor checks the required column for triplegs."""
         tpls = testdata_tpls.copy()
 
-        assert tpls.as_triplegs
+        tpls.as_triplegs
 
         # check user_id
         with pytest.raises(AttributeError):

@@ -1,7 +1,12 @@
 import filecmp
 import os
-import pytest
+
+import geopandas as gpd
 import pandas as pd
+import pytest
+from pandas.testing import assert_frame_equal
+from geopandas.testing import assert_geodataframe_equal
+from shapely.geometry import Point, Polygon
 
 import trackintel as ti
 
@@ -9,25 +14,23 @@ import trackintel as ti
 class TestPositionfixes:
     """Test for 'read_positionfixes_csv' and 'write_positionfixes_csv' functions."""
 
-    # commented out as test needs to be adapted and that is not really part of this PR
-    # -> as_positionfixes cannot be called anymore with data that doesn't fit the model
-    #    def test_from_to_csv(self):
-    #        """Test basic reading and writing functions."""
-    #        orig_file = os.path.join("tests", "data", "positionfixes.csv")
-    #        mod_file = os.path.join("tests", "data", "positionfixes_mod_columns.csv")
-    #        tmp_file = os.path.join("tests", "data", "positionfixes_test_1.csv")
-    #
-    #        pfs = ti.read_positionfixes_csv(orig_file, sep=";", index_col="id")
-    #
-    #        column_mapping = {"lat": "latitude", "lon": "longitude", "time": "tracked_at"}
-    #        mod_pfs = ti.read_positionfixes_csv(mod_file, sep=";", index_col="id", columns=column_mapping)
-    #        assert mod_pfs.equals(pfs)
-    #        pfs["tracked_at"] = pfs["tracked_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
-    #
-    #        columns = ["user_id", "tracked_at", "latitude", "longitude", "elevation", "accuracy"]
-    #        pfs.as_positionfixes.to_csv(tmp_file, sep=";", columns=columns)
-    #        assert filecmp.cmp(orig_file, tmp_file, shallow=False)
-    #        os.remove(tmp_file)
+    def test_from_to_csv(self):
+        """Test basic reading and writing functions."""
+        orig_file = os.path.join("tests", "data", "positionfixes.csv")
+        mod_file = os.path.join("tests", "data", "positionfixes_mod_columns.csv")
+        tmp_file = os.path.join("tests", "data", "positionfixes_test_1.csv")
+
+        pfs = ti.read_positionfixes_csv(orig_file, sep=";", index_col="id")
+
+        column_mapping = {"lat": "latitude", "lon": "longitude", "time": "tracked_at"}
+        mod_pfs = ti.read_positionfixes_csv(mod_file, sep=";", index_col="id", columns=column_mapping)
+        assert mod_pfs.equals(pfs)
+
+        date_format = "%Y-%m-%dT%H:%M:%SZ"
+        columns = ["user_id", "tracked_at", "latitude", "longitude", "elevation", "accuracy"]
+        pfs.as_positionfixes.to_csv(tmp_file, sep=";", columns=columns, date_format=date_format)
+        assert filecmp.cmp(orig_file, tmp_file, shallow=False)
+        os.remove(tmp_file)
 
     def test_set_crs(self):
         """Test setting the crs when reading."""
@@ -39,29 +42,26 @@ class TestPositionfixes:
         pfs = ti.read_positionfixes_csv(file, sep=";", index_col="id", crs=crs)
         assert pfs.crs == crs
 
-    # commented out as test needs to be adapted and that is not really part of this PR
-    # -> as_positionfixes cannot be called anymore with data that doesn't fit the model
-    #    def test_set_datatime_tz(self):
-    #        """Test setting the timezone infomation when reading."""
-    #        # check if tz is added to the datatime column
-    #        file = os.path.join("tests", "data", "positionfixes.csv")
-    #        pfs = ti.read_positionfixes_csv(file, sep=";", index_col="id")
-    #        assert pd.api.types.is_datetime64tz_dtype(pfs["tracked_at"])
-    #
-    #        # check if a timezone will be set after manually deleting the timezone
-    #        pfs["tracked_at"] = pfs["tracked_at"].dt.tz_localize(None)
-    #        assert not pd.api.types.is_datetime64tz_dtype(pfs["tracked_at"])
-    #        tmp_file = os.path.join("tests", "data", "positionfixes_test_2.csv")
-    #        pfs.as_positionfixes.to_csv(tmp_file, sep=";")
-    #        pfs = ti.read_positionfixes_csv(tmp_file, sep=";", index_col="id", tz="utc")
-    #
-    #        assert pd.api.types.is_datetime64tz_dtype(pfs["tracked_at"])
-    #
-    #        # check if a warning is raised if 'tz' is not provided
-    #        with pytest.warns(UserWarning):
-    #            ti.read_positionfixes_csv(tmp_file, sep=";", index_col="id")
-    #
-    #        os.remove(tmp_file)
+    def test_set_datatime_tz(self):
+        """Test setting the timezone infomation when reading."""
+        # check if tz is added to the datatime column
+        file = os.path.join("tests", "data", "positionfixes.csv")
+        pfs = ti.read_positionfixes_csv(file, sep=";", index_col="id")
+        assert pd.api.types.is_datetime64tz_dtype(pfs["tracked_at"])
+
+        # check if a timezone will be set without storing the timezone
+        date_format = "%Y-%m-%d %H:%M:%S"
+        tmp_file = os.path.join("tests", "data", "positionfixes_test_2.csv")
+        pfs.as_positionfixes.to_csv(tmp_file, sep=";", date_format=date_format)
+        pfs = ti.read_positionfixes_csv(tmp_file, sep=";", index_col="id", tz="utc")
+
+        assert pd.api.types.is_datetime64tz_dtype(pfs["tracked_at"])
+
+        # check if a warning is raised if 'tz' is not provided
+        with pytest.warns(UserWarning):
+            ti.read_positionfixes_csv(tmp_file, sep=";", index_col="id")
+
+        os.remove(tmp_file)
 
     def test_set_index_warning(self):
         """Test if a warning is raised when not parsing the index_col argument."""
@@ -93,11 +93,10 @@ class TestTriplegs:
         mod_tpls = ti.read_triplegs_csv(mod_file, sep=";", columns=column_mapping, index_col="id")
 
         assert mod_tpls.equals(tpls)
-        tpls["started_at"] = tpls["started_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
-        tpls["finished_at"] = tpls["finished_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
 
+        date_format = "%Y-%m-%dT%H:%M:%SZ"
         columns = ["user_id", "started_at", "finished_at", "geom"]
-        tpls.as_triplegs.to_csv(tmp_file, sep=";", columns=columns)
+        tpls.as_triplegs.to_csv(tmp_file, sep=";", columns=columns, date_format=date_format)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
@@ -118,11 +117,10 @@ class TestTriplegs:
         tpls = ti.read_triplegs_csv(file, sep=";", index_col="id")
         assert pd.api.types.is_datetime64tz_dtype(tpls["started_at"])
 
-        # check if a timezone will be set after manually deleting the timezone
-        tpls["started_at"] = tpls["started_at"].dt.tz_localize(None)
-        assert not pd.api.types.is_datetime64tz_dtype(tpls["started_at"])
+        # check if a timezone will be set without storing the timezone
         tmp_file = os.path.join("tests", "data", "triplegs_test_2.csv")
-        tpls.as_triplegs.to_csv(tmp_file, sep=";")
+        date_format = "%Y-%m-%d %H:%M:%S"
+        tpls.as_triplegs.to_csv(tmp_file, sep=";", date_format=date_format)
         tpls = ti.read_triplegs_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
         assert pd.api.types.is_datetime64tz_dtype(tpls["started_at"])
@@ -160,11 +158,10 @@ class TestStaypoints:
         sp = ti.read_staypoints_csv(orig_file, sep=";", tz="utc", index_col="id")
         mod_sp = ti.read_staypoints_csv(mod_file, columns={"User": "user_id"}, sep=";", index_col="id")
         assert mod_sp.equals(sp)
-        sp["started_at"] = sp["started_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
-        sp["finished_at"] = sp["finished_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
 
+        date_format = "%Y-%m-%dT%H:%M:%SZ"
         columns = ["user_id", "started_at", "finished_at", "elevation", "geom"]
-        sp.as_staypoints.to_csv(tmp_file, sep=";", columns=columns)
+        sp.as_staypoints.to_csv(tmp_file, sep=";", columns=columns, date_format=date_format)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
@@ -185,11 +182,10 @@ class TestStaypoints:
         sp = ti.read_staypoints_csv(file, sep=";", index_col="id")
         assert pd.api.types.is_datetime64tz_dtype(sp["started_at"])
 
-        # check if a timezone will be set after manually deleting the timezone
-        sp["started_at"] = sp["started_at"].dt.tz_localize(None)
-        assert not pd.api.types.is_datetime64tz_dtype(sp["started_at"])
+        # check if a timezone will be without storing the timezone
         tmp_file = os.path.join("tests", "data", "staypoints_test_2.csv")
-        sp.as_staypoints.to_csv(tmp_file, sep=";")
+        date_format = "%Y-%m-%d %H:%M:%S"
+        sp.as_staypoints.to_csv(tmp_file, sep=";", date_format=date_format)
         sp = ti.read_staypoints_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
         assert pd.api.types.is_datetime64tz_dtype(sp["started_at"])
@@ -214,6 +210,24 @@ class TestStaypoints:
         assert pfs.index.name == ind_name
         pfs = ti.read_staypoints_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
+
+
+@pytest.fixture
+def example_locations():
+    """Locations to load into the database."""
+    p1 = Point(8.5067847, 47.4)
+    p2 = Point(8.5067847, 47.5)
+    p3 = Point(8.5067847, 47.6)
+
+    list_dict = [
+        {"user_id": 0, "center": p1},
+        {"user_id": 0, "center": p2},
+        {"user_id": 1, "center": p3},
+    ]
+    locs = gpd.GeoDataFrame(data=list_dict, geometry="center", crs="EPSG:4326")
+    locs.index.name = "id"
+    locs.as_locations
+    return locs
 
 
 class TestLocations:
@@ -256,6 +270,15 @@ class TestLocations:
         pfs = ti.read_locations_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
+    def test_without_extent(self, example_locations):
+        """Test if without extent column data is correctly write/read."""
+        locs = example_locations
+        tmp_file = os.path.join("tests", "data", "locations_test.csv")
+        locs.as_locations.to_csv(tmp_file, sep=";")
+        locs_in = ti.read_locations_csv(tmp_file, sep=";", index_col="id", crs=4326)
+        assert_geodataframe_equal(locs, locs_in)
+        os.remove(tmp_file)
+
 
 class TestTrips:
     """Test for 'read_trips_csv' and 'write_trips_csv' functions."""
@@ -271,10 +294,9 @@ class TestTrips:
         mod_trips_wo_geom = pd.DataFrame(mod_trips.drop(columns=["geom"]))
         assert mod_trips_wo_geom.equals(trips)
 
-        trips["started_at"] = trips["started_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
-        trips["finished_at"] = trips["finished_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
+        date_format = "%Y-%m-%dT%H:%M:%SZ"
         columns = ["user_id", "started_at", "finished_at", "origin_staypoint_id", "destination_staypoint_id"]
-        trips.as_trips.to_csv(tmp_file, sep=";", columns=columns)
+        trips.as_trips.to_csv(tmp_file, sep=";", columns=columns, date_format=date_format)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
@@ -285,11 +307,10 @@ class TestTrips:
         trips = ti.read_trips_csv(file, sep=";", index_col="id")
         assert pd.api.types.is_datetime64tz_dtype(trips["started_at"])
 
-        # check if a timezone will be set after manually deleting the timezone
-        trips["started_at"] = trips["started_at"].dt.tz_localize(None)
-        assert not pd.api.types.is_datetime64tz_dtype(trips["started_at"])
+        # check if a timezone will be set without storing the timezone
         tmp_file = os.path.join("tests", "data", "trips_test_2.csv")
-        trips.as_trips.to_csv(tmp_file, sep=";")
+        date_format = "%Y-%m-%d %H:%M:%S"
+        trips.as_trips.to_csv(tmp_file, sep=";", date_format=date_format)
         trips = ti.read_trips_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
         assert pd.api.types.is_datetime64tz_dtype(trips["started_at"])
@@ -316,6 +337,25 @@ class TestTrips:
         assert gdf.index.name is None
 
 
+@pytest.fixture
+def example_tours():
+    """Tours to load into the database."""
+    t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+    t2 = pd.Timestamp("1971-01-01 05:00:00", tz="utc")
+    t3 = pd.Timestamp("1971-01-02 07:00:00", tz="utc")
+    h = pd.Timedelta(hours=1)
+
+    list_dict = [
+        {"user_id": 0, "started_at": t1, "finished_at": t1 + h, "trips": [0, 1, 2]},
+        {"user_id": 0, "started_at": t2, "finished_at": t2 + h, "trips": [2, 3, 4]},
+        {"user_id": 1, "started_at": t3, "finished_at": t3 + h, "trips": [4, 5, 6]},
+    ]
+    tours = pd.DataFrame(data=list_dict)
+    tours.index.name = "id"
+    tours.as_tours
+    return tours
+
+
 class TestTours:
     """Test for 'read_tours_csv' and 'write_tours_csv' functions."""
 
@@ -329,6 +369,14 @@ class TestTours:
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
+    def test_to_from_csv(self, example_tours):
+        """Test writing then reading functionality."""
+        tmp_file = os.path.join("tests", "data", "tours_test.csv")
+        example_tours.as_tours.to_csv(tmp_file)
+        read_tours = ti.read_tours_csv(tmp_file, index_col="id")
+        os.remove(tmp_file)
+        assert_frame_equal(example_tours, read_tours)
+
     def test_to_csv_accessor(self):
         """Test basic reading and writing functions."""
         orig_file = os.path.join("tests", "data", "geolife_long", "tours.csv")
@@ -338,7 +386,3 @@ class TestTours:
         tours.as_tours.to_csv(tmp_file)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
-
-    def test_from_to_postgis(self):
-        # TODO Implement some tests for reading and writing tours.
-        pass

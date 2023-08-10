@@ -21,7 +21,7 @@ class TestStaypoints:
     def test_accessor_columns(self, testdata_sp):
         """Test if the as_staypoints accessor checks the required column for staypoints."""
         sp = testdata_sp.copy()
-        assert sp.as_staypoints
+        sp.as_staypoints
 
         with pytest.raises(AttributeError, match="To process a DataFrame as a collection of staypoints"):
             sp.drop(["user_id"], axis=1).as_staypoints

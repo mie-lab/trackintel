@@ -15,6 +15,7 @@ def generate_locations(
     num_samples=1,
     distance_metric="haversine",
     agg_level="user",
+    activities_only=False,
     print_progress=False,
     n_jobs=1,
 ):
@@ -47,6 +48,10 @@ def generate_locations(
         - 'user'      : locations are generated independently per-user.
         - 'dataset'   : shared locations are generated for all users.
 
+    activities_only: bool, default False (requires "activity" column)
+        Flag to set if locations should be generated only from staypoints on which the value for "activity" is True.
+        Useful if activites represent more significant places.
+
     print_progress : bool, default False
         If print_progress is True, the progress bar is displayed
 
@@ -75,6 +80,12 @@ def generate_locations(
 
     # initialize the return GeoDataFrames
     sp = staypoints.copy()
+    non_activities = None
+    if activities_only:
+        if "activity" not in sp.columns:
+            raise KeyError('staypoints must contain column "activity" if "activities_only" flag is set.')
+        non_activities = sp[~sp["activity"]]
+        sp = sp[sp["activity"]]
     sp = sp.sort_values(["user_id", "started_at"])
     geo_col = sp.geometry.name
 
@@ -165,6 +176,9 @@ def generate_locations(
 
         # staypoints not linked to a location receive np.nan in 'location_id'
         sp.loc[sp["location_id"] == -1, "location_id"] = np.nan
+
+    # merge non_activities back if "activities_only" flag is set
+    sp = pd.concat([sp, non_activities])
 
     if len(locs) > 0:
         locs.as_locations  # empty location is not valid

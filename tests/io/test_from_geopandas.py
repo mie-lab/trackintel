@@ -206,7 +206,7 @@ def example_locations():
     extent = Polygon(coords)
     locs["extent"] = extent  # broadcasting
     locs["extent"] = gpd.GeoSeries(locs["extent"])  # dtype
-    assert locs.as_locations
+    locs.as_locations
     return locs
 
 
@@ -264,7 +264,7 @@ def example_trips():
         d["finished_at"] = d["started_at"] + h
     trips = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:2056")
     trips.index.name = "id"
-    assert trips.as_trips
+    trips.as_trips
     return trips
 
 

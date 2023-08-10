@@ -7,6 +7,7 @@ from shapely import wkb
 import pandas as pd
 from geoalchemy2 import Geometry
 from sqlalchemy import create_engine
+from sqlalchemy.types import JSON
 
 import trackintel as ti
 
@@ -50,7 +51,7 @@ def read_positionfixes_postgis(
     parse_dates=None,
     params=None,
     chunksize=None,
-    **kwargs
+    read_gpd_kws=None,
 ):
     """Reads positionfixes from a PostGIS database.
 
@@ -92,7 +93,7 @@ def read_positionfixes_postgis(
         If specified, return an iterator where chunksize is the number
         of rows to include in each chunk.
 
-    **kwargs
+    read_gpd_kws : dict, default None
         Further keyword arguments as available in trackintels trackintel.io.read_positionfixes_gpd().
         Especially useful to rename column names from the SQL table to trackintel conform column names.
         See second example how to use it in code.
@@ -106,7 +107,8 @@ def read_positionfixes_postgis(
     --------
     >>> pfs = ti.io.read_positionfixes_postgis("SELECT * FROM positionfixes", con, geom_col="geom")
     >>> pfs = ti.io.read_positionfixes_postgis("SELECT * FROM positionfixes", con, geom_col="geom",
-    ...                                        index_col="id", user_id="USER", tracked_at="time")
+    ...                                        index_col="id",
+                                               read_gpd_kws={"user_id"="USER", "tracked_at": "time"})
     """
     pfs = gpd.GeoDataFrame.from_postgis(
         sql,
@@ -119,7 +121,7 @@ def read_positionfixes_postgis(
         params=params,
         chunksize=chunksize,
     )
-    return ti.io.read_positionfixes_gpd(pfs, **kwargs)
+    return ti.io.read_positionfixes_gpd(pfs, **(read_gpd_kws or {}))
 
 
 @_handle_con_string
@@ -163,7 +165,7 @@ def read_triplegs_postgis(
     parse_dates=None,
     params=None,
     chunksize=None,
-    **kwargs
+    read_gpd_kws=None,
 ):
     """Reads triplegs from a PostGIS database.
 
@@ -205,7 +207,7 @@ def read_triplegs_postgis(
         If specified, return an iterator where chunksize is the number
         of rows to include in each chunk.
 
-    **kwargs
+    read_gpd_kws : dict, default None
         Further keyword arguments as available in trackintels trackintel.io.read_triplegs_gpd().
         Especially useful to rename column names from the SQL table to trackintel conform column names.
         See second example how to use it in code.
@@ -219,7 +221,7 @@ def read_triplegs_postgis(
     --------
     >>> tpls = ti.io.read_triplegs_postgis("SELECT * FROM triplegs", con, geom_col="geom")
     >>> tpls = ti.io.read_triplegs_postgis("SELECT * FROM triplegs", con, geom_col="geom", index_col="id",
-    ...                                    started_at="start_time", finished_at="end_time", user_id="USER")
+    ...                                    read_gpd_kws={"user_id": "USER"})
     """
     tpls = gpd.GeoDataFrame.from_postgis(
         sql,
@@ -232,7 +234,7 @@ def read_triplegs_postgis(
         params=params,
         chunksize=chunksize,
     )
-    return ti.io.read_triplegs_gpd(tpls, **kwargs)
+    return ti.io.read_triplegs_gpd(tpls, **(read_gpd_kws or {}))
 
 
 @_handle_con_string
@@ -262,7 +264,7 @@ def read_staypoints_postgis(
     parse_dates=None,
     params=None,
     chunksize=None,
-    **kwargs
+    read_gpd_kws=None,
 ):
     """Read staypoints from a PostGIS database.
 
@@ -304,7 +306,7 @@ def read_staypoints_postgis(
         If specified, return an iterator where chunksize is the number
         of rows to include in each chunk.
 
-    **kwargs
+    read_gpd_kws : dict, default None
         Further keyword arguments as available in trackintels trackintel.io.read_staypoints_gpd().
         Especially useful to rename column names from the SQL table to trackintel conform column names.
         See second example how to use it in code.
@@ -319,7 +321,7 @@ def read_staypoints_postgis(
     --------
     >>> sp = ti.io.read_staypoints_postgis("SELECT * FROM staypoints", con, geom_col="geom")
     >>> sp = ti.io.read_staypoints_postgis("SELECT * FROM staypoints", con, geom_col="geom", index_col="id",
-    ...                                      started_at="start_time", finished_at="end_time", user_id="USER")
+    ...                                    read_gpd_kws={"user_id": "USER"})
     """
     sp = gpd.GeoDataFrame.from_postgis(
         sql,
@@ -333,7 +335,7 @@ def read_staypoints_postgis(
         chunksize=chunksize,
     )
 
-    return ti.io.read_staypoints_gpd(sp, **kwargs)
+    return ti.io.read_staypoints_gpd(sp, **(read_gpd_kws or {}))
 
 
 @_handle_con_string
@@ -363,7 +365,8 @@ def read_locations_postgis(
     parse_dates=None,
     params=None,
     chunksize=None,
-    **kwargs
+    extent=None,
+    read_gpd_kws=None,
 ):
     """Reads locations from a PostGIS database.
 
@@ -405,7 +408,10 @@ def read_locations_postgis(
         If specified, return an iterator where chunksize is the number
         of rows to include in each chunk.
 
-    **kwargs
+    extent : string, default None
+        If specified read the extent column as geometry column.
+
+    read_gpd_kws : dict, default None
         Further keyword arguments as available in trackintels trackintel.io.read_locations_gpd().
         Especially useful to rename column names from the SQL table to trackintel conform column names.
         See second example how to use it in code.
@@ -419,7 +425,7 @@ def read_locations_postgis(
     --------
     >>> locs = ti.io.read_locations_postgis("SELECT * FROM locations", con, center="center")
     >>> locs = ti.io.read_locations_postgis("SELECT * FROM locations", con, center="geom", index_col="id",
-    ...                                     user_id="USER", extent="extent")
+    ...                                     extent="extent, read_gpd_kws={"user_id": "USER"})
     )
     """
     locs = gpd.GeoDataFrame.from_postgis(
@@ -433,10 +439,10 @@ def read_locations_postgis(
         params=params,
         chunksize=chunksize,
     )
-    if "extent" in kwargs:
-        locs[kwargs["extent"]] = gpd.GeoSeries.from_wkb(locs[kwargs["extent"]])
+    if extent is not None:
+        locs[extent] = gpd.GeoSeries.from_wkb(locs[extent])
 
-    return ti.io.read_locations_gpd(locs, center=center, **kwargs)
+    return ti.io.read_locations_gpd(locs, center=center, **(read_gpd_kws or {}))
 
 
 @_handle_con_string
@@ -480,7 +486,7 @@ def read_trips_postgis(
     parse_dates=None,
     params=None,
     chunksize=None,
-    **kwargs
+    read_gpd_kws=None,
 ):
     """Read trips from a PostGIS database.
 
@@ -522,7 +528,7 @@ def read_trips_postgis(
         If specified, return an iterator where chunksize is the number
         of rows to include in each chunk.
 
-    **kwargs
+    read_gpd_kws : dict, default None
         Further keyword arguments as available in trackintels trackintel.io.read_trips_gpd().
         Especially useful to rename column names from the SQL table to trackintel conform column names.
         See second example how to use it in code.
@@ -537,8 +543,8 @@ def read_trips_postgis(
     --------
     >>> trips = ti.io.read_trips_postgis("SELECT * FROM trips", con)
     >>> trips = ti.io.read_trips_postgis("SELECT * FROM trips", con, geom_col="geom", index_col="id",
-    ...                                  started_at="start_time", finished_at="end_time", user_id="USER",
-    ...                                  origin_staypoint_id="ORIGIN", destination_staypoint_id="DEST")
+    ...                                  read_gpd_kws={"user_id": "USER", "origin_staypoint_id": "ORIGIN",
+                                                       "destination_staypoint_id": "DEST"})
 
     """
     if geom_col is None:
@@ -564,13 +570,16 @@ def read_trips_postgis(
             chunksize=chunksize,
         )
 
-    return ti.io.read_trips_gpd(trips, **kwargs)
+    return ti.io.read_trips_gpd(trips, **(read_gpd_kws or {}))
 
 
 @_handle_con_string
 def write_trips_postgis(
     trips, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
+    if "trips" in trips.columns:
+        dtype = dtype or {}
+        dtype.setdefault("trips", JSON)
     if isinstance(trips, gpd.GeoDataFrame):
         trips.to_postgis(
             name,
@@ -606,7 +615,7 @@ def read_tours_postgis(
     parse_dates=None,
     params=None,
     chunksize=None,
-    **kwargs
+    read_gpd_kws=None,
 ):
     """Read tours from a PostGIS database.
 
@@ -648,7 +657,7 @@ def read_tours_postgis(
         If specified, return an iterator where chunksize is the number
         of rows to include in each chunk.
 
-    **kwargs
+    read_gpd_kws : dict, default None
         Further keyword arguments as available in trackintels trackintel.io.read_tours_gpd().
         Especially useful to rename column names from the SQL table to trackintel conform column names.
         See second example how to use it in code.
@@ -661,8 +670,8 @@ def read_tours_postgis(
     Examples
     --------
     >>> tours = ti.io.read_tours_postgis("SELECT * FROM tours", con)
-    >>> tours = ti.io.read_tours_postgis("SELECT * FROM tours", con, index_col="id", started_at="start_time",
-    ...                                  finished_at="end_time", user_id="USER")
+    >>> tours = ti.io.read_tours_postgis("SELECT * FROM tours", con, index_col="id",
+                                         read_gpd_kws={"user_id": "USER"})
     """
     if geom_col is None:
         tours = pd.read_sql(
@@ -687,7 +696,7 @@ def read_tours_postgis(
             chunksize=chunksize,
         )
 
-    return ti.io.read_tours_gpd(tours, **kwargs)
+    return ti.io.read_tours_gpd(tours, **(read_gpd_kws or {}))
 
 
 @_handle_con_string

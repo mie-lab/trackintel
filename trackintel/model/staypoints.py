@@ -4,13 +4,13 @@ from trackintel.analysis.labelling import create_activity_flag
 from trackintel.analysis.tracking_quality import temporal_tracking_quality
 from trackintel.io.file import write_staypoints_csv
 from trackintel.io.postgis import write_staypoints_postgis
-from trackintel.model.util import _copy_docstring
+from trackintel.model.util import _copy_docstring, _register_trackintel_accessor
 from trackintel.preprocessing.filter import spatial_filter
 from trackintel.preprocessing.staypoints import generate_locations, merge_staypoints
 from trackintel.visualization.staypoints import plot_staypoints
 
 
-@pd.api.extensions.register_dataframe_accessor("as_staypoints")
+@_register_trackintel_accessor("as_staypoints")
 class StaypointsAccessor(object):
     """A pandas accessor to treat (Geo)DataFrames as collections of `Staypoints`.
 
