@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from geopandas import GeoDataFrame
 import warnings
 from trackintel.visualization.osm import plot_osm_streets
 from trackintel.visualization.util import regular_figure, save_fig
@@ -45,13 +46,8 @@ def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False, axis=No
         south = positionfixes.geometry.y.min()
         plot_osm_streets(north, south, east, west, ax)
 
-    # temporary change to maintain old behavior
-    # plot_positionfixes should be changed so that it handles the same
-    # args as GDF.plot -> subtyping
-    if isinstance(positionfixes, ti.model.positionfixes.PositionfixesAccessor):
-        super(ti.model.positionfixes.PositionfixesAccessor, positionfixes).plot(ax=ax, markersize=0.5, zorder=2)
-    else:
-        positionfixes.plot(ax=ax, markersize=0.5, zorder=2)
+    # GeoDataFrame.plot is a class and not a method, therefore we have to initialize it
+    (GeoDataFrame.plot(positionfixes))(ax=ax, markersize=0.5, zorder=2)
     ax.set_aspect("equal", adjustable="box")
 
     if out_filename is not None:

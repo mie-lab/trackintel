@@ -128,30 +128,7 @@ def read_positionfixes_postgis(
 def write_positionfixes_postgis(
     positionfixes, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
-    # so far we allow positionfixes to be GeoDataFrames and not Positionfixes
-    # thus this if else check. (If we disallow this then this is not needed anymore.)
-    if type(positionfixes) == gpd.GeoDataFrame:
-        positionfixes.to_postgis(
-            name,
-            con,
-            schema=schema,
-            if_exists=if_exists,
-            index=index,
-            index_label=index_label,
-            chunksize=chunksize,
-            dtype=dtype,
-        )
-    else:
-        super(positionfixes.__class__, positionfixes).to_postgis(
-            name,
-            con,
-            schema=schema,
-            if_exists=if_exists,
-            index=index,
-            index_label=index_label,
-            chunksize=chunksize,
-            dtype=dtype,
-        )
+    gpd.GeoDataFrame.to_postgis(positionfixes, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
 
 @_handle_con_string
