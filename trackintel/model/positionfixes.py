@@ -14,6 +14,8 @@ from trackintel.model.util import (
     _register_trackintel_accessor,
 )
 
+_required_columns = ["user_id", "tracked_at"]
+
 
 @_register_trackintel_accessor("as_positionfixes")
 class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
@@ -43,46 +45,40 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
     >>> df.as_positionfixes.generate_staypoints()
     """
 
-    required_columns = ["user_id", "tracked_at"]
-
-    def __init__(self, *args, validate=True, **kwargs):
+    def __init__(self, *args, validate_geometry=True, **kwargs):
         # could be moved to super class
         # validate kwarg is necessary as the object is not fully initialised if we call it from _constructor
         # (geometry-link is missing). thus we need a way to stop validating too early.
-        # maybe we have to think if and how we want to expose this kwarg to the outside.
         super().__init__(*args, **kwargs)
-        if validate:
-            self._validate(self)
+        self._validate(self, validate_geometry=validate_geometry)
 
-    # create circular reference directly
-    # this avoids calling init twice via accessor
+    # create circular reference directly -> avoid second call of init via accessor
     @property
     def as_positionfixes(self):
         return self
 
     @staticmethod
-    def _validate(obj):
-        assert obj.shape[0] > 0, "Geodataframe is empty with shape: {}".format(obj.shape)
+    def _validate(obj, validate_geometry=True):
+        assert obj.shape[0] > 0, f"Geodataframe is empty with shape: {obj.shape}"
         # check columns
-        if any([c not in obj.columns for c in Positionfixes.required_columns]):
+        if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
                 "To process a DataFrame as a collection of positionfixes, "
-                + "it must have the properties [%s], but it has [%s]."
-                % (", ".join(Positionfixes.required_columns), ", ".join(obj.columns))
+                f"it must have the columns {_required_columns}, but it has [{', '.join(obj.columns)}]."
             )
-
-        # check geometry
-        assert obj.geometry.is_valid.all(), (
-            "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
-        )
-
-        if obj.geometry.iloc[0].geom_type != "Point":
-            raise AttributeError("The geometry must be a Point (only first checked).")
-
         # check timestamp dtypes
         assert pd.api.types.is_datetime64tz_dtype(
             obj["tracked_at"]
-        ), "dtype of tracked_at is {} but has to be datetime64 and timezone aware".format(obj["tracked_at"].dtype)
+        ), f"dtype of tracked_at is {obj['tracked_at'].dtype} but has to be datetime64 and timezone aware"
+
+        if validate_geometry:
+            # check geometry
+            assert obj.geometry.is_valid.all(), (
+                "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
+            )
+
+            if obj.geometry.iloc[0].geom_type != "Point":
+                raise AttributeError("The geometry must be a Point (only first checked).")
 
     @property
     def center(self):

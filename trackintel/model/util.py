@@ -117,10 +117,9 @@ def _wrapped_gdf_method(func):
     @wraps(func)  # copy all metadata
     def wrapper(self, *args, **kwargs):
         result = func(self, *args, **kwargs)
-        if not isinstance(result, GeoDataFrame) or not self._has_required_columns(result):
+        if not isinstance(result, GeoDataFrame) or not self._validate(result):
             return result
-        # is GeoDataFrame and has required columns -> is TrackintelClass
-        # as we don't have mutable attributes, we can just change the class field
+        # as geopandas only change the __class__ attribute, we can just change it back
         result.__class__ = self.__class__
         return result
 
@@ -129,6 +128,9 @@ def _wrapped_gdf_method(func):
 
 class TrackintelGeoDataFrame(GeoDataFrame):
     """Helper class to subtype GeoDataFrame correctly."""
+
+    def _validate(self, validate_geometry=True):
+        raise NotImplementedError
 
     # Following methods manually set self.__class__ fix to GeoDataFrame.
     # Thus to properly subtype, we need to downcast them with the _wrapped_gdf_method decorator.
@@ -149,12 +151,13 @@ class TrackintelGeoDataFrame(GeoDataFrame):
         """Interface to subtype pandas properly"""
         super_cons = super()._constructor
         class_cons = self.__class__
-        check = self._has_required_columns
+        check = partial(self._validate, validate_geometry=False)
 
         def _constructor_with_fallback(*args, **kwargs):
             result = super_cons(*args, **kwargs)
             if isinstance(result, GeoDataFrame) and check(result):
-                return class_cons(result, validate=False)
+                # cannot validate_geometry as geometry column is maybe not set
+                return class_cons(result, validate_geometry=False)
             return result
 
         return _constructor_with_fallback
@@ -166,16 +169,8 @@ class TrackintelBase(object):
     # so far we don't have a lot of methods here
     # but a lot of IO code can be moved here.
 
-    def _validate(self):
+    def _validate(self, validate_geometry=True):
         raise NotImplementedError
-
-    def _has_required_columns(self, obj):  # maybe we can move this out to function that we'll call
-        for col in self.required_columns:
-            if col not in obj.columns:
-                return False
-        return True
-
-    # maybe do some non-costly checks as well -> e.g. dtype
 
 
 class NonCachedAccessor:
