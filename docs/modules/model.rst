@@ -56,10 +56,10 @@ Available Accessors
 
 The following accessors are available within *trackintel*.
 
-PositionfixesAccessor
+Positionfixes
 ---------------------
 
-.. autoclass:: trackintel.model.positionfixes.PositionfixesAccessor
+.. autoclass:: trackintel.model.positionfixes.Positionfixes
 	:members:
 
 StaypointsAccessor

@@ -10,6 +10,7 @@ from trackintel.io.file import read_locations_csv
 from trackintel.io.file import read_trips_csv
 from trackintel.io.file import read_tours_csv
 
-#
+from trackintel.model.positionfixes import Positionfixes
+
 from trackintel.__version__ import __version__
 from .core import print_version

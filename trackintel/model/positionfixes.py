@@ -16,7 +16,7 @@ from trackintel.model.util import (
 
 
 @_register_trackintel_accessor("as_positionfixes")
-class PositionfixesAccessor(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
+class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
     """A pandas accessor to treat (Geo)DataFrames as collections of `Positionfixes`.
 
     This will define certain methods and accessors, as well as make sure that the DataFrame
@@ -64,11 +64,11 @@ class PositionfixesAccessor(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataF
     def _validate(obj):
         assert obj.shape[0] > 0, "Geodataframe is empty with shape: {}".format(obj.shape)
         # check columns
-        if any([c not in obj.columns for c in PositionfixesAccessor.required_columns]):
+        if any([c not in obj.columns for c in Positionfixes.required_columns]):
             raise AttributeError(
                 "To process a DataFrame as a collection of positionfixes, "
                 + "it must have the properties [%s], but it has [%s]."
-                % (", ".join(PositionfixesAccessor.required_columns), ", ".join(obj.columns))
+                % (", ".join(Positionfixes.required_columns), ", ".join(obj.columns))
             )
 
         # check geometry

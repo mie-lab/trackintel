@@ -15,7 +15,7 @@ def testdata_geolife():
 
 
 class TestPositionfixes:
-    """Tests for the PositionfixesAccessor."""
+    """Tests for the Positionfixes class."""
 
     def test_accessor_column(self, testdata_geolife):
         """Test if the as_positionfixes accessor checks the required column for positionfixes."""
