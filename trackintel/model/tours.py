@@ -1,8 +1,9 @@
 import pandas as pd
 import trackintel as ti
+from trackintel.model.util import _register_trackintel_accessor
 
 
-@pd.api.extensions.register_dataframe_accessor("as_tours")
+@_register_trackintel_accessor("as_tours")
 class ToursAccessor(object):
     """A pandas accessor to treat DataFrames as collections of `Tours`.
 

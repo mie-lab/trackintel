@@ -1,14 +1,13 @@
 import pandas as pd
 import trackintel as ti
-import trackintel.io
 from trackintel.io.file import write_locations_csv
 from trackintel.io.postgis import write_locations_postgis
-from trackintel.model.util import _copy_docstring
+from trackintel.model.util import _copy_docstring, _register_trackintel_accessor
 from trackintel.preprocessing.filter import spatial_filter
 from trackintel.visualization.locations import plot_locations
 
 
-@pd.api.extensions.register_dataframe_accessor("as_locations")
+@_register_trackintel_accessor("as_locations")
 class LocationsAccessor(object):
     """A pandas accessor to treat (Geo)DataFrames as collections of locations.
 

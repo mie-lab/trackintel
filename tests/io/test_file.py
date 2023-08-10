@@ -25,10 +25,10 @@ class TestPositionfixes:
         column_mapping = {"lat": "latitude", "lon": "longitude", "time": "tracked_at"}
         mod_pfs = ti.read_positionfixes_csv(mod_file, sep=";", index_col="id", columns=column_mapping)
         assert mod_pfs.equals(pfs)
-        pfs["tracked_at"] = pfs["tracked_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
 
+        date_format = "%Y-%m-%dT%H:%M:%SZ"
         columns = ["user_id", "tracked_at", "latitude", "longitude", "elevation", "accuracy"]
-        pfs.as_positionfixes.to_csv(tmp_file, sep=";", columns=columns)
+        pfs.as_positionfixes.to_csv(tmp_file, sep=";", columns=columns, date_format=date_format)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
@@ -49,11 +49,10 @@ class TestPositionfixes:
         pfs = ti.read_positionfixes_csv(file, sep=";", index_col="id")
         assert pd.api.types.is_datetime64tz_dtype(pfs["tracked_at"])
 
-        # check if a timezone will be set after manually deleting the timezone
-        pfs["tracked_at"] = pfs["tracked_at"].dt.tz_localize(None)
-        assert not pd.api.types.is_datetime64tz_dtype(pfs["tracked_at"])
+        # check if a timezone will be set without storing the timezone
+        date_format = "%Y-%m-%d %H:%M:%S"
         tmp_file = os.path.join("tests", "data", "positionfixes_test_2.csv")
-        pfs.as_positionfixes.to_csv(tmp_file, sep=";")
+        pfs.as_positionfixes.to_csv(tmp_file, sep=";", date_format=date_format)
         pfs = ti.read_positionfixes_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
         assert pd.api.types.is_datetime64tz_dtype(pfs["tracked_at"])
@@ -94,11 +93,10 @@ class TestTriplegs:
         mod_tpls = ti.read_triplegs_csv(mod_file, sep=";", columns=column_mapping, index_col="id")
 
         assert mod_tpls.equals(tpls)
-        tpls["started_at"] = tpls["started_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
-        tpls["finished_at"] = tpls["finished_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
 
+        date_format = "%Y-%m-%dT%H:%M:%SZ"
         columns = ["user_id", "started_at", "finished_at", "geom"]
-        tpls.as_triplegs.to_csv(tmp_file, sep=";", columns=columns)
+        tpls.as_triplegs.to_csv(tmp_file, sep=";", columns=columns, date_format=date_format)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
@@ -119,11 +117,10 @@ class TestTriplegs:
         tpls = ti.read_triplegs_csv(file, sep=";", index_col="id")
         assert pd.api.types.is_datetime64tz_dtype(tpls["started_at"])
 
-        # check if a timezone will be set after manually deleting the timezone
-        tpls["started_at"] = tpls["started_at"].dt.tz_localize(None)
-        assert not pd.api.types.is_datetime64tz_dtype(tpls["started_at"])
+        # check if a timezone will be set without storing the timezone
         tmp_file = os.path.join("tests", "data", "triplegs_test_2.csv")
-        tpls.as_triplegs.to_csv(tmp_file, sep=";")
+        date_format = "%Y-%m-%d %H:%M:%S"
+        tpls.as_triplegs.to_csv(tmp_file, sep=";", date_format=date_format)
         tpls = ti.read_triplegs_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
         assert pd.api.types.is_datetime64tz_dtype(tpls["started_at"])
@@ -161,11 +158,10 @@ class TestStaypoints:
         sp = ti.read_staypoints_csv(orig_file, sep=";", tz="utc", index_col="id")
         mod_sp = ti.read_staypoints_csv(mod_file, columns={"User": "user_id"}, sep=";", index_col="id")
         assert mod_sp.equals(sp)
-        sp["started_at"] = sp["started_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
-        sp["finished_at"] = sp["finished_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
 
+        date_format = "%Y-%m-%dT%H:%M:%SZ"
         columns = ["user_id", "started_at", "finished_at", "elevation", "geom"]
-        sp.as_staypoints.to_csv(tmp_file, sep=";", columns=columns)
+        sp.as_staypoints.to_csv(tmp_file, sep=";", columns=columns, date_format=date_format)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
@@ -186,11 +182,10 @@ class TestStaypoints:
         sp = ti.read_staypoints_csv(file, sep=";", index_col="id")
         assert pd.api.types.is_datetime64tz_dtype(sp["started_at"])
 
-        # check if a timezone will be set after manually deleting the timezone
-        sp["started_at"] = sp["started_at"].dt.tz_localize(None)
-        assert not pd.api.types.is_datetime64tz_dtype(sp["started_at"])
+        # check if a timezone will be without storing the timezone
         tmp_file = os.path.join("tests", "data", "staypoints_test_2.csv")
-        sp.as_staypoints.to_csv(tmp_file, sep=";")
+        date_format = "%Y-%m-%d %H:%M:%S"
+        sp.as_staypoints.to_csv(tmp_file, sep=";", date_format=date_format)
         sp = ti.read_staypoints_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
         assert pd.api.types.is_datetime64tz_dtype(sp["started_at"])
@@ -299,10 +294,9 @@ class TestTrips:
         mod_trips_wo_geom = pd.DataFrame(mod_trips.drop(columns=["geom"]))
         assert mod_trips_wo_geom.equals(trips)
 
-        trips["started_at"] = trips["started_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
-        trips["finished_at"] = trips["finished_at"].apply(lambda d: d.isoformat().replace("+00:00", "Z"))
+        date_format = "%Y-%m-%dT%H:%M:%SZ"
         columns = ["user_id", "started_at", "finished_at", "origin_staypoint_id", "destination_staypoint_id"]
-        trips.as_trips.to_csv(tmp_file, sep=";", columns=columns)
+        trips.as_trips.to_csv(tmp_file, sep=";", columns=columns, date_format=date_format)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
 
@@ -313,11 +307,10 @@ class TestTrips:
         trips = ti.read_trips_csv(file, sep=";", index_col="id")
         assert pd.api.types.is_datetime64tz_dtype(trips["started_at"])
 
-        # check if a timezone will be set after manually deleting the timezone
-        trips["started_at"] = trips["started_at"].dt.tz_localize(None)
-        assert not pd.api.types.is_datetime64tz_dtype(trips["started_at"])
+        # check if a timezone will be set without storing the timezone
         tmp_file = os.path.join("tests", "data", "trips_test_2.csv")
-        trips.as_trips.to_csv(tmp_file, sep=";")
+        date_format = "%Y-%m-%d %H:%M:%S"
+        trips.as_trips.to_csv(tmp_file, sep=";", date_format=date_format)
         trips = ti.read_trips_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
         assert pd.api.types.is_datetime64tz_dtype(trips["started_at"])

@@ -6,10 +6,10 @@ from trackintel.io.postgis import write_positionfixes_postgis
 from trackintel.model.util import _copy_docstring
 from trackintel.preprocessing.positionfixes import generate_staypoints, generate_triplegs
 from trackintel.visualization.positionfixes import plot_positionfixes
-from trackintel.model.util import get_speed_positionfixes
+from trackintel.model.util import get_speed_positionfixes, _register_trackintel_accessor
 
 
-@pd.api.extensions.register_dataframe_accessor("as_positionfixes")
+@_register_trackintel_accessor("as_positionfixes")
 class PositionfixesAccessor(object):
     """A pandas accessor to treat (Geo)DataFrames as collections of `Positionfixes`.
 
