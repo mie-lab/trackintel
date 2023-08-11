@@ -310,7 +310,7 @@ class TestTrackintelGeoDataFrame:
     def test_merge(self, example_positionfixes):
         """Test if merge maintains class"""
         a = self.A(example_positionfixes)
-        b = pd.merge(a, a, on="user_id", suffixes=("", "_other"))
+        b = a.merge(a, on="user_id", suffixes=("", "_other"))
         assert type(b) == self.A
 
     def test_constructor_dataframe_fallback(self, example_positionfixes):
