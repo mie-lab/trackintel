@@ -5,6 +5,7 @@ import numpy as np
 from shapely.geometry import LineString
 
 import trackintel as ti
+from trackintel import Positionfixes
 
 
 @pytest.fixture
@@ -55,3 +56,34 @@ class TestPositionfixes:
         accessor_result = pfs.as_positionfixes.calculate_distance_matrix(dist_metric="haversine", n_jobs=1)
         function_result = ti.geogr.distances.calculate_distance_matrix(pfs, dist_metric="haversine", n_jobs=1)
         assert np.allclose(accessor_result, function_result)
+
+    def test_check_suceeding(self, testdata_geolife):
+        """Test if check returns True on valid pfs"""
+        assert Positionfixes._check(testdata_geolife)
+
+    def test_check_missing_columns(self, testdata_geolife):
+        """Test if check returns False if column is missing"""
+        assert not Positionfixes._check(testdata_geolife.drop(columns="user_id"))
+
+    def test_check_empty_df(self, testdata_geolife):
+        """Test if check returns False if DataFrame is empty"""
+        assert not Positionfixes._check(testdata_geolife.drop(testdata_geolife.index))
+
+    def test_check_no_tz(self, testdata_geolife):
+        """Test if check returns False if tracked at column has no tz"""
+        testdata_geolife["tracked_at"] = testdata_geolife["tracked_at"].dt.tz_localize(None)
+        assert not Positionfixes._check(testdata_geolife)
+
+    def test_check_false_geometry_type(self, testdata_geolife):
+        """Test if check returns False if geometry type is wrong"""
+        testdata_geolife["geom"] = LineString(
+            [(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)]
+        )
+        assert not Positionfixes._check(testdata_geolife)
+
+    def test_check_ignore_false_geometry_type(self, testdata_geolife):
+        """Test if check returns True if geometry type is wrong but validate_geometry is set to False"""
+        testdata_geolife["geom"] = LineString(
+            [(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)]
+        )
+        assert Positionfixes._check(testdata_geolife, validate_geometry=False)

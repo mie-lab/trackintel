@@ -117,7 +117,7 @@ def _wrapped_gdf_method(func):
     @wraps(func)  # copy all metadata
     def wrapper(self, *args, **kwargs):
         result = func(self, *args, **kwargs)
-        if not isinstance(result, GeoDataFrame) or not self._validate(result):
+        if not isinstance(result, GeoDataFrame) or not self._check(result, validate_geometry=False):
             return result
         # as geopandas only change the __class__ attribute, we can just change it back
         result.__class__ = self.__class__
@@ -129,7 +129,8 @@ def _wrapped_gdf_method(func):
 class TrackintelGeoDataFrame(GeoDataFrame):
     """Helper class to subtype GeoDataFrame correctly."""
 
-    def _validate(self, validate_geometry=True):
+    @staticmethod
+    def _check(self, validate_geometry=True):
         raise NotImplementedError
 
     # Following methods manually set self.__class__ fix to GeoDataFrame.
@@ -149,14 +150,15 @@ class TrackintelGeoDataFrame(GeoDataFrame):
     @property
     def _constructor(self):
         """Interface to subtype pandas properly"""
+        # we loose access to self in inner function -> write objects to local variables
         super_cons = super()._constructor
         class_cons = self.__class__
-        check = partial(self._validate, validate_geometry=False)
+        check = self._check
 
         def _constructor_with_fallback(*args, **kwargs):
             result = super_cons(*args, **kwargs)
-            if isinstance(result, GeoDataFrame) and check(result):
-                # cannot validate_geometry as geometry column is maybe not set
+            # cannot validate_geometry as geometry column is maybe not set
+            if isinstance(result, GeoDataFrame) and check(result, validate_geometry=False):
                 return class_cons(result, validate_geometry=False)
             return result
 
@@ -169,7 +171,8 @@ class TrackintelBase(object):
     # so far we don't have a lot of methods here
     # but a lot of IO code can be moved here.
 
-    def _validate(self, validate_geometry=True):
+    @staticmethod
+    def _check(self, validate_geometry=True):
         raise NotImplementedError
 
 

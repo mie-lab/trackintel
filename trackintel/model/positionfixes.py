@@ -71,14 +71,27 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
             obj["tracked_at"]
         ), f"dtype of tracked_at is {obj['tracked_at'].dtype} but has to be datetime64 and timezone aware"
 
+        # check geometry
         if validate_geometry:
-            # check geometry
             assert obj.geometry.is_valid.all(), (
                 "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
             )
 
             if obj.geometry.iloc[0].geom_type != "Point":
                 raise AttributeError("The geometry must be a Point (only first checked).")
+
+    @staticmethod
+    def _check(obj, validate_geometry=True):
+        """Check does the same as _validate but returns bool instead of potentially raising an error."""
+        if any([c not in obj.columns for c in _required_columns]):
+            return False
+        if obj.shape[0] <= 0:
+            return False
+        if not pd.api.types.is_datetime64tz_dtype(obj["tracked_at"]):
+            return False
+        if validate_geometry:
+            return obj.geometry.is_valid.all() and obj.geometry.iloc[0].geom_type == "Point"
+        return True
 
     @property
     def center(self):
