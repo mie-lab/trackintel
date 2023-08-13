@@ -37,18 +37,17 @@ class ToursAccessor(object):
     def _validate(obj):
         if any([c not in obj.columns for c in ToursAccessor.required_columns]):
             raise AttributeError(
-                "To process a DataFrame as a collection of tours, "
-                + "it must have the properties [%s], but it has [%s]."
-                % (", ".join(ToursAccessor.required_columns), ", ".join(obj.columns))
+                "To process a DataFrame as a collection of tours, it must have the properties"
+                f" {ToursAccessor.required_columns}, but it has {', '.join(obj.columns)}."
             )
 
         # check timestamp dtypes
         assert pd.api.types.is_datetime64tz_dtype(
             obj["started_at"]
-        ), "dtype of started_at is {} but has to be datetime64 and timezone aware".format(obj["started_at"].dtype)
+        ), f"dtype of started_at is {obj['started_at'].dtype} but has to be datetime64 and timezone aware"
         assert pd.api.types.is_datetime64tz_dtype(
             obj["finished_at"]
-        ), "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj["finished_at"].dtype)
+        ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be datetime64 and timezone aware"
 
     def to_csv(self, filename, *args, **kwargs):
         """

@@ -72,8 +72,7 @@ def temporal_tracking_quality(source, granularity="all"):
     if any([c not in source.columns for c in required_columns]):
         raise KeyError(
             "To successfully calculate the user-level tracking quality, "
-            + "the source dataframe must have the columns [%s], but it has [%s]."
-            % (", ".join(required_columns), ", ".join(source.columns))
+            f"the source dataframe must have the columns {required_columns}, but it has [{', '.join(source.columns)}]."
         )
 
     df = source.copy()

@@ -64,9 +64,9 @@ def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kw
     geom_type = X.geometry.iat[0].geom_type
     if Y is None:
         Y = X
-    assert Y.geometry.iat[0].geom_type == Y.geometry.iat[0].geom_type, (
-        "x and y need same geometry type " "(only first column checked)"
-    )
+    assert (
+        Y.geometry.iat[0].geom_type == Y.geometry.iat[0].geom_type
+    ), "x and y need same geometry type (only first column checked)"
 
     if geom_type == "Point":
         x1 = X.geometry.x.values
