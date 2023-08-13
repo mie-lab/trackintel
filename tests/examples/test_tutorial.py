@@ -1,9 +1,4 @@
 import os
-import pandas as pd
-import geopandas as gpd
-
-import trackintel as ti
-
 import subprocess
 import pytest
 

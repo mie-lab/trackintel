@@ -1,4 +1,3 @@
-import pandas as pd
 import trackintel as ti
 from trackintel.io.file import write_locations_csv
 from trackintel.io.postgis import write_locations_postgis
