@@ -47,7 +47,7 @@ def a4_figsize(fig_height_mm=None, columns=2):
 
     max_figh_height_mm = 234.0
     if fig_height_mm > max_figh_height_mm:
-        logging.warning("fig_height too large: %s, so will reduce to %s." % (fig_height_mm, fig_height_mm))
+        logging.warning(f"fig_height too large: {fig_height_mm}, so will reduce to {max_figh_height_mm}.")
         fig_height_mm = max_figh_height_mm
 
     fig_height_mm *= ureg.millimeter
@@ -56,7 +56,7 @@ def a4_figsize(fig_height_mm=None, columns=2):
     fig_width = fig_width_mm.to(ureg.inch).magnitude
     fig_height = fig_height_mm.to(ureg.inch).magnitude
 
-    logging.info("Creating figure of %sx%s." % (fig_width_mm, fig_height_mm))
+    logging.info(f"Creating figure of {fig_width_mm}x{fig_height_mm}.")
     return fig_width, fig_height
 
 
@@ -113,11 +113,11 @@ def save_fig(out_filename, tight="tight", formats=["png", "pdf"]):
         logging.info("Creating png...")
         ts = time.time()
         plt.savefig(outpath, dpi=600, bbox_inches=tight, pad_inches=0)
-        logging.info("...took {} s!".format(round(time.time() - ts, 2)))
+        logging.info(f"...took {round(time.time() - ts, 2)} s!")
     if "pdf" in formats:
         logging.info("Creating pdf...")
         ts = time.time()
         plt.savefig(outpath.replace(".png", ".pdf"), bbox_inches=tight, pad_inches=0)
-        logging.info("...took {} s!".format(round(time.time() - ts, 2)))
+        logging.info(f"...took {round(time.time() - ts, 2)} s!")
     plt.close()
     logging.info("Finished!")

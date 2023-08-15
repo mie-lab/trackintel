@@ -45,19 +45,18 @@ class PositionfixesAccessor(object):
 
     @staticmethod
     def _validate(obj):
-        assert obj.shape[0] > 0, "Geodataframe is empty with shape: {}".format(obj.shape)
+        assert obj.shape[0] > 0, f"Geodataframe is empty with shape: {obj.shape}"
         # check columns
         if any([c not in obj.columns for c in PositionfixesAccessor.required_columns]):
             raise AttributeError(
-                "To process a DataFrame as a collection of positionfixes, "
-                + "it must have the properties [%s], but it has [%s]."
-                % (", ".join(PositionfixesAccessor.required_columns), ", ".join(obj.columns))
+                "To process a DataFrame as a collection of positionfixes, it must have the properties"
+                f" {PositionfixesAccessor.required_columns}, but it has [{', '.join(obj.columns)}]."
             )
 
         # check geometry
-        assert obj.geometry.is_valid.all(), (
-            "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
-        )
+        assert (
+            obj.geometry.is_valid.all()
+        ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
 
         if obj.geometry.iloc[0].geom_type != "Point":
             raise AttributeError("The geometry must be a Point (only first checked).")
@@ -65,7 +64,7 @@ class PositionfixesAccessor(object):
         # check timestamp dtypes
         assert pd.api.types.is_datetime64tz_dtype(
             obj["tracked_at"]
-        ), "dtype of tracked_at is {} but has to be datetime64 and timezone aware".format(obj["tracked_at"].dtype)
+        ), f"dtype of tracked_at is {obj['tracked_at'].dtype} but has to be datetime64 and timezone aware"
 
     @property
     def center(self):

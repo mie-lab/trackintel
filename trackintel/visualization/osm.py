@@ -46,4 +46,4 @@ def plot_osm_streets(north, south, east, west, ax):
         lc = LineCollection(lines, colors="#999999", linewidths=0.5, alpha=1, zorder=0)
         ax.add_collection(lc)
     except NetworkXPointlessConcept as e:
-        logging.warn("Plotting of OSM graph failed: %s", e)
+        logging.warn(f"Plotting of OSM graph failed: {e}")

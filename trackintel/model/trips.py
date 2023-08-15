@@ -53,25 +53,24 @@ class TripsAccessor(object):
     def _validate(obj):
         if any([c not in obj.columns for c in TripsAccessor.required_columns]):
             raise AttributeError(
-                "To process a DataFrame as a collection of trips, "
-                + "it must have the properties [%s], but it has [%s]."
-                % (", ".join(TripsAccessor.required_columns), ", ".join(obj.columns))
+                "To process a DataFrame as a collection of trips, it must have the properties"
+                f" {TripsAccessor.required_columns}, but it has [{', '.join(obj.columns)}]."
             )
 
         # check timestamp dtypes
         assert pd.api.types.is_datetime64tz_dtype(
             obj["started_at"]
-        ), "dtype of started_at is {} but has to be datetime64 and timezone aware".format(obj["started_at"].dtype)
+        ), f"dtype of started_at is {obj['started_at'].dtype} but has to be datetime64 and timezone aware"
         assert pd.api.types.is_datetime64tz_dtype(
             obj["finished_at"]
-        ), "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj["finished_at"].dtype)
+        ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be datetime64 and timezone aware"
 
         # Check geometry if Trips is a GeoDataFrame
         if isinstance(obj, gpd.GeoDataFrame):
             # check geometry
-            assert obj.geometry.is_valid.all(), (
-                "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
-            )
+            assert (
+                obj.geometry.is_valid.all()
+            ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
             if obj.geometry.iloc[0].geom_type != "MultiPoint":
                 raise AttributeError("The geometry must be a MultiPoint (only first checked).")
 
