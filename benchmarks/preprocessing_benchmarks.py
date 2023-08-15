@@ -1,5 +1,4 @@
 import os
-import pandas as pd
 import trackintel as ti
 from pathlib import Path
 

@@ -2,7 +2,6 @@ import os
 import pandas as pd
 import pytest
 from shapely.geometry import MultiPoint, Point
-import datetime
 import geopandas as gpd
 from geopandas.testing import assert_geodataframe_equal
 

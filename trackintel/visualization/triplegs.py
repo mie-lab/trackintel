@@ -1,6 +1,4 @@
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-import warnings
 
 from trackintel.visualization.osm import plot_osm_streets
 from trackintel.visualization.util import regular_figure, save_fig

@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 from geopandas.testing import assert_geodataframe_equal
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point
 
 import trackintel as ti
 
