@@ -1,10 +1,8 @@
 import matplotlib.pyplot as plt
 from geopandas import GeoDataFrame
-import warnings
 from trackintel.visualization.osm import plot_osm_streets
 from trackintel.visualization.util import regular_figure, save_fig
 from trackintel.geogr.distances import check_gdf_planar
-import trackintel as ti
 
 
 def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False, axis=None):

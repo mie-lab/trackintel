@@ -7,8 +7,6 @@ sys.path.append("../trackintel")
 
 import logging
 
-import matplotlib.pyplot as plt
-
 import trackintel as ti
 
 logging.basicConfig(filename="examples/log/preprocessing.log", level=logging.INFO, filemode="w")

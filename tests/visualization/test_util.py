@@ -1,8 +1,6 @@
-import os
 import pytest
 import numpy as np
 
-import trackintel as ti
 from trackintel.visualization.util import a4_figsize
 
 

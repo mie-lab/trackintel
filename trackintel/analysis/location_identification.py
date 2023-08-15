@@ -1,7 +1,6 @@
 import warnings
 import numpy as np
 import pandas as pd
-import trackintel as ti
 
 
 def location_identifier(staypoints, method="FREQ", pre_filter=True, **pre_filter_kwargs):

@@ -10,6 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.types import JSON
 
 import trackintel as ti
+from trackintel.io.util import _index_warning_default_none
 
 
 def _handle_con_string(func):
@@ -40,6 +41,7 @@ def _handle_con_string(func):
     return wrapper
 
 
+@_index_warning_default_none
 @_handle_con_string
 def read_positionfixes_postgis(
     sql,
@@ -131,6 +133,7 @@ def write_positionfixes_postgis(
     gpd.GeoDataFrame.to_postgis(positionfixes, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
 
+@_index_warning_default_none
 @_handle_con_string
 def read_triplegs_postgis(
     sql,
@@ -230,6 +233,7 @@ def write_triplegs_postgis(
     )
 
 
+@_index_warning_default_none
 @_handle_con_string
 def read_staypoints_postgis(
     sql,
@@ -331,6 +335,7 @@ def write_staypoints_postgis(
     )
 
 
+@_index_warning_default_none
 @_handle_con_string
 def read_locations_postgis(
     sql,
@@ -452,6 +457,7 @@ def write_locations_postgis(
     )
 
 
+@_index_warning_default_none
 @_handle_con_string
 def read_trips_postgis(
     sql,
@@ -581,6 +587,7 @@ def write_trips_postgis(
         )
 
 
+@_index_warning_default_none
 @_handle_con_string
 def read_tours_postgis(
     sql,

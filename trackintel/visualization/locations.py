@@ -1,6 +1,5 @@
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-import warnings
 
 from trackintel.geogr.distances import meters_to_decimal_degrees
 from trackintel.visualization.osm import plot_osm_streets

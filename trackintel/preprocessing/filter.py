@@ -1,6 +1,3 @@
-import geopandas as gpd
-
-
 def spatial_filter(source, areas, method="within", re_project=False):
     """
     Filter staypoints, locations or triplegs with a geo extent.

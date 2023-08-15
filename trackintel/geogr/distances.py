@@ -4,7 +4,6 @@ from functools import partial
 from math import cos, pi
 
 import numpy as np
-import pandas as pd
 import shapely
 import similaritymeasures
 from scipy.spatial.distance import cdist

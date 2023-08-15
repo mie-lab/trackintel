@@ -1,6 +1,6 @@
 import os
 import pytest
-from shapely.geometry import Point, MultiPoint
+from shapely.geometry import Point
 
 import trackintel as ti
 
