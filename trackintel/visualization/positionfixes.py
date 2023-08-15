@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from geopandas import GeoDataFrame
 from trackintel.visualization.osm import plot_osm_streets
 from trackintel.visualization.util import regular_figure, save_fig
 from trackintel.geogr.distances import check_gdf_planar
@@ -43,7 +44,8 @@ def plot_positionfixes(positionfixes, out_filename=None, plot_osm=False, axis=No
         south = positionfixes.geometry.y.min()
         plot_osm_streets(north, south, east, west, ax)
 
-    positionfixes.plot(ax=ax, markersize=0.5, zorder=2)
+    # GeoDataFrame.plot is a class and not a method, therefore we have to initialize it
+    (GeoDataFrame.plot(positionfixes))(ax=ax, markersize=0.5, zorder=2)
     ax.set_aspect("equal", adjustable="box")
 
     if out_filename is not None:

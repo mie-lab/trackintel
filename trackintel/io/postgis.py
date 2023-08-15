@@ -130,16 +130,7 @@ def read_positionfixes_postgis(
 def write_positionfixes_postgis(
     positionfixes, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
-    positionfixes.to_postgis(
-        name,
-        con,
-        schema=schema,
-        if_exists=if_exists,
-        index=index,
-        index_label=index_label,
-        chunksize=chunksize,
-        dtype=dtype,
-    )
+    gpd.GeoDataFrame.to_postgis(positionfixes, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
 
 @_index_warning_default_none

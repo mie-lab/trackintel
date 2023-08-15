@@ -1,4 +1,4 @@
-from .positionfixes import PositionfixesAccessor
+from .positionfixes import Positionfixes
 from .staypoints import StaypointsAccessor
 from .triplegs import TriplegsAccessor
 from .locations import LocationsAccessor
