@@ -1,7 +1,4 @@
 import ast
-import warnings
-from functools import wraps
-from inspect import signature
 
 import geopandas as gpd
 import pandas as pd
@@ -15,22 +12,7 @@ from trackintel.io.from_geopandas import (
     read_triplegs_gpd,
     read_trips_gpd,
 )
-
-
-def _index_warning_default_none(func):
-    """Decorator function that warns if index_col None is not set explicit."""
-
-    @wraps(func)  # copy all metadata
-    def wrapper(*args, **kwargs):
-        bound_values = signature(func).bind(*args, **kwargs)  # binds only available args and kwargs
-        if "index_col" not in bound_values.arguments:
-            warnings.warn(
-                "Assuming default index as unique identifier. "
-                "Pass 'index_col=None' as explicit argument to avoid a warning when reading csv files."
-            )
-        return func(*args, **kwargs)
-
-    return wrapper
+from trackintel.io.util import _index_warning_default_none
 
 
 @_index_warning_default_none
