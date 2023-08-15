@@ -98,15 +98,15 @@ def read_geolife(geolife_path, print_progress=False):
     uids = [u for u in os.listdir(geolife_path) if os.path.isdir(os.path.join(geolife_path, u))]
 
     if len(uids) == 0:
-        raise FileNotFoundError("No user folders found at path {}".format(geolife_path))
+        raise FileNotFoundError(f"No user folders found at path {geolife_path}")
 
     for user_id in uids:
         try:
             int(user_id)
         except ValueError as err:
             errmsg = (
-                "Invalid user_id '{}' found in geolife path '{}'. The geolife path can only contain folders"
-                " named with integers that represent the user id.".format(user_id, os.path.join(geolife_path, user_id))
+                f"Invalid user_id '{user_id}' found in geolife path '{os.path.join(geolife_path, user_id)}'."
+                "The geolife path can only contain folders named with integers that represent the user id."
             )
             raise ValueError(errmsg) from err
 

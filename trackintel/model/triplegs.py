@@ -48,28 +48,27 @@ class TriplegsAccessor(object):
 
     @staticmethod
     def _validate(obj):
-        assert obj.shape[0] > 0, "Geodataframe is empty with shape: {}".format(obj.shape)
+        assert obj.shape[0] > 0, f"Geodataframe is empty with shape: {obj.shape}"
         # check columns
         if any([c not in obj.columns for c in TriplegsAccessor.required_columns]):
             raise AttributeError(
-                "To process a DataFrame as a collection of triplegs, "
-                + "it must have the properties [%s], but it has [%s]."
-                % (", ".join(TriplegsAccessor.required_columns), ", ".join(obj.columns))
+                "To process a DataFrame as a collection of triplegs, it must have the properties"
+                f" {TriplegsAccessor.required_columns}, but it has [{', '.join(obj.columns)}]."
             )
         # check geometry
-        assert obj.geometry.is_valid.all(), (
-            "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
-        )
+        assert (
+            obj.geometry.is_valid.all()
+        ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
         if obj.geometry.iloc[0].geom_type != "LineString":
             raise AttributeError("The geometry must be a LineString (only first checked).")
 
         # check timestamp dtypes
         assert pd.api.types.is_datetime64tz_dtype(
             obj["started_at"]
-        ), "dtype of started_at is {} but has to be datetime64 and timezone aware".format(obj["started_at"].dtype)
+        ), f"dtype of started_at is {obj['started_at'].dtype} but has to be datetime64 and timezone aware"
         assert pd.api.types.is_datetime64tz_dtype(
             obj["finished_at"]
-        ), "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj["finished_at"].dtype)
+        ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be datetime64 and timezone aware"
 
     @_copy_docstring(plot_triplegs)
     def plot(self, *args, **kwargs):

@@ -448,7 +448,7 @@ def _localize_timestamp(dt_series, pytz_tzinfo, col_name):
         a timezone aware pandas datetime series
     """
     if pytz_tzinfo is None:
-        warnings.warn("Assuming UTC timezone for column {}".format(col_name))
+        warnings.warn(f"Assuming UTC timezone for column {col_name}")
         pytz_tzinfo = "utc"
 
     timezone = pytz.timezone(pytz_tzinfo)

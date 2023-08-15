@@ -38,9 +38,8 @@ class LocationsAccessor(object):
     def _validate(obj):
         if any([c not in obj.columns for c in LocationsAccessor.required_columns]):
             raise AttributeError(
-                "To process a DataFrame as a collection of locations, "
-                + "it must have the properties [%s], but it has [%s]."
-                % (", ".join(LocationsAccessor.required_columns), ", ".join(obj.columns))
+                "To process a DataFrame as a collection of locations, it must have the properties"
+                f" {LocationsAccessor.required_columns}, but it has [{', '.join(obj.columns)}]."
             )
 
         if not (obj.shape[0] > 0 and obj["center"].iloc[0].geom_type == "Point"):

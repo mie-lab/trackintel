@@ -63,8 +63,8 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         # check columns
         if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
-                "To process a DataFrame as a collection of positionfixes, "
-                f"it must have the columns {_required_columns}, but it has [{', '.join(obj.columns)}]."
+                "To process a DataFrame as a collection of positionfixes, it must have the properties"
+                f" {_required_columns}, but it has [{', '.join(obj.columns)}]."
             )
         # check timestamp dtypes
         assert pd.api.types.is_datetime64tz_dtype(
@@ -73,9 +73,9 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
 
         # check geometry
         if validate_geometry:
-            assert obj.geometry.is_valid.all(), (
-                "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
-            )
+            assert (
+                obj.geometry.is_valid.all()
+            ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
 
             if obj.geometry.iloc[0].geom_type != "Point":
                 raise AttributeError("The geometry must be a Point (only first checked).")
