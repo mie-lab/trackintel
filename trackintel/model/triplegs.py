@@ -54,7 +54,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
 
     # create circular reference directly -> avoid second call of init via accessor
     @property
-    def as_positionfixes(self):
+    def as_triplegs(self):
         return self
 
     @staticmethod
