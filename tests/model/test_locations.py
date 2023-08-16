@@ -40,6 +40,12 @@ class TestLocations:
         with pytest.raises(ValueError, match="GeoDataFrame is empty with shape:"):
             testdata_locs.drop(testdata_locs.index).as_locations
 
+    def test_accessor_recursive(self, testdata_locs):
+        """Test if as_locations works recursivly"""
+        locs = testdata_locs.as_locations
+        assert type(locs) == Locations
+        assert id(locs) == id(locs.as_locations)
+
     def test_check_suceeding(self, testdata_locs):
         """Test if check returns True on valid pfs"""
         assert Locations._check(testdata_locs)
