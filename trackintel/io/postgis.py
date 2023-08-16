@@ -445,7 +445,8 @@ def write_locations_postgis(
         locations = locations.copy()
         locations["extent"] = locations["extent"].apply(lambda x: wkb.dumps(x, srid=srid, hex=True))
 
-    locations.to_postgis(
+    gpd.GeoDataFrame.to_postgis(
+        locations,
         name,
         con,
         schema=schema,

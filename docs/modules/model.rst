@@ -74,10 +74,10 @@ TriplegsAccessor
 .. autoclass:: trackintel.model.triplegs.TriplegsAccessor
 	:members:
 
-LocationsAccessor
+Locations
 -----------------
 
-.. autoclass:: trackintel.model.locations.LocationsAccessor
+.. autoclass:: trackintel.model.locations.Locations
 	:members:
 
 TripsAccessor

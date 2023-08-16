@@ -1,9 +1,10 @@
 import os
-import pytest
 
+import pytest
 from shapely.geometry import LineString
 
 import trackintel as ti
+from trackintel import Locations
 
 
 @pytest.fixture
@@ -14,24 +15,53 @@ def testdata_locs():
     sp, locs = sp.as_staypoints.generate_locations(
         method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
     )
+    locs.as_locations
     return locs
 
 
 class TestLocations:
-    """Tests for the LocationsAccessor."""
+    """Tests for the Locations class."""
 
     def test_accessor_column(self, testdata_locs):
         """Test if the as_locations accessor checks the required column for locations."""
-        locs = testdata_locs.copy()
-
         with pytest.raises(AttributeError, match="To process a DataFrame as a collection of locations"):
-            locs.drop(["user_id"], axis=1).as_locations
+            testdata_locs.drop(["user_id"], axis=1).as_locations
 
     def test_accessor_geometry_type(self, testdata_locs):
         """Test if the as_locations accessor requires Point geometry."""
-        locs = testdata_locs.copy()
-        with pytest.raises(AttributeError, match="The center geometry must be a Point"):
-            locs["center"] = LineString(
-                [(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)]
-            )
-            locs.as_locations
+        testdata_locs["center"] = LineString(
+            [(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)]
+        )
+        with pytest.raises(ValueError, match="The center geometry must be a Point"):
+            testdata_locs.as_locations
+
+    def test_accessor_empty(self, testdata_locs):
+        """Test if as_locations accessor raises error if data is empty."""
+        with pytest.raises(ValueError, match="GeoDataFrame is empty with shape:"):
+            testdata_locs.drop(testdata_locs.index).as_locations
+
+    def test_check_suceeding(self, testdata_locs):
+        """Test if check returns True on valid pfs"""
+        assert Locations._check(testdata_locs)
+
+    def test_check_missing_columns(self, testdata_locs):
+        """Test if check returns False if column is missing"""
+        assert not Locations._check(testdata_locs.drop(columns="user_id"))
+
+    def test_check_empty_df(self, testdata_locs):
+        """Test if check returns False if DataFrame is empty"""
+        assert not Locations._check(testdata_locs.drop(testdata_locs.index))
+
+    def test_check_false_geometry_type(self, testdata_locs):
+        """Test if check returns False if geometry type is wrong"""
+        testdata_locs["center"] = LineString(
+            [(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)]
+        )
+        assert not Locations._check(testdata_locs)
+
+    def test_check_ignore_false_geometry_type(self, testdata_locs):
+        """Test if check returns True if geometry type is wrong but validate_geometry is set to False"""
+        testdata_locs["center"] = LineString(
+            [(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)]
+        )
+        assert Locations._check(testdata_locs, validate_geometry=False)

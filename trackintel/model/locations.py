@@ -1,14 +1,21 @@
 import trackintel as ti
 from trackintel.io.file import write_locations_csv
 from trackintel.io.postgis import write_locations_postgis
-from trackintel.model.util import _copy_docstring, _register_trackintel_accessor
+from trackintel.model.util import (
+    TrackintelBase,
+    TrackintelGeoDataFrame,
+    _copy_docstring,
+    _register_trackintel_accessor,
+)
 from trackintel.preprocessing.filter import spatial_filter
 from trackintel.visualization.locations import plot_locations
 
+_required_columns = ["user_id", "center"]
+
 
 @_register_trackintel_accessor("as_locations")
-class LocationsAccessor(object):
-    """A pandas accessor to treat (Geo)DataFrames as collections of locations.
+class Locations(TrackintelBase, TrackintelGeoDataFrame):
+    """A pandas accessor to treat a GeoDataFrames as a collections of locations.
 
     This will define certain methods and accessors, as well as make sure that the DataFrame
     adheres to some requirements.
@@ -28,24 +35,39 @@ class LocationsAccessor(object):
     >>> df.as_locations.plot()
     """
 
-    required_columns = ["user_id", "center"]
+    def __init__(self, *args, validate_geometry=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._validate(self, validate_geometry=validate_geometry)
 
-    def __init__(self, pandas_obj):
-        self._validate(pandas_obj)
-        self._obj = pandas_obj
+    @property
+    def as_locations(self):
+        return self
 
     @staticmethod
-    def _validate(obj):
-        if any([c not in obj.columns for c in LocationsAccessor.required_columns]):
+    def _validate(obj, validate_geometry):
+        if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
                 "To process a DataFrame as a collection of locations, it must have the properties"
-                f" {LocationsAccessor.required_columns}, but it has [{', '.join(obj.columns)}]."
+                f" {_required_columns}, but it has [{', '.join(obj.columns)}]."
             )
+        if obj.shape[0] <= 0:
+            raise ValueError(f"GeoDataFrame is empty with shape: {obj.shape}")
 
-        if not (obj.shape[0] > 0 and obj["center"].iloc[0].geom_type == "Point"):
+        if validate_geometry and obj["center"].iloc[0].geom_type != "Point":
             # todo: We could think about allowing both geometry types for locations (point and polygon)
             # One for extend and one for the center
-            raise AttributeError("The center geometry must be a Point (only first checked).")
+            raise ValueError("The center geometry must be a Point (only first checked).")
+
+    @staticmethod
+    def _check(obj, validate_geometry=True):
+        """Check does the same as _validate but returns bool instead of potentially raising an error."""
+        if any([c not in obj.columns for c in _required_columns]):
+            return False
+        if obj.shape[0] <= 0:
+            return False
+        if validate_geometry:
+            return obj.geometry.iloc[0].geom_type == "Point"
+        return True
 
     @_copy_docstring(plot_locations)
     def plot(self, *args, **kwargs):
@@ -54,7 +76,7 @@ class LocationsAccessor(object):
 
         See :func:`trackintel.visualization.locations.plot_locations`.
         """
-        ti.visualization.locations.plot_locations(self._obj, *args, **kwargs)
+        ti.visualization.locations.plot_locations(self, *args, **kwargs)
 
     @_copy_docstring(write_locations_csv)
     def to_csv(self, filename, *args, **kwargs):
@@ -63,7 +85,7 @@ class LocationsAccessor(object):
 
         See :func:`trackintel.io.file.write_locations_csv`.
         """
-        ti.io.file.write_locations_csv(self._obj, filename, *args, **kwargs)
+        ti.io.file.write_locations_csv(self, filename, *args, **kwargs)
 
     @_copy_docstring(write_locations_postgis)
     def to_postgis(
@@ -74,9 +96,7 @@ class LocationsAccessor(object):
 
         See :func:`trackintel.io.postgis.write_locations_postgis`.
         """
-        ti.io.postgis.write_locations_postgis(
-            self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype
-        )
+        ti.io.postgis.write_locations_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
     @_copy_docstring(spatial_filter)
     def spatial_filter(self, *args, **kwargs):
@@ -85,4 +105,4 @@ class LocationsAccessor(object):
 
         See :func:`trackintel.preprocessing.filter.spatial_filter`.
         """
-        return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
+        return ti.preprocessing.filter.spatial_filter(self, *args, **kwargs)
