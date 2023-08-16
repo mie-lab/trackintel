@@ -1,5 +1,6 @@
 import datetime
 import os
+import warnings
 
 import matplotlib
 import numpy as np
@@ -222,6 +223,7 @@ class Testplot:
     def test_no_ax_no_file(self, test_data):
         """Test call without set axis nor output file then call plt.show()."""
         pfs, sp, tpls, locs = test_data
-        # agg cannot show plt.show() but we get a nice warning for it
-        with pytest.warns(UserWarning, match="Matplotlib is currently using agg"):
-            plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs)
+        # agg cannot show plt.show() but locally we get a warning for it (except in Linux)
+        warnings.filterwarnings("ignore", "Matplotlib is currently using agg", category=UserWarning)
+        plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs)
+        warnings.resetwarnings()
