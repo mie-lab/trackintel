@@ -231,7 +231,7 @@ def _calculate_bounds(positionfixes, staypoints, triplegs, locations):
         south = min(triplegs_bounds.miny) - 0.03
         east = max(triplegs_bounds.maxx) + 0.03
         west = min(triplegs_bounds.minx) - 0.03
-    elif locations is not None:
+    else: # locations is not None
         north = locations.geometry.y.max() + 0.03
         south = locations.geometry.y.min() - 0.03
         east = locations.geometry.x.max() + 0.03

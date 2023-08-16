@@ -189,7 +189,7 @@ class Test_calculate_bounds:
         assert w <= pfs.geometry.x.min()
 
 
-class Testplot:
+class TestPlot:
     """Test the plot function"""
 
     def test_ax(self, test_data):
