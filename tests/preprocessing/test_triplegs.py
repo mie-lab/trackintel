@@ -135,7 +135,7 @@ class TestGenerate_trips:
         # test if generated trips are equal
         assert_geodataframe_equal(trips_expl, trips_acc)
         assert_geodataframe_equal(sp_expl, sp_acc)
-        assert_geodataframe_equal(tpls_expl, tpls_acc)
+        assert_geodataframe_equal(tpls_acc, tpls_expl)
 
     def test_accessor_arguments(self, example_triplegs):
         """Test if the accessor is robust to different ways to receive arguments"""

@@ -1,9 +1,10 @@
 import os
-import pytest
 
+import pytest
 from shapely.geometry import Point
 
 import trackintel as ti
+from trackintel import Triplegs
 
 
 @pytest.fixture
@@ -17,7 +18,7 @@ def testdata_tpls():
 
 
 class TestTriplegs:
-    """Tests for the TriplegsAccessor."""
+    """Tests for the Triplegs class."""
 
     def test_accessor_column(self, testdata_tpls):
         """Test if the as_triplegs accessor checks the required column for triplegs."""
@@ -45,3 +46,34 @@ class TestTriplegs:
         with pytest.raises(AttributeError, match="The geometry must be a LineString"):
             tpls["geom"] = Point([(13.476808430, 48.573711823)])
             tpls.as_triplegs
+
+    def test_check_suceeding(self, testdata_tpls):
+        """Test if check returns True on valid pfs"""
+        assert Triplegs._check(testdata_tpls)
+
+    def test_check_missing_columns(self, testdata_tpls):
+        """Test if check returns False if column is missing"""
+        assert not Triplegs._check(testdata_tpls.drop(columns="user_id"))
+
+    def test_check_empty_df(self, testdata_tpls):
+        """Test if check returns False if DataFrame is empty"""
+        assert not Triplegs._check(testdata_tpls.drop(testdata_tpls.index))
+
+    def test_check_no_tz(self, testdata_tpls):
+        """Test if check returns False if tracked at column has no tz"""
+        tmp = testdata_tpls["started_at"]
+        testdata_tpls["started_at"] = testdata_tpls["started_at"].dt.tz_localize(None)
+        assert not Triplegs._check(testdata_tpls)
+        testdata_tpls["started_at"] = tmp
+        testdata_tpls["finished_at"] = testdata_tpls["finished_at"].dt.tz_localize(None)
+        assert not Triplegs._check(testdata_tpls)
+
+    def test_check_false_geometry_type(self, testdata_tpls):
+        """Test if check returns False if geometry type is wrong"""
+        testdata_tpls["geom"] = Point([(13.476808430, 48.573711823)])
+        assert not Triplegs._check(testdata_tpls)
+
+    def test_check_ignore_false_geometry_type(self, testdata_tpls):
+        """Test if check returns True if geometry type is wrong but validate_geometry is set to False"""
+        testdata_tpls["geom"] = Point([(13.476808430, 48.573711823)])
+        assert Triplegs._check(testdata_tpls, validate_geometry=False)

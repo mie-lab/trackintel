@@ -1,3 +1,4 @@
+import geopandas as gpd
 import matplotlib.pyplot as plt
 
 from trackintel.visualization.osm import plot_osm_streets
@@ -60,7 +61,7 @@ def plot_triplegs(
         south = min(triplegs_bounds.miny) - 0.03
         plot_osm_streets(north, south, east, west, ax)
 
-    triplegs.plot(ax=ax, cmap="viridis")
+    gpd.GeoDataFrame.plot(triplegs)(ax=ax, cmap="viridis")
     ax.set_aspect("equal", adjustable="box")
 
     if out_filename is not None:
