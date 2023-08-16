@@ -47,6 +47,11 @@ class TestTriplegs:
             tpls["geom"] = Point([(13.476808430, 48.573711823)])
             tpls.as_triplegs
 
+    def test_accessor_recursive(self, testdata_tpls):
+        tpls = testdata_tpls.as_triplegs
+        assert type(tpls) == Triplegs
+        assert id(tpls) == id(tpls.as_triplegs)
+
     def test_check_suceeding(self, testdata_tpls):
         """Test if check returns True on valid pfs"""
         assert Triplegs._check(testdata_tpls)
