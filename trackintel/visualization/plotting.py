@@ -275,7 +275,7 @@ def _plot_frames(positionfixes, staypoints, triplegs, locations, radius_sp, radi
             ax.add_artist(circle)
 
 
-def plot_map(
+def plot(
     *,
     positionfixes=None,
     staypoints=None,
@@ -315,7 +315,7 @@ def plot_map(
 
     Examples
     --------
-    >>> ti.plot_map(positionfixes=pfs, filename="output.png", plot_osm=True)
+    >>> ti.plot(positionfixes=pfs, filename="output.png", plot_osm=True)
     """
     has_no_ax_input = ax is None
     if ax is None:

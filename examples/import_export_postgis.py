@@ -17,4 +17,4 @@ pfs = ti.read_positionfixes_csv("examples/data/geolife_trajectory.csv", sep=";")
 
 # Geolife trajectory from PostGIS.
 # pfs = ti.io.read_positionfixes_postgis('positionfixes', conn_string)
-ti.plot_map(positionfixes=pfs)
+ti.plot(positionfixes=pfs)

@@ -72,7 +72,7 @@ pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp, method='between_staypoint
 **[3.]** Visualization.
  ```python
 # plot the generated tripleg result
-ti.plot_map(positionfixes=pfs, staypoints=sp, triplegs=tpls, radius_sp=10)
+ti.plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, radius_sp=10)
 ```
 
 **[4.]** Analysis.

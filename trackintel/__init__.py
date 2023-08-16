@@ -12,7 +12,7 @@ from trackintel.io.file import read_tours_csv
 
 from trackintel.model.positionfixes import Positionfixes
 
-from trackintel.visualization import plot_map, plot_modal_split
+from trackintel.visualization import plot, plot_modal_split
 
 from trackintel.__version__ import __version__
 from .core import print_version

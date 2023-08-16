@@ -4,10 +4,10 @@ Visualization
 The visualization module provides a variety of functions to visualize initial, 
 intermediate and final datasets within trackintel. 
 
-plot_map
+plot
 =============
 
-.. autofunction:: trackintel.visualization.plot_map
+.. autofunction:: trackintel.visualization.plot
 
 .. image:: /_static/example_locations.png
    :scale: 25 %

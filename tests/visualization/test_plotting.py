@@ -9,7 +9,7 @@ import pytest
 import trackintel as ti
 from trackintel.analysis.modal_split import calculate_modal_split
 from trackintel.io.dataset_reader import geolife_add_modes_to_triplegs, read_geolife
-from trackintel.visualization.plotting import _calculate_bounds, a4_figsize, plot_map, plot_modal_split, regular_figure
+from trackintel.visualization.plotting import _calculate_bounds, a4_figsize, plot, plot_modal_split, regular_figure
 
 matplotlib.use("Agg")
 
@@ -188,25 +188,25 @@ class Test_calculate_bounds:
         assert w <= pfs.geometry.x.min()
 
 
-class TestPlot_map:
-    """Test the plot_map function"""
+class Testplot:
+    """Test the plot function"""
 
     def test_ax(self, test_data):
         """Test if you can pass in the axis kwarg"""
         pfs, sp, tpls, locs = test_data
         _, ax = regular_figure()
-        plot_map(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs, ax=ax)
+        plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs, ax=ax)
 
     def test_all_None(self):
         """Test if Error is raised if all GeoDataFrames are None"""
         with pytest.raises(ValueError, match="At least one GeoDataFrame should not be None."):
-            plot_map()
+            plot()
 
     def test_plot_file(self, test_data):
         """Test if plotting to file produces a file"""
         pfs, sp, tpls, locs = test_data
         tmp_file = os.path.join("tests", "data", "temp.png")
-        plot_map(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs, filename=tmp_file)
+        plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs, filename=tmp_file)
         assert os.path.exists(tmp_file)
         os.remove(tmp_file)
 
@@ -215,7 +215,7 @@ class TestPlot_map:
         pfs, sp, tpls, locs = test_data
         n, s, e, w = _calculate_bounds(*test_data)
         _, ax = regular_figure()
-        plot_map(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs, plot_osm=True, ax=ax)
+        plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs, plot_osm=True, ax=ax)
         assert ax.get_xlim() == (w, e)
         assert ax.get_ylim() == (s, n)
 
@@ -224,4 +224,4 @@ class TestPlot_map:
         pfs, sp, tpls, locs = test_data
         # agg cannot show plt.show() but we get a nice warning for it
         with pytest.warns(UserWarning, match="Matplotlib is currently using agg"):
-            plot_map(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs)
+            plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs)
