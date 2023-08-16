@@ -3,7 +3,6 @@ from trackintel.io.file import write_locations_csv
 from trackintel.io.postgis import write_locations_postgis
 from trackintel.model.util import _copy_docstring, _register_trackintel_accessor
 from trackintel.preprocessing.filter import spatial_filter
-from trackintel.visualization.locations import plot_locations
 
 
 @_register_trackintel_accessor("as_locations")
@@ -25,7 +24,7 @@ class LocationsAccessor(object):
 
     Examples
     --------
-    >>> df.as_locations.plot()
+    >>> df.as_locations.to_csv("filename.csv")
     """
 
     required_columns = ["user_id", "center"]
@@ -46,15 +45,6 @@ class LocationsAccessor(object):
             # todo: We could think about allowing both geometry types for locations (point and polygon)
             # One for extend and one for the center
             raise AttributeError("The center geometry must be a Point (only first checked).")
-
-    @_copy_docstring(plot_locations)
-    def plot(self, *args, **kwargs):
-        """
-        Plot this collection of locations.
-
-        See :func:`trackintel.visualization.locations.plot_locations`.
-        """
-        ti.visualization.locations.plot_locations(self._obj, *args, **kwargs)
 
     @_copy_docstring(write_locations_csv)
     def to_csv(self, filename, *args, **kwargs):

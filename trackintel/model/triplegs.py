@@ -10,7 +10,6 @@ from trackintel.io.postgis import write_triplegs_postgis
 from trackintel.model.util import _copy_docstring, get_speed_triplegs, _register_trackintel_accessor
 from trackintel.preprocessing.filter import spatial_filter
 from trackintel.preprocessing.triplegs import generate_trips
-from trackintel.visualization.triplegs import plot_triplegs
 
 
 @_register_trackintel_accessor("as_triplegs")
@@ -37,7 +36,7 @@ class TriplegsAccessor(object):
 
     Examples
     --------
-    >>> df.as_triplegs.plot()
+    >>> df.as_triplegs.generate_trips()
     """
 
     required_columns = ["user_id", "started_at", "finished_at"]
@@ -69,15 +68,6 @@ class TriplegsAccessor(object):
         assert pd.api.types.is_datetime64tz_dtype(
             obj["finished_at"]
         ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be datetime64 and timezone aware"
-
-    @_copy_docstring(plot_triplegs)
-    def plot(self, *args, **kwargs):
-        """
-        Plot this collection of triplegs.
-
-        See :func:`trackintel.visualization.triplegs.plot_triplegs`.
-        """
-        ti.visualization.triplegs.plot_triplegs(self._obj, *args, **kwargs)
 
     @_copy_docstring(write_triplegs_csv)
     def to_csv(self, filename, *args, **kwargs):
