@@ -4,6 +4,7 @@ import pytest
 from shapely.geometry import LineString
 
 import trackintel as ti
+from trackintel import Staypoints
 
 
 @pytest.fixture
@@ -15,7 +16,7 @@ def testdata_sp():
 
 
 class TestStaypoints:
-    """Tests for the StaypointsAccessor."""
+    """Tests for the Staypoints class."""
 
     def test_accessor_columns(self, testdata_sp):
         """Test if the as_staypoints accessor checks the required column for staypoints."""
@@ -46,3 +47,34 @@ class TestStaypoints:
         """Check if sp has center method and returns (lat, lon) pairs as geometry."""
         sp = testdata_sp.copy()
         assert len(sp.as_staypoints.center) == 2
+
+    def test_check_suceeding(self, testdata_sp):
+        """Test if check returns True on valid sp"""
+        assert Staypoints._check(testdata_sp)
+
+    def test_check_missing_columns(self, testdata_sp):
+        """Test if check returns False if column is missing"""
+        assert not Staypoints._check(testdata_sp.drop(columns="user_id"))
+
+    def test_check_no_tz(self, testdata_sp):
+        """Test if check returns False if datetime columns have no tz"""
+        tmp = testdata_sp["started_at"]
+        testdata_sp["started_at"] = testdata_sp["started_at"].dt.tz_localize(None)
+        assert not Staypoints._check(testdata_sp)
+        testdata_sp["started_at"] = tmp
+        testdata_sp["finished_at"] = testdata_sp["finished_at"].dt.tz_localize(None)
+        assert not Staypoints._check(testdata_sp)
+
+    def test_check_false_geometry_type(self, testdata_sp):
+        """Test if check returns False if geometry type is wrong"""
+        testdata_sp["geom"] = LineString(
+            [(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)]
+        )
+        assert not Staypoints._check(testdata_sp)
+
+    def test_check_ignore_false_geometry_type(self, testdata_sp):
+        """Test if check returns True if geometry type is wrong but validate_geometry is set to False"""
+        testdata_sp["geom"] = LineString(
+            [(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)]
+        )
+        assert Staypoints._check(testdata_sp, validate_geometry=False)
