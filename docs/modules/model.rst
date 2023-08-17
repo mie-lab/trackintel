@@ -68,10 +68,10 @@ Staypoints
 .. autoclass:: trackintel.model.staypoints.Staypoints
 	:members:
 
-TriplegsAccessor
+Triplegs
 ----------------
 
-.. autoclass:: trackintel.model.triplegs.TriplegsAccessor
+.. autoclass:: trackintel.model.triplegs.Triplegs
 	:members:
 
 LocationsAccessor
