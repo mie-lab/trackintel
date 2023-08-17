@@ -16,7 +16,6 @@ from trackintel.model.util import (
 )
 from trackintel.preprocessing.filter import spatial_filter
 from trackintel.preprocessing.triplegs import generate_trips
-from trackintel.visualization.triplegs import plot_triplegs
 
 _required_columns = ["user_id", "started_at", "finished_at"]
 
@@ -45,7 +44,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
 
     Examples
     --------
-    >>> df.as_triplegs.plot()
+    >>> df.as_triplegs.generate_trips()
     """
 
     def __init__(self, *args, validate_geometry=True, **kwargs):
@@ -97,15 +96,6 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
         if validate_geometry:
             return obj.geometry.is_valid.all() and obj.geometry.iloc[0].geom_type == "LineString"
         return True
-
-    @_copy_docstring(plot_triplegs)
-    def plot(self, *args, **kwargs):
-        """
-        Plot this collection of triplegs.
-
-        See :func:`trackintel.visualization.triplegs.plot_triplegs`.
-        """
-        ti.visualization.triplegs.plot_triplegs(self, *args, **kwargs)
 
     @_copy_docstring(write_triplegs_csv)
     def to_csv(self, filename, *args, **kwargs):

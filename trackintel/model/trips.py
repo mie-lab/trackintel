@@ -40,7 +40,7 @@ class TripsAccessor(object):
 
     Examples
     --------
-    >>> df.as_trips.plot()
+    >>> df.as_trips.generate_tours()
     """
 
     required_columns = ["user_id", "started_at", "finished_at", "origin_staypoint_id", "destination_staypoint_id"]
@@ -73,14 +73,6 @@ class TripsAccessor(object):
             ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
             if obj.geometry.iloc[0].geom_type != "MultiPoint":
                 raise AttributeError("The geometry must be a MultiPoint (only first checked).")
-
-    def plot(self, *args, **kwargs):
-        """
-        Plot this collection of trips.
-
-        See :func:`trackintel.visualization.trips.plot_trips`.
-        """
-        raise NotImplementedError
 
     @_copy_docstring(write_trips_csv)
     def to_csv(self, filename, *args, **kwargs):

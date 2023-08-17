@@ -8,7 +8,6 @@ from trackintel.model.util import (
     _register_trackintel_accessor,
 )
 from trackintel.preprocessing.filter import spatial_filter
-from trackintel.visualization.locations import plot_locations
 
 _required_columns = ["user_id", "center"]
 
@@ -32,7 +31,7 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
 
     Examples
     --------
-    >>> df.as_locations.plot()
+    >>> df.as_locations.to_csv("filename.csv")
     """
 
     def __init__(self, *args, validate_geometry=True, **kwargs):
@@ -68,15 +67,6 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
         if validate_geometry:
             return obj.geometry.iloc[0].geom_type == "Point"
         return True
-
-    @_copy_docstring(plot_locations)
-    def plot(self, *args, **kwargs):
-        """
-        Plot this collection of locations.
-
-        See :func:`trackintel.visualization.locations.plot_locations`.
-        """
-        ti.visualization.locations.plot_locations(self, *args, **kwargs)
 
     @_copy_docstring(write_locations_csv)
     def to_csv(self, filename, *args, **kwargs):

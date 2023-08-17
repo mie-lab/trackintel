@@ -15,5 +15,7 @@ from trackintel.model.locations import Locations
 from trackintel.model.triplegs import Triplegs
 from trackintel.model.staypoints import Staypoints
 
+from trackintel.visualization import plot, plot_modal_split
+
 from trackintel.__version__ import __version__
 from .core import print_version

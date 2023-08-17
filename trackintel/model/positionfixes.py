@@ -6,7 +6,6 @@ from trackintel.io.file import write_positionfixes_csv
 from trackintel.io.postgis import write_positionfixes_postgis
 from trackintel.model.util import _copy_docstring
 from trackintel.preprocessing.positionfixes import generate_staypoints, generate_triplegs
-from trackintel.visualization.positionfixes import plot_positionfixes
 from trackintel.model.util import (
     get_speed_positionfixes,
     TrackintelBase,
@@ -117,15 +116,6 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         See :func:`trackintel.preprocessing.positionfixes.generate_triplegs`.
         """
         return ti.preprocessing.positionfixes.generate_triplegs(self, staypoints, *args, **kwargs)
-
-    @_copy_docstring(plot_positionfixes)
-    def plot(self, *args, **kwargs):
-        """
-        Plot this collection of positionfixes.
-
-        See :func:`trackintel.visualization.positionfixes.plot_positionfixes`.
-        """
-        ti.visualization.positionfixes.plot_positionfixes(self, *args, **kwargs)
 
     @_copy_docstring(write_positionfixes_csv)
     def to_csv(self, filename, *args, **kwargs):

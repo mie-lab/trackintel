@@ -35,7 +35,7 @@ def calculate_modal_split(tpls, freq=None, metric="count", per_user=False, norm=
 
         If `freq=None` and `per_user=False` are passed the modal split collapses to a single column.
 
-        The modal split can be visualized using :func:`trackintel.visualization.modal_split.plot_modal_split`
+        The modal split can be visualized using :func:`trackintel.visualization.plot_modal_split`
 
     Examples
     --------

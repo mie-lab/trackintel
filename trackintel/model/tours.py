@@ -24,7 +24,7 @@ class ToursAccessor(object):
 
     Examples
     --------
-    >>> df.as_tours.plot()
+    >>> df.as_tours.to_csv("filename.csv")
     """
 
     required_columns = ["user_id", "started_at", "finished_at"]
@@ -66,11 +66,3 @@ class ToursAccessor(object):
         See :func:`trackintel.io.postgis.write_tours_postgis`.
         """
         ti.io.postgis.write_tours_postgis(self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype)
-
-    def plot(self, *args, **kwargs):
-        """
-        Plot this collection of tours.
-
-        See :func:`trackintel.visualization.tours.plot_tours`.
-        """
-        raise NotImplementedError

@@ -13,7 +13,6 @@ from trackintel.model.util import (
 )
 from trackintel.preprocessing.filter import spatial_filter
 from trackintel.preprocessing.staypoints import generate_locations, merge_staypoints
-from trackintel.visualization.staypoints import plot_staypoints
 
 _required_columns = ["user_id", "started_at", "finished_at"]
 
@@ -137,15 +136,6 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         See :func:`trackintel.preprocessing.filter.spatial_filter`.
         """
         return ti.preprocessing.filter.spatial_filter(self, *args, **kwargs)
-
-    @_copy_docstring(plot_staypoints)
-    def plot(self, *args, **kwargs):
-        """
-        Plot this collection of staypoints.
-
-        See :func:`trackintel.visualization.staypoints.plot_staypoints`.
-        """
-        ti.visualization.staypoints.plot_staypoints(self, *args, **kwargs)
 
     @_copy_docstring(write_staypoints_csv)
     def to_csv(self, filename, *args, **kwargs):
