@@ -195,7 +195,7 @@ def _split_overlaps(source, granularity="day"):
     gdf = source.copy()
     gdf[["started_at", "finished_at"]] = gdf.apply(_get_times, axis="columns", result_type="expand", freq=freq)
     # must call DataFrame.explode directly because GeoDataFrame.explode cannot be used on multiple columns
-    gdf = super(type(gdf), gdf).explode(["started_at", "finished_at"], ignore_index=True)
+    gdf = pd.DataFrame.explode(gdf, ["started_at", "finished_at"], ignore_index=True)
     if "duration" in gdf.columns:
         gdf["duration"] = gdf["finished_at"] - gdf["started_at"]
     return gdf

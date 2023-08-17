@@ -323,7 +323,8 @@ def read_staypoints_postgis(
 def write_staypoints_postgis(
     staypoints, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
-    staypoints.to_postgis(
+    gpd.GeoDataFrame.to_postgis(
+        staypoints,
         name,
         con,
         schema=schema,
