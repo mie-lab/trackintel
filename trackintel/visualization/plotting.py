@@ -276,7 +276,6 @@ def _plot_frames(positionfixes, staypoints, triplegs, locations, radius_sp, radi
 
 
 def plot(
-    *,
     positionfixes=None,
     staypoints=None,
     triplegs=None,
