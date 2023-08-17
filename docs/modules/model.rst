@@ -62,22 +62,22 @@ Positionfixes
 .. autoclass:: trackintel.model.positionfixes.Positionfixes
 	:members:
 
-StaypointsAccessor
+Staypoints
 ------------------
 
-.. autoclass:: trackintel.model.staypoints.StaypointsAccessor
+.. autoclass:: trackintel.model.staypoints.Staypoints
 	:members:
 
-TriplegsAccessor
+Triplegs
 ----------------
 
-.. autoclass:: trackintel.model.triplegs.TriplegsAccessor
+.. autoclass:: trackintel.model.triplegs.Triplegs
 	:members:
 
-LocationsAccessor
+Locations
 -----------------
 
-.. autoclass:: trackintel.model.locations.LocationsAccessor
+.. autoclass:: trackintel.model.locations.Locations
 	:members:
 
 TripsAccessor

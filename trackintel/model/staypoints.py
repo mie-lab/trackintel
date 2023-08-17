@@ -1,17 +1,25 @@
 import pandas as pd
+
 import trackintel as ti
 from trackintel.analysis.labelling import create_activity_flag
 from trackintel.analysis.tracking_quality import temporal_tracking_quality
 from trackintel.io.file import write_staypoints_csv
 from trackintel.io.postgis import write_staypoints_postgis
-from trackintel.model.util import _copy_docstring, _register_trackintel_accessor
+from trackintel.model.util import (
+    TrackintelBase,
+    TrackintelGeoDataFrame,
+    _copy_docstring,
+    _register_trackintel_accessor,
+)
 from trackintel.preprocessing.filter import spatial_filter
 from trackintel.preprocessing.staypoints import generate_locations, merge_staypoints
 
+_required_columns = ["user_id", "started_at", "finished_at"]
+
 
 @_register_trackintel_accessor("as_staypoints")
-class StaypointsAccessor(object):
-    """A pandas accessor to treat (Geo)DataFrames as collections of `Staypoints`.
+class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
+    """A pandas accessor to treat a GeoDataFrame as collections of `Staypoints`.
 
     This will define certain methods and accessors, as well as make sure that the DataFrame
     adheres to some requirements.
@@ -40,27 +48,23 @@ class StaypointsAccessor(object):
     >>> df.as_staypoints.generate_locations()
     """
 
-    required_columns = ["user_id", "started_at", "finished_at"]
+    def __init__(self, *args, validate_geometry=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._validate(self, validate_geometry=validate_geometry)
 
-    def __init__(self, pandas_obj):
-        self._validate(pandas_obj)
-        self._obj = pandas_obj
+    # create circular reference directly -> avoid second call of init via accessor
+    @property
+    def as_staypoints(self):
+        return self
 
     @staticmethod
-    def _validate(obj):
+    def _validate(obj, validate_geometry=True):
         # check columns
-        if any([c not in obj.columns for c in StaypointsAccessor.required_columns]):
+        if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
                 "To process a DataFrame as a collection of staypoints, it must have the properties"
-                f" {StaypointsAccessor.required_columns}, but it has {', '.join(obj.columns)}."
+                f" {_required_columns}, but it has {', '.join(obj.columns)}."
             )
-        # check geometry
-        assert (
-            obj.geometry.is_valid.all()
-        ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
-        if obj.geometry.iloc[0].geom_type != "Point":
-            raise AttributeError("The geometry must be a Point (only first checked).")
-
         # check timestamp dtypes
         assert pd.api.types.is_datetime64tz_dtype(
             obj["started_at"]
@@ -69,11 +73,32 @@ class StaypointsAccessor(object):
             obj["finished_at"]
         ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be tz aware datetime64"
 
+        if validate_geometry:
+            # check geometry
+            assert (
+                obj.geometry.is_valid.all()
+            ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
+            if obj.geometry.iloc[0].geom_type != "Point":
+                raise AttributeError("The geometry must be a Point (only first checked).")
+
+    @staticmethod
+    def _check(obj, validate_geometry=True):
+        """Check does the same as _validate but returns bool instead of potentially raising an error."""
+        if any([c not in obj.columns for c in _required_columns]):
+            return False
+        if not pd.api.types.is_datetime64tz_dtype(obj["started_at"]):
+            return False
+        if not pd.api.types.is_datetime64tz_dtype(obj["finished_at"]):
+            return False
+        if validate_geometry:
+            return obj.geometry.is_valid.all() and obj.geometry.iloc[0].geom_type == "Point"
+        return True
+
     @property
     def center(self):
         """Return the center coordinate of this collection of staypoints."""
-        lat = self._obj.geometry.y
-        lon = self._obj.geometry.x
+        lat = self.geometry.y
+        lon = self.geometry.x
         return (float(lon.mean()), float(lat.mean()))
 
     @_copy_docstring(generate_locations)
@@ -83,7 +108,7 @@ class StaypointsAccessor(object):
 
         See :func:`trackintel.preprocessing.staypoints.generate_locations`.
         """
-        return ti.preprocessing.staypoints.generate_locations(self._obj, *args, **kwargs)
+        return ti.preprocessing.staypoints.generate_locations(self, *args, **kwargs)
 
     @_copy_docstring(merge_staypoints)
     def merge_staypoints(self, *args, **kwargs):
@@ -92,7 +117,7 @@ class StaypointsAccessor(object):
 
         See :func:`trackintel.preprocessing.staypoints.merge_staypoints`.
         """
-        return ti.preprocessing.staypoints.merge_staypoints(self._obj, *args, **kwargs)
+        return ti.preprocessing.staypoints.merge_staypoints(self, *args, **kwargs)
 
     @_copy_docstring(create_activity_flag)
     def create_activity_flag(self, *args, **kwargs):
@@ -101,7 +126,7 @@ class StaypointsAccessor(object):
 
         See :func:`trackintel.analysis.labelling.create_activity_flag`.
         """
-        return ti.analysis.labelling.create_activity_flag(self._obj, *args, **kwargs)
+        return ti.analysis.labelling.create_activity_flag(self, *args, **kwargs)
 
     @_copy_docstring(spatial_filter)
     def spatial_filter(self, *args, **kwargs):
@@ -110,7 +135,7 @@ class StaypointsAccessor(object):
 
         See :func:`trackintel.preprocessing.filter.spatial_filter`.
         """
-        return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
+        return ti.preprocessing.filter.spatial_filter(self, *args, **kwargs)
 
     @_copy_docstring(write_staypoints_csv)
     def to_csv(self, filename, *args, **kwargs):
@@ -119,7 +144,7 @@ class StaypointsAccessor(object):
 
         See :func:`trackintel.io.file.write_staypoints_csv`.
         """
-        ti.io.file.write_staypoints_csv(self._obj, filename, *args, **kwargs)
+        ti.io.file.write_staypoints_csv(self, filename, *args, **kwargs)
 
     @_copy_docstring(write_staypoints_postgis)
     def to_postgis(
@@ -130,9 +155,7 @@ class StaypointsAccessor(object):
 
         See :func:`trackintel.io.postgis.write_staypoints_postgis`.
         """
-        ti.io.postgis.write_staypoints_postgis(
-            self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype
-        )
+        ti.io.postgis.write_staypoints_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
     @_copy_docstring(temporal_tracking_quality)
     def temporal_tracking_quality(self, *args, **kwargs):
@@ -141,4 +164,4 @@ class StaypointsAccessor(object):
 
         See :func:`trackintel.analysis.tracking_quality.temporal_tracking_quality`.
         """
-        return ti.analysis.tracking_quality.temporal_tracking_quality(self._obj, *args, **kwargs)
+        return ti.analysis.tracking_quality.temporal_tracking_quality(self, *args, **kwargs)
