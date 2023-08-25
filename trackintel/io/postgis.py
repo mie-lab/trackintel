@@ -567,7 +567,8 @@ def write_trips_postgis(
         dtype = dtype or {}
         dtype.setdefault("trips", JSON)
     if isinstance(trips, gpd.GeoDataFrame):
-        trips.to_postgis(
+        gpd.GeoDataFrame.to_postgis(
+            trips,
             name,
             con,
             schema=schema,

@@ -14,6 +14,9 @@ from trackintel.model.positionfixes import Positionfixes
 from trackintel.model.locations import Locations
 from trackintel.model.triplegs import Triplegs
 from trackintel.model.staypoints import Staypoints
+from trackintel.model.trips import trips
+from trackintel.model.trips import TripsDataFrame
+from trackintel.model.trips import TripsGeoDataFrame
 
 from trackintel.visualization import plot, plot_modal_split
 
