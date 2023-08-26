@@ -552,5 +552,5 @@ class TestGenerate_triplegs:
         # remove isolated - not needed for this test
         pfs = pfs[~pfs.index.isin([1, 2])].copy()
         # set user ID to string
-        pfs["user_id"] = pfs["user_id"].astype(str)
-        pfs, tpls = pfs.as_positionfixes.generate_triplegs()
+        pfs["user_id"] = pfs["user_id"].astype(str) + "not_numerical_interpretable_str"
+        pfs, _ = pfs.as_positionfixes.generate_triplegs()
