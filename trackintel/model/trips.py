@@ -187,6 +187,7 @@ class TripsGeoDataFrame(TrackintelGeoDataFrameWithFallback, TripsDataFrame, gpd.
     --------
     >>> df.as_trips.generate_tours()
     """
+
     fallback_class = TripsDataFrame
 
     def __init__(self, *args, validate_geometry=True, **kwargs):
