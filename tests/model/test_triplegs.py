@@ -49,7 +49,7 @@ class TestTriplegs:
 
     def test_accessor_recursive(self, testdata_tpls):
         tpls = testdata_tpls.as_triplegs
-        assert type(tpls) == Triplegs
+        assert type(tpls) is Triplegs
         assert id(tpls) == id(tpls.as_triplegs)
 
     def test_check_suceeding(self, testdata_tpls):
