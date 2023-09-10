@@ -43,7 +43,7 @@ class TestLocations:
     def test_accessor_recursive(self, testdata_locs):
         """Test if as_locations works recursivly"""
         locs = testdata_locs.as_locations
-        assert type(locs) == Locations
+        assert type(locs) is Locations
         assert id(locs) == id(locs.as_locations)
 
     def test_check_suceeding(self, testdata_locs):
