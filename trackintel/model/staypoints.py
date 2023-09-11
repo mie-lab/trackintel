@@ -66,11 +66,11 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
                 f" {_required_columns}, but it has {', '.join(obj.columns)}."
             )
         # check timestamp dtypes
-        assert pd.api.types.is_datetime64tz_dtype(
-            obj["started_at"]
+        assert isinstance(
+            obj["started_at"].dtype, pd.DatetimeTZDtype
         ), f"dtype of started_at is {obj['started_at'].dtype} but has to be tz aware datetime64"
-        assert pd.api.types.is_datetime64tz_dtype(
-            obj["finished_at"]
+        assert isinstance(
+            obj["finished_at"].dtype, pd.DatetimeTZDtype
         ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be tz aware datetime64"
 
         if validate_geometry:
@@ -86,9 +86,9 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         """Check does the same as _validate but returns bool instead of potentially raising an error."""
         if any([c not in obj.columns for c in _required_columns]):
             return False
-        if not pd.api.types.is_datetime64tz_dtype(obj["started_at"]):
+        if not isinstance(obj["started_at"].dtype, pd.DatetimeTZDtype):
             return False
-        if not pd.api.types.is_datetime64tz_dtype(obj["finished_at"]):
+        if not isinstance(obj["finished_at"].dtype, pd.DatetimeTZDtype):
             return False
         if validate_geometry:
             return obj.geometry.is_valid.all() and obj.geometry.iloc[0].geom_type == "Point"
