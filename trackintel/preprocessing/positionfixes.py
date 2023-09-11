@@ -362,7 +362,7 @@ def generate_triplegs(
         posfix_grouper = pfs.groupby("tripleg_id")
 
         tpls = posfix_grouper.agg(
-            {"user_id": ["mean"], "tracked_at": [min, max], pfs.geometry.name: list}
+            {"user_id": ["first"], "tracked_at": [min, max], pfs.geometry.name: list}
         )  # could add a "number of pfs": can be any column "count"
 
         # prepare dataframe: Rename columns; read/set geometry/crs;
