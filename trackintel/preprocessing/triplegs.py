@@ -96,7 +96,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
 
     trips_grouper = sp_tpls_no_act.groupby("temp_trip_id")
     trips = trips_grouper.agg(
-        {"user_id": "first", "started_at": min, "finished_at": max, "type": list, "sp_tpls_id": list}
+        {"user_id": "first", "started_at": "min", "finished_at": "max", "type": list, "sp_tpls_id": list}
     )
 
     def _seperate_ids(row):
