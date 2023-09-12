@@ -143,7 +143,7 @@ def pre_filter_locations(
         groupby_loc = ["location_id"]
     else:
         raise ValueError(f"Unknown agg_level '{agg_level}' use instead {{'user', 'dataset'}}.")
-    loc = sp.groupby(groupby_loc).agg({"started_at": [min, "count"], "finished_at": max, "duration": sum})
+    loc = sp.groupby(groupby_loc).agg({"started_at": ["min", "count"], "finished_at": "max", "duration": "sum"})
     loc.columns = loc.columns.droplevel(0)  # remove possible multi-index
     loc.rename(columns={"min": "started_at", "max": "finished_at", "sum": "duration"}, inplace=True)
     # period for maximal time span first visit - last visit.
@@ -214,7 +214,7 @@ def _freq_transform(group, *labels):
     pd.Series
         dtype : object
     """
-    group_agg = group.groupby("location_id").agg({"duration": sum})
+    group_agg = group.groupby("location_id").agg({"duration": "sum"})
     group_agg["purpose"] = _freq_assign(group_agg["duration"], *labels)
     group_merge = pd.merge(
         group["location_id"], group_agg["purpose"], how="left", left_on="location_id", right_index=True
@@ -301,24 +301,37 @@ def osna_method(staypoints):
 
     # create a pivot table -> labels "home" and "work" as columns. ("user_id", "location_id" still in index.)
     sp_pivot = sp_agg.unstack()
-    # this line is here to circumvent a bug in pandas .idxmax should return NA if all values in column are
-    # empty but that doesn't work for pd.NaT -> therefor we cast to float64
-    sp_pivot /= pd.Timedelta("1ns")
     # get index of maximum for columns "work" and "home"
     # looks over locations to find maximum for columns
-    sp_idxmax = sp_pivot.groupby(["user_id"]).idxmax(axis="index")
-    # first assign labels
-    for col in sp_idxmax.columns:
-        sp_pivot.loc[sp_idxmax[col].dropna(), "purpose"] = col
+    # use fillna to such that idxmax works on columns with only NaT
+    sp_idxmax = sp_pivot.fillna(pd.Timedelta(0)).groupby(["user_id"]).idxmax()
 
-    # The "home" label could overlap with the "work" label
-    # we set the rows where "home" is maximum to zero (pd.NaT) and recalculate index of work maximum.
-    if all(col in sp_idxmax.columns for col in ["work", "home"]):
-        redo_work = sp_idxmax[sp_idxmax["home"] == sp_idxmax["work"]]
-        sp_pivot.loc[redo_work["work"], "purpose"] = "home"
-        sp_pivot.loc[redo_work["work"], "work"] = np.nan
-        sp_idxmax_work = sp_pivot.groupby(["user_id"])["work"].idxmax()
-        sp_pivot.loc[sp_idxmax_work.dropna(), "purpose"] = "work"
+    # preset dtype to avoid upcast (float64 -> object) in pandas (and the corresponding error)
+    sp_pivot["purpose"] = None
+    if "work" in sp_pivot.columns:
+        # first get all index of max entries (of work) that are not NaT
+        idx_work = sp_pivot.loc[sp_idxmax["work"], "work"].dropna().index
+        # set them to the corresponding purpose (work)
+        sp_pivot.loc[idx_work, "purpose"] = "work"
+    else:
+        # assign empty index to see if overlap happened
+        idx_work = sp_pivot.iloc[0:0].index
+
+    if "home" in sp_pivot.columns:
+        # get all index of max entries (of home) that are not NaT
+        idx_home = sp_pivot.loc[sp_idxmax["home"], "home"].dropna().index
+        # set them to the corresponding purpose (home overrides work!)
+        sp_pivot.loc[idx_home, "purpose"] = "home"
+    else:
+        idx_home = sp_pivot.iloc[0:0].index
+
+    # if override happened recalculate work
+    overlap = idx_home.intersection(idx_work)
+    if not overlap.empty:
+        sp_pivot.loc[overlap, "work"] = pd.NaT
+        sp_idxmax = sp_pivot["work"].fillna(pd.Timedelta(0)).groupby(["user_id"]).idxmax()
+        idx_work = sp_pivot.loc[sp_idxmax, "work"].dropna().index
+        sp_pivot.loc[idx_work, "purpose"] = "work"
 
     # now join it back together
     sel = sp_in.columns != "purpose"  # no overlap with older "purpose"
