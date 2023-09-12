@@ -143,7 +143,7 @@ def pre_filter_locations(
         groupby_loc = ["location_id"]
     else:
         raise ValueError(f"Unknown agg_level '{agg_level}' use instead {{'user', 'dataset'}}.")
-    loc = sp.groupby(groupby_loc).agg({"started_at": ["min", "count"], "finished_at": "max", "duration": "sum"})
+    loc = sp.groupby(groupby_loc).agg({"started_at": [min, "count"], "finished_at": max, "duration": sum})
     loc.columns = loc.columns.droplevel(0)  # remove possible multi-index
     loc.rename(columns={"min": "started_at", "max": "finished_at", "sum": "duration"}, inplace=True)
     # period for maximal time span first visit - last visit.
@@ -214,7 +214,7 @@ def _freq_transform(group, *labels):
     pd.Series
         dtype : object
     """
-    group_agg = group.groupby("location_id").agg({"duration": "sum"})
+    group_agg = group.groupby("location_id").agg({"duration": sum})
     group_agg["purpose"] = _freq_assign(group_agg["duration"], *labels)
     group_merge = pd.merge(
         group["location_id"], group_agg["purpose"], how="left", left_on="location_id", right_index=True
