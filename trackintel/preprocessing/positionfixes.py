@@ -355,7 +355,7 @@ def generate_triplegs(
 
         # fill the pd.NAs with the previously observed tripleg_id
         # pfs not belonging to tripleg are also propagated (with -1)
-        pfs["tripleg_id"] = pfs["tripleg_id"].fillna(method="ffill")
+        pfs["tripleg_id"] = pfs["tripleg_id"].ffill()
         # assign back pd.NA to -1
         pfs.loc[pfs["tripleg_id"] == -1, "tripleg_id"] = pd.NA
 

@@ -86,7 +86,8 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     # assign an incrementing id to all triplegs that start a trip
     # temporary as empty trips are not filtered out yet.
     sp_tpls.loc[new_trip, "temp_trip_id"] = np.arange(new_trip.sum())
-    sp_tpls["temp_trip_id"].fillna(method="ffill", inplace=True)
+    # fill NA with previous entry
+    sp_tpls["temp_trip_id"].ffill(inplace=True)
 
     # exclude activities to aggregate trips together.
     # activity can be thought of as the same aggregation level as trips.
