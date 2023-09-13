@@ -308,26 +308,24 @@ def osna_method(staypoints):
 
     # preset dtype to avoid upcast (float64 -> object) in pandas (and the corresponding error)
     sp_pivot["purpose"] = None
+    # assign empty index without any overlap
+    idx_work = idx_home = sp_pivot.iloc[0:0].index
     if "work" in sp_pivot.columns:
         # first get all index of max entries (of work) that are not NaT
         idx_work = sp_pivot.loc[sp_idxmax["work"], "work"].dropna().index
         # set them to the corresponding purpose (work)
         sp_pivot.loc[idx_work, "purpose"] = "work"
-    else:
-        # assign empty index to see if overlap happened
-        idx_work = sp_pivot.iloc[0:0].index
 
     if "home" in sp_pivot.columns:
         # get all index of max entries (of home) that are not NaT
         idx_home = sp_pivot.loc[sp_idxmax["home"], "home"].dropna().index
         # set them to the corresponding purpose (home overrides work!)
         sp_pivot.loc[idx_home, "purpose"] = "home"
-    else:
-        idx_home = sp_pivot.iloc[0:0].index
 
     # if override happened recalculate work
     overlap = idx_home.intersection(idx_work)
     if not overlap.empty:
+        # remove overlap -> must take another location as everything is NaT on maximum
         sp_pivot.loc[overlap, "work"] = pd.NaT
         sp_idxmax = sp_pivot["work"].fillna(pd.Timedelta(0)).groupby(["user_id"]).idxmax()
         idx_work = sp_pivot.loc[sp_idxmax, "work"].dropna().index
