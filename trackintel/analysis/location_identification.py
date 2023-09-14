@@ -303,12 +303,12 @@ def osna_method(staypoints):
     sp_pivot = sp_agg.unstack()
     # get index of maximum for columns "work" and "home"
     # looks over locations to find maximum for columns
-    # use fillna to such that idxmax works on columns with only NaT
+    # use fillna such that idxmax raises no error on columns with only NaT
     sp_idxmax = sp_pivot.fillna(pd.Timedelta(0)).groupby(["user_id"]).idxmax()
 
     # preset dtype to avoid upcast (float64 -> object) in pandas (and the corresponding error)
     sp_pivot["purpose"] = None
-    # assign empty index without any overlap
+    # assign empty index to idx_work/idx_home to have a default behavior for the intersection later
     idx_work = idx_home = sp_pivot.iloc[0:0].index
     if "work" in sp_pivot.columns:
         # first get all index of max entries (of work) that are not NaT
