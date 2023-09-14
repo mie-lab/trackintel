@@ -47,7 +47,7 @@ class TestPositionfixes:
         # check if tz is added to the datatime column
         file = os.path.join("tests", "data", "positionfixes.csv")
         pfs = ti.read_positionfixes_csv(file, sep=";", index_col="id")
-        assert pd.api.types.is_datetime64tz_dtype(pfs["tracked_at"])
+        assert isinstance(pfs["tracked_at"].dtype, pd.DatetimeTZDtype)
 
         # check if a timezone will be set without storing the timezone
         date_format = "%Y-%m-%d %H:%M:%S"
@@ -55,7 +55,7 @@ class TestPositionfixes:
         pfs.as_positionfixes.to_csv(tmp_file, sep=";", date_format=date_format)
         pfs = ti.read_positionfixes_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
-        assert pd.api.types.is_datetime64tz_dtype(pfs["tracked_at"])
+        assert isinstance(pfs["tracked_at"].dtype, pd.DatetimeTZDtype)
 
         # check if a warning is raised if 'tz' is not provided
         with pytest.warns(UserWarning):
@@ -115,7 +115,7 @@ class TestTriplegs:
         # check if tz is added to the datatime column
         file = os.path.join("tests", "data", "triplegs.csv")
         tpls = ti.read_triplegs_csv(file, sep=";", index_col="id")
-        assert pd.api.types.is_datetime64tz_dtype(tpls["started_at"])
+        assert isinstance(tpls["started_at"].dtype, pd.DatetimeTZDtype)
 
         # check if a timezone will be set without storing the timezone
         tmp_file = os.path.join("tests", "data", "triplegs_test_2.csv")
@@ -123,7 +123,7 @@ class TestTriplegs:
         tpls.as_triplegs.to_csv(tmp_file, sep=";", date_format=date_format)
         tpls = ti.read_triplegs_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
-        assert pd.api.types.is_datetime64tz_dtype(tpls["started_at"])
+        assert isinstance(tpls["started_at"].dtype, pd.DatetimeTZDtype)
 
         # check if a warning is raised if 'tz' is not provided
         with pytest.warns(UserWarning):
@@ -180,7 +180,7 @@ class TestStaypoints:
         # check if tz is added to the datatime column
         file = os.path.join("tests", "data", "staypoints.csv")
         sp = ti.read_staypoints_csv(file, sep=";", index_col="id")
-        assert pd.api.types.is_datetime64tz_dtype(sp["started_at"])
+        assert isinstance(sp["started_at"].dtype, pd.DatetimeTZDtype)
 
         # check if a timezone will be without storing the timezone
         tmp_file = os.path.join("tests", "data", "staypoints_test_2.csv")
@@ -188,7 +188,7 @@ class TestStaypoints:
         sp.as_staypoints.to_csv(tmp_file, sep=";", date_format=date_format)
         sp = ti.read_staypoints_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
-        assert pd.api.types.is_datetime64tz_dtype(sp["started_at"])
+        assert isinstance(sp["started_at"].dtype, pd.DatetimeTZDtype)
 
         # check if a warning is raised if 'tz' is not provided
         with pytest.warns(UserWarning):
@@ -305,7 +305,7 @@ class TestTrips:
         # check if tz is added to the datatime column
         file = os.path.join("tests", "data", "trips.csv")
         trips = ti.read_trips_csv(file, sep=";", index_col="id")
-        assert pd.api.types.is_datetime64tz_dtype(trips["started_at"])
+        assert isinstance(trips["started_at"].dtype, pd.DatetimeTZDtype)
 
         # check if a timezone will be set without storing the timezone
         tmp_file = os.path.join("tests", "data", "trips_test_2.csv")
@@ -313,7 +313,7 @@ class TestTrips:
         trips.as_trips.to_csv(tmp_file, sep=";", date_format=date_format)
         trips = ti.read_trips_csv(tmp_file, sep=";", index_col="id", tz="utc")
 
-        assert pd.api.types.is_datetime64tz_dtype(trips["started_at"])
+        assert isinstance(trips["started_at"].dtype, pd.DatetimeTZDtype)
 
         # check if a warning is raised if 'tz' is not provided
         with pytest.warns(UserWarning):

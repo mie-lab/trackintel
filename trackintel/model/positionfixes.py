@@ -66,8 +66,8 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
                 f" {_required_columns}, but it has [{', '.join(obj.columns)}]."
             )
         # check timestamp dtypes
-        assert pd.api.types.is_datetime64tz_dtype(
-            obj["tracked_at"]
+        assert isinstance(
+            obj["tracked_at"].dtype, pd.DatetimeTZDtype
         ), f"dtype of tracked_at is {obj['tracked_at'].dtype} but has to be datetime64 and timezone aware"
 
         # check geometry
@@ -86,7 +86,7 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
             return False
         if obj.shape[0] <= 0:
             return False
-        if not pd.api.types.is_datetime64tz_dtype(obj["tracked_at"]):
+        if not isinstance(obj["tracked_at"].dtype, pd.DatetimeTZDtype):
             return False
         if validate_geometry:
             return obj.geometry.is_valid.all() and obj.geometry.iloc[0].geom_type == "Point"

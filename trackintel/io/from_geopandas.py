@@ -400,7 +400,7 @@ def _trackintel_model(gdf, set_names=None, geom_col=None, crs=None, tz_cols=None
 
     if tz_cols is not None:
         for col in tz_cols:
-            if not pd.api.types.is_datetime64tz_dtype(gdf[col]):
+            if not isinstance(gdf[col].dtype, pd.DatetimeTZDtype):
                 try:
                     gdf[col] = _localize_timestamp(dt_series=gdf[col], pytz_tzinfo=tz, col_name=col)
                 except ValueError:

@@ -42,11 +42,11 @@ class ToursAccessor(object):
             )
 
         # check timestamp dtypes
-        assert pd.api.types.is_datetime64tz_dtype(
-            obj["started_at"]
+        assert isinstance(
+            obj["started_at"].dtype, pd.DatetimeTZDtype
         ), f"dtype of started_at is {obj['started_at'].dtype} but has to be datetime64 and timezone aware"
-        assert pd.api.types.is_datetime64tz_dtype(
-            obj["finished_at"]
+        assert isinstance(
+            obj["finished_at"].dtype, pd.DatetimeTZDtype
         ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be datetime64 and timezone aware"
 
     def to_csv(self, filename, *args, **kwargs):
