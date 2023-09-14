@@ -309,7 +309,7 @@ def osna_method(staypoints):
     # preset dtype to avoid upcast (float64 -> object) in pandas (and the corresponding error)
     sp_pivot["purpose"] = None
     # assign empty index to idx_work/idx_home to have a default behavior for the intersection later
-    idx_work = idx_home = sp_pivot.iloc[0:0].index
+    idx_work = idx_home = pd.Index([])
     if "work" in sp_pivot.columns:
         # first get all index of max entries (of work) that are not NaT
         idx_work = sp_pivot.loc[sp_idxmax["work"], "work"].dropna().index
