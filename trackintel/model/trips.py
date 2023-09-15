@@ -15,11 +15,10 @@ from trackintel.model.util import (
 
 
 @_register_trackintel_accessor("as_trips")
-def trips(*args, **kwargs):
+class Trips:
     """A pandas accessor to treat (Geo)DataFrames as collections of trips.
 
-    This function will create a TrackintelDataFrame or a TrackintelGeoDataFrame depending if a geometry column is present.
-    It can be used like a typical GeoDataFrame/DataFrame constructor.
+    The class constructor will create a TripsDataFrame or a TripsGeoDataFrame depending if a geometry column is present.
 
     Requires at least the following columns:
     ['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'destination_staypoint_id']
@@ -48,10 +47,16 @@ def trips(*args, **kwargs):
     --------
     >>> df.as_trips.generate_tours()
     """
-    is_gdf = len(args) > 0 and isinstance(args[0], gpd.GeoDataFrame) or "geometry" in kwargs
-    if is_gdf:
-        return TripsGeoDataFrame(*args, **kwargs)
-    return TripsDataFrame(*args, **kwargs)
+
+    def __new__(cls, *args, **kwargs):
+        is_gdf = (
+            (len(args) > 0 and isinstance(args[0], gpd.GeoDataFrame))
+            or "geometry" in kwargs
+            or ("data" in kwargs and isinstance(kwargs["data"], gpd.GeoDataFrame))
+        )
+        if is_gdf:
+            return TripsGeoDataFrame(*args, **kwargs)
+        return TripsDataFrame(*args, **kwargs)
 
 
 _required_columns = ["user_id", "started_at", "finished_at", "origin_staypoint_id", "destination_staypoint_id"]
@@ -64,8 +69,6 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
     ['user_id', 'started_at', 'finished_at', 'origin_staypoint_id', 'destination_staypoint_id']
 
     The 'index' of the DataFrame will be treated as unique identifier of the `Trips`
-
-    Trips have an optional geometry of type MultiPoint which describes the start and the end point of the trip
 
     For several usecases, the following additional columns are required:
     ['origin_purpose', 'destination_purpose', 'modes', 'primary_mode', 'tour_id']
@@ -101,20 +104,20 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
             )
 
         # check timestamp dtypes
-        assert pd.api.types.is_datetime64tz_dtype(
-            obj["started_at"]
+        assert isinstance(
+            obj["started_at"].dtype, pd.DatetimeTZDtype
         ), f"dtype of started_at is {obj['started_at'].dtype} but has to be datetime64 and timezone aware"
-        assert pd.api.types.is_datetime64tz_dtype(
-            obj["finished_at"]
+        assert isinstance(
+            obj["finished_at"].dtype, pd.DatetimeTZDtype
         ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be datetime64 and timezone aware"
 
     @staticmethod
     def _check(obj):
         if any([c not in obj.columns for c in _required_columns]):
             return False
-        if not pd.api.types.is_datetime64tz_dtype(obj["started_at"]):
+        if not isinstance(obj["started_at"].dtype, pd.DatetimeTZDtype):
             return False
-        if not pd.api.types.is_datetime64tz_dtype(obj["finished_at"]):
+        if not isinstance(obj["finished_at"].dtype, pd.DatetimeTZDtype):
             return False
         return True
 
@@ -157,7 +160,7 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
 
 
 # added GeoDataFrame and DataFrame manually afterwards such that our methods always come first
-class TripsGeoDataFrame(TrackintelGeoDataFrameWithFallback, TripsDataFrame, gpd.GeoDataFrame, pd.DataFrame):
+class TripsGeoDataFrame(TrackintelGeoDataFrameWithFallback, TripsDataFrame, gpd.GeoDataFrame):
     """Class to treat a GeoDataFrame as collections of trips.
 
     Requires at least the following columns:
@@ -165,7 +168,7 @@ class TripsGeoDataFrame(TrackintelGeoDataFrameWithFallback, TripsDataFrame, gpd.
 
     The 'index' of the GeoDataFrame will be treated as unique identifier of the `Trips`
 
-    Trips have an optional geometry of type MultiPoint which describes the start and the end point of the trip
+    TripsGeoDataFrame must have a geometry of type MultiPoint which describes the start and the end point of the trip.
 
     For several usecases, the following additional columns are required:
     ['origin_purpose', 'destination_purpose', 'modes', 'primary_mode', 'tour_id']

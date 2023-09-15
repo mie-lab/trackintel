@@ -248,10 +248,10 @@ class Test_wrapped_gdf_method:
     def test_no_geodataframe(self, example_positionfixes):
         """Test if function return value does not subclass GeoDataFrame then __class__ is not touched"""
 
+        @_wrapped_gdf_method
         def foo(gdf: GeoDataFrame) -> pd.DataFrame:
             return gdf.drop(columns=gdf.geometry.name)
 
-        foo = _wrapped_gdf_method(foo)
         assert type(foo(example_positionfixes)) is pd.DataFrame
 
     def test_failed_check(self, example_positionfixes):
@@ -291,10 +291,10 @@ class Test_wrapped_gdf_method_fallback:
     def test_no_geodataframe(self, example_positionfixes):
         """Test if function return value does not subclass DataFrame then __class__ is not touched"""
 
+        @_wrapped_gdf_method_fallback
         def foo(gdf: GeoDataFrame) -> pd.Series:
             return pd.Series(gdf.iloc[0])
 
-        foo = _wrapped_gdf_method(foo)
         assert type(foo(example_positionfixes)) is pd.Series
 
     def test_failed_check(self, example_positionfixes):
