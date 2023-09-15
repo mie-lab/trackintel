@@ -301,24 +301,35 @@ def osna_method(staypoints):
 
     # create a pivot table -> labels "home" and "work" as columns. ("user_id", "location_id" still in index.)
     sp_pivot = sp_agg.unstack()
-    # this line is here to circumvent a bug in pandas .idxmax should return NA if all values in column are
-    # empty but that doesn't work for pd.NaT -> therefor we cast to float64
-    sp_pivot /= pd.Timedelta("1ns")
     # get index of maximum for columns "work" and "home"
     # looks over locations to find maximum for columns
-    sp_idxmax = sp_pivot.groupby(["user_id"]).idxmax(axis="index")
-    # first assign labels
-    for col in sp_idxmax.columns:
-        sp_pivot.loc[sp_idxmax[col].dropna(), "purpose"] = col
+    # use fillna such that idxmax raises no error on columns with only NaT
+    sp_idxmax = sp_pivot.fillna(pd.Timedelta(0)).groupby(["user_id"]).idxmax()
 
-    # The "home" label could overlap with the "work" label
-    # we set the rows where "home" is maximum to zero (pd.NaT) and recalculate index of work maximum.
-    if all(col in sp_idxmax.columns for col in ["work", "home"]):
-        redo_work = sp_idxmax[sp_idxmax["home"] == sp_idxmax["work"]]
-        sp_pivot.loc[redo_work["work"], "purpose"] = "home"
-        sp_pivot.loc[redo_work["work"], "work"] = np.nan
-        sp_idxmax_work = sp_pivot.groupby(["user_id"])["work"].idxmax()
-        sp_pivot.loc[sp_idxmax_work.dropna(), "purpose"] = "work"
+    # preset dtype to avoid upcast (float64 -> object) in pandas (and the corresponding error)
+    sp_pivot["purpose"] = None
+    # assign empty index to idx_work/idx_home to have a default behavior for the intersection later
+    idx_work = idx_home = pd.Index([])
+    if "work" in sp_pivot.columns:
+        # first get all index of max entries (of work) that are not NaT
+        idx_work = sp_pivot.loc[sp_idxmax["work"], "work"].dropna().index
+        # set them to the corresponding purpose (work)
+        sp_pivot.loc[idx_work, "purpose"] = "work"
+
+    if "home" in sp_pivot.columns:
+        # get all index of max entries (of home) that are not NaT
+        idx_home = sp_pivot.loc[sp_idxmax["home"], "home"].dropna().index
+        # set them to the corresponding purpose (home overrides work!)
+        sp_pivot.loc[idx_home, "purpose"] = "home"
+
+    # if override happened recalculate work
+    overlap = idx_home.intersection(idx_work)
+    if not overlap.empty:
+        # remove overlap -> must take another location as everything is NaT on maximum
+        sp_pivot.loc[overlap, "work"] = pd.NaT
+        sp_idxmax = sp_pivot["work"].fillna(pd.Timedelta(0)).groupby(["user_id"]).idxmax()
+        idx_work = sp_pivot.loc[sp_idxmax, "work"].dropna().index
+        sp_pivot.loc[idx_work, "purpose"] = "work"
 
     # now join it back together
     sel = sp_in.columns != "purpose"  # no overlap with older "purpose"

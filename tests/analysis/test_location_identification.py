@@ -307,6 +307,7 @@ class TestOsna_Method:
     def test_default(self, example_osna):
         """Test with no changes to test data."""
         osna = osna_method(example_osna)
+        example_osna["purpose"] = None
         example_osna.loc[example_osna["location_id"] == 0, "purpose"] = "home"
         example_osna.loc[example_osna["location_id"] == 1, "purpose"] = "work"
         assert_geodataframe_equal(example_osna, osna)
@@ -327,6 +328,7 @@ class TestOsna_Method:
         sp = pd.concat((example_osna, sp))
 
         result = osna_method(sp).iloc[:-2]
+        example_osna["purpose"] = None
         example_osna.loc[example_osna["location_id"] == 0, "purpose"] = "home"
         example_osna.loc[example_osna["location_id"] == 1, "purpose"] = "work"
         assert_geodataframe_equal(result, example_osna)
@@ -358,6 +360,7 @@ class TestOsna_Method:
         two_user = pd.concat((example_osna, example_osna))
         two_user.iloc[len(example_osna) :, 0] = 1  # second user gets id 1
         result = osna_method(two_user)
+        two_user["purpose"] = None
         two_user.loc[two_user["location_id"] == 0, "purpose"] = "home"
         two_user.loc[two_user["location_id"] == 1, "purpose"] = "work"
         assert_geodataframe_equal(result, two_user)
@@ -385,6 +388,7 @@ class TestOsna_Method:
         sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
         sp.index.name = "id"
         result = osna_method(sp)
+        sp["purpose"] = None
         sp.loc[sp["location_id"] == 1, "purpose"] = "home"
         sp.loc[sp["location_id"] == 2, "purpose"] = "work"
         assert_geodataframe_equal(sp, result)
@@ -429,7 +433,7 @@ class TestOsna_Method:
         """Test that prior purpose column does not corrupt output."""
         example_osna["purpose"] = np.arange(len(example_osna))
         result = osna_method(example_osna)
-        del example_osna["purpose"]
+        example_osna["purpose"] = None
         example_osna.loc[example_osna["location_id"] == 0, "purpose"] = "home"
         example_osna.loc[example_osna["location_id"] == 1, "purpose"] = "work"
         assert_geodataframe_equal(example_osna, result)
