@@ -16,8 +16,11 @@ from trackintel.model.util import (
     _copy_docstring,
     _register_trackintel_accessor,
     _wrapped_gdf_method,
+    _wrapped_gdf_method_fallback,
     get_speed_positionfixes,
     TrackintelGeoDataFrame,
+    TrackintelGeoDataFrameWithFallback,
+    TrackintelDataFrame,
 )
 
 
@@ -245,10 +248,10 @@ class Test_wrapped_gdf_method:
     def test_no_geodataframe(self, example_positionfixes):
         """Test if function return value does not subclass GeoDataFrame then __class__ is not touched"""
 
+        @_wrapped_gdf_method
         def foo(gdf: GeoDataFrame) -> pd.DataFrame:
             return gdf.drop(columns=gdf.geometry.name)
 
-        foo = _wrapped_gdf_method(foo)
         assert type(foo(example_positionfixes)) is pd.DataFrame
 
     def test_failed_check(self, example_positionfixes):
@@ -280,6 +283,67 @@ class Test_wrapped_gdf_method:
 
         a = A(example_positionfixes)
         assert type(foo(a)) is A
+
+
+class Test_wrapped_gdf_method_fallback:
+    """Test if _wrapped_gdf_method_fallback conditionals work"""
+
+    def test_no_geodataframe(self, example_positionfixes):
+        """Test if function return value does not subclass DataFrame then __class__ is not touched"""
+
+        @_wrapped_gdf_method_fallback
+        def foo(gdf: GeoDataFrame) -> pd.Series:
+            return pd.Series(gdf.iloc[0])
+
+        assert type(foo(example_positionfixes)) is pd.Series
+
+    def test_failed_check(self, example_positionfixes):
+        """Test if _check fails then __class__ is not touched"""
+
+        class A(GeoDataFrame):
+            @staticmethod
+            def _check(obj, validate_geometry=True):
+                return False
+
+        @_wrapped_gdf_method_fallback
+        def foo(a: A) -> GeoDataFrame:
+            return GeoDataFrame(a)
+
+        a = A(example_positionfixes)
+        assert type(foo(a)) is GeoDataFrame
+
+    def test_keep_class(self, example_positionfixes):
+        """Test if original class is restored if return value subclasses GeoDataFarme and fulfills _check"""
+
+        class A(GeoDataFrame):
+            @staticmethod
+            def _check(obj, validate_geometry=True):
+                return True
+
+        @_wrapped_gdf_method_fallback
+        def foo(a: A) -> GeoDataFrame:
+            return GeoDataFrame(a)
+
+        a = A(example_positionfixes)
+        assert type(foo(a)) is A
+
+    def test_fallback(self, example_positionfixes):
+        class B(pd.DataFrame):
+            pass
+
+        class A(GeoDataFrame):
+            fallback_class = B
+
+            @staticmethod
+            def _check(obj, validate_geometry=True):
+                return True
+
+        @_wrapped_gdf_method_fallback
+        def foo(a: A) -> pd.DataFrame:
+            return pd.DataFrame(a)
+
+        a = A(example_positionfixes)
+        assert type(foo(a)) is B
 
 
 class TestTrackintelGeoDataFrame:
@@ -318,6 +382,85 @@ class TestTrackintelGeoDataFrame:
         a = self.A(example_positionfixes)
         df = example_positionfixes.drop(columns=example_positionfixes.geometry.name)
         assert type(a._constructor(df)) is pd.DataFrame
+
+    def test_constructor_calls_init(self, example_positionfixes):
+        """Test if _constructor gets GeoDataFrame and fulfills test then builds class"""
+        a = self.A(example_positionfixes)
+        assert type(a._constructor(a)) is self.A
+
+
+class TestTrackintelGeoDataFrameWithFallback:
+    """Test helper class TrackintelGeoDataFrameWithFallback."""
+
+    class A(TrackintelGeoDataFrameWithFallback):
+        """Mimic TrackintelGeoDataFrameWithFallback subclass by taking the same arguments"""
+
+        class AFallback(TrackintelDataFrame):
+            pass
+
+        fallback_class = AFallback
+
+        def __init__(self, *args, validate_geometry=True, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        @staticmethod
+        def _check(obj, validate_geometry=True):
+            return "user_id" in obj.columns
+
+    def test_getitem(self, example_positionfixes):
+        """Test if loc on all columns returns original class."""
+        a = self.A(example_positionfixes)
+        b = a.loc[[True for _ in a.columns]]
+        assert type(b) is self.A
+
+    def test_copy(self, example_positionfixes):
+        """Test if copy maintains class."""
+        a = self.A(example_positionfixes)
+        b = a.copy()
+        assert type(b) is self.A
+
+    def test_merge(self, example_positionfixes):
+        """Test if merge maintains class"""
+        a = self.A(example_positionfixes)
+        b = a.merge(a, on="user_id", suffixes=("", "_other"))
+        assert type(b) is self.A
+
+    def test_constructor_fails_check(self, example_positionfixes):
+        """Test if falls through if _check fails"""
+        a = self.A(example_positionfixes)
+        # a.drop(columns=geometryname, inplace=True) fails
+        # this is also true for geopandas their motivation can be found here:
+        # https://github.com/geopandas/geopandas/pull/2060#issuecomment-899802955
+        a = a.drop(columns="user_id")
+        assert type(a) is GeoDataFrame
+
+    def test_constructor_fallback_class(self, example_positionfixes):
+        """Test if _constructor gets DataFrame it falls through"""
+        a = self.A(example_positionfixes)
+        a = a.drop(columns=a.geometry.name)
+        assert type(a) is self.A.fallback_class
+
+    def test_constructor_calls_init(self, example_positionfixes):
+        """Test if _constructor gets GeoDataFrame and fulfills test then builds class"""
+        a = self.A(example_positionfixes)
+        assert type(a._constructor(a)) is self.A
+
+
+class TestTrackintelDataFrame:
+    """Test helper class TrackintelDataFrame."""
+
+    class A(TrackintelDataFrame):
+        """Mimic TrackintelDataFrame subclass by taking the same arguments"""
+
+        @staticmethod
+        def _check(obj):
+            return "user_id" in obj.columns
+
+    def test_constructor_fails_check(self, example_positionfixes):
+        """Test if falls through if _check fails"""
+        a = self.A(example_positionfixes)
+        a = a.drop(columns="user_id")
+        assert type(a) is pd.DataFrame
 
     def test_constructor_calls_init(self, example_positionfixes):
         """Test if _constructor gets GeoDataFrame and fulfills test then builds class"""

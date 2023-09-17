@@ -499,7 +499,8 @@ def write_trips_csv(trips, filename, *args, **kwargs):
     if isinstance(df, GeoDataFrame):
         geom_col_name = df.geometry.name
         df[geom_col_name] = df[geom_col_name].to_wkt()
-    df.to_csv(filename, index=True, *args, **kwargs)
+    # static call necessary as TripsDataFrame has a to_csv method as well.
+    pd.DataFrame.to_csv(df, filename, index=True, *args, **kwargs)
 
 
 @_index_warning_default_none

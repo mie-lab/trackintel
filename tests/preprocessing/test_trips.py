@@ -254,7 +254,7 @@ class TestGenerate_tours:
         # generate tours using the accessor
         trips_acc, tours_acc = trips.as_trips.generate_tours()
 
-        pd.testing.assert_frame_equal(trips_expl, trips_acc)
+        pd.testing.assert_frame_equal(trips_expl, trips_acc, check_frame_type=False)
         pd.testing.assert_frame_equal(tours_expl, tours_acc)
 
     def test_print_progress_flag(self, example_trip_data, capsys):

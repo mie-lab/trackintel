@@ -152,15 +152,98 @@ class TrackintelGeoDataFrame(GeoDataFrame):
         """Interface to subtype pandas properly"""
         # we loose access to self in inner function -> write objects to local variables
         super_cons = super()._constructor
-        class_cons = self.__class__
-        check = self._check
 
         def _constructor_with_fallback(*args, **kwargs):
             result = super_cons(*args, **kwargs)
             # cannot validate_geometry as geometry column is maybe not set
-            if isinstance(result, GeoDataFrame) and check(result, validate_geometry=False):
-                return class_cons(result, validate_geometry=False)
+            if isinstance(result, GeoDataFrame) and self._check(result, validate_geometry=False):
+                return self.__class__(result, validate_geometry=False)
             return result
+
+        return _constructor_with_fallback
+
+
+def _wrapped_gdf_method_fallback(func):
+    """Decorator function that downcast types to trackintel class if is (Geo)DataFrame and has the required columns."""
+
+    @wraps(func)  # copy all metadata
+    def wrapper(self, *args, **kwargs):
+        result = func(self, *args, **kwargs)
+        if isinstance(result, pd.DataFrame) and self._check(result, validate_geometry=False):
+            if isinstance(result, GeoDataFrame):
+                result.__class__ = self.__class__
+            else:
+                result.__class__ = self.fallback_class
+        return result
+
+    return wrapper
+
+
+# short and memorizable name
+class TrackintelGeoDataFrameWithFallback(GeoDataFrame):
+    """
+    Helper class to subtype GeoDataFrame correctly and fallback to custom class.
+
+    Fallback to fallback_class if looses geometry but _check does still succeed.
+    Fallback to GeoDataFrame if still has geometry but _check fails.
+    Fallback to DataFrame if looses geometry and _check fails.
+    """
+
+    fallback_class = None
+
+    @staticmethod
+    def _check(self, validate_geometry=True):
+        raise NotImplementedError
+
+    @property
+    def _constructor(self):
+        """Interface to subtype pandas properly"""
+        super_cons = super()._constructor
+
+        def _constructor_with_fallback(*args, **kwargs):
+            result = super_cons(*args, **kwargs)
+            if not self._check(result, validate_geometry=False):
+                # check fails -> not one of our classes
+                return result
+            if isinstance(result, GeoDataFrame):
+                # cannot validate geometry as geometry column is maybe not set
+                return self.__class__(result, validate_geometry=False)
+            return self.fallback_class(result)
+
+        return _constructor_with_fallback
+
+    # Following methods manually set self.__class__ fix to GeoDataFrame.
+    # Thus to properly subtype, we need to downcast them with the _wrapped_gdf_method_fallback decorator.
+    @_wrapped_gdf_method_fallback
+    def __getitem__(self, key):
+        return super().__getitem__(key)
+
+    @_wrapped_gdf_method_fallback
+    def copy(self, deep=True):
+        return super().copy(deep=deep)
+
+    @_wrapped_gdf_method_fallback
+    def merge(self, *args, **kwargs):
+        return super().merge(*args, **kwargs)
+
+
+class TrackintelDataFrame(pd.DataFrame):
+    """Helper class to subtype DataFrame and handle fallback"""
+
+    @staticmethod
+    def _check(self):  # has no geometry to check
+        raise NotImplementedError
+
+    @property
+    def _constructor(self):
+        """Interface to subtype pandas properly"""
+        super_cons = super()._constructor
+
+        def _constructor_with_fallback(*args, **kwargs):
+            result = super_cons(*args, **kwargs)
+            if not self._check(result):
+                return result
+            return self.__class__(result)
 
         return _constructor_with_fallback
 
@@ -170,10 +253,7 @@ class TrackintelBase(object):
 
     # so far we don't have a lot of methods here
     # but a lot of IO code can be moved here.
-
-    @staticmethod
-    def _check(self, validate_geometry=True):
-        raise NotImplementedError
+    pass
 
 
 class NonCachedAccessor:
