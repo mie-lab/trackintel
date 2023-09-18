@@ -21,6 +21,11 @@ class TestTours:
         with pytest.raises(AttributeError, match="To process a DataFrame as a collection of tours"):
             test_tours.drop(columns="user_id").as_tours
 
+    def test_accessor_recursive(self, test_tours):
+        tours = test_tours.as_tours
+        assert type(tours) is Tours
+        assert id(tours) == id(tours.as_tours)
+
     def test_check_succeeding(self, test_tours):
         """Test if check returns True on valid tours"""
         assert Tours._check(test_tours)
