@@ -17,6 +17,7 @@ from trackintel.model.staypoints import Staypoints
 from trackintel.model.trips import Trips
 from trackintel.model.trips import TripsDataFrame
 from trackintel.model.trips import TripsGeoDataFrame
+from trackintel.model.tours import Tours
 
 from trackintel.visualization import plot, plot_modal_split
 

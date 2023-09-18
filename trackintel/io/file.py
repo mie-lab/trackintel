@@ -573,4 +573,4 @@ def write_tours_csv(tours, filename, *args, **kwargs):
     --------
     >>> tours.as_tours.to_csv("export_tours.csv")
     """
-    tours.to_csv(filename, index=True, *args, **kwargs)
+    pd.DataFrame.to_csv(tours, filename, index=True, *args, **kwargs)

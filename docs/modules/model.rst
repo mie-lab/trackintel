@@ -80,16 +80,16 @@ Locations
 .. autoclass:: trackintel.model.locations.Locations
 	:members:
 
-TripsAccessor
+Trips
 -------------
 
-.. autoclass:: trackintel.model.trips.TripsAccessor
+.. autoclass:: trackintel.model.trips.Trips
 	:members:
 
-ToursAccessor
+Tours
 -------------
 
-.. autoclass:: trackintel.model.tours.ToursAccessor
+.. autoclass:: trackintel.model.tours.Tours
 	:members:
 
 
