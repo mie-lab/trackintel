@@ -563,9 +563,6 @@ def read_trips_postgis(
 def write_trips_postgis(
     trips, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
-    if "trips" in trips.columns:
-        dtype = dtype or {}
-        dtype.setdefault("trips", JSON)
     if isinstance(trips, gpd.GeoDataFrame):
         gpd.GeoDataFrame.to_postgis(
             trips,
@@ -691,10 +688,12 @@ def read_tours_postgis(
 def write_tours_postgis(
     tours, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
-    write_trips_postgis(
-        tours,
-        name=name,
-        con=con,
+    if "trips" in tours.columns:
+        dtype = dtype or {}
+        dtype.setdefault("trips", JSON)
+    tours.to_sql(
+        name,
+        con,
         schema=schema,
         if_exists=if_exists,
         index=index,

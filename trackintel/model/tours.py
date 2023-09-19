@@ -1,10 +1,15 @@
 import pandas as pd
+
 import trackintel as ti
-from trackintel.model.util import _register_trackintel_accessor
+from trackintel.io.file import write_tours_csv
+from trackintel.io.postgis import write_tours_postgis
+from trackintel.model.util import _register_trackintel_accessor, TrackintelBase, TrackintelDataFrame, _copy_docstring
+
+_required_columns = ["user_id", "started_at", "finished_at"]
 
 
 @_register_trackintel_accessor("as_tours")
-class ToursAccessor(object):
+class Tours(TrackintelBase, TrackintelDataFrame):
     """A pandas accessor to treat DataFrames as collections of `Tours`.
 
     Requires at least the following columns:
@@ -27,18 +32,21 @@ class ToursAccessor(object):
     >>> df.as_tours.to_csv("filename.csv")
     """
 
-    required_columns = ["user_id", "started_at", "finished_at"]
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._validate(self)
 
-    def __init__(self, pandas_obj):
-        self._validate(pandas_obj)
-        self._obj = pandas_obj
+    # createte circular reference directly -> avoid second call of init via accessor
+    @property
+    def as_tours(self):
+        return self
 
     @staticmethod
     def _validate(obj):
-        if any([c not in obj.columns for c in ToursAccessor.required_columns]):
+        if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
                 "To process a DataFrame as a collection of tours, it must have the properties"
-                f" {ToursAccessor.required_columns}, but it has {', '.join(obj.columns)}."
+                f" {_required_columns}, but it has {', '.join(obj.columns)}."
             )
 
         # check timestamp dtypes
@@ -49,14 +57,27 @@ class ToursAccessor(object):
             obj["finished_at"].dtype, pd.DatetimeTZDtype
         ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be datetime64 and timezone aware"
 
+    @staticmethod
+    def _check(obj):
+        """Check does the same as _validate but returns bool instead of potentially raising an error."""
+        if any([c not in obj.columns for c in _required_columns]):
+            return False
+        if not isinstance(obj["started_at"].dtype, pd.DatetimeTZDtype):
+            return False
+        if not isinstance(obj["finished_at"].dtype, pd.DatetimeTZDtype):
+            return False
+        return True
+
+    @_copy_docstring(write_tours_csv)
     def to_csv(self, filename, *args, **kwargs):
         """
         Store this collection of tours as a CSV file.
 
         See :func:`trackintel.io.file.write_tours_csv`.
         """
-        ti.io.file.write_tours_csv(self._obj, filename, *args, **kwargs)
+        ti.io.file.write_tours_csv(self, filename, *args, **kwargs)
 
+    @_copy_docstring(write_tours_postgis)
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
@@ -65,4 +86,4 @@ class ToursAccessor(object):
 
         See :func:`trackintel.io.postgis.write_tours_postgis`.
         """
-        ti.io.postgis.write_tours_postgis(self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype)
+        ti.io.postgis.write_tours_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
