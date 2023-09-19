@@ -672,7 +672,6 @@ def _generate_trips_user(df, gap_threshold):
             )
         )
 
-    # print(trip_ls)
     trips = pd.DataFrame(trip_ls)
     return trips
 

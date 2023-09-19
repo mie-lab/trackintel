@@ -232,8 +232,6 @@ class Test_copy_docstring:
             pass
 
         old_docs = """Old docstring."""
-        print(type(old_docs))
-
         for wa in WRAPPER_ASSIGNMENTS:
             attr_foo = getattr(read_trips_postgis, wa)
             attr_bar = getattr(bar, wa)

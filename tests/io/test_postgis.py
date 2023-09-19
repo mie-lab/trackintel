@@ -276,7 +276,6 @@ class TestPositionfixes:
             with pytest.warns(UserWarning):
                 pfs_db = ti.io.read_positionfixes_postgis(sql, conn, geom_col)
             pfs_db = pfs_db.set_index("id")
-            print(pfs_db)
             assert_geodataframe_equal(pfs, pfs_db)
         finally:
             del_table(conn, table)
