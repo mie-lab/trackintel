@@ -1,7 +1,9 @@
 import pandas as pd
 
 import trackintel as ti
-from trackintel.model.util import _register_trackintel_accessor, TrackintelBase, TrackintelDataFrame
+from trackintel.io.file import write_tours_csv
+from trackintel.io.postgis import write_tours_postgis
+from trackintel.model.util import _register_trackintel_accessor, TrackintelBase, TrackintelDataFrame, _copy_docstring
 
 _required_columns = ["user_id", "started_at", "finished_at"]
 
@@ -66,6 +68,7 @@ class Tours(TrackintelBase, TrackintelDataFrame):
             return False
         return True
 
+    @_copy_docstring(write_tours_csv)
     def to_csv(self, filename, *args, **kwargs):
         """
         Store this collection of tours as a CSV file.
@@ -74,6 +77,7 @@ class Tours(TrackintelBase, TrackintelDataFrame):
         """
         ti.io.file.write_tours_csv(self, filename, *args, **kwargs)
 
+    @_copy_docstring(write_tours_postgis)
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
