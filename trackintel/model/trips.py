@@ -10,7 +10,7 @@ from trackintel.model.util import (
     _register_trackintel_accessor,
     TrackintelBase,
     TrackintelDataFrame,
-    TrackintelGeoDataFrameWithFallback,
+    TrackintelGeoDataFrame,
 )
 
 
@@ -160,7 +160,7 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
 
 
 # added GeoDataFrame and DataFrame manually afterwards such that our methods always come first
-class TripsGeoDataFrame(TrackintelGeoDataFrameWithFallback, TripsDataFrame, gpd.GeoDataFrame):
+class TripsGeoDataFrame(TrackintelGeoDataFrame, TripsDataFrame, gpd.GeoDataFrame):
     """Class to treat a GeoDataFrame as collections of trips.
 
     Requires at least the following columns:

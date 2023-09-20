@@ -112,58 +112,6 @@ def _copy_docstring(wrapped, assigned=("__doc__",), updated=[]):
 
 
 def _wrapped_gdf_method(func):
-    """Decorator function that downcast types to trackintel class if is GeoDataFrame and has the required columns."""
-
-    @wraps(func)  # copy all metadata
-    def wrapper(self, *args, **kwargs):
-        result = func(self, *args, **kwargs)
-        if not isinstance(result, GeoDataFrame) or not self._check(result, validate_geometry=False):
-            return result
-        # as geopandas only change the __class__ attribute, we can just change it back
-        result.__class__ = self.__class__
-        return result
-
-    return wrapper
-
-
-class TrackintelGeoDataFrame(GeoDataFrame):
-    """Helper class to subtype GeoDataFrame correctly."""
-
-    @staticmethod
-    def _check(self, validate_geometry=True):
-        raise NotImplementedError
-
-    # Following methods manually set self.__class__ fix to GeoDataFrame.
-    # Thus to properly subtype, we need to downcast them with the _wrapped_gdf_method decorator.
-    @_wrapped_gdf_method
-    def __getitem__(self, key):
-        return super().__getitem__(key)
-
-    @_wrapped_gdf_method
-    def copy(self, deep=True):
-        return super().copy(deep=deep)
-
-    @_wrapped_gdf_method
-    def merge(self, *args, **kwargs):
-        return super().merge(*args, **kwargs)
-
-    @property
-    def _constructor(self):
-        """Interface to subtype pandas properly"""
-        # we loose access to self in inner function -> write objects to local variables
-        super_cons = super()._constructor
-
-        def _constructor_with_fallback(*args, **kwargs):
-            result = super_cons(*args, **kwargs)
-            # cannot validate_geometry as geometry column is maybe not set
-            if isinstance(result, GeoDataFrame) and self._check(result, validate_geometry=False):
-                return self.__class__(result, validate_geometry=False)
-            return result
-
-        return _constructor_with_fallback
-
-
-def _wrapped_gdf_method_fallback(func):
     """Decorator function that downcast types to trackintel class if is (Geo)DataFrame and has the required columns."""
 
     @wraps(func)  # copy all metadata
@@ -172,7 +120,7 @@ def _wrapped_gdf_method_fallback(func):
         if isinstance(result, pd.DataFrame) and self._check(result, validate_geometry=False):
             if isinstance(result, GeoDataFrame):
                 result.__class__ = self.__class__
-            else:
+            elif self.fallback_class is not None:
                 result.__class__ = self.fallback_class
         return result
 
@@ -180,7 +128,7 @@ def _wrapped_gdf_method_fallback(func):
 
 
 # short and memorizable name
-class TrackintelGeoDataFrameWithFallback(GeoDataFrame):
+class TrackintelGeoDataFrame(GeoDataFrame):
     """
     Helper class to subtype GeoDataFrame correctly and fallback to custom class.
 
@@ -189,6 +137,7 @@ class TrackintelGeoDataFrameWithFallback(GeoDataFrame):
     Fallback to DataFrame if looses geometry and _check fails.
     """
 
+    # set fallback_class for succeeding _check and missing geometry, if None default to pd.DataFrame
     fallback_class = None
 
     @staticmethod
@@ -208,21 +157,23 @@ class TrackintelGeoDataFrameWithFallback(GeoDataFrame):
             if isinstance(result, GeoDataFrame):
                 # cannot validate geometry as geometry column is maybe not set
                 return self.__class__(result, validate_geometry=False)
-            return self.fallback_class(result)
+            if self.fallback_class is not None:
+                return self.fallback_class(result)
+            return result
 
         return _constructor_with_fallback
 
     # Following methods manually set self.__class__ fix to GeoDataFrame.
-    # Thus to properly subtype, we need to downcast them with the _wrapped_gdf_method_fallback decorator.
-    @_wrapped_gdf_method_fallback
+    # Thus to properly subtype, we need to downcast them with the _wrapped_gdf_method decorator.
+    @_wrapped_gdf_method
     def __getitem__(self, key):
         return super().__getitem__(key)
 
-    @_wrapped_gdf_method_fallback
+    @_wrapped_gdf_method
     def copy(self, deep=True):
         return super().copy(deep=deep)
 
-    @_wrapped_gdf_method_fallback
+    @_wrapped_gdf_method
     def merge(self, *args, **kwargs):
         return super().merge(*args, **kwargs)
 
