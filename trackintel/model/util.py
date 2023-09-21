@@ -127,14 +127,14 @@ def _wrapped_gdf_method(func):
     return wrapper
 
 
-# short and memorizable name
 class TrackintelGeoDataFrame(GeoDataFrame):
     """
     Helper class to subtype GeoDataFrame correctly and fallback to custom class.
 
-    Fallback to fallback_class if looses geometry but _check does still succeed.
-    Fallback to GeoDataFrame if still has geometry but _check fails.
-    Fallback to DataFrame if looses geometry and _check fails.
+    Three possible outcomes for the _constructor
+    - If check fails or is DataFrame without fallback_class set, return GeoDataFrame/DataFrame instance w/o changes
+    - If check succeeds and has geometry, change class to current class and return
+    - If check succeeds and has no geometry, change class to fallback_class and return
     """
 
     # set fallback_class for succeeding _check and missing geometry, if None default to pd.DataFrame

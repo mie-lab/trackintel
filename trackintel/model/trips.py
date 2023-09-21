@@ -159,7 +159,7 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
         return ti.preprocessing.trips.generate_tours(trips=self, **kwargs)
 
 
-# added GeoDataFrame and DataFrame manually afterwards such that our methods always come first
+# added GeoDataFrame manually afterwards such that our methods always come first
 class TripsGeoDataFrame(TrackintelGeoDataFrame, TripsDataFrame, gpd.GeoDataFrame):
     """Class to treat a GeoDataFrame as collections of trips.
 
