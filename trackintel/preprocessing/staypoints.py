@@ -91,7 +91,7 @@ def generate_locations(
 
     if method == "dbscan":
         eps = epsilon / 6371000 if distance_metric == "haversine" else epsilon
-        # scikit haversine_dist wants radian. (We assume that this is good enough)
+        # scikit haversine_distance wants radian. (We assume that this is good enough)
         # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.haversine_distances.html
         db = DBSCAN(eps=eps, min_samples=num_samples, algorithm="ball_tree", metric=distance_metric)
 

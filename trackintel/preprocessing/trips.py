@@ -1,9 +1,10 @@
-from datetime import timedelta
-import geopandas as gpd
-import pandas as pd
-import numpy as np
-from tqdm import tqdm
 import warnings
+from datetime import timedelta
+
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
 
 import trackintel as ti
 
@@ -126,7 +127,7 @@ def generate_tours(
         assert isinstance(trips, gpd.geodataframe.GeoDataFrame), "Trips table must be a GeoDataFrame"
         geom_col = trips.geometry.name
         # get crs
-        crs_is_projected = ti.geogr.distances.check_gdf_planar(trips)
+        crs_is_projected = ti.geogr.check_gdf_planar(trips)
 
     # convert max_time to timedelta
     if isinstance(max_time, str):
@@ -394,7 +395,7 @@ def _check_max_dist(p1, p2, max_dist, crs_is_projected=False):
     if crs_is_projected:
         dist = p1.distance(p2)
     else:
-        dist = ti.geogr.point_distances.haversine_dist(p1.x, p1.y, p2.x, p2.y)
+        dist = ti.geogr.point_haversine_dist(p1.x, p1.y, p2.x, p2.y)
     dist_below_thresh = dist <= max_dist
     return dist_below_thresh
 

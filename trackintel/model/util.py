@@ -1,114 +1,9 @@
-from functools import partial, update_wrapper, wraps
-import numpy as np
-import pandas as pd
 import warnings
+from functools import partial, update_wrapper, wraps
+from textwrap import dedent
+
+import pandas as pd
 from geopandas import GeoDataFrame
-
-import trackintel as ti
-from trackintel.geogr.distances import calculate_haversine_length, check_gdf_planar
-from trackintel.geogr.point_distances import haversine_dist
-
-
-def get_speed_positionfixes(positionfixes):
-    """
-    Compute speed per positionfix (in m/s)
-
-    Parameters
-    ----------
-    positionfixes : GeoDataFrame (as trackintel positionfixes)
-        The positionfixes have to follow the standard definition for positionfixes DataFrames.
-
-    Returns
-    -------
-    pfs: GeoDataFrame (as trackintel positionfixes)
-        The original positionfixes with a new column ``[`speed`]``. The speed is given in m/s
-
-    Notes
-    -----
-    The speed at one positionfix is computed from the distance and time since the previous positionfix. For the first
-    positionfix, the speed is set to the same value as for the second one.
-    """
-    pfs = positionfixes.copy()
-    is_planar_crs = ti.geogr.distances.check_gdf_planar(pfs)
-
-    g = pfs.geometry
-    # get distance and time difference
-    if is_planar_crs:
-        dist = g.distance(g.shift(1)).to_numpy()
-    else:
-        x = g.x.to_numpy()
-        y = g.y.to_numpy()
-        dist = np.zeros(len(pfs), dtype=np.float64)
-        dist[1:] = haversine_dist(x[:-1], y[:-1], x[1:], y[1:])
-
-    time_delta = (pfs["tracked_at"] - pfs["tracked_at"].shift(1)).dt.total_seconds().to_numpy()
-    # compute speed (in m/s)
-    speed = dist / time_delta
-    speed[0] = speed[1]  # The first point speed is imputed
-    pfs["speed"] = speed
-    return pfs
-
-
-def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
-    """
-    Compute the average speed per positionfix for each tripleg (in m/s)
-
-    Parameters
-    ----------
-    triplegs: GeoDataFrame (as trackintel triplegs)
-        The generated triplegs as returned by ti.preprocessing.positionfixes.generate_triplegs
-
-    positionfixes (Optional): GeoDataFrame (as trackintel positionfixes)
-        The positionfixes as returned by ti.preprocessing.positionfixes.generate_triplegs. Only required if the method
-        is 'pfs_mean_speed'. In addition the standard columns it must include the column ``[`tripleg_id`]``.
-
-    method: str
-        Method how the speed is computed, one of {tpls_speed, pfs_mean_speed}. The 'tpls_speed' method simply divides
-        the overall tripleg distance by its duration, while the 'pfs_mean_speed' method is the mean pfs speed.
-
-    Returns
-    -------
-    tpls: GeoDataFrame (as trackintel triplegs)
-        The original triplegs with a new column ``[`speed`]``. The speed is given in m/s.
-    """
-    # Simple method: Divide overall tripleg distance by overall duration
-    if method == "tpls_speed":
-        if check_gdf_planar(triplegs):
-            distance = triplegs.length
-        else:
-            distance = calculate_haversine_length(triplegs)
-        duration = (triplegs["finished_at"] - triplegs["started_at"]).dt.total_seconds()
-        # The unit of the speed is m/s
-        tpls = triplegs.copy()
-        tpls["speed"] = distance / duration
-        return tpls
-
-    # Pfs-based method: compute speed per positionfix and average then
-    elif method == "pfs_mean_speed":
-        if positionfixes is None:
-            raise AttributeError('Method "pfs_mean_speed" requires positionfixes as input.')
-        if "tripleg_id" not in positionfixes:
-            raise AttributeError('Positionfixes must include column "tripleg_id".')
-        # group positionfixes by triplegs and compute average speed for each collection of positionfixes
-        grouped_pfs = positionfixes.groupby("tripleg_id").apply(_single_tripleg_mean_speed)
-        # add the speed values to the triplegs column
-        tpls = pd.merge(triplegs, grouped_pfs.rename("speed"), how="left", left_index=True, right_index=True)
-        tpls.index = tpls.index.astype("int64")
-        return tpls
-
-    else:
-        raise AttributeError(f"Method {method} not known for speed computation.")
-
-
-def _single_tripleg_mean_speed(positionfixes):
-    pfs_sorted = positionfixes.sort_values(by="tracked_at")
-    pfs_speed = get_speed_positionfixes(pfs_sorted)
-    return np.mean(pfs_speed["speed"].values[1:])
-
-
-def _copy_docstring(wrapped, assigned=("__doc__",), updated=[]):
-    """Thin wrapper for `functools.update_wrapper` to mimic `functools.wraps` but to only copy the docstring."""
-    return partial(update_wrapper, wrapped=wrapped, assigned=assigned, updated=updated)
 
 
 def _wrapped_gdf_method(func):
@@ -236,3 +131,151 @@ def _register_trackintel_accessor(name: str):
         return accessor
 
     return decorator
+
+def _copy_docstring(wrapped, assigned=("__doc__",), updated=[]):
+    """Thin wrapper for `functools.update_wrapper` to mimic `functools.wraps` but to only copy the docstring."""
+    return partial(update_wrapper, wrapped=wrapped, assigned=assigned, updated=updated)
+
+
+
+# doc is derived from pandas.util._decorators (2.1.0)
+# module https://github.com/pandas-dev/pandas/blob/main/LICENSE
+
+
+def doc(*docstrings, **params):
+    """
+    A decorator to take docstring templates, concatenate them and perform string
+    substitution on them.
+
+    This decorator will add a variable "_docstring_components" to the wrapped
+    callable to keep track the original docstring template for potential usage.
+    If it should be consider as a template, it will be saved as a string.
+    Otherwise, it will be saved as callable, and later user __doc__ and dedent
+    to get docstring.
+
+    Parameters
+    ----------
+    *docstrings : None, str, or callable
+        The string / docstring / docstring template to be appended in order
+        after default docstring under callable.
+    **params
+        The string which would be used to format docstring template.
+    """
+
+    def decorator(decorated):
+        # collecting docstring and docstring templates
+        components = []
+        if decorated.__doc__:
+            components.append(dedent(decorated.__doc__))
+
+        for docstring in docstrings:
+            if docstring is None:
+                continue
+            if hasattr(docstring, "_docstring_components"):
+                components.extend(docstring._docstring_components)
+            elif isinstance(docstring, str) or docstring.__doc__:
+                components.append(docstring)
+
+        decorated._docstring_components = components
+        params_applied = (c.format(**params) if (isinstance(c, str) and params) else c for c in components)
+        decorated.__doc__ = "".join(c if isinstance(c, str) else dedent(c.__doc__ or "") for c in params_applied)
+        return decorated
+
+    return decorator
+
+
+_shared_docs = {}
+
+# in _shared_docs as all write_postgis_xyz functions use this docstring
+_shared_docs[
+    "write_postgis"
+] = """
+Stores {long} to PostGIS. Usually, this is directly called on a {long}
+DataFrame (see example below).
+
+Parameters
+----------{first_arg}
+name : str
+    The name of the table to write to.
+
+con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+    active connection to PostGIS database.
+
+schema : str, optional
+    The schema (if the database supports this) where the table resides.
+
+if_exists : str, {{'fail', 'replace', 'append'}}, default 'fail'
+    How to behave if the table already exists.
+
+    - fail: Raise a ValueError.
+    - replace: Drop the table before inserting new values.
+    - append: Insert new values to the existing table.
+
+index : bool, default True
+    Write DataFrame index as a column. Uses index_label as the column name in the table.
+
+index_label : str or sequence, default None
+    Column label for index column(s). If None is given (default) and index is True, then the index names are used.
+
+chunksize : int, optional
+    How many entries should be written at the same time.
+
+dtype: dict of column name to SQL type, default None
+    Specifying the datatype for columns.
+    The keys should be the column names and the values should be the SQLAlchemy types.
+
+Examples
+--------
+>>> {short}.as_{long}.to_postgis(conn_string, table_name)
+>>> ti.io.postgis.write_{long}_postgis({short}, conn_string, table_name)
+"""
+
+# in _shared_docs as positionfixes, staypoints, and triplegs all can use this
+_shared_docs[
+    "calculate_distance_matrix"
+] = """
+Calculate a distance matrix based on a specific distance metric.
+
+If only X is given, the pair-wise distances between all elements in X are calculated. If X and Y are given, the
+distances between all combinations of X and Y are calculated. Distances between elements of X and X, and distances
+between elements of Y and Y are not calculated.
+
+Parameters
+----------{first_arg}
+Y : GeoDataFrame (as trackintel staypoints or triplegs), optional
+    By default None
+
+dist_metric : {{'haversine', 'euclidean', 'dtw', 'frechet'}}, optional
+    The distance metric to be used for calculating the matrix. By default 'haversine'.
+
+    For staypoints, common choice is 'haversine' or 'euclidean'. This function wraps around
+    the ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
+    ``scipy.spatial.distance.cdist`` function if X and Y are given.
+    Therefore the following metrics are also accepted:
+
+    via ``scikit-learn``: `['cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan']`
+
+    via ``scipy.spatial.distance``: `['braycurtis', 'canberra', 'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
+    'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener',
+    'sokalsneath', 'sqeuclidean', 'yule']`
+
+    For triplegs, common choice is 'dtw' or 'frechet'. This function uses the implementation
+    from similaritymeasures.
+
+n_jobs : int, optional
+    Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available
+    if only X is given) are parallelized. By default 1.
+
+**kwargs :
+    optional keywords passed to the distance functions.
+
+Returns
+-------
+D: np.array
+    matrix of shape (len(X), len(X)) or of shape (len(X), len(Y)) if Y is provided.
+
+Examples
+--------
+>>> calculate_distance_matrix(staypoints, dist_metric="haversine")
+>>> calculate_distance_matrix(triplegs_1, triplegs_2, dist_metric="dtw")
+"""

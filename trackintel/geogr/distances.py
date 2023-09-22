@@ -1,65 +1,89 @@
+import math
 import multiprocessing
 import warnings
 from functools import partial
 from math import cos, pi
 
 import numpy as np
+import pandas as pd
 import shapely
 import similaritymeasures
 from scipy.spatial.distance import cdist
 from sklearn.metrics import pairwise_distances
 
-from trackintel.geogr.point_distances import haversine_dist
+from trackintel.model.util import doc, _shared_docs
 
 
-def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
+def point_haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000, float_flag=False):
     """
-    Calculate a distance matrix based on a specific distance metric.
+    Compute the great circle or haversine distance between two coordinates in WGS84.
 
-    If only X is given, the pair-wise distances between all elements in X are calculated. If X and Y are given, the
-    distances between all combinations of X and Y are calculated. Distances between elements of X and X, and distances
-    between elements of Y and Y are not calculated.
+    Serialized version of the haversine distance.
 
     Parameters
     ----------
-    X : GeoDataFrame (as trackintel staypoints or triplegs)
+    lon_1 : float or numpy.array of shape (-1,)
+        The longitude of the first point.
 
-    Y : GeoDataFrame (as trackintel staypoints or triplegs), optional
+    lat_1 : float or numpy.array of shape (-1,)
+        The latitude of the first point.
 
-    dist_metric: {'haversine', 'euclidean', 'dtw', 'frechet'}
-        The distance metric to be used for calculating the matrix.
+    lon_2 : float or numpy.array of shape (-1,)
+        The longitude of the second point.
 
-        For staypoints, common choice is 'haversine' or 'euclidean'. This function wraps around
-        the ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
-        ``scipy.spatial.distance.cdist`` function if X and Y are given.
-        Therefore the following metrics are also accepted:
+    lat_2 : float or numpy.array of shape (-1,)
+        The latitude of the second point.
 
-        via ``scikit-learn``: `[‘cityblock’, ‘cosine’, ‘euclidean’, ‘l1’, ‘l2’, ‘manhattan’]`
+    r     : float
+        Radius of the reference sphere for the calculation.
+        The average Earth radius is 6'371'000 m.
 
-        via ``scipy.spatial.distance``: `[‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘correlation’, ‘dice’, ‘hamming’, ‘jaccard’,
-        ‘kulsinski’, ‘mahalanobis’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’,
-        ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]`
-
-        For triplegs, common choice is 'dtw' or 'frechet'. This function uses the implementation
-        from similaritymeasures.
-
-    n_jobs: int
-        Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available
-        if only X is given) are parallelized.
-
-    **kwds:
-        optional keywords passed to the distance functions.
+    float_flag : bool, default False
+        Optimization flag. Set to True if you are sure that you are only using floats as args.
 
     Returns
     -------
-    D: np.array
-        matrix of shape (len(X), len(X)) or of shape (len(X), len(Y)) if Y is provided.
+    float or numpy.array
+        An approximation of the distance between two points in WGS84 given in meters.
 
     Examples
     --------
-    >>> calculate_distance_matrix(staypoints, dist_metric="haversine")
-    >>> calculate_distance_matrix(triplegs_1, triplegs_2, dist_metric="dtw")
+    >>> point_haversine_dist(8.5, 47.3, 8.7, 47.2)
+    18749.056277719905
+
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Haversine_formula
+    https://stackoverflow.com/questions/19413259/efficient-way-to-calculate-distance-matrix-given-latitude-and-longitude-data-in
     """
+    if float_flag:
+        lon_1 = math.radians(lon_1)
+        lat_1 = math.radians(lat_1)
+        lon_2 = math.radians(lon_2)
+        lat_2 = math.radians(lat_2)
+
+        cos_lat2 = math.cos(lat_2)
+        cos_lat1 = math.cos(lat_1)
+        cos_lat_d = math.cos(lat_1 - lat_2)
+        cos_lon_d = math.cos(lon_1 - lon_2)
+
+        return r * math.acos(cos_lat_d - cos_lat1 * cos_lat2 * (1 - cos_lon_d))
+
+    lon_1 = np.deg2rad(lon_1).ravel()
+    lat_1 = np.deg2rad(lat_1).ravel()
+    lon_2 = np.deg2rad(lon_2).ravel()
+    lat_2 = np.deg2rad(lat_2).ravel()
+
+    cos_lat1 = np.cos(lat_1)
+    cos_lat2 = np.cos(lat_2)
+    cos_lat_d = np.cos(lat_1 - lat_2)
+    cos_lon_d = np.cos(lon_1 - lon_2)
+
+    return r * np.arccos(cos_lat_d - cos_lat1 * cos_lat2 * (1 - cos_lon_d))
+
+
+@doc(_shared_docs["calculate_distance_matrix"], first_arg="\nX : GeoDataFrame (as trackintel staypoints or triplegs)\n")
+def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
     geom_type = X.geometry.iat[0].geom_type
     if Y is None:
         Y = X
@@ -91,7 +115,7 @@ def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kw
             x2 = x2[ix_2]
             y2 = y2[ix_2]
 
-            d = haversine_dist(x1, y1, x2, y2)
+            d = point_haversine_dist(x1, y1, x2, y2)
 
             D = np.zeros((nx, ny))
             D[(ix_1, ix_2)] = d
@@ -214,7 +238,7 @@ def check_gdf_planar(gdf, transform=False):
 
     Examples
     --------
-    >>> from trackintel.geogr.distances import check_gdf_planar
+    >>> from trackintel.geogr import check_gdf_planar
     >>> check_gdf_planar(triplegs, transform=False)
     """
     wgs84 = "EPSG:4326"
@@ -246,12 +270,109 @@ def calculate_haversine_length(gdf):
 
     Examples
     --------
-    >>> from trackintel.geogr.distances import calculate_haversine_length
+    >>> from trackintel.geogr import calculate_haversine_length
     >>> triplegs['length'] = calculate_haversine_length(triplegs)
     """
     geom = gdf.geometry
     assert np.any(shapely.get_type_id(geom) == 1)  # 1 is LineStrings
     geom, index = shapely.get_coordinates(geom, return_index=True)
     no_mix = index[:-1] == index[1:]  # mask where LineStrings are not overlapping
-    dist = haversine_dist(geom[:-1, 0], geom[:-1, 1], geom[1:, 0], geom[1:, 1])
+    dist = point_haversine_dist(geom[:-1, 0], geom[:-1, 1], geom[1:, 0], geom[1:, 1])
     return np.bincount((index[:-1])[no_mix], weights=dist[no_mix])
+
+
+def get_speed_positionfixes(positionfixes):
+    """
+    Compute speed per positionfix (in m/s)
+
+    Parameters
+    ----------
+    positionfixes : GeoDataFrame (as trackintel positionfixes)
+        The positionfixes have to follow the standard definition for positionfixes DataFrames.
+
+    Returns
+    -------
+    pfs: GeoDataFrame (as trackintel positionfixes)
+        The original positionfixes with a new column ``[`speed`]``. The speed is given in m/s
+
+    Notes
+    -----
+    The speed at one positionfix is computed from the distance and time since the previous positionfix. For the first
+    positionfix, the speed is set to the same value as for the second one.
+    """
+    pfs = positionfixes.copy()
+    is_planar_crs = check_gdf_planar(pfs)
+
+    g = pfs.geometry
+    # get distance and time difference
+    if is_planar_crs:
+        dist = g.distance(g.shift(1)).to_numpy()
+    else:
+        x = g.x.to_numpy()
+        y = g.y.to_numpy()
+        dist = np.zeros(len(pfs), dtype=np.float64)
+        dist[1:] = point_haversine_dist(x[:-1], y[:-1], x[1:], y[1:])
+
+    time_delta = (pfs["tracked_at"] - pfs["tracked_at"].shift(1)).dt.total_seconds().to_numpy()
+    # compute speed (in m/s)
+    speed = dist / time_delta
+    speed[0] = speed[1]  # The first point speed is imputed
+    pfs["speed"] = speed
+    return pfs
+
+
+def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
+    """
+    Compute the average speed per positionfix for each tripleg (in m/s)
+
+    Parameters
+    ----------
+    triplegs: GeoDataFrame (as trackintel triplegs)
+        The generated triplegs as returned by ti.preprocessing.positionfixes.generate_triplegs
+
+    positionfixes (Optional): GeoDataFrame (as trackintel positionfixes)
+        The positionfixes as returned by ti.preprocessing.positionfixes.generate_triplegs. Only required if the method
+        is 'pfs_mean_speed'. In addition the standard columns it must include the column ``[`tripleg_id`]``.
+
+    method: str
+        Method how the speed is computed, one of {tpls_speed, pfs_mean_speed}. The 'tpls_speed' method simply divides
+        the overall tripleg distance by its duration, while the 'pfs_mean_speed' method is the mean pfs speed.
+
+    Returns
+    -------
+    tpls: GeoDataFrame (as trackintel triplegs)
+        The original triplegs with a new column ``[`speed`]``. The speed is given in m/s.
+    """
+    # Simple method: Divide overall tripleg distance by overall duration
+    if method == "tpls_speed":
+        if check_gdf_planar(triplegs):
+            distance = triplegs.length
+        else:
+            distance = calculate_haversine_length(triplegs)
+        duration = (triplegs["finished_at"] - triplegs["started_at"]).dt.total_seconds()
+        # The unit of the speed is m/s
+        tpls = triplegs.copy()
+        tpls["speed"] = distance / duration
+        return tpls
+
+    # Pfs-based method: compute speed per positionfix and average then
+    elif method == "pfs_mean_speed":
+        if positionfixes is None:
+            raise AttributeError('Method "pfs_mean_speed" requires positionfixes as input.')
+        if "tripleg_id" not in positionfixes:
+            raise AttributeError('Positionfixes must include column "tripleg_id".')
+        # group positionfixes by triplegs and compute average speed for each collection of positionfixes
+        grouped_pfs = positionfixes.groupby("tripleg_id").apply(_single_tripleg_mean_speed)
+        # add the speed values to the triplegs column
+        tpls = pd.merge(triplegs, grouped_pfs.rename("speed"), how="left", left_index=True, right_index=True)
+        tpls.index = tpls.index.astype("int64")
+        return tpls
+
+    else:
+        raise AttributeError(f"Method {method} not known for speed computation.")
+
+
+def _single_tripleg_mean_speed(positionfixes):
+    pfs_sorted = positionfixes.sort_values(by="tracked_at")
+    pfs_speed = get_speed_positionfixes(pfs_sorted)
+    return np.mean(pfs_speed["speed"].values[1:])

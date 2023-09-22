@@ -11,6 +11,7 @@ from sqlalchemy.types import JSON
 
 import trackintel as ti
 from trackintel.io.util import _index_warning_default_none
+from trackintel.model.util import _shared_docs, doc
 
 
 def _handle_con_string(func):
@@ -126,6 +127,12 @@ def read_positionfixes_postgis(
     return ti.io.read_positionfixes_gpd(pfs, **(read_gpd_kws or {}))
 
 
+@doc(
+    _shared_docs["write_postgis"],
+    first_arg="\npositionfixes : GeoDataFrame (as trackintel positionfixes)\n",
+    short="pfs",
+    long="positionfixes",
+)
 @_handle_con_string
 def write_positionfixes_postgis(
     positionfixes, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
@@ -704,50 +711,49 @@ def write_tours_postgis(
 
 
 # helper docstring to change __doc__ of all write functions conveniently in one place
-__doc = """Stores {long} to PostGIS. Usually, this is directly called on a {long}
-    DataFrame (see example below).
+__doc = """
+        Stores {long} to PostGIS. Usually, this is directly called on a {long}
+        DataFrame (see example below).
 
-    Parameters
-    ----------
-    {long} : GeoDataFrame (as trackintel {long})
-        The {long} to store to the database.
+        Parameters
+        ----------
+        {long} : GeoDataFrame (as trackintel {long})
+            The {long} to store to the database.
 
-    name : str
-        The name of the table to write to.
+        name : str
+            The name of the table to write to.
 
-    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        active connection to PostGIS database.
+        con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+            active connection to PostGIS database.
 
-    schema : str, optional
-        The schema (if the database supports this) where the table resides.
+        schema : str, optional
+            The schema (if the database supports this) where the table resides.
 
-    if_exists : str, {{'fail', 'replace', 'append'}}, default 'fail'
-        How to behave if the table already exists.
+        if_exists : str, {{'fail', 'replace', 'append'}}, default 'fail'
+            How to behave if the table already exists.
+            - fail: Raise a ValueError.
+            - replace: Drop the table before inserting new values.
+            - append: Insert new values to the existing table.
 
-        - fail: Raise a ValueError.
-        - replace: Drop the table before inserting new values.
-        - append: Insert new values to the existing table.
+        index : bool, default True
+            Write DataFrame index as a column. Uses index_label as the column name in the table.
 
-    index : bool, default True
-        Write DataFrame index as a column. Uses index_label as the column name in the table.
+        index_label : str or sequence, default None
+            Column label for index column(s). If None is given (default) and index is True, then the index names are used.
 
-    index_label : str or sequence, default None
-        Column label for index column(s). If None is given (default) and index is True, then the index names are used.
+        chunksize : int, optional
+            How many entries should be written at the same time.
 
-    chunksize : int, optional
-        How many entries should be written at the same time.
+        dtype: dict of column name to SQL type, default None
+            Specifying the datatype for columns.
+            The keys should be the column names and the values should be the SQLAlchemy types.
 
-    dtype: dict of column name to SQL type, default None
-        Specifying the datatype for columns.
-        The keys should be the column names and the values should be the SQLAlchemy types.
+        Examples
+        --------
+        >>> {short}.as_{long}.to_postgis(conn_string, table_name)
+        >>> ti.io.postgis.write_{long}_postgis({short}, conn_string, table_name)
+        """
 
-    Examples
-    --------
-    >>> {short}.as_{long}.to_postgis(conn_string, table_name)
-    >>> ti.io.postgis.write_{long}_postgis({short}, conn_string, table_name)
-"""
-
-write_positionfixes_postgis.__doc__ = __doc.format(long="positionfixes", short="pfs")
 write_triplegs_postgis.__doc__ = __doc.format(long="triplegs", short="tpls")
 write_staypoints_postgis.__doc__ = __doc.format(long="staypoints", short="sp")
 write_locations_postgis.__doc__ = __doc.format(long="locations", short="locs")
