@@ -1,7 +1,9 @@
+import warnings
 from functools import partial, update_wrapper, wraps
+from textwrap import dedent
+
 import numpy as np
 import pandas as pd
-import warnings
 from geopandas import GeoDataFrame
 
 import trackintel as ti
@@ -104,11 +106,6 @@ def _single_tripleg_mean_speed(positionfixes):
     pfs_sorted = positionfixes.sort_values(by="tracked_at")
     pfs_speed = get_speed_positionfixes(pfs_sorted)
     return np.mean(pfs_speed["speed"].values[1:])
-
-
-def _copy_docstring(wrapped, assigned=("__doc__",), updated=[]):
-    """Thin wrapper for `functools.update_wrapper` to mimic `functools.wraps` but to only copy the docstring."""
-    return partial(update_wrapper, wrapped=wrapped, assigned=assigned, updated=updated)
 
 
 def _wrapped_gdf_method(func):
@@ -236,3 +233,104 @@ def _register_trackintel_accessor(name: str):
         return accessor
 
     return decorator
+
+
+def _copy_docstring(wrapped, assigned=("__doc__",), updated=[]):
+    """Thin wrapper for `functools.update_wrapper` to mimic `functools.wraps` but to only copy the docstring."""
+    return partial(update_wrapper, wrapped=wrapped, assigned=assigned, updated=updated)
+
+
+# doc is derived from pandas.util._decorators (2.1.0)
+# module https://github.com/pandas-dev/pandas/blob/main/LICENSE
+
+
+def doc(*docstrings, **params):
+    """
+    A decorator to take docstring templates, concatenate them and perform string
+    substitution on them.
+
+    This decorator will add a variable "_docstring_components" to the wrapped
+    callable to keep track the original docstring template for potential usage.
+    If it should be consider as a template, it will be saved as a string.
+    Otherwise, it will be saved as callable, and later user __doc__ and dedent
+    to get docstring.
+
+    Parameters
+    ----------
+    *docstrings : None, str, or callable
+        The string / docstring / docstring template to be appended in order
+        after default docstring under callable.
+    **params
+        The string which would be used to format docstring template.
+    """
+
+    def decorator(decorated):
+        # collecting docstring and docstring templates
+        components = []
+        if decorated.__doc__:
+            components.append(dedent(decorated.__doc__))
+
+        for docstring in docstrings:
+            if docstring is None:
+                continue
+            if hasattr(docstring, "_docstring_components"):
+                components.extend(docstring._docstring_components)
+            elif isinstance(docstring, str) or docstring.__doc__:
+                components.append(docstring)
+
+        decorated._docstring_components = components
+        params_applied = (c.format(**params) if (isinstance(c, str) and params) else c for c in components)
+        decorated.__doc__ = "".join(c if isinstance(c, str) else dedent(c.__doc__ or "") for c in params_applied)
+        return decorated
+
+    return decorator
+
+
+_shared_docs = {}
+
+# in _shared_docs as all write_postgis_xyz functions use this docstring
+_shared_docs[
+    "write_postgis"
+] = """
+Stores {long} to PostGIS. Usually, this is directly called on a {long}
+DataFrame (see example below).
+
+Parameters
+----------
+{long} : GeoDataFrame (as trackintel {long})
+        The {long} to store to the database.
+
+name : str
+    The name of the table to write to.
+
+con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+    active connection to PostGIS database.
+
+schema : str, optional
+    The schema (if the database supports this) where the table resides.
+
+if_exists : str, {{'fail', 'replace', 'append'}}, default 'fail'
+    How to behave if the table already exists.
+
+    - fail: Raise a ValueError.
+    - replace: Drop the table before inserting new values.
+    - append: Insert new values to the existing table.
+
+index : bool, default True
+    Write DataFrame index as a column. Uses index_label as the column name in the table.
+
+index_label : str or sequence, default None
+    Column label for index column(s). If None is given (default) and index is True, then the index names are used.
+
+chunksize : int, optional
+    How many entries should be written at the same time.
+
+dtype: dict of column name to SQL type, default None
+    Specifying the datatype for columns.
+    The keys should be the column names and the values should be the SQLAlchemy types.
+
+Examples
+--------
+>>> {short}.as_{long}.to_postgis(conn_string, table_name)
+>>> ti.io.postgis.write_{long}_postgis({short}, conn_string, table_name)
+"""
