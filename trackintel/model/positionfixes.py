@@ -1,13 +1,12 @@
 import pandas as pd
 import geopandas as gpd
 import trackintel as ti
-from trackintel.geogr.distances import calculate_distance_matrix
+from trackintel.geogr import calculate_distance_matrix, get_speed_positionfixes
 from trackintel.io.file import write_positionfixes_csv
 from trackintel.io.postgis import write_positionfixes_postgis
 from trackintel.model.util import _copy_docstring
 from trackintel.preprocessing.positionfixes import generate_staypoints, generate_triplegs
 from trackintel.model.util import (
-    get_speed_positionfixes,
     TrackintelBase,
     TrackintelGeoDataFrame,
     _register_trackintel_accessor,
@@ -153,6 +152,6 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         """
         Compute speed per positionfix (in m/s)
 
-        See :func:`trackintel.model.util.get_speed_positionfixes`.
+        See :func:`trackintel.geogr.distances.get_speed_positionfixes`.
         """
-        return ti.model.util.get_speed_positionfixes(self, *args, **kwargs)
+        return ti.geogr.distances.get_speed_positionfixes(self, *args, **kwargs)
