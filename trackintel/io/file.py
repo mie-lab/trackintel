@@ -13,6 +13,8 @@ from trackintel.io.from_geopandas import (
     read_trips_gpd,
 )
 from trackintel.io.util import _index_warning_default_none
+from trackintel.model.util import doc
+from trackintel import Positionfixes
 
 
 @_index_warning_default_none
@@ -88,36 +90,14 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, geom_co
     return read_positionfixes_gpd(df, geom_col=geom_col, crs=crs, tz=tz)
 
 
+@doc(
+    Positionfixes.to_csv,
+    first_arg="""
+positionfixes : GeoDataFrame (as trackintel positionfixes)
+    The positionfixes to store to the CSV file.
+""",
+)
 def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
-    """
-    Write positionfixes to csv file.
-
-    Wraps the pandas to_csv function, but strips the geometry column and
-    stores the longitude and latitude in respective columns.
-
-    Parameters
-    ----------
-    positionfixes : GeoDataFrame (as trackintel positionfixes)
-        The positionfixes to store to the CSV file.
-
-    filename : str
-        The file to write to.
-
-    args
-        Additional arguments passed to pd.DataFrame.to_csv().
-
-    kwargs
-        Additional keyword arguments passed to pd.DataFrame.to_csv().
-
-    Notes
-    -----
-    "longitude" and "latitude" is extracted from the geometry column and the orignal
-    geometry column is dropped.
-
-    Examples
-    ---------
-    >>> ps.as_positionfixes.to_csv("export_pfs.csv")
-    """
     gdf = positionfixes.copy()
     gdf["longitude"] = positionfixes.geometry.x
     gdf["latitude"] = positionfixes.geometry.y
