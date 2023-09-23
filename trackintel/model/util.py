@@ -194,10 +194,7 @@ Stores {long} to PostGIS. Usually, this is directly called on a {long}
 DataFrame (see example below).
 
 Parameters
-----------
-{long} : GeoDataFrame (as trackintel {long})
-        The {long} to store to the database.
-
+----------{first_arg}
 name : str
     The name of the table to write to.
 

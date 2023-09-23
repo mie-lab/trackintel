@@ -1,16 +1,19 @@
-import pandas as pd
 import geopandas as gpd
+import pandas as pd
+
 import trackintel as ti
 from trackintel.geogr import calculate_distance_matrix, get_speed_positionfixes
 from trackintel.io.file import write_positionfixes_csv
 from trackintel.io.postgis import write_positionfixes_postgis
-from trackintel.model.util import _copy_docstring
-from trackintel.preprocessing.positionfixes import generate_staypoints, generate_triplegs
 from trackintel.model.util import (
     TrackintelBase,
     TrackintelGeoDataFrame,
+    _copy_docstring,
     _register_trackintel_accessor,
+    _shared_docs,
+    doc,
 )
+from trackintel.preprocessing.positionfixes import generate_staypoints, generate_triplegs
 
 _required_columns = ["user_id", "tracked_at"]
 
@@ -125,15 +128,10 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         """
         ti.io.file.write_positionfixes_csv(self, filename, *args, **kwargs)
 
-    @_copy_docstring(write_positionfixes_postgis)
+    @doc(_shared_docs["write_postgis"], first_arg="", long="positionfixes", short="pfs")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        """
-        Store this collection of positionfixes to PostGIS.
-
-        See :func:`trackintel.io.postgis.write_positionfixes_postgis`.
-        """
         ti.io.postgis.write_positionfixes_postgis(
             self, name, con, schema, if_exists, index, index_label, chunksize, dtype
         )
