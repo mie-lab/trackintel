@@ -11,6 +11,7 @@ from sqlalchemy.types import JSON
 
 import trackintel as ti
 from trackintel.io.util import _index_warning_default_none
+from trackintel.model.util import doc, _shared_docs
 
 
 def _handle_con_string(func):
@@ -126,6 +127,7 @@ def read_positionfixes_postgis(
     return ti.io.read_positionfixes_gpd(pfs, **(read_gpd_kws or {}))
 
 
+@doc(_shared_docs["write_postgis"], long="positionfixes", short="pfs")
 @_handle_con_string
 def write_positionfixes_postgis(
     positionfixes, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
@@ -217,6 +219,7 @@ def read_triplegs_postgis(
     return ti.io.read_triplegs_gpd(tpls, **(read_gpd_kws or {}))
 
 
+@doc(_shared_docs["write_postgis"], long="triplegs", short="tpls")
 @_handle_con_string
 def write_triplegs_postgis(
     triplegs, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
@@ -320,6 +323,7 @@ def read_staypoints_postgis(
     return ti.io.read_staypoints_gpd(sp, **(read_gpd_kws or {}))
 
 
+@doc(_shared_docs["write_postgis"], long="staypoints", short="sp")
 @_handle_con_string
 def write_staypoints_postgis(
     staypoints, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
@@ -429,6 +433,7 @@ def read_locations_postgis(
     return ti.io.read_locations_gpd(locs, center=center, **(read_gpd_kws or {}))
 
 
+@doc(_shared_docs["write_postgis"], long="locations", short="locs")
 @_handle_con_string
 def write_locations_postgis(
     locations, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
@@ -559,6 +564,7 @@ def read_trips_postgis(
     return ti.io.read_trips_gpd(trips, **(read_gpd_kws or {}))
 
 
+@doc(_shared_docs["write_postgis"], long="trips", short="trips")
 @_handle_con_string
 def write_trips_postgis(
     trips, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
@@ -684,6 +690,7 @@ def read_tours_postgis(
     return ti.io.read_tours_gpd(tours, **(read_gpd_kws or {}))
 
 
+@doc(_shared_docs["write_postgis"], long="tours", short="tours")
 @_handle_con_string
 def write_tours_postgis(
     tours, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
@@ -701,55 +708,3 @@ def write_tours_postgis(
         chunksize=chunksize,
         dtype=dtype,
     )
-
-
-# helper docstring to change __doc__ of all write functions conveniently in one place
-__doc = """Stores {long} to PostGIS. Usually, this is directly called on a {long}
-    DataFrame (see example below).
-
-    Parameters
-    ----------
-    {long} : GeoDataFrame (as trackintel {long})
-        The {long} to store to the database.
-
-    name : str
-        The name of the table to write to.
-
-    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        active connection to PostGIS database.
-
-    schema : str, optional
-        The schema (if the database supports this) where the table resides.
-
-    if_exists : str, {{'fail', 'replace', 'append'}}, default 'fail'
-        How to behave if the table already exists.
-
-        - fail: Raise a ValueError.
-        - replace: Drop the table before inserting new values.
-        - append: Insert new values to the existing table.
-
-    index : bool, default True
-        Write DataFrame index as a column. Uses index_label as the column name in the table.
-
-    index_label : str or sequence, default None
-        Column label for index column(s). If None is given (default) and index is True, then the index names are used.
-
-    chunksize : int, optional
-        How many entries should be written at the same time.
-
-    dtype: dict of column name to SQL type, default None
-        Specifying the datatype for columns.
-        The keys should be the column names and the values should be the SQLAlchemy types.
-
-    Examples
-    --------
-    >>> {short}.as_{long}.to_postgis(conn_string, table_name)
-    >>> ti.io.postgis.write_{long}_postgis({short}, conn_string, table_name)
-"""
-
-write_positionfixes_postgis.__doc__ = __doc.format(long="positionfixes", short="pfs")
-write_triplegs_postgis.__doc__ = __doc.format(long="triplegs", short="tpls")
-write_staypoints_postgis.__doc__ = __doc.format(long="staypoints", short="sp")
-write_locations_postgis.__doc__ = __doc.format(long="locations", short="locs")
-write_trips_postgis.__doc__ = __doc.format(long="trips", short="trips")
-write_tours_postgis.__doc__ = __doc.format(long="tours", short="tours")

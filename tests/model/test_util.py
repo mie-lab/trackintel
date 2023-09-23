@@ -10,6 +10,7 @@ from trackintel.io.postgis import read_trips_postgis
 from trackintel.model.util import (
     NonCachedAccessor,
     _copy_docstring,
+    doc,
     _register_trackintel_accessor,
     _wrapped_gdf_method,
     TrackintelGeoDataFrame,
@@ -275,3 +276,57 @@ class Test_register_trackintel_accessor:
         # remove accessor again to make tests independent
         pd.DataFrame._accesors = pd.DataFrame._accessors.remove("foo")
         del pd.DataFrame.foo
+
+
+class TestDoc:
+    """Test doc decorator"""
+
+    def test_default_docstring(self):
+        """Test that default docstring is kept."""
+
+        def foo():
+            pass
+
+        default = "I am a docstring"
+        foo.__doc__ = default
+        foo = doc()(foo)
+        assert foo.__doc__ == default
+
+    def test_None(self):
+        """Test that None in args create no docstring"""
+
+        def foo():
+            pass
+
+        foo = doc(None)(foo)
+        assert foo.__doc__ == ""
+
+    def test_docstring_component(self):
+        """Test that docstring component is formatable"""
+        d = "this is a {adjective} function"
+
+        def foo():
+            pass
+
+        foo._docstring_components = [d]
+        foo = doc(foo, adjective="cool")(foo)
+        assert foo.__doc__ == d.format(adjective="cool")
+
+    def test_string(self):
+        """Test if string can be supplied"""
+        d = "this is a {adjective} function"
+
+        def foo():
+            pass
+
+        foo = doc(d, adjective="cool")(foo)
+        assert foo.__doc__ == d.format(adjective="cool")
+
+    def test_fall_through_case(self):
+        """Test fall through case in for loop"""
+
+        def foo():
+            pass
+
+        foo = doc(foo)(foo)
+        assert foo.__doc__ == ""
