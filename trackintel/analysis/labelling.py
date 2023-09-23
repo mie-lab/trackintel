@@ -2,7 +2,7 @@ import datetime
 
 import numpy as np
 
-from trackintel.model.util import get_speed_triplegs
+from trackintel.geogr import get_speed_triplegs
 
 
 def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.0, activity_column_name="is_activity"):
