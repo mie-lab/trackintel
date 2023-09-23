@@ -7,7 +7,7 @@ import pandas as pd
 from tqdm import tqdm
 from shapely.geometry import LineString
 
-from trackintel.geogr.distances import check_gdf_planar, haversine_dist
+from trackintel.geogr import check_gdf_planar, point_haversine_dist
 from trackintel.preprocessing.util import _explode_agg, angle_centroid_multipoints, applyParallel
 
 
@@ -402,7 +402,7 @@ def _generate_staypoints_sliding_user(
 ):
     """User level staypoint generation using sliding method, see generate_staypoints() function for parameter meaning."""
     if distance_metric == "haversine":
-        dist_func = haversine_dist
+        dist_func = point_haversine_dist
     else:
         raise AttributeError("distance_metric unknown. We only support ['haversine']. " f"You passed {distance_metric}")
 

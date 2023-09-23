@@ -4,16 +4,10 @@ import trackintel as ti
 from trackintel.analysis.labelling import predict_transport_mode
 from trackintel.analysis.modal_split import calculate_modal_split
 from trackintel.analysis.tracking_quality import temporal_tracking_quality
-from trackintel.geogr.distances import calculate_distance_matrix
+from trackintel.geogr import calculate_distance_matrix, get_speed_triplegs
 from trackintel.io.file import write_triplegs_csv
 from trackintel.io.postgis import write_triplegs_postgis
-from trackintel.model.util import (
-    TrackintelBase,
-    TrackintelGeoDataFrame,
-    _copy_docstring,
-    _register_trackintel_accessor,
-    get_speed_triplegs,
-)
+from trackintel.model.util import TrackintelBase, TrackintelGeoDataFrame, _copy_docstring, _register_trackintel_accessor
 from trackintel.preprocessing.filter import spatial_filter
 from trackintel.preprocessing.triplegs import generate_trips
 
@@ -124,7 +118,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
 
         See :func:`trackintel.geogr.distances.calculate_distance_matrix`.
         """
-        return ti.geogr.distances.calculate_distance_matrix(self, *args, **kwargs)
+        return ti.geogr.calculate_distance_matrix(self, *args, **kwargs)
 
     @_copy_docstring(spatial_filter)
     def spatial_filter(self, *args, **kwargs):
@@ -187,4 +181,4 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
 
         See :func:`trackintel.model.util.get_speed_triplegs`.
         """
-        return ti.model.util.get_speed_triplegs(self, *args, **kwargs)
+        return ti.geogr.get_speed_triplegs(self, *args, **kwargs)
