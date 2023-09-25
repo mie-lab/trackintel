@@ -284,11 +284,7 @@ def calculate_haversine_length(gdf):
 
 @doc(
     Positionfixes.get_speed,
-    first_arg="""
-Parameters
-----------
-positionfixes : GeoDataFrame (as trackintel positionfixes)
-""",
+    first_arg="\nParameters\n----------\npositionfixes : GeoDataFrame (as trackintel positionfixes)",
 )
 def get_speed_positionfixes(positionfixes):
     pfs = positionfixes.copy()

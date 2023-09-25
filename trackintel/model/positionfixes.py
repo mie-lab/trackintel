@@ -193,7 +193,6 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
             n_jobs=n_jobs,
         )
 
-    # @_copy_docstring(generate_triplegs)
     @doc(first_arg="")
     def generate_triplegs(
         self,
@@ -342,7 +341,6 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         """
         return ti.geogr.distances.calculate_distance_matrix(self, Y=Y, dist_metric=dist_metric, n_jobs=n_jobs, **kwds)
 
-    # @_copy_docstring(get_speed_positionfixes)
     @doc(first_arg="")
     def get_speed(self):
         """

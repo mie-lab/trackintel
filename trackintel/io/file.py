@@ -92,10 +92,7 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, geom_co
 
 @doc(
     Positionfixes.to_csv,
-    first_arg="""
-positionfixes : GeoDataFrame (as trackintel positionfixes)
-    The positionfixes to store to the CSV file.
-""",
+    first_arg="\npositionfixes : GeoDataFrame (as trackintel positionfixes)\n    The positionfixes to store to the CSV file.",
 )
 def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
     gdf = positionfixes.copy()
