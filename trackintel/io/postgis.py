@@ -127,7 +127,12 @@ def read_positionfixes_postgis(
     return ti.io.read_positionfixes_gpd(pfs, **(read_gpd_kws or {}))
 
 
-@doc(_shared_docs["write_postgis"], long="positionfixes", short="pfs")
+@doc(
+    _shared_docs["write_postgis"],
+    first_arg="\npositionfixes : GeoDataFrame (as trackintel positionfixes)\n    The positionfixes to store to the database.\n",
+    long="positionfixes",
+    short="pfs",
+)
 @_handle_con_string
 def write_positionfixes_postgis(
     positionfixes, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
@@ -219,7 +224,12 @@ def read_triplegs_postgis(
     return ti.io.read_triplegs_gpd(tpls, **(read_gpd_kws or {}))
 
 
-@doc(_shared_docs["write_postgis"], long="triplegs", short="tpls")
+@doc(
+    _shared_docs["write_postgis"],
+    first_arg="\ntriplegs : GeoDataFrame (as trackintel triplegs)\n    The triplegs to store to the database.\n",
+    long="triplegs",
+    short="tpls",
+)
 @_handle_con_string
 def write_triplegs_postgis(
     triplegs, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
@@ -323,7 +333,12 @@ def read_staypoints_postgis(
     return ti.io.read_staypoints_gpd(sp, **(read_gpd_kws or {}))
 
 
-@doc(_shared_docs["write_postgis"], long="staypoints", short="sp")
+@doc(
+    _shared_docs["write_postgis"],
+    first_arg="\nstaypoints : GeoDataFrame (as trackintel staypoints)\n    The staypoints to store to the database.\n",
+    long="staypoints",
+    short="sp",
+)
 @_handle_con_string
 def write_staypoints_postgis(
     staypoints, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
@@ -433,7 +448,12 @@ def read_locations_postgis(
     return ti.io.read_locations_gpd(locs, center=center, **(read_gpd_kws or {}))
 
 
-@doc(_shared_docs["write_postgis"], long="locations", short="locs")
+@doc(
+    _shared_docs["write_postgis"],
+    first_arg="\nlocations : GeoDataFrame (as trackintel locations)\n    The locations to store to the database.\n",
+    long="locations",
+    short="locs",
+)
 @_handle_con_string
 def write_locations_postgis(
     locations, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
@@ -564,7 +584,12 @@ def read_trips_postgis(
     return ti.io.read_trips_gpd(trips, **(read_gpd_kws or {}))
 
 
-@doc(_shared_docs["write_postgis"], long="trips", short="trips")
+@doc(
+    _shared_docs["write_postgis"],
+    first_arg="\ntrips : GeoDataFrame (as trackintel trips)\n    The trips to store to the database.\n",
+    long="trips",
+    short="trips",
+)
 @_handle_con_string
 def write_trips_postgis(
     trips, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
@@ -690,7 +715,12 @@ def read_tours_postgis(
     return ti.io.read_tours_gpd(tours, **(read_gpd_kws or {}))
 
 
-@doc(_shared_docs["write_postgis"], long="tours", short="tours")
+@doc(
+    _shared_docs["write_postgis"],
+    first_arg="\ntours : GeoDataFrame (as trackintel tours)\n    The tours to store to the database.\n",
+    long="tours",
+    short="tours",
+)
 @_handle_con_string
 def write_tours_postgis(
     tours, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
