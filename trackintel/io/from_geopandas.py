@@ -449,7 +449,10 @@ def _localize_timestamp(dt_series, pytz_tzinfo, col_name):
     """
     if pytz_tzinfo is None:
         warnings.warn(f"Assuming UTC timezone for column {col_name}")
-        pytz_tzinfo = "utc"
-
-    timezone = pytz.timezone(pytz_tzinfo)
-    return dt_series.apply(pd.Timestamp, tz=timezone)
+        return pd.to_datetime(dt_series, utc=True)
+    dt_series = pd.to_datetime(dt_series, utc=False)
+    # if object already has a tz we need to convert it
+    if dt_series.dt.tz:
+        return dt_series.dt.tz_convert(pytz_tzinfo)
+    # else we can just set it
+    return dt_series.dt.tz_localize(pytz_tzinfo)
