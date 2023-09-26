@@ -11,6 +11,7 @@ import similaritymeasures
 from scipy.spatial.distance import cdist
 from sklearn.metrics import pairwise_distances
 
+
 def point_haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000, float_flag=False):
     """
     Compute the great circle or haversine distance between two coordinates in WGS84.
