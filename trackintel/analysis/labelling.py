@@ -6,16 +6,15 @@ from trackintel.geogr import get_speed_triplegs
 
 
 def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.0, activity_column_name="is_activity"):
+    # if you update this docstring update ti.Staypoints.create_activity_flag as well.
     """
-    Add a flag whether or not a staypoint is considered an activity.
+    Add a flag whether or not a staypoint is considered an activity based on a time threshold.
 
     Parameters
     ----------
     staypoints: GeoDataFrame (as trackintel staypoints)
-        The original input staypoints
 
     method: {'time_threshold'}, default = 'time_threshold'
-
         - 'time_threshold' : All staypoints with a duration greater than the time_threshold are considered an activity.
 
     time_threshold : float, default = 15 (minutes)
@@ -32,7 +31,7 @@ def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.
     Examples
     --------
     >>> sp  = sp.as_staypoints.create_activity_flag(method='time_threshold', time_threshold=15)
-    >>> print(sp['activity'])
+    >>> print(sp['is_activity'])
     """
     if method == "time_threshold":
         staypoints[activity_column_name] = staypoints["finished_at"] - staypoints["started_at"] > datetime.timedelta(
@@ -45,6 +44,7 @@ def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.
 
 
 def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
+    # if you update this docstring update Triplegs.predict_transport_mode as well
     """
     Predict the transport mode of triplegs.
 
@@ -54,11 +54,9 @@ def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
     Parameters
     ----------
     triplegs: GeoDataFrame (as trackintel triplegs)
-        The original input triplegs.
 
-    method: {'simple-coarse'}
+    method: {'simple-coarse'}, default 'simple-coarse'
         The following methods are available for transport mode inference/prediction:
-
         - 'simple-coarse' : Uses simple heuristics to predict coarse transport classes.
 
     Returns

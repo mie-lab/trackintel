@@ -19,17 +19,16 @@ def generate_locations(
     print_progress=False,
     n_jobs=1,
 ):
+    # if you update this docstring update ti.Staypoints.generate_locations as well
     """
     Generate locations from the staypoints.
 
     Parameters
     ----------
     staypoints : GeoDataFrame (as trackintel staypoints)
-        The staypoints have to follow the standard definition for staypoints DataFrames.
 
     method : {'dbscan'}
         Method to create locations.
-
         - 'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
 
     epsilon : float, default 100
@@ -219,17 +218,16 @@ def _gen_locs_dbscan(sp, distance_metric, db):
 
 
 def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
+    # if you update this docstring update ti.Staypoints.merge_staypoints as well
     """
     Aggregate staypoints horizontally via time threshold.
 
     Parameters
     ----------
     staypoints : GeoDataFrame (as trackintel staypoints)
-        The staypoints must contain a column `location_id` (see `generate_locations` function) and have to follow the
-        standard trackintel definition for staypoints DataFrames.
+        The staypoints must contain a column `location_id` (see `generate_locations` function)
 
     triplegs: GeoDataFrame (as trackintel triplegs)
-        The triplegs have to follow the standard definition for triplegs DataFrames.
 
     max_time_gap : str or pd.Timedelta, default "10min"
         Maximum duration between staypoints to still be merged.

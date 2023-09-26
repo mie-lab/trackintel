@@ -1,26 +1,26 @@
 def spatial_filter(source, areas, method="within", re_project=False):
+    # if you update this docstring update all ti class methods that use this as well
     """
-    Filter staypoints, locations or triplegs with a geo extent.
+    Filter a GeoDataFrame on a geo extent.
 
     Parameters
     ----------
-    source : GeoDataFrame (as trackintel datamodels)
+    source : GeoDataFrame
         The source feature to perform the spatial filtering
 
     areas : GeoDataFrame
         The areas used to perform the spatial filtering. Note, you can have multiple Polygons
         and it will return all the features intersect with ANY of those geometries.
 
-    method : {'within', 'intersects', 'crosses'}
-        The method to filter the 'source' GeoDataFrame
-
-        - 'within'    : return instances in 'source' where no points of these instances lies in the \
-            exterior of the 'areas' and at least one point of the interior of these instances lies \
+    method : {'within', 'intersects', 'crosses'}, optional
+        The method to filter the 'source' GeoDataFrame, by default 'within'
+        - 'within'    : return instances in 'source' where no points of these instances lies in the
+            exterior of the 'areas' and at least one point of the interior of these instances lies
             in the interior of 'areas'.
-        - 'intersects': return instances in 'source' where the boundary or interior of these instances \
+        - 'intersects': return instances in 'source' where the boundary or interior of these instances
             intersect in any way with those of the 'areas'
-        - 'crosses'   : return instances in 'source' where the interior of these instances intersects \
-            the interior of the 'areas' but does not contain it, and the dimension of the intersection \
+        - 'crosses'   : return instances in 'source' where the interior of these instances intersects
+            the interior of the 'areas' but does not contain it, and the dimension of the intersection
             is less than the dimension of the one of the 'areas'.
 
     re_project : bool, default False
@@ -28,7 +28,7 @@ def spatial_filter(source, areas, method="within", re_project=False):
 
     Returns
     -------
-    ret_gdf: GeoDataFrame (as trackintel datamodels)
+    GeoDataFrame
         A new GeoDataFrame containing the features after the spatial filtering.
 
     Examples

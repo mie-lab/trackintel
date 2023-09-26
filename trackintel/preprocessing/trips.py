@@ -59,23 +59,22 @@ def generate_tours(
     max_nr_gaps=0,
     print_progress=False,
 ):
+    # if you update this docstring update Trips.generate_tours as well
     """
     Generate trackintel-tours from trips
 
     Parameters
     ----------
     trips : GeoDataFrame (as trackintel trips)
-        The trips have to follow the standard definition for trips DataFrames
 
-    staypoints : GeoDataFrame (as trackintel staypoints, preprocessed to contain location IDs), default None
-        The staypoints have to follow the standard definition for staypoints DataFrames. The location ID column
-        is necessary to connect trips via locations to a tour. If None, trips will be connected based only on a
-        distance threshold `max_dist`.
+    staypoints : GeoDataFrame (as trackintel staypoints), default None
+        Must have `location_id` column to connect trips via locations to a tour.
+        If None, trips will be connected based only by the set distance threshold `max_dist`.
 
     max_dist: float, default 100 (meters)
-        Maximum distance between the end point of one trip and the start point of the next trip on a tour.
-        This is parameter is only used if staypoints is None!
-        Also, if `max_nr_gaps > 0`, a tour can contain larger spatial gaps (see Notes below)
+        Maximum distance between the end point of one trip and the start point of the next trip within a tour.
+        This is parameter is only used if staypoints is `None`!
+        Also, if `max_nr_gaps > 0`, a tour can contain larger spatial gaps (see Notes below for more detail)
 
     max_time: str or pd.Timedelta, default "1d" (1 day)
         Maximum time that a tour is allowed to take
@@ -85,7 +84,6 @@ def generate_tours(
 
     print_progress : bool, default False
         If print_progress is True, the progress bar is displayed
-
 
     Returns
     -------

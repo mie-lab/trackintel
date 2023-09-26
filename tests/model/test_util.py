@@ -1,15 +1,11 @@
-from functools import WRAPPER_ASSIGNMENTS
-
 import pandas as pd
 import pytest
 from geopandas import GeoDataFrame
 from shapely.geometry import Point
 
 import trackintel as ti
-from trackintel.io.postgis import read_trips_postgis
 from trackintel.model.util import (
     NonCachedAccessor,
-    _copy_docstring,
     doc,
     _register_trackintel_accessor,
     _wrapped_gdf_method,
@@ -40,24 +36,6 @@ def example_positionfixes():
     # assert validity of positionfixes.
     pfs.as_positionfixes
     return pfs
-
-
-class Test_copy_docstring:
-    def test_default(self):
-        @_copy_docstring(read_trips_postgis)
-        def bar(b: int) -> int:
-            """Old docstring."""
-            pass
-
-        old_docs = """Old docstring."""
-        for wa in WRAPPER_ASSIGNMENTS:
-            attr_foo = getattr(read_trips_postgis, wa)
-            attr_bar = getattr(bar, wa)
-            if wa == "__doc__":
-                assert attr_foo == attr_bar
-                assert attr_bar != old_docs
-            else:
-                assert attr_foo != attr_bar
 
 
 class Test_wrapped_gdf_method:

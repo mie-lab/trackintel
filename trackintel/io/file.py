@@ -13,7 +13,7 @@ from trackintel.io.from_geopandas import (
     read_trips_gpd,
 )
 from trackintel.io.util import _index_warning_default_none
-from trackintel.model.util import doc
+from trackintel.model.util import doc, _shared_docs
 from trackintel import Positionfixes
 
 
@@ -90,11 +90,37 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, geom_co
     return read_positionfixes_gpd(df, geom_col=geom_col, crs=crs, tz=tz)
 
 
-@doc(
-    Positionfixes.to_csv,
-    first_arg="\npositionfixes : GeoDataFrame (as trackintel positionfixes)\n    The positionfixes to store to the CSV file.",
-)
 def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
+    # if you update this docstring update ti.Positionfixes.to_csv as well
+    """
+    Write positionfixes to csv file.
+
+    Wraps the pandas to_csv function, but strips the geometry column and
+    stores the longitude and latitude in respective columns.
+
+    Parameters
+    ----------
+    positionfixes : GeoDataFrame (as trackintel positionfixes)
+
+    filename : str
+        The file to write to.
+
+    args
+        Additional arguments passed to pd.DataFrame.to_csv().
+
+    kwargs
+        Additional keyword arguments passed to pd.DataFrame.to_csv().
+
+    Notes
+    -----
+    "longitude" and "latitude" is extracted from the geometry column and the orignal
+    geometry column is dropped.
+
+    Examples
+    ---------
+    >>> pfs.as_positionfixes.to_csv("export_pfs.csv")
+    >>> ti.io.write_positionfixes_csv(pfs, "export_pfs.csv")
+    """
     gdf = positionfixes.copy()
     gdf["longitude"] = positionfixes.geometry.x
     gdf["latitude"] = positionfixes.geometry.y
@@ -163,31 +189,13 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, geom_col="ge
     return read_triplegs_gpd(df, geom_col=geom_col, crs=crs, tz=tz, mapper=columns)
 
 
+@doc(
+    _shared_docs["write_csv"],
+    first_arg="\ntriplegs : GeoDataFrame (as trackintel triplegs)\n",
+    long="triplegs",
+    short="tpls",
+)
 def write_triplegs_csv(triplegs, filename, *args, **kwargs):
-    """
-    Write triplegs to csv file.
-
-    Wraps the pandas to_csv function, but transforms the geometry into WKT
-    before writing.
-
-    Parameters
-    ----------
-    triplegs : GeoDataFrame (as trackintel triplegs)
-        The triplegs to store to the CSV file.
-
-    filename : str
-        The file to write to.
-
-    args
-        Additional arguments passed to pd.DataFrame.to_csv().
-
-    kwargs
-        Additional keyword arguments passed to pd.DataFrame.to_csv().
-
-    Examples
-    --------
-    >>> tpls.as_triplegs.to_csv("export_tpls.csv")
-    """
     geo_col_name = triplegs.geometry.name
     df = pd.DataFrame(triplegs, copy=True)
     df[geo_col_name] = triplegs.geometry.apply(wkt.dumps)
@@ -255,31 +263,13 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=None, geom_col="
     return read_staypoints_gpd(df, geom_col=geom_col, crs=crs, tz=tz)
 
 
+@doc(
+    _shared_docs["write_csv"],
+    first_arg="\nstaypoints : GeoDataFrame (as trackintel staypoints)\n",
+    long="staypoints",
+    short="sp",
+)
 def write_staypoints_csv(staypoints, filename, *args, **kwargs):
-    """
-    Write staypoints to csv file.
-
-    Wraps the pandas to_csv function, but transforms the geometry into WKT
-    before writing.
-
-    Parameters
-    ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
-        The staypoints to store to the CSV file.
-
-    filename : str
-        The file to write to.
-
-    args
-        Additional arguments passed to pd.DataFrame.to_csv().
-
-    kwargs
-        Additional keyword arguments passed to pd.DataFrame.to_csv().
-
-    Examples
-    --------
-    >>> tpls.as_triplegs.to_csv("export_tpls.csv")
-    """
     geo_col_name = staypoints.geometry.name
     df = pd.DataFrame(staypoints, copy=True)
     df[geo_col_name] = staypoints.geometry.apply(wkt.dumps)
@@ -341,31 +331,13 @@ def read_locations_csv(*args, columns=None, index_col=None, crs=None, **kwargs):
     return read_locations_gpd(df, crs=crs)
 
 
+@doc(
+    _shared_docs["write_csv"],
+    first_arg="\nlocations : GeoDataFrame (as trackintel locations)\n",
+    long="locations",
+    short="locs",
+)
 def write_locations_csv(locations, filename, *args, **kwargs):
-    """
-    Write locations to csv file.
-
-    Wraps the pandas to_csv function, but transforms the center (and
-    extent) into WKT before writing.
-
-    Parameters
-    ----------
-    locations : GeoDataFrame (as trackintel locations)
-        The locations to store to the CSV file.
-
-    filename : str
-        The file to write to.
-
-    args
-        Additional arguments passed to pd.DataFrame.to_csv().
-
-    kwargs
-        Additional keyword arguments passed to pd.DataFrame.to_csv().
-
-    Examples
-    --------
-    >>> locs.as_locations.to_csv("export_locs.csv")
-    """
     df = pd.DataFrame(locations, copy=True)
     df["center"] = locations["center"].apply(wkt.dumps)
     if "extent" in df.columns:
@@ -447,31 +419,10 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=None, geom_col=None, 
     return read_trips_gpd(trips, geom_col=geom_col, crs=crs, tz=tz)
 
 
+@doc(
+    _shared_docs["write_csv"], first_arg="\ntrips : (Geo)DataFrame (as trackintel trips)\n", long="trips", short="trips"
+)
 def write_trips_csv(trips, filename, *args, **kwargs):
-    """
-    Write trips to csv file.
-
-    Wraps the pandas to_csv function.
-    Geometry get transformed to WKT before writing.
-
-    Parameters
-    ----------
-    trips : (Geo)DataFrame (as trackintel trips)
-        The trips to store to the CSV file.
-
-    filename : str
-        The file to write to.
-
-    args
-        Additional arguments passed to pd.DataFrame.to_csv().
-
-    kwargs
-        Additional keyword arguments passed to pd.DataFrame.to_csv().
-
-    Examples
-    --------
-    >>> trips.as_trips.to_csv("export_trips.csv")
-    """
     df = trips.copy()
     if isinstance(df, GeoDataFrame):
         geom_col_name = df.geometry.name
@@ -526,28 +477,6 @@ def read_tours_csv(*args, columns=None, index_col=None, tz=None, **kwargs):
     return read_tours_gpd(tours, tz=tz)
 
 
+@doc(_shared_docs["write_csv"], first_arg="\ntours : DataFrame (as trackintel tours)\n", long="tours", short="tours")
 def write_tours_csv(tours, filename, *args, **kwargs):
-    """
-    Write tours to csv file.
-
-    Wraps the pandas to_csv function.
-
-    Parameters
-    ----------
-    tours : DataFrame (as trackintel tours)
-        The tours to store to the CSV file.
-
-    filename : str
-        The file to write to.
-
-    args
-        Additional arguments passed to pd.DataFrame.to_csv().
-
-    kwargs
-        Additional keyword arguments passed to pd.DataFrame.to_csv().
-
-    Examples
-    --------
-    >>> tours.as_tours.to_csv("export_tours.csv")
-    """
     pd.DataFrame.to_csv(tours, filename, index=True, *args, **kwargs)

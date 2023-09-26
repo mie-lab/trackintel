@@ -96,7 +96,6 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         lon = self.geometry.x
         return (float(lon.mean()), float(lat.mean()))
 
-    @doc(first_arg="")
     def generate_staypoints(
         self,
         method="sliding",
@@ -109,15 +108,16 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         exclude_duplicate_pfs=True,
         n_jobs=1,
     ):
+        # if you update this docstring update ti.preprocessing.generate_staypoints as well
         """
         Generate staypoints from positionfixes.
 
         Parameters
-        ----------{first_arg}
-        method : {{'sliding'}}
+        ----------
+        method : {'sliding'}
             Method to create staypoints. 'sliding' applies a sliding window over the data.
 
-        distance_metric : {{'haversine'}}
+        distance_metric : {'haversine'}
             The distance metric used by the applied method.
 
         dist_threshold : float, default 100
@@ -193,7 +193,6 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
             n_jobs=n_jobs,
         )
 
-    @doc(first_arg="")
     def generate_triplegs(
         self,
         staypoints=None,
@@ -201,16 +200,17 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         gap_threshold=15,
         print_progress=False,
     ):
+        # if you update this docstring update ti.preprocessing.generate_triplegs as well
         """
         Generate triplegs from positionfixes.
 
         Parameters
-        ----------{first_arg}
+        ----------
         staypoints : GeoDataFrame (as trackintel staypoints), optional
             The staypoints (corresponding to the positionfixes). If this is not passed, the
             positionfixes need 'staypoint_id' associated with them.
 
-        method: {{'between_staypoints'}}
+        method: {'between_staypoints'}
             Method to create triplegs. 'between_staypoints' method defines a tripleg as all positionfixes
             between two staypoints (no overlap). This method requires either a column 'staypoint_id' on
             the positionfixes or passing staypoints as an input.
@@ -254,8 +254,8 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
             print_progress=print_progress,
         )
 
-    @doc(first_arg="")
     def to_csv(self, filename, *args, **kwargs):
+        # if you update this docstring update ti.io.file.write_positionfixex_csv as well
         """
         Write positionfixes to csv file.
 
@@ -263,7 +263,7 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         stores the longitude and latitude in respective columns.
 
         Parameters
-        ----------{first_arg}
+        ----------
         filename : str
             The file to write to.
 
@@ -280,7 +280,7 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
 
         Examples
         ---------
-        >>> ps.as_positionfixes.to_csv("export_pfs.csv")
+        >>> pfs.as_positionfixes.to_csv("export_pfs.csv")
         """
         ti.io.file.write_positionfixes_csv(self, filename, *args, **kwargs)
 
@@ -292,23 +292,24 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
             self, name, con, schema, if_exists, index, index_label, chunksize, dtype
         )
 
-    @doc(first_arg="")
     def calculate_distance_matrix(self, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
+        # if you update this docstring update ti.geogr.calculate_distance_matrix as well.
         """
         Calculate a distance matrix based on a specific distance metric.
 
-        If only X is given, the pair-wise distances between all elements in X are calculated. If X and Y are given, the
-        distances between all combinations of X and Y are calculated. Distances between elements of X and X, and distances
-        between elements of Y and Y are not calculated.
+        If no Y is given, the pair-wise distances between all elements in self are calculated.
+        If Y is given, the distances between all combinations of self and Y are calculated.
+        Distances between elements of self and self, and distances between elements of Y and Y are not calculated.
 
         Parameters
-        ----------{first_arg}
-        Y : GeoDataFrame (as trackintel staypoints or triplegs), optional
+        ----------
+        Y : GeoDataFrame (as trackintel positionfixes), optional
+            Should be of the same type as self
 
-        dist_metric: {{'haversine', 'euclidean', 'dtw', 'frechet'}}, optional
+        dist_metric: {'haversine', 'euclidean', 'dtw', 'frechet'}, optional
             The distance metric to be used for calculating the matrix. By default 'haversine.
 
-            For staypoints, common choice is 'haversine' or 'euclidean'. This function wraps around
+            For staypoints or positionfixes, a common choice is 'haversine' or 'euclidean'. This function wraps around
             the ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
             ``scipy.spatial.distance.cdist`` function if X and Y are given.
             Therefore the following metrics are also accepted:
@@ -338,14 +339,15 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         --------
         >>> calculate_distance_matrix(staypoints, dist_metric="haversine")
         >>> calculate_distance_matrix(triplegs_1, triplegs_2, dist_metric="dtw")
+        >>> pfs.as_positionfixes.calculate_distance_matrix(dist_metric="haversine")
         """
         return ti.geogr.distances.calculate_distance_matrix(self, Y=Y, dist_metric=dist_metric, n_jobs=n_jobs, **kwds)
 
-    @doc(first_arg="")
     def get_speed(self):
+        # if you update this docstring update ti.geogr.get_speed_positionfixes as well
         """
         Compute speed per positionfix (in m/s)
-        {first_arg}
+
         Returns
         -------
         pfs: GeoDataFrame (as trackintel positionfixes)

@@ -1,5 +1,5 @@
 import warnings
-from functools import partial, update_wrapper, wraps
+from functools import wraps
 from textwrap import dedent
 
 import pandas as pd
@@ -133,11 +133,6 @@ def _register_trackintel_accessor(name: str):
     return decorator
 
 
-def _copy_docstring(wrapped, assigned=("__doc__",), updated=[]):
-    """Thin wrapper for `functools.update_wrapper` to mimic `functools.wraps` but to only copy the docstring."""
-    return partial(update_wrapper, wrapped=wrapped, assigned=assigned, updated=updated)
-
-
 # doc is derived from pandas.util._decorators (2.1.0)
 # module https://github.com/pandas-dev/pandas/blob/main/LICENSE
 
@@ -228,4 +223,28 @@ Examples
 --------
 >>> {short}.as_{long}.to_postgis(conn_string, table_name)
 >>> ti.io.postgis.write_{long}_postgis({short}, conn_string, table_name)
+"""
+
+_shared_docs[
+    "write_csv"
+] = """
+Write {long} to csv file.
+
+Wraps the pandas to_csv function.
+Geometry get transformed to WKT before writing.
+
+Parameters
+----------{first_arg}
+filename : str
+    The file to write to.
+
+args
+    Additional arguments passed to pd.DataFrame.to_csv().
+
+kwargs
+    Additional keyword arguments passed to pd.DataFrame.to_csv().
+
+Examples
+--------
+>>> {short}.as_{long}.to_csv("export_{long}.csv")
 """

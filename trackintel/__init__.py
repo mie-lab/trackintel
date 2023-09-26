@@ -16,6 +16,11 @@ from trackintel.io.file import read_tours_csv
 
 from trackintel.visualization import plot, plot_modal_split
 
+# why is this import needed?
+# as trackintel.analysis is never imported somewhere python does not realize that it is a module during the set-up period.
+# with adding it here, we avoid this and make analysis importable.
+import trackintel.analysis
+
 from trackintel.__version__ import __version__
 from .core import print_version
 
