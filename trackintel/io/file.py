@@ -3,7 +3,6 @@ import ast
 import geopandas as gpd
 import pandas as pd
 from geopandas.geodataframe import GeoDataFrame
-from shapely import wkt
 from trackintel.io.from_geopandas import (
     read_locations_gpd,
     read_positionfixes_gpd,
@@ -188,10 +187,7 @@ def write_triplegs_csv(triplegs, filename, *args, **kwargs):
     --------
     >>> tpls.as_triplegs.to_csv("export_tpls.csv")
     """
-    geo_col_name = triplegs.geometry.name
-    df = pd.DataFrame(triplegs, copy=True)
-    df[geo_col_name] = triplegs.geometry.apply(wkt.dumps)
-    df.to_csv(filename, index=True, *args, **kwargs)
+    pd.DataFrame.to_csv(triplegs.to_wkt(rounding_precision=-1, trim=False), filename, index=True, *args, **kwargs)
 
 
 @_index_warning_default_none
@@ -280,10 +276,7 @@ def write_staypoints_csv(staypoints, filename, *args, **kwargs):
     --------
     >>> tpls.as_triplegs.to_csv("export_tpls.csv")
     """
-    geo_col_name = staypoints.geometry.name
-    df = pd.DataFrame(staypoints, copy=True)
-    df[geo_col_name] = staypoints.geometry.apply(wkt.dumps)
-    df.to_csv(filename, index=True, *args, **kwargs)
+    pd.DataFrame.to_csv(staypoints.to_wkt(rounding_precision=-1, trim=False), filename, index=True, *args, **kwargs)
 
 
 @_index_warning_default_none
@@ -366,11 +359,7 @@ def write_locations_csv(locations, filename, *args, **kwargs):
     --------
     >>> locs.as_locations.to_csv("export_locs.csv")
     """
-    df = pd.DataFrame(locations, copy=True)
-    df["center"] = locations["center"].apply(wkt.dumps)
-    if "extent" in df.columns:
-        df["extent"] = locations["extent"].apply(wkt.dumps)
-    df.to_csv(filename, index=True, *args, **kwargs)
+    pd.DataFrame.to_csv(locations.to_wkt(rounding_precision=-1, trim=False), filename, index=True, *args, **kwargs)
 
 
 @_index_warning_default_none
@@ -472,12 +461,10 @@ def write_trips_csv(trips, filename, *args, **kwargs):
     --------
     >>> trips.as_trips.to_csv("export_trips.csv")
     """
-    df = trips.copy()
-    if isinstance(df, GeoDataFrame):
-        geom_col_name = df.geometry.name
-        df[geom_col_name] = df[geom_col_name].to_wkt()
+    if isinstance(trips, GeoDataFrame):
+        trips = trips.to_wkt(rounding_precision=-1, trim=False)
     # static call necessary as TripsDataFrame has a to_csv method as well.
-    pd.DataFrame.to_csv(df, filename, index=True, *args, **kwargs)
+    pd.DataFrame.to_csv(trips, filename, index=True, *args, **kwargs)
 
 
 @_index_warning_default_none
