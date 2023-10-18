@@ -111,7 +111,7 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         """
         Generate staypoints based on positionfixes.
 
-        See :func:`ti.preprocessing.generate_staypoints` for full documentation.
+        See :func:`trackintel.preprocessing.generate_staypoints` for full documentation.
         """
         return ti.preprocessing.positionfixes.generate_staypoints(
             self,
@@ -136,7 +136,7 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         """
         Generate triplegs from positionfixes.
 
-        See :func:`ti.preprocessing.generate_triplegs` for full documentation.
+        See :func:`trackintel.preprocessing.generate_triplegs` for full documentation.
         """
         return ti.preprocessing.positionfixes.generate_triplegs(
             self,
@@ -150,7 +150,7 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         """
         Write positionfixes to csv file.
 
-        See :func:`ti.io.write_positionfixes_csv` for full documentation.
+        See :func:`trackintel.io.write_positionfixes_csv` for full documentation.
         """
         ti.io.file.write_positionfixes_csv(self, filename, *args, **kwargs)
 
@@ -166,7 +166,7 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         """
         Calculate a distance matrix based on a specific distance metric.
 
-        See :func:`ti.geogr.calculate_distance_matrix` for full documentation.
+        See :func:`trackintel.geogr.calculate_distance_matrix` for full documentation.
         """
         return ti.geogr.distances.calculate_distance_matrix(self, Y=Y, dist_metric=dist_metric, n_jobs=n_jobs, **kwds)
 
@@ -174,6 +174,6 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         """
         Compute speed per positionfix (in m/s)
 
-        See :func:`ti.geogr.get_speed_positionfixes` for full documentation.
+        See :func:`trackintel.geogr.get_speed_positionfixes` for full documentation.
         """
         return ti.geogr.distances.get_speed_positionfixes(self)

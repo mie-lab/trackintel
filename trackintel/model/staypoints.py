@@ -110,7 +110,7 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         """
         Generate locations from the staypoints.
 
-        See :func:`ti.preprocessing.generate_locations` for full documentation.
+        See :func:`trackintel.preprocessing.generate_locations` for full documentation.
         """
         return ti.preprocessing.staypoints.generate_locations(
             self,
@@ -128,7 +128,7 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         """
         Aggregate staypoints horizontally via time threshold.
 
-        See :func:`ti.preprocessing.staypoints.merge_staypoints` for full documentation.
+        See :func:`trackintel.preprocessing.staypoints.merge_staypoints` for full documentation.
         """
         return ti.preprocessing.staypoints.merge_staypoints(self, triplegs, max_time_gap=max_time_gap, agg=agg)
 
@@ -136,7 +136,7 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         """
         Add a flag whether or not a staypoint is considered an activity based on a time threshold.
 
-        See :func:`ti.analysis.create_activity_flag` for full documentation.
+        See :func:`trackintel.analysis.create_activity_flag` for full documentation.
         """
         return ti.analysis.create_activity_flag(
             self, method=method, time_threshold=time_threshold, activity_column_name=activity_column_name
@@ -146,7 +146,7 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         """
         Filter Staypoints on a geo extent.
 
-        See :func:`ti.preprocessing.spatial_filter` for full documentation.
+        See :func:`trackintel.preprocessing.spatial_filter` for full documentation.
         """
         return ti.preprocessing.spatial_filter(self, areas, method=method, re_project=re_project)
 
@@ -164,6 +164,6 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         """
         Calculate per-user temporal tracking quality (temporal coverage).
 
-        See :func:`ti.analysis.temporal_tracking_quality` for full documentation.
+        See :func:`trackintel.analysis.temporal_tracking_quality` for full documentation.
         """
         return ti.analysis.tracking_quality.temporal_tracking_quality(self, granularity=granularity)

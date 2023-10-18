@@ -133,7 +133,7 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
         """
         Calculate per-user temporal tracking quality (temporal coverage).
 
-        See :func:`ti.analysis.temporal_tracking_quality` for full documentation.
+        See :func:`trackintel.analysis.temporal_tracking_quality` for full documentation.
         """
         return ti.analysis.temporal_tracking_quality(self, granularity=granularity)
 
@@ -141,7 +141,7 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
         """
         Generate trackintel-tours from trips
 
-        See :func:`ti.preprocessing.generate_tours` for full documentation.
+        See :func:`trackintel.preprocessing.generate_tours` for full documentation.
         """
         return ti.preprocessing.trips.generate_tours(trips=self, **kwargs)
 

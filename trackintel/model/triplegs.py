@@ -103,7 +103,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
         """
         Calculate a distance matrix based on a specific distance metric.
 
-        See :func:`ti.geogr.calculate_distance_matrix` for full documentation.
+        See :func:`trackintel.geogr.calculate_distance_matrix` for full documentation.
         """
         return ti.geogr.calculate_distance_matrix(self, Y=Y, dist_metric=dist_metric, n_jobs=n_jobs, **kwds)
 
@@ -111,7 +111,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
         """
         Filter Triplegs on a geo extent.
 
-        See :func:`ti.preprocessing.spatial_filter` for full documentation.
+        See :func:`trackintel.preprocessing.spatial_filter` for full documentation.
         """
         return ti.preprocessing.filter.spatial_filter(self, areas, method=method, re_project=re_project)
 
@@ -119,7 +119,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
         """
         Generate trips based on staypoints and triplegs.
 
-        See :func:`ti.preprocessing.generate_triplegs` for full documentation.
+        See :func:`trackintel.preprocessing.generate_triplegs` for full documentation.
         """
         return ti.preprocessing.triplegs.generate_trips(
             staypoints, self, gap_threshold=gap_threshold, add_geometry=add_geometry
@@ -129,7 +129,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
         """
         Predict the transport mode of triplegs.
 
-        See :func:`ti.analysis.labelling.predict_transport_mode` for full documentation.
+        See :func:`trackintel.analysis.labelling.predict_transport_mode` for full documentation.
         """
         return ti.analysis.labelling.predict_transport_mode(self, method=method, **kwargs)
 
@@ -137,7 +137,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
         """
         Calculate the modal split of triplegs.
 
-        See :func:`ti.analysis.calculate_modal_split` for full documentation.
+        See :func:`trackintel.analysis.calculate_modal_split` for full documentation.
         """
         return ti.analysis.calculate_modal_split(self, freq=freq, metric=metric, per_user=per_user, norm=norm)
 
@@ -145,7 +145,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
         """
         Calculate per-user temporal tracking quality (temporal coverage).
 
-        See :func:`ti.analysis.temporal_tracking_quality` for full documentation.
+        See :func:`trackintel.analysis.temporal_tracking_quality` for full documentation.
         """
         return ti.analysis.temporal_tracking_quality(self, granularity=granularity)
 
@@ -153,6 +153,6 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
         """
         Compute the average speed per positionfix for each tripleg (in m/s)
 
-        See :func:`ti.geogr.get_speed_triplegs` for full documentation.
+        See :func:`trackintel.geogr.get_speed_triplegs` for full documentation.
         """
         return ti.geogr.get_speed_triplegs(self, positionfixes=positionfixes, method=method)
