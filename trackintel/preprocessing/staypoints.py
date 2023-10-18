@@ -19,7 +19,6 @@ def generate_locations(
     print_progress=False,
     n_jobs=1,
 ):
-    # if you update this docstring update ti.Staypoints.generate_locations as well
     """
     Generate locations from the staypoints.
 
@@ -218,7 +217,6 @@ def _gen_locs_dbscan(sp, distance_metric, db):
 
 
 def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
-    # if you update this docstring update ti.Staypoints.merge_staypoints as well
     """
     Aggregate staypoints horizontally via time threshold.
 

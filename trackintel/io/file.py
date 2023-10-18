@@ -91,7 +91,6 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, geom_co
 
 
 def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
-    # if you update this docstring update ti.Positionfixes.to_csv as well
     """
     Write positionfixes to csv file.
 

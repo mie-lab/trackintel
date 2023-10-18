@@ -7,9 +7,7 @@ import pandas as pd
 from shapely.geometry import LineString
 from tqdm import tqdm
 
-from trackintel import Positionfixes
 from trackintel.geogr import check_gdf_planar, point_haversine_dist
-from trackintel.model.util import doc
 from trackintel.preprocessing.util import _explode_agg, angle_centroid_multipoints, applyParallel
 
 
@@ -25,7 +23,6 @@ def generate_staypoints(
     exclude_duplicate_pfs=True,
     n_jobs=1,
 ):
-    # if you update this docstring update Positionfixes.generate_staypoints as well
     """
     Generate staypoints from positionfixes.
 
@@ -175,7 +172,6 @@ def generate_triplegs(
     gap_threshold=15,
     print_progress=False,
 ):
-    # if you update this docstring update ti.Positionfixes.generate_triplegs as well
     """
     Generate triplegs from positionfixes.
 

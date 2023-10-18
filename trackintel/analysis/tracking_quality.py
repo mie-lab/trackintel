@@ -4,7 +4,6 @@ import pandas as pd
 
 
 def temporal_tracking_quality(source, granularity="all"):
-    # if you update this docstring update all class method that rely on this method as well.
     """
     Calculate per-user temporal tracking quality (temporal coverage).
 

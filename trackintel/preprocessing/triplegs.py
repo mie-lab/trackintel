@@ -9,7 +9,6 @@ from trackintel.preprocessing.util import _explode_agg
 
 
 def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
-    # if you update this docstring update Triplegs.generate_triplegs as well
     """
     Generate trips based on staypoints and triplegs.
 

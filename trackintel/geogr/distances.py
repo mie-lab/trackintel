@@ -81,7 +81,6 @@ def point_haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000, float_flag=False
 
 
 def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
-    # if you update this docstring update all class methods that rely on it as well.
     """
     Calculate a distance matrix based on a specific distance metric.
 
@@ -329,7 +328,6 @@ def calculate_haversine_length(gdf):
 
 
 def get_speed_positionfixes(positionfixes):
-    # if you update this docstring update ti.Positionfixes.get_speed as well
     """
     Compute speed per positionfix (in m/s)
 
@@ -369,7 +367,6 @@ def get_speed_positionfixes(positionfixes):
 
 
 def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
-    # if you update this docstring update Triplegs.get_speed as well
     """
     Compute the average speed per positionfix for each tripleg (in m/s)
 

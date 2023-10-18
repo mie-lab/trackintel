@@ -59,7 +59,6 @@ def generate_tours(
     max_nr_gaps=0,
     print_progress=False,
 ):
-    # if you update this docstring update Trips.generate_tours as well
     """
     Generate trackintel-tours from trips
 

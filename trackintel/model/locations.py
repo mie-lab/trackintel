@@ -77,37 +77,9 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
         ti.io.postgis.write_locations_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
     def spatial_filter(self, areas, method="within", re_project=False):
-        # if you update this docstring update ti.preprocessing.filter.spatial_filter as well.
         """
         Filter Locations on a geo extent.
 
-        Parameters
-        ----------
-        areas : GeoDataFrame
-            The areas used to perform the spatial filtering. Note, you can have multiple Polygons
-            and it will return all the features intersect with ANY of those geometries.
-
-        method : {'within', 'intersects', 'crosses'}, optional
-            The method to filter the 'source' GeoDataFrame, by default 'within'
-            - 'within'    : return instances in 'source' where no points of these instances lies in the
-                exterior of the 'areas' and at least one point of the interior of these instances lies
-                in the interior of 'areas'.
-            - 'intersects': return instances in 'source' where the boundary or interior of these instances
-                intersect in any way with those of the 'areas'
-            - 'crosses'   : return instances in 'source' where the interior of these instances intersects
-                the interior of the 'areas' but does not contain it, and the dimension of the intersection
-                is less than the dimension of the one of the 'areas'.
-
-        re_project : bool, default False
-            If this is set to True, the 'source' will be projected to the coordinate reference system of 'areas'
-
-        Returns
-        -------
-        GeoDataFrame (as trackintel locations)
-            GeoDataFrame containing the features after the spatial filtering.
-
-        Examples
-        --------
-        >>> locs.as_locations.spatial_filter(areas, method="within", re_project=False)
+        See :func:`ti.preprocessing.spatial_filter` for full documentation.
         """
-        return ti.preprocessing.filter.spatial_filter(self, areas, method=method, re_project=re_project)
+        return ti.preprocessing.spatial_filter(self, areas, method=method, re_project=re_project)

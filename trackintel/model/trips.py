@@ -130,116 +130,18 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
         ti.io.postgis.write_trips_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
     def temporal_tracking_quality(self, granularity="all"):
-        # if you update this docstring update ti.analysis.tracking_quality as well.
         """
         Calculate per-user temporal tracking quality (temporal coverage).
 
-        Parameters
-        ----------
-        granularity : {"all", "day", "week", "weekday", "hour"}
-            The level of which the tracking quality is calculated. The default "all" returns
-            the overall tracking quality; "day" the tracking quality by days; "week" the quality
-            by weeks; "weekday" the quality by day of the week (e.g, Mondays, Tuesdays, etc.) and
-            "hour" the quality by hours.
-
-        Returns
-        -------
-        quality: DataFrame
-            A per-user per-granularity temporal tracking quality dataframe.
-
-        Notes
-        -----
-        Requires at least the following columns:
-        ``['user_id', 'started_at', 'finished_at']``
-        which means the function supports trackintel ``staypoints``, ``triplegs``, ``trips`` and ``tours``
-        datamodels and their combinations (e.g., staypoints and triplegs sequence).
-
-        The temporal tracking quality is the ratio of tracking time and the total time extent. It is
-        calculated and returned per-user in the defined ``granularity``. The time extents
-        and the columns for the returned ``quality`` df for different ``granularity`` are:
-
-        - ``all``:
-            - time extent: between the latest "finished_at" and the earliest "started_at" for each user.
-            - columns: ``['user_id', 'quality']``.
-
-        - ``week``:
-            - time extent: the whole week (604800 sec) for each user.
-            - columns: ``['user_id', 'week_monday', 'quality']``.
-
-        - ``day``:
-            - time extent: the whole day (86400 sec) for each user
-            - columns: ``['user_id', 'day', 'quality']``
-
-        - ``weekday``
-            - time extent: the whole day (86400 sec) * number of tracked weeks for each user for each user
-            - columns: ``['user_id', 'weekday', 'quality']``
-
-        - ``hour``:
-            - time extent: the whole hour (3600 sec) * number of tracked days for each user
-            - columns: ``['user_id', 'hour', 'quality']``
-
-        Examples
-        --------
-        >>> # calculate overall tracking quality of staypoints
-        >>> temporal_tracking_quality(sp, granularity="all")
-        >>> # calculate per-day tracking quality of sp and tpls sequence
-        >>> temporal_tracking_quality(sp_tpls, granularity="day")
+        See :func:`ti.analysis.temporal_tracking_quality` for full documentation.
         """
-        return ti.analysis.tracking_quality.temporal_tracking_quality(self, granularity=granularity)
+        return ti.analysis.temporal_tracking_quality(self, granularity=granularity)
 
     def generate_tours(self, **kwargs):
-        # if you update this docstring update ti.preprocessing.generate_tours as well
         """
         Generate trackintel-tours from trips
 
-        Parameters
-        ----------
-        trips : GeoDataFrame (as trackintel trips)
-
-        staypoints : GeoDataFrame (as trackintel staypoints), default None
-            Must have `location_id` column to connect trips via locations to a tour.
-            If None, trips will be connected based only by the set distance threshold `max_dist`.
-
-        max_dist: float, default 100 (meters)
-            Maximum distance between the end point of one trip and the start point of the next trip within a tour.
-            This is parameter is only used if staypoints is `None`!
-            Also, if `max_nr_gaps > 0`, a tour can contain larger spatial gaps (see Notes below for more detail)
-
-        max_time: str or pd.Timedelta, default "1d" (1 day)
-            Maximum time that a tour is allowed to take
-
-        max_nr_gaps: int, default 0
-            Maximum number of spatial gaps on the tour. Use with caution - see notes below.
-
-        print_progress : bool, default False
-            If print_progress is True, the progress bar is displayed
-
-        Returns
-        -------
-        trips_with_tours: GeoDataFrame (as trackintel trips)
-            Same as `trips`, but with column `tour_id`, containing a list of the tours that the trip is part of (see notes).
-
-        tours: GeoDataFrame (as trackintel tours)
-            The generated tours
-
-        Examples
-        --------
-        >>> trips.as_trips.generate_tours(staypoints)
-
-        Notes
-        -------
-        - Tours are defined as a collection of trips in a certain time frame that start and end at the same point
-        - Tours and trips have an N:N relationship: One tour consists of multiple trips, but also one trip can be part of
-        multiple tours, due to nested tours or overlapping tours.
-        - This function implements two possibilities to generate tours of trips: Via the location ID in the `staypoints`
-        df, or via a maximum distance. Thus, note that only one of the parameters `staypoints` or `max_dist` is used!
-        - Nested tours are possible and will be regarded as 2 (or more tours).
-        - It is possible to allow spatial gaps to occur on the tour, which might be useful to deal with missing data.
-        Example: The two trips home-work, supermarket-home would still be detected as a tour when max_nr_gaps >= 1,
-        although the work-supermarket trip is missing.
-        Warning: This only counts the number of gaps, but neither temporal or spatial distance of gaps, nor the number
-        of missing trips in a gap are bounded. Thus, this parameter should be set with caution, because trips that are
-        hours apart might still be connected to a tour if `max_nr_gaps > 0`.
+        See :func:`ti.preprocessing.generate_tours` for full documentation.
         """
         return ti.preprocessing.trips.generate_tours(trips=self, **kwargs)
 

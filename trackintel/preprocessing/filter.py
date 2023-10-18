@@ -1,5 +1,4 @@
 def spatial_filter(source, areas, method="within", re_project=False):
-    # if you update this docstring update all ti class methods that use this as well
     """
     Filter a GeoDataFrame on a geo extent.
 

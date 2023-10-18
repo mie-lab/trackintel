@@ -4,7 +4,6 @@ from trackintel.geogr.distances import check_gdf_planar, calculate_haversine_len
 
 
 def calculate_modal_split(tpls, freq=None, metric="count", per_user=False, norm=False):
-    # if you update this docstring update Triplegs.calculate_modal_split as well.
     """
     Calculate the modal split of triplegs
 

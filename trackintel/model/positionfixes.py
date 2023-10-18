@@ -108,77 +108,10 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         exclude_duplicate_pfs=True,
         n_jobs=1,
     ):
-        # if you update this docstring update ti.preprocessing.generate_staypoints as well
         """
-        Generate staypoints from positionfixes.
+        Generate staypoints based on positionfixes.
 
-        Parameters
-        ----------
-        method : {'sliding'}
-            Method to create staypoints. 'sliding' applies a sliding window over the data.
-
-        distance_metric : {'haversine'}
-            The distance metric used by the applied method.
-
-        dist_threshold : float, default 100
-            The distance threshold for the 'sliding' method, i.e., how far someone has to travel to
-            generate a new staypoint. Units depend on the dist_func parameter. If 'distance_metric' is 'haversine' the
-            unit is in meters
-
-        time_threshold : float, default 5.0 (minutes)
-            The time threshold for the 'sliding' method in minutes.
-
-        gap_threshold : float, default 15.0 (minutes)
-            The time threshold of determine whether a gap exists between consecutive pfs. Consecutive pfs with
-            temporal gaps larger than 'gap_threshold' will be excluded from staypoints generation.
-            Only valid in 'sliding' method.
-
-        include_last: boolean, default False
-            The algorithm in Li et al. (2008) only detects staypoint if the user steps out
-            of that staypoint. This will omit the last staypoint (if any). Set 'include_last'
-            to True to include this last staypoint.
-
-        print_progress: boolean, default False
-            Show per-user progress if set to True.
-
-        exclude_duplicate_pfs: boolean, default True
-            Filters duplicate positionfixes before generating staypoints. Duplicates can lead to problems in later
-            processing steps (e.g., when generating triplegs). It is not recommended to set this to False.
-
-        n_jobs: int, default 1
-            The maximum number of concurrently running jobs. If -1 all CPUs are used. If 1 is given, no parallel
-            computing code is used at all, which is useful for debugging. See
-            https://joblib.readthedocs.io/en/latest/parallel.html#parallel-reference-documentation
-            for a detailed description
-
-        Returns
-        -------
-        pfs: GeoDataFrame (as trackintel positionfixes)
-            The original positionfixes with a new column ``[`staypoint_id`]``.
-
-        sp: GeoDataFrame (as trackintel staypoints)
-            The generated staypoints.
-
-        Notes
-        -----
-        The 'sliding' method is adapted from Li et al. (2008). In the original algorithm, the 'finished_at'
-        time for the current staypoint lasts until the 'tracked_at' time of the first positionfix outside
-        this staypoint. Users are assumed to be stationary during this missing period and potential tracking
-        gaps may be included in staypoints. To avoid including too large missing signal gaps, set 'gap_threshold'
-        to a small value, e.g., 15 min.
-
-        Examples
-        --------
-        >>> pfs.as_positionfixes.generate_staypoints('sliding', dist_threshold=100)
-
-        References
-        ----------
-        Zheng, Y. (2015). Trajectory data mining: an overview. ACM Transactions on Intelligent Systems
-        and Technology (TIST), 6(3), 29.
-
-        Li, Q., Zheng, Y., Xie, X., Chen, Y., Liu, W., & Ma, W. Y. (2008, November). Mining user
-        similarity based on location history. In Proceedings of the 16th ACM SIGSPATIAL international
-        conference on Advances in geographic information systems (p. 34). ACM.
+        See :func:`ti.preprocessing.generate_staypoints` for full documentation.
         """
         return ti.preprocessing.positionfixes.generate_staypoints(
             self,
@@ -200,51 +133,10 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         gap_threshold=15,
         print_progress=False,
     ):
-        # if you update this docstring update ti.preprocessing.generate_triplegs as well
         """
         Generate triplegs from positionfixes.
 
-        Parameters
-        ----------
-        staypoints : GeoDataFrame (as trackintel staypoints), optional
-            The staypoints (corresponding to the positionfixes). If this is not passed, the
-            positionfixes need 'staypoint_id' associated with them.
-
-        method: {'between_staypoints'}
-            Method to create triplegs. 'between_staypoints' method defines a tripleg as all positionfixes
-            between two staypoints (no overlap). This method requires either a column 'staypoint_id' on
-            the positionfixes or passing staypoints as an input.
-
-        gap_threshold: float, default 15 (minutes)
-            Maximum allowed temporal gap size in minutes. If tracking data is missing for more than
-            `gap_threshold` minutes, a new tripleg will be generated.
-
-        print_progress: boolean, default False
-            Show the progress bar for assigning staypoints to positionfixes if set to True.
-
-        Returns
-        -------
-        pfs: GeoDataFrame (as trackintel positionfixes)
-            The original positionfixes with a new column ``[`tripleg_id`]``.
-
-        tpls: GeoDataFrame (as trackintel triplegs)
-            The generated triplegs.
-
-        Notes
-        -----
-        Methods 'between_staypoints' requires either a column 'staypoint_id' on the
-        positionfixes or passing some staypoints that correspond to the positionfixes!
-        This means you usually should call ``generate_staypoints()`` first.
-
-        The first positionfix after a staypoint is regarded as the first positionfix of the
-        generated tripleg. The generated tripleg will not have overlapping positionfix with
-        the existing staypoints. This means a small temporal gap in user's trace will occur
-        between the first positionfix of staypoint and the last positionfix of tripleg:
-        pfs_stp_first['tracked_at'] - pfs_tpl_last['tracked_at'].
-
-        Examples
-        --------
-        >>> pfs.as_positionfixes.generate_triplegs('between_staypoints', gap_threshold=15)
+        See :func:`ti.preprocessing.generate_triplegs` for full documentation.
         """
         return ti.preprocessing.positionfixes.generate_triplegs(
             self,
@@ -255,32 +147,10 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         )
 
     def to_csv(self, filename, *args, **kwargs):
-        # if you update this docstring update ti.io.file.write_positionfixex_csv as well
         """
         Write positionfixes to csv file.
 
-        Wraps the pandas to_csv function, but strips the geometry column and
-        stores the longitude and latitude in respective columns.
-
-        Parameters
-        ----------
-        filename : str
-            The file to write to.
-
-        args
-            Additional arguments passed to pd.DataFrame.to_csv().
-
-        kwargs
-            Additional keyword arguments passed to pd.DataFrame.to_csv().
-
-        Notes
-        -----
-        "longitude" and "latitude" is extracted from the geometry column and the orignal
-        geometry column is dropped.
-
-        Examples
-        ---------
-        >>> pfs.as_positionfixes.to_csv("export_pfs.csv")
+        See :func:`ti.io.write_positionfixes_csv` for full documentation.
         """
         ti.io.file.write_positionfixes_csv(self, filename, *args, **kwargs)
 
@@ -293,69 +163,17 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         )
 
     def calculate_distance_matrix(self, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
-        # if you update this docstring update ti.geogr.calculate_distance_matrix as well.
         """
         Calculate a distance matrix based on a specific distance metric.
 
-        If no Y is given, the pair-wise distances between all elements in self are calculated.
-        If Y is given, the distances between all combinations of self and Y are calculated.
-        Distances between elements of self and self, and distances between elements of Y and Y are not calculated.
-
-        Parameters
-        ----------
-        Y : GeoDataFrame (as trackintel positionfixes), optional
-            Should be of the same type as self
-
-        dist_metric: {'haversine', 'euclidean', 'dtw', 'frechet'}, optional
-            The distance metric to be used for calculating the matrix. By default 'haversine.
-
-            For staypoints or positionfixes, a common choice is 'haversine' or 'euclidean'. This function wraps around
-            the ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
-            ``scipy.spatial.distance.cdist`` function if X and Y are given.
-            Therefore the following metrics are also accepted:
-
-            via ``scikit-learn``: `['cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan']`
-
-            via ``scipy.spatial.distance``: `['braycurtis', 'canberra', 'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
-            'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener',
-            'sokalsneath', 'sqeuclidean', 'yule']`
-
-            For triplegs, common choice is 'dtw' or 'frechet'. This function uses the implementation
-            from similaritymeasures.
-
-        n_jobs: int, optional
-            Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available
-            if only X is given) are parallelized. By default 1.
-
-        **kwds:
-            optional keywords passed to the distance functions.
-
-        Returns
-        -------
-        D: np.array
-            matrix of shape (len(X), len(X)) or of shape (len(X), len(Y)) if Y is provided.
-
-        Examples
-        --------
-        >>> calculate_distance_matrix(staypoints, dist_metric="haversine")
-        >>> calculate_distance_matrix(triplegs_1, triplegs_2, dist_metric="dtw")
-        >>> pfs.as_positionfixes.calculate_distance_matrix(dist_metric="haversine")
+        See :func:`ti.geogr.calculate_distance_matrix` for full documentation.
         """
         return ti.geogr.distances.calculate_distance_matrix(self, Y=Y, dist_metric=dist_metric, n_jobs=n_jobs, **kwds)
 
     def get_speed(self):
-        # if you update this docstring update ti.geogr.get_speed_positionfixes as well
         """
         Compute speed per positionfix (in m/s)
 
-        Returns
-        -------
-        pfs: GeoDataFrame (as trackintel positionfixes)
-            Copy of the original positionfixes with a new column ``[`speed`]``. The speed is given in m/s
-
-        Notes
-        -----
-        The speed at one positionfix is computed from the distance and time since the previous positionfix.
-        For the first positionfix, the speed is set to the same value as for the second one.
+        See :func:`ti.geogr.get_speed_positionfixes` for full documentation.
         """
         return ti.geogr.distances.get_speed_positionfixes(self)

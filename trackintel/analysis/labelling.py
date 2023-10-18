@@ -6,7 +6,6 @@ from trackintel.geogr import get_speed_triplegs
 
 
 def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.0, activity_column_name="is_activity"):
-    # if you update this docstring update ti.Staypoints.create_activity_flag as well.
     """
     Add a flag whether or not a staypoint is considered an activity based on a time threshold.
 
@@ -44,7 +43,6 @@ def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.
 
 
 def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
-    # if you update this docstring update Triplegs.predict_transport_mode as well
     """
     Predict the transport mode of triplegs.
 
