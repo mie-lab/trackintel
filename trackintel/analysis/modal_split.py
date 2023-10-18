@@ -4,7 +4,8 @@ from trackintel.geogr.distances import check_gdf_planar, calculate_haversine_len
 
 
 def calculate_modal_split(tpls, freq=None, metric="count", per_user=False, norm=False):
-    """Calculate the modal split of triplegs
+    """
+    Calculate the modal split of triplegs
 
     Parameters
     ----------
@@ -32,16 +33,13 @@ def calculate_modal_split(tpls, freq=None, metric="count", per_user=False, norm=
     Notes
     ------
         `freq='W-MON'` is used for a weekly aggregation that starts on mondays.
-
         If `freq=None` and `per_user=False` are passed the modal split collapses to a single column.
-
         The modal split can be visualized using :func:`trackintel.visualization.plot_modal_split`
 
     Examples
     --------
     >>> triplegs.calculate_modal_split()
     >>> tripleg.calculate_modal_split(freq='W-MON', metric='distance')
-
     """
     tpls = tpls.copy()  # copy as we add additional columns on tpls
 

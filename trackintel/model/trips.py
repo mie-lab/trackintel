@@ -2,15 +2,13 @@ import geopandas as gpd
 import pandas as pd
 
 import trackintel as ti
-from trackintel.analysis.tracking_quality import temporal_tracking_quality
-from trackintel.io.file import write_trips_csv
-from trackintel.io.postgis import write_trips_postgis
 from trackintel.model.util import (
-    _copy_docstring,
-    _register_trackintel_accessor,
     TrackintelBase,
     TrackintelDataFrame,
     TrackintelGeoDataFrame,
+    _register_trackintel_accessor,
+    _shared_docs,
+    doc,
 )
 
 
@@ -121,40 +119,29 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
             return False
         return True
 
-    @_copy_docstring(write_trips_csv)
+    @doc(_shared_docs["write_csv"], first_arg="", long="trips", short="trips")
     def to_csv(self, filename, *args, **kwargs):
-        """
-        Store this collection of trips as a CSV file.
-
-        See :func:`trackintel.io.file.write_trips_csv`.
-        """
         ti.io.file.write_trips_csv(self, filename, *args, **kwargs)
 
-    @_copy_docstring(write_trips_postgis)
+    @doc(_shared_docs["write_postgis"], first_arg="", long="trips", short="trips")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        """
-        Store this collection of trips to PostGIS.
-
-        See :func:`trackintel.io.postgis.write_trips_postgis`.
-        """
         ti.io.postgis.write_trips_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
-    @_copy_docstring(temporal_tracking_quality)
-    def temporal_tracking_quality(self, *args, **kwargs):
+    def temporal_tracking_quality(self, granularity="all"):
         """
         Calculate per-user temporal tracking quality (temporal coverage).
 
-        See :func:`trackintel.analysis.tracking_quality.temporal_tracking_quality`.
+        See :func:`trackintel.analysis.temporal_tracking_quality` for full documentation.
         """
-        return ti.analysis.tracking_quality.temporal_tracking_quality(self, *args, **kwargs)
+        return ti.analysis.temporal_tracking_quality(self, granularity=granularity)
 
     def generate_tours(self, **kwargs):
         """
-        Generate tours based on trips (and optionally staypoint locations).
+        Generate trackintel-tours from trips
 
-        See :func:`trackintel.preprocessing.trips.generate_tours`.
+        See :func:`trackintel.preprocessing.generate_tours` for full documentation.
         """
         return ti.preprocessing.trips.generate_tours(trips=self, **kwargs)
 

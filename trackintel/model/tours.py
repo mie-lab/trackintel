@@ -1,9 +1,13 @@
 import pandas as pd
 
 import trackintel as ti
-from trackintel.io.file import write_tours_csv
-from trackintel.io.postgis import write_tours_postgis
-from trackintel.model.util import _register_trackintel_accessor, TrackintelBase, TrackintelDataFrame, _copy_docstring
+from trackintel.model.util import (
+    TrackintelBase,
+    TrackintelDataFrame,
+    _register_trackintel_accessor,
+    _shared_docs,
+    doc,
+)
 
 _required_columns = ["user_id", "started_at", "finished_at"]
 
@@ -68,22 +72,12 @@ class Tours(TrackintelBase, TrackintelDataFrame):
             return False
         return True
 
-    @_copy_docstring(write_tours_csv)
+    @doc(_shared_docs["write_csv"], first_arg="", long="tours", short="tours")
     def to_csv(self, filename, *args, **kwargs):
-        """
-        Store this collection of tours as a CSV file.
-
-        See :func:`trackintel.io.file.write_tours_csv`.
-        """
         ti.io.file.write_tours_csv(self, filename, *args, **kwargs)
 
-    @_copy_docstring(write_tours_postgis)
+    @doc(_shared_docs["write_postgis"], first_arg="", long="tours", short="tours")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        """
-        Store this collection of tours to PostGIS.
-
-        See :func:`trackintel.io.postgis.write_tours_postgis`.
-        """
         ti.io.postgis.write_tours_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)

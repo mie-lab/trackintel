@@ -1,18 +1,13 @@
 import pandas as pd
 
 import trackintel as ti
-from trackintel.analysis.labelling import create_activity_flag
-from trackintel.analysis.tracking_quality import temporal_tracking_quality
-from trackintel.io.file import write_staypoints_csv
-from trackintel.io.postgis import write_staypoints_postgis
 from trackintel.model.util import (
     TrackintelBase,
     TrackintelGeoDataFrame,
-    _copy_docstring,
     _register_trackintel_accessor,
+    doc,
+    _shared_docs,
 )
-from trackintel.preprocessing.filter import spatial_filter
-from trackintel.preprocessing.staypoints import generate_locations, merge_staypoints
 
 _required_columns = ["user_id", "started_at", "finished_at"]
 
@@ -101,67 +96,74 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         lon = self.geometry.x
         return (float(lon.mean()), float(lat.mean()))
 
-    @_copy_docstring(generate_locations)
-    def generate_locations(self, *args, **kwargs):
+    def generate_locations(
+        self,
+        method="dbscan",
+        epsilon=100,
+        num_samples=1,
+        distance_metric="haversine",
+        agg_level="user",
+        activities_only=False,
+        print_progress=False,
+        n_jobs=1,
+    ):
         """
-        Generate locations from this collection of staypoints.
+        Generate locations from the staypoints.
 
-        See :func:`trackintel.preprocessing.staypoints.generate_locations`.
+        See :func:`trackintel.preprocessing.generate_locations` for full documentation.
         """
-        return ti.preprocessing.staypoints.generate_locations(self, *args, **kwargs)
+        return ti.preprocessing.staypoints.generate_locations(
+            self,
+            method=method,
+            epsilon=epsilon,
+            num_samples=num_samples,
+            distance_metric=distance_metric,
+            agg_level=agg_level,
+            activities_only=activities_only,
+            print_progress=print_progress,
+            n_jobs=n_jobs,
+        )
 
-    @_copy_docstring(merge_staypoints)
-    def merge_staypoints(self, *args, **kwargs):
+    def merge_staypoints(self, triplegs, max_time_gap="10min", agg={}):
         """
         Aggregate staypoints horizontally via time threshold.
 
-        See :func:`trackintel.preprocessing.staypoints.merge_staypoints`.
+        See :func:`trackintel.preprocessing.staypoints.merge_staypoints` for full documentation.
         """
-        return ti.preprocessing.staypoints.merge_staypoints(self, *args, **kwargs)
+        return ti.preprocessing.staypoints.merge_staypoints(self, triplegs, max_time_gap=max_time_gap, agg=agg)
 
-    @_copy_docstring(create_activity_flag)
-    def create_activity_flag(self, *args, **kwargs):
+    def create_activity_flag(self, method="time_threshold", time_threshold=15.0, activity_column_name="is_activity"):
         """
-        Set a flag if a staypoint is also an activity.
+        Add a flag whether or not a staypoint is considered an activity based on a time threshold.
 
-        See :func:`trackintel.analysis.labelling.create_activity_flag`.
+        See :func:`trackintel.analysis.create_activity_flag` for full documentation.
         """
-        return ti.analysis.labelling.create_activity_flag(self, *args, **kwargs)
+        return ti.analysis.create_activity_flag(
+            self, method=method, time_threshold=time_threshold, activity_column_name=activity_column_name
+        )
 
-    @_copy_docstring(spatial_filter)
-    def spatial_filter(self, *args, **kwargs):
+    def spatial_filter(self, areas, method="within", re_project=False):
         """
-        Filter staypoints with a geo extent.
+        Filter Staypoints on a geo extent.
 
-        See :func:`trackintel.preprocessing.filter.spatial_filter`.
+        See :func:`trackintel.preprocessing.spatial_filter` for full documentation.
         """
-        return ti.preprocessing.filter.spatial_filter(self, *args, **kwargs)
+        return ti.preprocessing.spatial_filter(self, areas, method=method, re_project=re_project)
 
-    @_copy_docstring(write_staypoints_csv)
+    @doc(_shared_docs["write_csv"], first_arg="", long="staypoints", short="sp")
     def to_csv(self, filename, *args, **kwargs):
-        """
-        Store this collection of staypoints as a CSV file.
-
-        See :func:`trackintel.io.file.write_staypoints_csv`.
-        """
         ti.io.file.write_staypoints_csv(self, filename, *args, **kwargs)
 
-    @_copy_docstring(write_staypoints_postgis)
+    @doc(_shared_docs["write_postgis"], first_arg="", long="staypoints", short="sp")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        """
-        Store this collection of staypoints to PostGIS.
-
-        See :func:`trackintel.io.postgis.write_staypoints_postgis`.
-        """
         ti.io.postgis.write_staypoints_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
-    @_copy_docstring(temporal_tracking_quality)
-    def temporal_tracking_quality(self, *args, **kwargs):
+    def temporal_tracking_quality(self, granularity="all"):
         """
         Calculate per-user temporal tracking quality (temporal coverage).
 
-        See :func:`trackintel.analysis.tracking_quality.temporal_tracking_quality`.
+        See :func:`trackintel.analysis.temporal_tracking_quality` for full documentation.
         """
-        return ti.analysis.tracking_quality.temporal_tracking_quality(self, *args, **kwargs)
+        return ti.analysis.tracking_quality.temporal_tracking_quality(self, granularity=granularity)

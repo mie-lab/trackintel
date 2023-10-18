@@ -11,9 +11,6 @@ import similaritymeasures
 from scipy.spatial.distance import cdist
 from sklearn.metrics import pairwise_distances
 
-from trackintel import Positionfixes
-from trackintel.model.util import doc
-
 
 def point_haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000, float_flag=False):
     """
@@ -83,8 +80,56 @@ def point_haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000, float_flag=False
     return r * np.arccos(cos_lat_d - cos_lat1 * cos_lat2 * (1 - cos_lon_d))
 
 
-@doc(Positionfixes.calculate_distance_matrix, first_arg="\nX : GeoDataFrame (as trackintel staypoints or triplegs)\n")
 def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
+    """
+    Calculate a distance matrix based on a specific distance metric.
+
+    If only X is given, the pair-wise distances between all elements in X are calculated.
+    If X and Y are given, the distances between all combinations of X and Y are calculated.
+    Distances between elements of X and X, and distances between elements of Y and Y are not calculated.
+
+    Parameters
+    ----------
+    X : GeoDataFrame (as trackintel model)
+
+    Y : GeoDataFrame (as trackintel model), optional
+        Should be of the same type as X
+
+    dist_metric: {{'haversine', 'euclidean', 'dtw', 'frechet'}}, optional
+        The distance metric to be used for calculating the matrix. By default 'haversine.
+
+        For staypoints or positionfixes, a common choice is 'haversine' or 'euclidean'. This function wraps around
+        the ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
+        ``scipy.spatial.distance.cdist`` function if X and Y are given.
+        Therefore the following metrics are also accepted:
+
+        via ``scikit-learn``: `['cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan']`
+
+        via ``scipy.spatial.distance``: `['braycurtis', 'canberra', 'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
+        'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener',
+        'sokalsneath', 'sqeuclidean', 'yule']`
+
+        For triplegs, common choice is 'dtw' or 'frechet'. This function uses the implementation
+        from similaritymeasures.
+
+    n_jobs: int, optional
+        Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available
+        if only X is given) are parallelized. By default 1.
+
+    **kwds:
+        optional keywords passed to the distance functions.
+
+    Returns
+    -------
+    D: np.array
+        matrix of shape (len(X), len(X)) or of shape (len(X), len(Y)) if Y is provided.
+
+    Examples
+    --------
+    >>> calculate_distance_matrix(staypoints, dist_metric="haversine")
+    >>> calculate_distance_matrix(triplegs_1, triplegs_2, dist_metric="dtw")
+    >>> pfs.as_positionfixes.calculate_distance_matrix(dist_metric="haversine")
+    """
     geom_type = X.geometry.iat[0].geom_type
     if Y is None:
         Y = X
@@ -282,11 +327,24 @@ def calculate_haversine_length(gdf):
     return np.bincount((index[:-1])[no_mix], weights=dist[no_mix])
 
 
-@doc(
-    Positionfixes.get_speed,
-    first_arg="\nParameters\n----------\npositionfixes : GeoDataFrame (as trackintel positionfixes)",
-)
 def get_speed_positionfixes(positionfixes):
+    """
+    Compute speed per positionfix (in m/s)
+
+    Parameters
+    ----------
+    positionfixes : GeoDataFrame (as trackintel positionfixes)
+
+    Returns
+    -------
+    pfs: GeoDataFrame (as trackintel positionfixes)
+        Copy of the original positionfixes with a new column ``[`speed`]``. The speed is given in m/s
+
+    Notes
+    -----
+    The speed at one positionfix is computed from the distance and time since the previous positionfix.
+    For the first positionfix, the speed is set to the same value as for the second one.
+    """
     pfs = positionfixes.copy()
     is_planar_crs = check_gdf_planar(pfs)
 
@@ -315,15 +373,15 @@ def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
     Parameters
     ----------
     triplegs: GeoDataFrame (as trackintel triplegs)
-        The generated triplegs as returned by ti.preprocessing.positionfixes.generate_triplegs
 
-    positionfixes (Optional): GeoDataFrame (as trackintel positionfixes)
-        The positionfixes as returned by ti.preprocessing.positionfixes.generate_triplegs. Only required if the method
-        is 'pfs_mean_speed'. In addition the standard columns it must include the column ``[`tripleg_id`]``.
+    positionfixes: GeoDataFrame (as trackintel positionfixes), optional
+        Only required if the method is 'pfs_mean_speed'.
+        In addition to the standard columns positionfixes must include the column ``[`tripleg_id`]``.
 
-    method: str
-        Method how the speed is computed, one of {tpls_speed, pfs_mean_speed}. The 'tpls_speed' method simply divides
-        the overall tripleg distance by its duration, while the 'pfs_mean_speed' method is the mean pfs speed.
+    method: {'tpls_speed', 'pfs_mean_speed'}, optional
+        Method how of speed calculation, default is "tpls_speed"
+        The 'tpls_speed' method divides the tripleg distance by its duration,
+        the 'pfs_mean_speed' method calculates the speed via the mean speed of the positionfixes of a tripleg.
 
     Returns
     -------

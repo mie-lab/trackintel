@@ -137,25 +137,6 @@ class TestGenerate_trips:
         assert_geodataframe_equal(sp_expl, sp_acc)
         assert_geodataframe_equal(tpls_acc, tpls_expl)
 
-    def test_accessor_arguments(self, example_triplegs):
-        """Test if the accessor is robust to different ways to receive arguments"""
-        sp, tpls = example_triplegs
-
-        # accessor with only arguments (not allowed)
-        with pytest.raises(AssertionError):
-            _, _, _ = tpls.as_triplegs.generate_trips(sp, 15)
-
-        # accessor with only keywords
-        sp_1, tpls_1, trips_1 = tpls.as_triplegs.generate_trips(staypoints=sp, gap_threshold=15)
-
-        # accessor with mixed arguments/keywords
-        sp_2, tpls_2, trips_2 = tpls.as_triplegs.generate_trips(staypoints=sp, gap_threshold=15)
-
-        # test if generated trips are equal (1,2)
-        assert_geodataframe_equal(sp_1, sp_2)
-        assert_geodataframe_equal(tpls_1, tpls_2)
-        assert_geodataframe_equal(trips_1, trips_2)
-
     def test_generate_trips_missing_link(self, example_triplegs):
         """Test nan is assigned for missing link between sp and trips, and tpls and trips."""
         sp, tpls = example_triplegs

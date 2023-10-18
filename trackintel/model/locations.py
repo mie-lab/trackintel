@@ -1,13 +1,11 @@
 import trackintel as ti
-from trackintel.io.file import write_locations_csv
-from trackintel.io.postgis import write_locations_postgis
 from trackintel.model.util import (
     TrackintelBase,
     TrackintelGeoDataFrame,
-    _copy_docstring,
     _register_trackintel_accessor,
+    _shared_docs,
+    doc,
 )
-from trackintel.preprocessing.filter import spatial_filter
 
 _required_columns = ["user_id", "center"]
 
@@ -68,31 +66,20 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
             return obj.geometry.iloc[0].geom_type == "Point"
         return True
 
-    @_copy_docstring(write_locations_csv)
+    @doc(_shared_docs["write_csv"], first_arg="", long="locations", short="locs")
     def to_csv(self, filename, *args, **kwargs):
-        """
-        Store this collection of locations as a CSV file.
-
-        See :func:`trackintel.io.file.write_locations_csv`.
-        """
         ti.io.file.write_locations_csv(self, filename, *args, **kwargs)
 
-    @_copy_docstring(write_locations_postgis)
+    @doc(_shared_docs["write_postgis"], first_arg="", long="locations", short="locs")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        """
-        Store this collection of locations to PostGIS.
-
-        See :func:`trackintel.io.postgis.write_locations_postgis`.
-        """
         ti.io.postgis.write_locations_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
-    @_copy_docstring(spatial_filter)
-    def spatial_filter(self, *args, **kwargs):
+    def spatial_filter(self, areas, method="within", re_project=False):
         """
-        Filter locations with a geo extent.
+        Filter Locations on a geo extent.
 
-        See :func:`trackintel.preprocessing.filter.spatial_filter`.
+        See :func:`trackintel.preprocessing.spatial_filter` for full documentation.
         """
-        return ti.preprocessing.filter.spatial_filter(self, *args, **kwargs)
+        return ti.preprocessing.spatial_filter(self, areas, method=method, re_project=re_project)

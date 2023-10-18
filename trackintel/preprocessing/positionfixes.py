@@ -7,13 +7,10 @@ import pandas as pd
 from shapely.geometry import LineString
 from tqdm import tqdm
 
-from trackintel import Positionfixes
 from trackintel.geogr import check_gdf_planar, point_haversine_dist
-from trackintel.model.util import doc
 from trackintel.preprocessing.util import _explode_agg, angle_centroid_multipoints, applyParallel
 
 
-@doc(Positionfixes.generate_staypoints, first_arg="\npositionfixes : GeoDataFrame (as trackintel positionfixes)\n")
 def generate_staypoints(
     positionfixes,
     method="sliding",
@@ -26,6 +23,79 @@ def generate_staypoints(
     exclude_duplicate_pfs=True,
     n_jobs=1,
 ):
+    """
+    Generate staypoints from positionfixes.
+
+    Parameters
+    ----------
+    positionfixes : GeoDataFrame (as trackintel positionfixes)
+
+    method : {'sliding'}
+        Method to create staypoints. 'sliding' applies a sliding window over the data.
+
+    distance_metric : {'haversine'}
+        The distance metric used by the applied method.
+
+    dist_threshold : float, default 100
+        The distance threshold for the 'sliding' method, i.e., how far someone has to travel to
+        generate a new staypoint. Units depend on the dist_func parameter. If 'distance_metric' is 'haversine' the
+        unit is in meters
+
+    time_threshold : float, default 5.0 (minutes)
+        The time threshold for the 'sliding' method in minutes.
+
+    gap_threshold : float, default 15.0 (minutes)
+        The time threshold of determine whether a gap exists between consecutive pfs. Consecutive pfs with
+        temporal gaps larger than 'gap_threshold' will be excluded from staypoints generation.
+        Only valid in 'sliding' method.
+
+    include_last: boolean, default False
+        The algorithm in Li et al. (2008) only detects staypoint if the user steps out
+        of that staypoint. This will omit the last staypoint (if any). Set 'include_last'
+        to True to include this last staypoint.
+
+    print_progress: boolean, default False
+        Show per-user progress if set to True.
+
+    exclude_duplicate_pfs: boolean, default True
+        Filters duplicate positionfixes before generating staypoints. Duplicates can lead to problems in later
+        processing steps (e.g., when generating triplegs). It is not recommended to set this to False.
+
+    n_jobs: int, default 1
+        The maximum number of concurrently running jobs. If -1 all CPUs are used. If 1 is given, no parallel
+        computing code is used at all, which is useful for debugging. See
+        https://joblib.readthedocs.io/en/latest/parallel.html#parallel-reference-documentation
+        for a detailed description
+
+    Returns
+    -------
+    pfs: GeoDataFrame (as trackintel positionfixes)
+        The original positionfixes with a new column ``[`staypoint_id`]``.
+
+    sp: GeoDataFrame (as trackintel staypoints)
+        The generated staypoints.
+
+    Notes
+    -----
+    The 'sliding' method is adapted from Li et al. (2008). In the original algorithm, the 'finished_at'
+    time for the current staypoint lasts until the 'tracked_at' time of the first positionfix outside
+    this staypoint. Users are assumed to be stationary during this missing period and potential tracking
+    gaps may be included in staypoints. To avoid including too large missing signal gaps, set 'gap_threshold'
+    to a small value, e.g., 15 min.
+
+    Examples
+    --------
+    >>> pfs.as_positionfixes.generate_staypoints('sliding', dist_threshold=100)
+
+    References
+    ----------
+    Zheng, Y. (2015). Trajectory data mining: an overview. ACM Transactions on Intelligent Systems
+    and Technology (TIST), 6(3), 29.
+
+    Li, Q., Zheng, Y., Xie, X., Chen, Y., Liu, W., & Ma, W. Y. (2008, November). Mining user
+    similarity based on location history. In Proceedings of the 16th ACM SIGSPATIAL international
+    conference on Advances in geographic information systems (p. 34). ACM.
+    """
     # copy the original pfs for adding 'staypoint_id' column
     pfs = positionfixes.copy()
 
@@ -95,13 +165,6 @@ def generate_staypoints(
     return pfs, sp
 
 
-@doc(
-    Positionfixes.generate_triplegs,
-    first_arg="""
-positionfixes : GeoDataFrame (as trackintel positionfixes)
-    If 'staypoint_id' column is not found, 'staypoints' needs to be provided.
-""",
-)
 def generate_triplegs(
     positionfixes,
     staypoints=None,
@@ -109,6 +172,54 @@ def generate_triplegs(
     gap_threshold=15,
     print_progress=False,
 ):
+    """
+    Generate triplegs from positionfixes.
+
+    Parameters
+    ----------
+    positionfixes : GeoDataFrame (as trackintel positionfixes)
+        If 'staypoint_id' column is not found, 'staypoints' needs to be provided.
+
+    staypoints : GeoDataFrame (as trackintel staypoints), optional
+        The staypoints (corresponding to the positionfixes). If this is not passed, the
+        positionfixes need 'staypoint_id' associated with them.
+
+    method: {'between_staypoints'}
+        Method to create triplegs. 'between_staypoints' method defines a tripleg as all positionfixes
+        between two staypoints (no overlap). This method requires either a column 'staypoint_id' on
+        the positionfixes or passing staypoints as an input.
+
+    gap_threshold: float, default 15 (minutes)
+        Maximum allowed temporal gap size in minutes. If tracking data is missing for more than
+        `gap_threshold` minutes, a new tripleg will be generated.
+
+    print_progress: boolean, default False
+        Show the progress bar for assigning staypoints to positionfixes if set to True.
+
+    Returns
+    -------
+    pfs: GeoDataFrame (as trackintel positionfixes)
+        The original positionfixes with a new column ``[`tripleg_id`]``.
+
+    tpls: GeoDataFrame (as trackintel triplegs)
+        The generated triplegs.
+
+    Notes
+    -----
+    Methods 'between_staypoints' requires either a column 'staypoint_id' on the
+    positionfixes or passing some staypoints that correspond to the positionfixes!
+    This means you usually should call ``generate_staypoints()`` first.
+
+    The first positionfix after a staypoint is regarded as the first positionfix of the
+    generated tripleg. The generated tripleg will not have overlapping positionfix with
+    the existing staypoints. This means a small temporal gap in user's trace will occur
+    between the first positionfix of staypoint and the last positionfix of tripleg:
+    pfs_stp_first['tracked_at'] - pfs_tpl_last['tracked_at'].
+
+    Examples
+    --------
+    >>> pfs.as_positionfixes.generate_triplegs('between_staypoints', gap_threshold=15)
+    """
     # copy the original pfs for adding 'tripleg_id' column
     pfs = positionfixes.copy()
 
