@@ -103,6 +103,19 @@ class Test_Trackintel_Model:
         example_positionfixes["tracked_at"] = pd.to_datetime(example_positionfixes["tracked_at"], utc=True)
         assert_geodataframe_equal(pfs, example_positionfixes)
 
+    def test_no_timezonee(self, example_positionfixes):
+        """Test if datetime in column with no timezone get casted to UTC"""
+        example_positionfixes["tracked_at"] = [
+            pd.Timestamp("2021-08-01 16:00:00"),
+            pd.Timestamp("2021-08-01 16:00:00"),
+            pd.Timestamp("2021-08-01 16:00:00"),
+        ]
+        pfs = _trackintel_model(example_positionfixes, tz_cols=["tracked_at"], tz="Europe/Amsterdam")
+        example_positionfixes["tracked_at"] = pd.to_datetime(
+            example_positionfixes["tracked_at"], utc=True
+        ).dt.tz_convert("Europe/Amsterdam")
+        assert_geodataframe_equal(pfs, example_positionfixes)
+
 
 class TestRead_Positionfixes_Gpd:
     """Test `read_positionfixes_gpd()` function."""

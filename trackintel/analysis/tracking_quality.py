@@ -1,5 +1,6 @@
 import warnings
 
+import numpy as np
 import pandas as pd
 
 
@@ -95,8 +96,8 @@ def temporal_tracking_quality(source, granularity="all"):
 
     elif granularity == "weekday":
         # get the tracked week relative to the first day
-        start_date = df["started_at"].min().date()
-        df["week"] = df["started_at"].apply(lambda x: (x.date() - start_date).days // 7)
+        start_date = df["started_at"].min().floor(freq="D")
+        df["week"] = ((df["started_at"] - start_date)).dt.days // 7
 
         grouper = df["started_at"].dt.weekday
         column_name = "weekday"
@@ -104,8 +105,8 @@ def temporal_tracking_quality(source, granularity="all"):
     elif granularity == "hour":
         df = _split_overlaps(df, granularity="hour")
         # get the tracked day relative to the first day
-        start_date = df["started_at"].min().date()
-        df["day"] = df["started_at"].apply(lambda x: (x.date() - start_date).days)
+        start_date = df["started_at"].min().floor(freq="D")
+        df["day"] = (df["started_at"] - start_date).dt.days
 
         grouper = df["started_at"].dt.hour
         column_name = "hour"
