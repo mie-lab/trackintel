@@ -102,7 +102,7 @@ def temporal_tracking_quality(source, granularity="all"):
     elif granularity == "weekday":
         # get the tracked week relative to the first day
         start_date = df["started_at"].min().floor(freq="D")
-        df["week"] = ((df["started_at"] - start_date) // 7).dt.days
+        df["week"] = ((df["started_at"] - start_date)).dt.days // 7
 
         grouper = df["started_at"].dt.weekday
         column_name = "weekday"

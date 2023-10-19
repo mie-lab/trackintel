@@ -401,12 +401,7 @@ def _trackintel_model(gdf, set_names=None, geom_col=None, crs=None, tz_cols=None
     if tz_cols is not None:
         for col in tz_cols:
             if not isinstance(gdf[col].dtype, pd.DatetimeTZDtype):
-                try:
-                    gdf[col] = _localize_timestamp(dt_series=gdf[col], pytz_tzinfo=tz, col_name=col)
-                except ValueError:
-                    # Taken if column contains datetimes with different timezone informations.
-                    # Cast them to UTC in this case.
-                    gdf[col] = pd.to_datetime(gdf[col], utc=True)
+                gdf[col] = _localize_timestamp(dt_series=gdf[col], pytz_tzinfo=tz, col_name=col)
 
     # If is not GeoDataFrame and no geom_col is set end early.
     # That allows us to handle DataFrames and GeoDataFrames in one function.
@@ -449,10 +444,18 @@ def _localize_timestamp(dt_series, pytz_tzinfo, col_name):
     """
     if pytz_tzinfo is None:
         warnings.warn(f"Assuming UTC timezone for column {col_name}")
-        return pd.to_datetime(dt_series, utc=True)
-    dt_series = pd.to_datetime(dt_series, utc=False)
-    # if object already has a tz we need to convert it
-    if dt_series.dt.tz:
-        return dt_series.dt.tz_convert(pytz_tzinfo)
-    # else we can just set it
-    return dt_series.dt.tz_localize(pytz_tzinfo)
+        pytz_tzinfo = "utc"
+
+    def localize(ts, tz):
+        """Localize ts if tz is not set else leave it be"""
+        ts = pd.Timestamp(ts)
+        if ts.tz is not None:
+            return ts
+        return pd.Timestamp.tz_localize(ts, tz)
+
+    # localize all datetimes without a timezone
+    dt_series = dt_series.apply(localize, tz=pytz_tzinfo)
+    # create a Timeseries (utc=False will create warning)
+    dt_series = pd.to_datetime(dt_series, utc=True)
+    # convert it back to right tz
+    return dt_series.dt.tz_convert(pytz_tzinfo)
