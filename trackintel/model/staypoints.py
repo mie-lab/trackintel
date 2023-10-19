@@ -45,7 +45,7 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
 
     def __init__(self, *args, validate_geometry=True, **kwargs):
         super().__init__(*args, **kwargs)
-        self._validate(self, validate_geometry=validate_geometry)
+        self.validate(self, validate_geometry=validate_geometry)
 
     # create circular reference directly -> avoid second call of init via accessor
     @property
@@ -53,7 +53,7 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         return self
 
     @staticmethod
-    def _validate(obj, validate_geometry=True):
+    def validate(obj, validate_geometry=True):
         # check columns
         if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
@@ -78,7 +78,7 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
 
     @staticmethod
     def _check(obj, validate_geometry=True):
-        """Check does the same as _validate but returns bool instead of potentially raising an error."""
+        """Check does the same as validate but returns bool instead of potentially raising an error."""
         if any([c not in obj.columns for c in _required_columns]):
             return False
         if not isinstance(obj["started_at"].dtype, pd.DatetimeTZDtype):

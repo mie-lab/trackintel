@@ -263,7 +263,7 @@ class TestGenerate_trips:
 
     def test_only_staypoints_in_trip(self):
         """Test that trips with only staypoints (non-activities) are deleted."""
-        start = pd.Timestamp("2021-07-11 8:00:00")
+        start = pd.Timestamp("2021-07-11 8:00:00", tz="utc")
         h = pd.to_timedelta("1h")
         sp_tpls = [
             {"is_activity": True, "type": "staypoint"},
@@ -289,7 +289,7 @@ class TestGenerate_trips:
 
     def test_sp_tpls_index(self):
         """Test if staypoint and tripleg index are identical before and after generating trips."""
-        start = pd.Timestamp("2021-07-11 8:00:00")
+        start = pd.Timestamp("2021-07-11 8:00:00", tz="utc")
         h = pd.to_timedelta("1h")
         sp_tpls = [
             {"is_activity": True, "type": "staypoint"},

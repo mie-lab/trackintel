@@ -38,7 +38,7 @@ class Tours(TrackintelBase, TrackintelDataFrame):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._validate(self)
+        self.validate(self)
 
     # createte circular reference directly -> avoid second call of init via accessor
     @property
@@ -46,7 +46,7 @@ class Tours(TrackintelBase, TrackintelDataFrame):
         return self
 
     @staticmethod
-    def _validate(obj):
+    def validate(obj):
         if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
                 "To process a DataFrame as a collection of tours, it must have the properties"
@@ -63,7 +63,7 @@ class Tours(TrackintelBase, TrackintelDataFrame):
 
     @staticmethod
     def _check(obj):
-        """Check does the same as _validate but returns bool instead of potentially raising an error."""
+        """Check does the same as validate but returns bool instead of potentially raising an error."""
         if any([c not in obj.columns for c in _required_columns]):
             return False
         if not isinstance(obj["started_at"].dtype, pd.DatetimeTZDtype):

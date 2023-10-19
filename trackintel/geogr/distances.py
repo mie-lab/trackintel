@@ -11,6 +11,8 @@ import similaritymeasures
 from scipy.spatial.distance import cdist
 from sklearn.metrics import pairwise_distances
 
+from trackintel import Positionfixes, Triplegs
+
 
 def point_haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000, float_flag=False):
     """
@@ -388,6 +390,7 @@ def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
     tpls: GeoDataFrame (as trackintel triplegs)
         The original triplegs with a new column ``[`speed`]``. The speed is given in m/s.
     """
+    Triplegs.validate(triplegs)
     # Simple method: Divide overall tripleg distance by overall duration
     if method == "tpls_speed":
         if check_gdf_planar(triplegs):

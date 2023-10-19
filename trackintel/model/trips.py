@@ -91,10 +91,10 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        TripsDataFrame._validate(self)  # static call
+        TripsDataFrame.validate(self)  # static call
 
     @staticmethod
-    def _validate(obj):
+    def validate(obj):
         if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
                 "To process a DataFrame as a collection of trips, it must have the properties"
@@ -182,14 +182,13 @@ class TripsGeoDataFrame(TrackintelGeoDataFrame, TripsDataFrame, gpd.GeoDataFrame
 
     def __init__(self, *args, validate_geometry=True, **kwargs):
         super().__init__(*args, **kwargs)
-        TripsGeoDataFrame._validate(self, validate_geometry=validate_geometry)
+        TripsGeoDataFrame.validate(self, validate_geometry=validate_geometry)
 
     @staticmethod
-    def _validate(self, validate_geometry=True):
+    def validate(self, validate_geometry=True):
+        TripsDataFrame.validate(self)
         if not validate_geometry:
             return
-        # _validate should not be called from the outside -> we can use fact that it is called only from __init__
-        # therefore TrackintelDataFrame validated all the columns and here we only have to validate the geometry
         assert (
             self.geometry.is_valid.all()
         ), "Not all geometries are valid. Try x[~x.geometry.is_valid] where x is you GeoDataFrame"

@@ -34,14 +34,14 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
 
     def __init__(self, *args, validate_geometry=True, **kwargs):
         super().__init__(*args, **kwargs)
-        self._validate(self, validate_geometry=validate_geometry)
+        self.validate(self, validate_geometry=validate_geometry)
 
     @property
     def as_locations(self):
         return self
 
     @staticmethod
-    def _validate(obj, validate_geometry):
+    def validate(obj, validate_geometry):
         if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
                 "To process a DataFrame as a collection of locations, it must have the properties"
@@ -57,7 +57,7 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
 
     @staticmethod
     def _check(obj, validate_geometry=True):
-        """Check does the same as _validate but returns bool instead of potentially raising an error."""
+        """Check does the same as validate but returns bool instead of potentially raising an error."""
         if any([c not in obj.columns for c in _required_columns]):
             return False
         if obj.shape[0] <= 0:

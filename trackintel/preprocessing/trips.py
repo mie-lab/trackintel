@@ -119,12 +119,14 @@ def generate_tours(
         ), "Staypoints with location ID is required, otherwise tours are generated without location using max_dist"
         geom_col = None  # not used
         crs_is_projected = False  # not used
+        ti.Staypoints.validate(staypoints)
     else:
         # if no location is given, we need the trips table to have a geometry column
         assert isinstance(trips, gpd.geodataframe.GeoDataFrame), "Trips table must be a GeoDataFrame"
         geom_col = trips.geometry.name
         # get crs
         crs_is_projected = ti.geogr.check_gdf_planar(trips)
+        ti.TripsGeoDataFrame.validate(trips)
 
     # convert max_time to timedelta
     if isinstance(max_time, str):

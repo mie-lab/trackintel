@@ -41,7 +41,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
 
     def __init__(self, *args, validate_geometry=True, **kwargs):
         super().__init__(*args, **kwargs)
-        self._validate(self, validate_geometry=validate_geometry)
+        self.validate(self, validate_geometry=validate_geometry)
 
     # create circular reference directly -> avoid second call of init via accessor
     @property
@@ -49,7 +49,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
         return self
 
     @staticmethod
-    def _validate(obj, validate_geometry=True):
+    def validate(obj, validate_geometry=True):
         assert obj.shape[0] > 0, f"Geodataframe is empty with shape: {obj.shape}"
         # check columns
         if any([c not in obj.columns for c in _required_columns]):
@@ -76,7 +76,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
 
     @staticmethod
     def _check(obj, validate_geometry=True):
-        """Check does the same as _validate but returns bool instead of potentially raising an error."""
+        """Check does the same as validate but returns bool instead of potentially raising an error."""
         if any([c not in obj.columns for c in _required_columns]):
             return False
         if obj.shape[0] <= 0:
