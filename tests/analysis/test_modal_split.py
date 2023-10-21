@@ -131,7 +131,6 @@ class TestModalSplit:
         """check if we can access `calculate_modal_split` via the tripelg accessor"""
 
         tpls = read_geolife_with_modes
-        print(tpls.columns)
         tpls.as_triplegs.calculate_modal_split(metric="count", freq="D")
 
     def test_modal_split_total_count(self, test_triplegs_modal_split):
