@@ -306,6 +306,12 @@ class TestGenerate_tours:
             _ = ti.preprocessing.trips.generate_tours(trips, max_time=24)
             assert e_info == "Parameter max_time must be either of type String or pd.Timedelta!"
 
+    def test_tours_type(self, example_trip_data):
+        """Test if retuned tours are of type Tours"""
+        trips, _ = example_trip_data
+        _, tours = trips.as_trips.generate_tours()
+        assert isinstance(tours, ti.Tours)
+
 
 class TestTourHelpers:
     """Test auxiliary function for trip grouping"""

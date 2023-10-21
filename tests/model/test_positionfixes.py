@@ -2,17 +2,18 @@ import os
 import pytest
 import numpy as np
 
+import geopandas as gpd
 from shapely.geometry import LineString
 
 import trackintel as ti
-from trackintel import Positionfixes
 
 
 @pytest.fixture
 def testdata_geolife():
     """Read geolife test data from files."""
     pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
-    return pfs
+    # we want test the accessor of GeoDataFrames and not Positionfixes
+    return gpd.GeoDataFrame(pfs)
 
 
 class TestPositionfixes:

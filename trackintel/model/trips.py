@@ -173,7 +173,8 @@ class TripsGeoDataFrame(TrackintelGeoDataFrame, TripsDataFrame, gpd.GeoDataFrame
     fallback_class = TripsDataFrame
 
     def __init__(self, *args, validate=True, **kwargs):
-        super().__init__(*args, **kwargs)
+        # we need to pass validate to TripsDataFrame (thus the order of dependency is important here)
+        super().__init__(*args, validate=validate, **kwargs)
         # disable validation after initial creation -> user is responsible for right shape
         if validate:
             TripsGeoDataFrame.validate(self)

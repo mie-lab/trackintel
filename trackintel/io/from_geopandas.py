@@ -3,6 +3,8 @@ import pandas as pd
 import geopandas as gpd
 import pytz
 
+from trackintel import Positionfixes, Staypoints, Triplegs, Locations, Trips, Tours
+
 
 def read_positionfixes_gpd(
     gdf, tracked_at="tracked_at", user_id="user_id", geom_col=None, crs=None, tz=None, mapper=None
@@ -51,9 +53,7 @@ def read_positionfixes_gpd(
         columns.update(mapper)
 
     pfs = _trackintel_model(gdf, columns, geom_col, crs, ["tracked_at"], tz)
-    # assert validity of positionfixes
-    pfs.as_positionfixes
-    return pfs
+    return Positionfixes(pfs)
 
 
 def read_staypoints_gpd(
@@ -114,9 +114,7 @@ def read_staypoints_gpd(
 
     sp = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
 
-    # assert validity of staypoints
-    sp.as_staypoints
-    return sp
+    return Staypoints(sp)
 
 
 def read_triplegs_gpd(
@@ -176,9 +174,7 @@ def read_triplegs_gpd(
         columns.update(mapper)
 
     tpls = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
-    # assert validity of triplegs
-    tpls.as_triplegs
-    return tpls
+    return Triplegs(tpls)
 
 
 def read_trips_gpd(
@@ -253,9 +249,7 @@ def read_trips_gpd(
 
     trips = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
 
-    # assert validity of trips
-    trips.as_trips
-    return trips
+    return Trips(trips)
 
 
 def read_locations_gpd(gdf, user_id="user_id", center="center", extent=None, crs=None, mapper=None):
@@ -306,9 +300,7 @@ def read_locations_gpd(gdf, user_id="user_id", center="center", extent=None, crs
     if extent is not None:
         locs["extent"] = gpd.GeoSeries(locs["extent"])
 
-    # assert validity of locations
-    locs.as_locations
-    return locs
+    return Locations(locs)
 
 
 def read_tours_gpd(
@@ -358,11 +350,7 @@ def read_tours_gpd(
         columns.update(mapper)
 
     tours = _trackintel_model(gdf, set_names=columns, tz_cols=["started_at", "finished_at"], tz=tz)
-
-    # assert validity of tours
-    tours.as_tours
-
-    return tours
+    return Tours(tours)
 
 
 def _trackintel_model(gdf, set_names=None, geom_col=None, crs=None, tz_cols=None, tz=None):

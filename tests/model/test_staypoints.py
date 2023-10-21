@@ -1,10 +1,10 @@
 import os
 import pytest
 
+import geopandas as gpd
 from shapely.geometry import LineString
 
 import trackintel as ti
-from trackintel import Staypoints
 
 
 @pytest.fixture
@@ -12,7 +12,8 @@ def testdata_sp():
     """Read sp test data from files."""
     sp_file = os.path.join("tests", "data", "staypoints.csv")
     sp = ti.read_staypoints_csv(sp_file, sep=";", index_col="id")
-    return sp
+    # we want test the accessor of GeoDataFrames and not Staypoints
+    return gpd.GeoDataFrame(sp)
 
 
 class TestStaypoints:

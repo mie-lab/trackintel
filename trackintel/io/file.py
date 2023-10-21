@@ -13,7 +13,6 @@ from trackintel.io.from_geopandas import (
 )
 from trackintel.io.util import _index_warning_default_none
 from trackintel.model.util import doc, _shared_docs
-from trackintel import Positionfixes
 
 
 @_index_warning_default_none

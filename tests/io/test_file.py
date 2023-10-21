@@ -78,6 +78,13 @@ class TestPositionfixes:
         pfs = ti.read_positionfixes_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
+    def test_type(self):
+        """Test if returned object is Positionfix"""
+        file = os.path.join("tests", "data", "positionfixes.csv")
+        ind_name = "id"
+        pfs = ti.read_positionfixes_csv(file, sep=";", index_col=ind_name)
+        assert isinstance(pfs, ti.Positionfixes)
+
 
 class TestTriplegs:
     """Test for 'read_triplegs_csv' and 'write_triplegs_csv' functions."""
@@ -146,6 +153,13 @@ class TestTriplegs:
         pfs = ti.read_triplegs_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
+    def test_type(self):
+        """Test if returned object is Triplegs"""
+        file = os.path.join("tests", "data", "triplegs.csv")
+        ind_name = "id"
+        tpls = ti.read_triplegs_csv(file, sep=";", index_col=ind_name)
+        assert isinstance(tpls, ti.Triplegs)
+
 
 class TestStaypoints:
     """Test for 'read_staypoints_csv' and 'write_staypoints_csv' functions."""
@@ -211,6 +225,13 @@ class TestStaypoints:
         pfs = ti.read_staypoints_csv(file, sep=";", index_col=None)
         assert pfs.index.name is None
 
+    def test_type(self):
+        """Test if returned object is Staypoint"""
+        file = os.path.join("tests", "data", "staypoints.csv")
+        ind_name = "id"
+        sp = ti.read_staypoints_csv(file, sep=";", index_col=ind_name)
+        assert isinstance(sp, ti.Staypoints)
+
 
 @pytest.fixture
 def example_locations():
@@ -226,8 +247,7 @@ def example_locations():
     ]
     locs = gpd.GeoDataFrame(data=list_dict, geometry="center", crs="EPSG:4326")
     locs.index.name = "id"
-    locs.as_locations
-    return locs
+    return ti.Locations(locs)
 
 
 class TestLocations:
@@ -278,6 +298,13 @@ class TestLocations:
         locs_in = ti.read_locations_csv(tmp_file, sep=";", index_col="id", crs=4326)
         assert_geodataframe_equal(locs, locs_in)
         os.remove(tmp_file)
+
+    def test_type(self):
+        """Test if returned object is Locations"""
+        file = os.path.join("tests", "data", "locations.csv")
+        ind_name = "id"
+        sp = ti.read_locations_csv(file, sep=";", index_col=ind_name)
+        assert isinstance(sp, ti.Locations)
 
 
 class TestTrips:
@@ -336,6 +363,13 @@ class TestTrips:
         gdf = ti.read_trips_csv(file, sep=";", index_col=None)
         assert gdf.index.name is None
 
+    def test_type(self):
+        """Test if returned object is Trips"""
+        file = os.path.join("tests", "data", "trips.csv")
+        ind_name = "id"
+        trips = ti.read_trips_csv(file, sep=";", index_col=ind_name)
+        assert isinstance(trips, ti.TripsDataFrame)
+
 
 @pytest.fixture
 def example_tours():
@@ -352,8 +386,7 @@ def example_tours():
     ]
     tours = pd.DataFrame(data=list_dict)
     tours.index.name = "id"
-    tours.as_tours
-    return tours
+    return ti.Tours(tours)
 
 
 class TestTours:
@@ -386,3 +419,10 @@ class TestTours:
         tours.as_tours.to_csv(tmp_file)
         assert filecmp.cmp(orig_file, tmp_file, shallow=False)
         os.remove(tmp_file)
+
+    def test_type(self):
+        """Test if returned object is Tours"""
+        file = os.path.join("tests", "data", "tours.csv")
+        ind_name = "id"
+        sp = ti.read_tours_csv(file, sep=";", index_col=ind_name)
+        assert isinstance(sp, ti.Tours)

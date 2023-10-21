@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import MultiPoint, Point
 
-from trackintel import Staypoints, Triplegs
+from trackintel import Staypoints, Triplegs, Trips
 from trackintel.preprocessing.util import _explode_agg
 
 
@@ -225,7 +225,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     # user_id of trips should be the same as tpls
     trips["user_id"] = trips["user_id"].astype(tpls["user_id"].dtype)
 
-    return sp, tpls, trips
+    return sp, tpls, Trips(trips)
 
 
 def _concat_staypoints_triplegs(staypoints, triplegs, add_geometry):
