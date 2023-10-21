@@ -54,7 +54,6 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
     def validate(obj, validate_geometry=True):
         assert obj.shape[0] > 0, f"Geodataframe is empty with shape: {obj.shape}"
         # check columns
-        print(obj.columns)
         if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
                 "To process a DataFrame as a collection of triplegs, it must have the properties"
