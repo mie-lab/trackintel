@@ -278,8 +278,12 @@ class TestGenerate_trips:
             d["started_at"] = start + n * h
             d["finished_at"] = d["started_at"] + h
         sp_tpls = pd.DataFrame(sp_tpls)
-        sp = sp_tpls[sp_tpls["type"] == "staypoint"]
-        tpls = sp_tpls[sp_tpls["type"] == "tripleg"]
+        sp = sp_tpls[sp_tpls["type"] == "staypoint"].copy()
+        tpls = sp_tpls[sp_tpls["type"] == "tripleg"].copy()
+        sp["geom"] = Point(0, 0)
+        tpls["geom"] = LineString([[1, 1], [2, 2]])
+        sp = gpd.GeoDataFrame(sp, geometry="geom")
+        tpls = gpd.GeoDataFrame(tpls, geometry="geom")
         sp_, tpls_, trips = generate_trips(sp, tpls, add_geometry=False)
         trip_id_truth = pd.Series([None, None, None, 0, None], dtype="Int64")
         trip_id_truth.index = sp_.index  # don't check index
@@ -304,8 +308,12 @@ class TestGenerate_trips:
             d["finished_at"] = d["started_at"] + h
 
         sp_tpls = pd.DataFrame(sp_tpls)
-        sp = sp_tpls[sp_tpls["type"] == "staypoint"]
-        tpls = sp_tpls[sp_tpls["type"] != "staypoint"]
+        sp = sp_tpls[sp_tpls["type"] == "staypoint"].copy()
+        tpls = sp_tpls[sp_tpls["type"] != "staypoint"].copy()
+        sp["geom"] = Point(0, 0)
+        tpls["geom"] = LineString([(0, 0), (1, 1)])
+        sp = gpd.GeoDataFrame(sp, geometry="geom")
+        tpls = gpd.GeoDataFrame(tpls, geometry="geom")
         tpls.index.name = "something_long_and_obscure"
         sp.index.name = "even_obscurer"
         sp_, tpls_, _ = generate_trips(sp, tpls, add_geometry=False)

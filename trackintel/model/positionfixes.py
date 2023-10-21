@@ -41,14 +41,14 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
     >>> df.as_positionfixes.generate_staypoints()
     """
 
-    def __init__(self, *args, validate=True, validate_geometry=True, **kwargs):
+    def __init__(self, *args, validate=True, **kwargs):
         # could be moved to super class
         # validate kwarg is necessary as the object is not fully initialised if we call it from _constructor
         # (geometry-link is missing). thus we need a way to stop validating too early.
         super().__init__(*args, **kwargs)
         # disable validation after initial creation -> user is responsible for right shape
         if validate:
-            self.validate(self, validate_geometry=validate_geometry)
+            self.validate(self)
 
     # create circular reference directly -> avoid second call of init via accessor
     @property
@@ -56,7 +56,7 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         return self
 
     @staticmethod
-    def validate(obj, validate_geometry=True):
+    def validate(obj):
         assert obj.shape[0] > 0, f"Geodataframe is empty with shape: {obj.shape}"
         # check columns
         if any([c not in obj.columns for c in _required_columns]):
@@ -70,13 +70,12 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         ), f"dtype of tracked_at is {obj['tracked_at'].dtype} but has to be datetime64 and timezone aware"
 
         # check geometry
-        if validate_geometry:
-            assert (
-                obj.geometry.is_valid.all()
-            ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
+        assert (
+            obj.geometry.is_valid.all()
+        ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
 
-            if obj.geometry.iloc[0].geom_type != "Point":
-                raise AttributeError("The geometry must be a Point (only first checked).")
+        if obj.geometry.iloc[0].geom_type != "Point":
+            raise AttributeError("The geometry must be a Point (only first checked).")
 
     @property
     def center(self):

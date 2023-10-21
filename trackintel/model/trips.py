@@ -172,17 +172,15 @@ class TripsGeoDataFrame(TrackintelGeoDataFrame, TripsDataFrame, gpd.GeoDataFrame
 
     fallback_class = TripsDataFrame
 
-    def __init__(self, *args, validate=True, validate_geometry=True, **kwargs):
+    def __init__(self, *args, validate=True, **kwargs):
         super().__init__(*args, **kwargs)
         # disable validation after initial creation -> user is responsible for right shape
         if validate:
-            TripsGeoDataFrame.validate(self, validate_geometry=validate_geometry)
+            TripsGeoDataFrame.validate(self)
 
     @staticmethod
-    def validate(self, validate_geometry=True):
+    def validate(self):
         TripsDataFrame.validate(self)
-        if not validate_geometry:
-            return
         assert (
             self.geometry.is_valid.all()
         ), "Not all geometries are valid. Try x[~x.geometry.is_valid] where x is you GeoDataFrame"

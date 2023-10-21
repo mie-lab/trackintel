@@ -32,18 +32,18 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
     >>> df.as_locations.to_csv("filename.csv")
     """
 
-    def __init__(self, *args, validate=True, validate_geometry=True, **kwargs):
+    def __init__(self, *args, validate=True, **kwargs):
         super().__init__(*args, **kwargs)
         # disable validation after initial creation -> user is responsible for right shape
         if validate:
-            self.validate(self, validate_geometry=validate_geometry)
+            self.validate(self)
 
     @property
     def as_locations(self):
         return self
 
     @staticmethod
-    def validate(obj, validate_geometry):
+    def validate(obj):
         if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
                 "To process a DataFrame as a collection of locations, it must have the properties"
@@ -52,7 +52,7 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
         if obj.shape[0] <= 0:
             raise ValueError(f"GeoDataFrame is empty with shape: {obj.shape}")
 
-        if validate_geometry and obj["center"].iloc[0].geom_type != "Point":
+        if obj["center"].iloc[0].geom_type != "Point":
             # todo: We could think about allowing both geometry types for locations (point and polygon)
             # One for extend and one for the center
             raise ValueError("The center geometry must be a Point (only first checked).")

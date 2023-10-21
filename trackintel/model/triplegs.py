@@ -39,11 +39,11 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
     >>> df.as_triplegs.generate_trips()
     """
 
-    def __init__(self, *args, validate=True, validate_geometry=True, **kwargs):
+    def __init__(self, *args, validate=True, **kwargs):
         super().__init__(*args, **kwargs)
         # disable validation after initial creation -> user is responsible for right shape
         if validate:
-            self.validate(self, validate_geometry=validate_geometry)
+            self.validate(self)
 
     # create circular reference directly -> avoid second call of init via accessor
     @property
@@ -51,7 +51,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
         return self
 
     @staticmethod
-    def validate(obj, validate_geometry=True):
+    def validate(obj):
         assert obj.shape[0] > 0, f"Geodataframe is empty with shape: {obj.shape}"
         # check columns
         if any([c not in obj.columns for c in _required_columns]):
@@ -69,12 +69,11 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
         ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be datetime64 and timezone aware"
 
         # check geometry
-        if validate_geometry:
-            assert (
-                obj.geometry.is_valid.all()
-            ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
-            if obj.geometry.iloc[0].geom_type != "LineString":
-                raise AttributeError("The geometry must be a LineString (only first checked).")
+        assert (
+            obj.geometry.is_valid.all()
+        ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
+        if obj.geometry.iloc[0].geom_type != "LineString":
+            raise AttributeError("The geometry must be a LineString (only first checked).")
 
     @doc(_shared_docs["write_csv"], first_arg="", long="triplegs", short="tpls")
     def to_csv(self, filename, *args, **kwargs):
