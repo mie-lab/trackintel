@@ -36,9 +36,11 @@ class Tours(TrackintelBase, TrackintelDataFrame):
     >>> df.as_tours.to_csv("filename.csv")
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, validate=True, **kwargs):
         super().__init__(*args, **kwargs)
-        self.validate(self)
+        # disable validation after initial creation -> user is responsible for right shape
+        if validate:
+            self.validate(self)
 
     # createte circular reference directly -> avoid second call of init via accessor
     @property
@@ -60,17 +62,6 @@ class Tours(TrackintelBase, TrackintelDataFrame):
         assert isinstance(
             obj["finished_at"].dtype, pd.DatetimeTZDtype
         ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be datetime64 and timezone aware"
-
-    @staticmethod
-    def _check(obj):
-        """Check does the same as validate but returns bool instead of potentially raising an error."""
-        if any([c not in obj.columns for c in _required_columns]):
-            return False
-        if not isinstance(obj["started_at"].dtype, pd.DatetimeTZDtype):
-            return False
-        if not isinstance(obj["finished_at"].dtype, pd.DatetimeTZDtype):
-            return False
-        return True
 
     @doc(_shared_docs["write_csv"], first_arg="", long="tours", short="tours")
     def to_csv(self, filename, *args, **kwargs):

@@ -32,9 +32,11 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
     >>> df.as_locations.to_csv("filename.csv")
     """
 
-    def __init__(self, *args, validate_geometry=True, **kwargs):
+    def __init__(self, *args, validate=True, validate_geometry=True, **kwargs):
         super().__init__(*args, **kwargs)
-        self.validate(self, validate_geometry=validate_geometry)
+        # disable validation after initial creation -> user is responsible for right shape
+        if validate:
+            self.validate(self, validate_geometry=validate_geometry)
 
     @property
     def as_locations(self):
@@ -54,17 +56,6 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
             # todo: We could think about allowing both geometry types for locations (point and polygon)
             # One for extend and one for the center
             raise ValueError("The center geometry must be a Point (only first checked).")
-
-    @staticmethod
-    def _check(obj, validate_geometry=True):
-        """Check does the same as validate but returns bool instead of potentially raising an error."""
-        if any([c not in obj.columns for c in _required_columns]):
-            return False
-        if obj.shape[0] <= 0:
-            return False
-        if validate_geometry:
-            return obj.geometry.iloc[0].geom_type == "Point"
-        return True
 
     @doc(_shared_docs["write_csv"], first_arg="", long="locations", short="locs")
     def to_csv(self, filename, *args, **kwargs):

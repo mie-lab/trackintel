@@ -39,9 +39,11 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
     >>> df.as_triplegs.generate_trips()
     """
 
-    def __init__(self, *args, validate_geometry=True, **kwargs):
+    def __init__(self, *args, validate=True, validate_geometry=True, **kwargs):
         super().__init__(*args, **kwargs)
-        self.validate(self, validate_geometry=validate_geometry)
+        # disable validation after initial creation -> user is responsible for right shape
+        if validate:
+            self.validate(self, validate_geometry=validate_geometry)
 
     # create circular reference directly -> avoid second call of init via accessor
     @property
@@ -52,6 +54,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
     def validate(obj, validate_geometry=True):
         assert obj.shape[0] > 0, f"Geodataframe is empty with shape: {obj.shape}"
         # check columns
+        print(obj.columns)
         if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
                 "To process a DataFrame as a collection of triplegs, it must have the properties"
@@ -73,21 +76,6 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
             ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
             if obj.geometry.iloc[0].geom_type != "LineString":
                 raise AttributeError("The geometry must be a LineString (only first checked).")
-
-    @staticmethod
-    def _check(obj, validate_geometry=True):
-        """Check does the same as validate but returns bool instead of potentially raising an error."""
-        if any([c not in obj.columns for c in _required_columns]):
-            return False
-        if obj.shape[0] <= 0:
-            return False
-        if not isinstance(obj["started_at"].dtype, pd.DatetimeTZDtype):
-            return False
-        if not isinstance(obj["finished_at"].dtype, pd.DatetimeTZDtype):
-            return False
-        if validate_geometry:
-            return obj.geometry.is_valid.all() and obj.geometry.iloc[0].geom_type == "LineString"
-        return True
 
     @doc(_shared_docs["write_csv"], first_arg="", long="triplegs", short="tpls")
     def to_csv(self, filename, *args, **kwargs):

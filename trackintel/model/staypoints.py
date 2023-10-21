@@ -43,9 +43,11 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
     >>> df.as_staypoints.generate_locations()
     """
 
-    def __init__(self, *args, validate_geometry=True, **kwargs):
+    def __init__(self, *args, validate=True, validate_geometry=True, **kwargs):
         super().__init__(*args, **kwargs)
-        self.validate(self, validate_geometry=validate_geometry)
+        # disable validation after initial creation -> user is responsible for right shape
+        if validate:
+            self.validate(self, validate_geometry=validate_geometry)
 
     # create circular reference directly -> avoid second call of init via accessor
     @property
@@ -75,19 +77,6 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
             ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
             if obj.geometry.iloc[0].geom_type != "Point":
                 raise AttributeError("The geometry must be a Point (only first checked).")
-
-    @staticmethod
-    def _check(obj, validate_geometry=True):
-        """Check does the same as validate but returns bool instead of potentially raising an error."""
-        if any([c not in obj.columns for c in _required_columns]):
-            return False
-        if not isinstance(obj["started_at"].dtype, pd.DatetimeTZDtype):
-            return False
-        if not isinstance(obj["finished_at"].dtype, pd.DatetimeTZDtype):
-            return False
-        if validate_geometry:
-            return obj.geometry.is_valid.all() and obj.geometry.iloc[0].geom_type == "Point"
-        return True
 
     @property
     def center(self):

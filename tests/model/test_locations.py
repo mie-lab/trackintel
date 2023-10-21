@@ -45,29 +45,3 @@ class TestLocations:
         locs = testdata_locs.as_locations
         assert type(locs) is Locations
         assert id(locs) == id(locs.as_locations)
-
-    def test_check_suceeding(self, testdata_locs):
-        """Test if check returns True on valid pfs"""
-        assert Locations._check(testdata_locs)
-
-    def test_check_missing_columns(self, testdata_locs):
-        """Test if check returns False if column is missing"""
-        assert not Locations._check(testdata_locs.drop(columns="user_id"))
-
-    def test_check_empty_df(self, testdata_locs):
-        """Test if check returns False if DataFrame is empty"""
-        assert not Locations._check(testdata_locs.drop(testdata_locs.index))
-
-    def test_check_false_geometry_type(self, testdata_locs):
-        """Test if check returns False if geometry type is wrong"""
-        testdata_locs["center"] = LineString(
-            [(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)]
-        )
-        assert not Locations._check(testdata_locs)
-
-    def test_check_ignore_false_geometry_type(self, testdata_locs):
-        """Test if check returns True if geometry type is wrong but validate_geometry is set to False"""
-        testdata_locs["center"] = LineString(
-            [(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)]
-        )
-        assert Locations._check(testdata_locs, validate_geometry=False)

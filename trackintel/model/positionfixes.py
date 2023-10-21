@@ -41,12 +41,14 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
     >>> df.as_positionfixes.generate_staypoints()
     """
 
-    def __init__(self, *args, validate_geometry=True, **kwargs):
+    def __init__(self, *args, validate=True, validate_geometry=True, **kwargs):
         # could be moved to super class
         # validate kwarg is necessary as the object is not fully initialised if we call it from _constructor
         # (geometry-link is missing). thus we need a way to stop validating too early.
         super().__init__(*args, **kwargs)
-        self.validate(self, validate_geometry=validate_geometry)
+        # disable validation after initial creation -> user is responsible for right shape
+        if validate:
+            self.validate(self, validate_geometry=validate_geometry)
 
     # create circular reference directly -> avoid second call of init via accessor
     @property
@@ -75,19 +77,6 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
 
             if obj.geometry.iloc[0].geom_type != "Point":
                 raise AttributeError("The geometry must be a Point (only first checked).")
-
-    @staticmethod
-    def _check(obj, validate_geometry=True):
-        """Check does the same as validate but returns bool instead of potentially raising an error."""
-        if any([c not in obj.columns for c in _required_columns]):
-            return False
-        if obj.shape[0] <= 0:
-            return False
-        if not isinstance(obj["tracked_at"].dtype, pd.DatetimeTZDtype):
-            return False
-        if validate_geometry:
-            return obj.geometry.is_valid.all() and obj.geometry.iloc[0].geom_type == "Point"
-        return True
 
     @property
     def center(self):
