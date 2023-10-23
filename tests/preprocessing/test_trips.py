@@ -108,6 +108,10 @@ def example_trip_data():
 
     # assign location IDs (only for testing, not a trackintel staypoints standard!)
     sp_locs = pd.DataFrame({"location_id": [1, 1, 2, 3, 1, 2, 4]}, index=[1, 2, 3, 4, 5, 6, 7])
+    sp_locs["user_id"] = 0
+    sp_locs["started_at"] = sp_locs["finished_at"] = pd.Timestamp("2021-07-11 8:00:00", tz="utc")
+    sp_locs["geom"] = Point(0.0, 0.0)
+    sp_locs = gpd.GeoDataFrame(sp_locs, geometry="geom")
 
     trips = gpd.GeoDataFrame(data=trips_list_dict, geometry="geom", crs="EPSG:4326")
     trips = trips.set_index("id")

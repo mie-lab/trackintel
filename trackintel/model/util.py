@@ -1,5 +1,5 @@
 import warnings
-from functools import wraps
+from functools import wraps, partial
 from textwrap import dedent
 
 import pandas as pd
@@ -12,7 +12,7 @@ def _wrapped_gdf_method(func):
     @wraps(func)  # copy all metadata
     def wrapper(self, *args, **kwargs):
         result = func(self, *args, **kwargs)
-        if isinstance(result, pd.DataFrame) and self._check(result, validate_geometry=False):
+        if isinstance(result, pd.DataFrame):
             if isinstance(result, GeoDataFrame):
                 result.__class__ = self.__class__
             elif self.fallback_class is not None:
@@ -27,17 +27,13 @@ class TrackintelGeoDataFrame(GeoDataFrame):
     Helper class to subtype GeoDataFrame correctly and fallback to custom class.
 
     Three possible outcomes for the _constructor
-    - If check fails or is DataFrame without fallback_class set, return GeoDataFrame/DataFrame instance w/o changes
-    - If check succeeds and has geometry, change class to current class and return
-    - If check succeeds and has no geometry, change class to fallback_class and return
+    - If GeoDataFrame, keep it a TrackintelGeoDataFrame
+    - If DataFrame without fallback class, just return the DataFrame
+    - If DataFrame with fallback class, fall back to it.
     """
 
-    # set fallback_class for succeeding _check and missing geometry, if None default to pd.DataFrame
+    # set fallback_class for missing geometry, if None default to pd.DataFrame
     fallback_class = None
-
-    @staticmethod
-    def _check(self, validate_geometry=True):
-        raise NotImplementedError
 
     @property
     def _constructor(self):
@@ -46,14 +42,11 @@ class TrackintelGeoDataFrame(GeoDataFrame):
 
         def _constructor_with_fallback(*args, **kwargs):
             result = super_cons(*args, **kwargs)
-            if not self._check(result, validate_geometry=False):
-                # check fails -> not one of our classes
-                return result
             if isinstance(result, GeoDataFrame):
-                # cannot validate geometry as geometry column is maybe not set
-                return self.__class__(result, validate_geometry=False)
+                return self.__class__(result, validate=False)
+            # uses DataFrame constructor -> must be DataFrame
             if self.fallback_class is not None:
-                return self.fallback_class(result)
+                return self.fallback_class(result, validate=False)
             return result
 
         return _constructor_with_fallback
@@ -76,22 +69,11 @@ class TrackintelGeoDataFrame(GeoDataFrame):
 class TrackintelDataFrame(pd.DataFrame):
     """Helper class to subtype DataFrame and handle fallback"""
 
-    @staticmethod
-    def _check(self):  # has no geometry to check
-        raise NotImplementedError
-
+    # subclassing DataFrames is significant simpler.
     @property
     def _constructor(self):
         """Interface to subtype pandas properly"""
-        super_cons = super()._constructor
-
-        def _constructor_with_fallback(*args, **kwargs):
-            result = super_cons(*args, **kwargs)
-            if not self._check(result):
-                return result
-            return self.__class__(result)
-
-        return _constructor_with_fallback
+        return partial(self.__class__, validate=False)
 
 
 class TrackintelBase(object):

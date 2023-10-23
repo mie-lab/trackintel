@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import MultiPoint, Point
 
+from trackintel import Staypoints, Triplegs
 from trackintel.preprocessing.util import _explode_agg
 
 
@@ -66,6 +67,8 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     trips can also be directly generated using the tripleg accessor
     >>> staypoints, triplegs, trips = triplegs.as_triplegs.generate_trips(staypoints)
     """
+    Triplegs.validate(triplegs)
+    Staypoints.validate(staypoints)
     gap_threshold = pd.to_timedelta(gap_threshold, unit="min")
     sp_tpls = _concat_staypoints_triplegs(staypoints, triplegs, add_geometry)
 

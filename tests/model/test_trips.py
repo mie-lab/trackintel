@@ -46,38 +46,3 @@ class TestTrips:
         # check that it works with other geometry name
         with pytest.raises(ValueError, match="The geometry must be a MultiPoint"):
             trips_other_geom_name.as_trips
-
-
-class TestTripsDataFrame:
-    """Test TripsDataFrame class"""
-
-    def test_check_suceeding(self, testdata_trips):
-        """Test if check returns True on valid trips"""
-        assert TripsDataFrame._check(testdata_trips)
-
-    def test_check_missing_columns(self, testdata_trips):
-        """Test if check returns False if column is missing"""
-        assert not TripsDataFrame._check(testdata_trips.drop(columns="user_id"))
-
-    def test_check_no_tz(self, testdata_trips):
-        """Test if check returns False if datetime columns have no tz"""
-        tmp = testdata_trips["started_at"]
-        testdata_trips["started_at"] = testdata_trips["started_at"].dt.tz_localize(None)
-        assert not TripsDataFrame._check(testdata_trips)
-        testdata_trips["started_at"] = tmp
-        testdata_trips["finished_at"] = testdata_trips["finished_at"].dt.tz_localize(None)
-        assert not TripsDataFrame._check(testdata_trips)
-
-
-class TestTripsGeoDataFrame:
-    """Test TripsGeoDataFrame class"""
-
-    def test_check_false_geometry_type(self, testdata_trips):
-        """Test if check returns False if geometry type is wrong"""
-        testdata_trips["geom"] = Point((13.476808430, 48.573711823))
-        assert not TripsGeoDataFrame._check(testdata_trips)
-
-    def test_check_ignore_false_geometry_type(self, testdata_trips):
-        """Test if check returns True if geometry type is wrong but validate_geometry is set to False"""
-        testdata_trips["geom"] = Point((13.476808430, 48.573711823))
-        assert TripsGeoDataFrame._check(testdata_trips, validate_geometry=False)

@@ -263,7 +263,7 @@ class TestGenerate_trips:
 
     def test_only_staypoints_in_trip(self):
         """Test that trips with only staypoints (non-activities) are deleted."""
-        start = pd.Timestamp("2021-07-11 8:00:00")
+        start = pd.Timestamp("2021-07-11 8:00:00", tz="utc")
         h = pd.to_timedelta("1h")
         sp_tpls = [
             {"is_activity": True, "type": "staypoint"},
@@ -278,8 +278,12 @@ class TestGenerate_trips:
             d["started_at"] = start + n * h
             d["finished_at"] = d["started_at"] + h
         sp_tpls = pd.DataFrame(sp_tpls)
-        sp = sp_tpls[sp_tpls["type"] == "staypoint"]
-        tpls = sp_tpls[sp_tpls["type"] == "tripleg"]
+        sp = sp_tpls[sp_tpls["type"] == "staypoint"].copy()
+        tpls = sp_tpls[sp_tpls["type"] == "tripleg"].copy()
+        sp["geom"] = Point(0, 0)
+        tpls["geom"] = LineString([[1, 1], [2, 2]])
+        sp = gpd.GeoDataFrame(sp, geometry="geom")
+        tpls = gpd.GeoDataFrame(tpls, geometry="geom")
         sp_, tpls_, trips = generate_trips(sp, tpls, add_geometry=False)
         trip_id_truth = pd.Series([None, None, None, 0, None], dtype="Int64")
         trip_id_truth.index = sp_.index  # don't check index
@@ -289,7 +293,7 @@ class TestGenerate_trips:
 
     def test_sp_tpls_index(self):
         """Test if staypoint and tripleg index are identical before and after generating trips."""
-        start = pd.Timestamp("2021-07-11 8:00:00")
+        start = pd.Timestamp("2021-07-11 8:00:00", tz="utc")
         h = pd.to_timedelta("1h")
         sp_tpls = [
             {"is_activity": True, "type": "staypoint"},
@@ -304,8 +308,12 @@ class TestGenerate_trips:
             d["finished_at"] = d["started_at"] + h
 
         sp_tpls = pd.DataFrame(sp_tpls)
-        sp = sp_tpls[sp_tpls["type"] == "staypoint"]
-        tpls = sp_tpls[sp_tpls["type"] != "staypoint"]
+        sp = sp_tpls[sp_tpls["type"] == "staypoint"].copy()
+        tpls = sp_tpls[sp_tpls["type"] != "staypoint"].copy()
+        sp["geom"] = Point(0, 0)
+        tpls["geom"] = LineString([(0, 0), (1, 1)])
+        sp = gpd.GeoDataFrame(sp, geometry="geom")
+        tpls = gpd.GeoDataFrame(tpls, geometry="geom")
         tpls.index.name = "something_long_and_obscure"
         sp.index.name = "even_obscurer"
         sp_, tpls_, _ = generate_trips(sp, tpls, add_geometry=False)

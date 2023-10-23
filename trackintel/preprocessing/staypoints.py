@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.cluster import DBSCAN
 import warnings
 
+from trackintel import Staypoints
 from trackintel.geogr.distances import meters_to_decimal_degrees, check_gdf_planar
 from trackintel.preprocessing.util import applyParallel, angle_centroid_multipoints
 
@@ -71,6 +72,7 @@ def generate_locations(
     --------
     >>> sp.as_staypoints.generate_locations(method='dbscan', epsilon=100, num_samples=1)
     """
+    Staypoints.validate(staypoints)
     if agg_level not in ["user", "dataset"]:
         raise AttributeError(f"agg_level '{agg_level}' is unknown. Supported values are ['user', 'dataset'].")
     if method not in ["dbscan"]:

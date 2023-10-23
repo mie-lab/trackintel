@@ -43,9 +43,10 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
     >>> df.as_staypoints.generate_locations()
     """
 
-    def __init__(self, *args, validate_geometry=True, **kwargs):
+    def __init__(self, *args, validate=True, **kwargs):
         super().__init__(*args, **kwargs)
-        self._validate(self, validate_geometry=validate_geometry)
+        if validate:
+            self.validate(self)
 
     # create circular reference directly -> avoid second call of init via accessor
     @property
@@ -53,7 +54,7 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         return self
 
     @staticmethod
-    def _validate(obj, validate_geometry=True):
+    def validate(obj):
         # check columns
         if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
@@ -68,26 +69,12 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
             obj["finished_at"].dtype, pd.DatetimeTZDtype
         ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be tz aware datetime64"
 
-        if validate_geometry:
-            # check geometry
-            assert (
-                obj.geometry.is_valid.all()
-            ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
-            if obj.geometry.iloc[0].geom_type != "Point":
-                raise AttributeError("The geometry must be a Point (only first checked).")
-
-    @staticmethod
-    def _check(obj, validate_geometry=True):
-        """Check does the same as _validate but returns bool instead of potentially raising an error."""
-        if any([c not in obj.columns for c in _required_columns]):
-            return False
-        if not isinstance(obj["started_at"].dtype, pd.DatetimeTZDtype):
-            return False
-        if not isinstance(obj["finished_at"].dtype, pd.DatetimeTZDtype):
-            return False
-        if validate_geometry:
-            return obj.geometry.is_valid.all() and obj.geometry.iloc[0].geom_type == "Point"
-        return True
+        # check geometry
+        assert (
+            obj.geometry.is_valid.all()
+        ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
+        if obj.geometry.iloc[0].geom_type != "Point":
+            raise AttributeError("The geometry must be a Point (only first checked).")
 
     @property
     def center(self):

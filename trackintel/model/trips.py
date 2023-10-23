@@ -89,12 +89,13 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
     >>> df.as_trips.generate_tours()
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, validate=True, **kwargs):
         super().__init__(*args, **kwargs)
-        TripsDataFrame._validate(self)  # static call
+        if validate:
+            TripsDataFrame.validate(self)  # static call
 
     @staticmethod
-    def _validate(obj):
+    def validate(obj):
         if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
                 "To process a DataFrame as a collection of trips, it must have the properties"
@@ -108,16 +109,6 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
         assert isinstance(
             obj["finished_at"].dtype, pd.DatetimeTZDtype
         ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be datetime64 and timezone aware"
-
-    @staticmethod
-    def _check(obj):
-        if any([c not in obj.columns for c in _required_columns]):
-            return False
-        if not isinstance(obj["started_at"].dtype, pd.DatetimeTZDtype):
-            return False
-        if not isinstance(obj["finished_at"].dtype, pd.DatetimeTZDtype):
-            return False
-        return True
 
     @doc(_shared_docs["write_csv"], first_arg="", long="trips", short="trips")
     def to_csv(self, filename, *args, **kwargs):
@@ -180,25 +171,16 @@ class TripsGeoDataFrame(TrackintelGeoDataFrame, TripsDataFrame, gpd.GeoDataFrame
 
     fallback_class = TripsDataFrame
 
-    def __init__(self, *args, validate_geometry=True, **kwargs):
+    def __init__(self, *args, validate=True, **kwargs):
         super().__init__(*args, **kwargs)
-        TripsGeoDataFrame._validate(self, validate_geometry=validate_geometry)
+        if validate:
+            TripsGeoDataFrame.validate(self)
 
     @staticmethod
-    def _validate(self, validate_geometry=True):
-        if not validate_geometry:
-            return
-        # _validate should not be called from the outside -> we can use fact that it is called only from __init__
-        # therefore TrackintelDataFrame validated all the columns and here we only have to validate the geometry
+    def validate(self):
+        TripsDataFrame.validate(self)
         assert (
             self.geometry.is_valid.all()
         ), "Not all geometries are valid. Try x[~x.geometry.is_valid] where x is you GeoDataFrame"
         if self.geometry.iloc[0].geom_type != "MultiPoint":
             raise ValueError("The geometry must be a MultiPoint (only first checked).")
-
-    @staticmethod
-    def _check(self, validate_geometry=True):
-        val = TripsDataFrame._check(self)
-        if not validate_geometry:
-            return val
-        return val and self.geometry.is_valid.all() and self.geometry.iloc[0].geom_type == "MultiPoint"

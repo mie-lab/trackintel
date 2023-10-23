@@ -7,6 +7,7 @@ import pandas as pd
 from shapely.geometry import LineString
 from tqdm import tqdm
 
+from trackintel import Positionfixes, Staypoints
 from trackintel.geogr import check_gdf_planar, point_haversine_dist
 from trackintel.preprocessing.util import _explode_agg, angle_centroid_multipoints, applyParallel
 
@@ -96,6 +97,7 @@ def generate_staypoints(
     similarity based on location history. In Proceedings of the 16th ACM SIGSPATIAL international
     conference on Advances in geographic information systems (p. 34). ACM.
     """
+    Positionfixes.validate(positionfixes)
     # copy the original pfs for adding 'staypoint_id' column
     pfs = positionfixes.copy()
 
@@ -220,6 +222,9 @@ def generate_triplegs(
     --------
     >>> pfs.as_positionfixes.generate_triplegs('between_staypoints', gap_threshold=15)
     """
+    Positionfixes.validate(positionfixes)
+    if staypoints is not None:
+        Staypoints.validate(staypoints)
     # copy the original pfs for adding 'tripleg_id' column
     pfs = positionfixes.copy()
 
