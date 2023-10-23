@@ -34,7 +34,6 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
 
     def __init__(self, *args, validate=True, **kwargs):
         super().__init__(*args, **kwargs)
-        # disable validation after initial creation -> user is responsible for right shape
         if validate:
             self.validate(self)
 
