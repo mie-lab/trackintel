@@ -46,7 +46,6 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         # validate kwarg is necessary as the object is not fully initialised if we call it from _constructor
         # (geometry-link is missing). thus we need a way to stop validating too early.
         super().__init__(*args, **kwargs)
-        # disable validation after initial creation -> user is responsible for right shape
         if validate:
             self.validate(self)
 

@@ -91,7 +91,6 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
 
     def __init__(self, *args, validate=True, **kwargs):
         super().__init__(*args, **kwargs)
-        # disable validation after initial creation -> user is responsible for right shape
         if validate:
             TripsDataFrame.validate(self)  # static call
 
@@ -174,7 +173,6 @@ class TripsGeoDataFrame(TrackintelGeoDataFrame, TripsDataFrame, gpd.GeoDataFrame
 
     def __init__(self, *args, validate=True, **kwargs):
         super().__init__(*args, **kwargs)
-        # disable validation after initial creation -> user is responsible for right shape
         if validate:
             TripsGeoDataFrame.validate(self)
 
