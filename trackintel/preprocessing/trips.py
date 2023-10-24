@@ -15,10 +15,10 @@ def get_trips_grouped(trips, tours):
 
     Parameters
     ----------
-    trips: GeoDataFrame (as trackintel trips)
+    trips: Trips
         Trips dataframe
 
-    tours: GeoDataFrame (as trackintel tours)
+    tours: Tours
         Output of generate_tours function, must contain column "trips" with list of trip ids on tour
 
     Returns
@@ -65,9 +65,9 @@ def generate_tours(
 
     Parameters
     ----------
-    trips : GeoDataFrame (as trackintel trips)
+    trips : Trips
 
-    staypoints : GeoDataFrame (as trackintel staypoints), optional
+    staypoints : Staypoints, default None
         Must have `location_id` column to connect trips via locations to a tour.
         If None, trips will be connected based only by the set distance threshold `max_dist`.
 
@@ -87,15 +87,15 @@ def generate_tours(
 
     Returns
     -------
-    trips_with_tours: GeoDataFrame (as trackintel trips)
+    trips_with_tours: Trips
         Same as `trips`, but with column `tour_id`, containing a list of the tours that the trip is part of (see notes).
 
-    tours: GeoDataFrame (as trackintel tours)
+    tours: Tours
         The generated tours
 
     Examples
     --------
-    >>> trips.as_trips.generate_tours(staypoints)
+    >>> trips.generate_tours(staypoints)
 
     Notes
     -------
@@ -201,13 +201,12 @@ def _generate_tours_user(
 
     Parameters
     ----------
-    user_trip_df : GeoDataFrame (as trackintel trips)
+    user_trip_df : Trips
         The trips have to follow the standard definition for trips DataFrames
 
-    staypoints : GeoDataFrame (as trackintel staypoints, preprocessed to contain location IDs), default None
-        The staypoints have to follow the standard definition for staypoints DataFrames. The location ID column
-        is necessary to connect trips via locations to a tour. If None, trips will be connected based only on a
-        distance threshold `max_dist`.
+    staypoints : Staypoints, optional
+        Must contain location ID column to connect trips via locations to a tour.
+        If None, trips will be connected based only on a distance threshold `max_dist`.
 
     max_dist: float, default 100 (meters)
         Maximum distance between the end point of one trip and the start point of the next trip on a tour.

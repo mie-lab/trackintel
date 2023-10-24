@@ -15,9 +15,9 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
 
     Parameters
     ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
+    staypoints : Staypoints
 
-    triplegs : GeoDataFrame (as trackintel triplegs)
+    triplegs : Triplegs
 
     gap_threshold : float, default 15 (minutes)
         Maximum allowed temporal gap size in minutes. If tracking data is missing for more than
@@ -32,13 +32,13 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
 
     Returns
     -------
-    sp: GeoDataFrame (as trackintel staypoints)
+    sp: Staypoints
         The original staypoints with new columns ``[`trip_id`, `prev_trip_id`, `next_trip_id`]``.
 
-    tpls: GeoDataFrame (as trackintel triplegs)
+    tpls: Triplegs
         The original triplegs with a new column ``[`trip_id`]``.
 
-    trips: (Geo)DataFrame (as trackintel trips)
+    trips: Trips
         The generated trips.
 
     Notes
@@ -65,7 +65,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     >>> staypoints, triplegs, trips = generate_trips(staypoints, triplegs)
 
     trips can also be directly generated using the tripleg accessor
-    >>> staypoints, triplegs, trips = triplegs.as_triplegs.generate_trips(staypoints)
+    >>> staypoints, triplegs, trips = triplegs.generate_trips(staypoints)
     """
     Triplegs.validate(triplegs)
     Staypoints.validate(staypoints)
@@ -233,8 +233,8 @@ def _concat_staypoints_triplegs(staypoints, triplegs, add_geometry):
 
     Parameters
     ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
-    triplegs : GeoDataFrame (as trackintel triplegs)
+    staypoints : Staypoints
+    triplegs : Triplegs
     add_geometry : bool
 
     Returns

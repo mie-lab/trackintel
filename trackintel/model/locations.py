@@ -29,7 +29,7 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
 
     Examples
     --------
-    >>> df.as_locations.to_csv("filename.csv")
+    >>> locations.to_csv("filename.csv")
     """
 
     def __init__(self, *args, validate=True, **kwargs):

@@ -29,7 +29,7 @@ def generate_staypoints(
 
     Parameters
     ----------
-    positionfixes : GeoDataFrame (as trackintel positionfixes)
+    positionfixes : Positionfixes
 
     method : {'sliding'}
         Method to create staypoints. 'sliding' applies a sliding window over the data.
@@ -70,10 +70,10 @@ def generate_staypoints(
 
     Returns
     -------
-    pfs: GeoDataFrame (as trackintel positionfixes)
+    pfs: Positionfixes
         The original positionfixes with a new column ``[`staypoint_id`]``.
 
-    sp: GeoDataFrame (as trackintel staypoints)
+    sp: Staypoints
         The generated staypoints.
 
     Notes
@@ -86,7 +86,7 @@ def generate_staypoints(
 
     Examples
     --------
-    >>> pfs.as_positionfixes.generate_staypoints('sliding', dist_threshold=100)
+    >>> pfs.generate_staypoints('sliding', dist_threshold=100)
 
     References
     ----------
@@ -178,10 +178,10 @@ def generate_triplegs(
 
     Parameters
     ----------
-    positionfixes : GeoDataFrame (as trackintel positionfixes)
+    positionfixes : Positionfixes
         If 'staypoint_id' column is not found, 'staypoints' needs to be provided.
 
-    staypoints : GeoDataFrame (as trackintel staypoints), optional
+    staypoints : Staypoints, optional
         The staypoints (corresponding to the positionfixes). If this is not passed, the
         positionfixes need 'staypoint_id' associated with them.
 
@@ -199,10 +199,10 @@ def generate_triplegs(
 
     Returns
     -------
-    pfs: GeoDataFrame (as trackintel positionfixes)
+    pfs: Positionfixes
         The original positionfixes with a new column ``[`tripleg_id`]``.
 
-    tpls: GeoDataFrame (as trackintel triplegs)
+    tpls: Triplegs
         The generated triplegs.
 
     Notes
@@ -219,7 +219,7 @@ def generate_triplegs(
 
     Examples
     --------
-    >>> pfs.as_positionfixes.generate_triplegs('between_staypoints', gap_threshold=15)
+    >>> pfs.generate_triplegs('between_staypoints', gap_threshold=15)
     """
     Positionfixes.validate(positionfixes)
     if staypoints is not None:
@@ -477,15 +477,15 @@ def _drop_invalid_triplegs(tpls, pfs):
 
     Parameters
     ----------
-    tpls : GeoDataFrame (as trackintel triplegs)
-    pfs : GeoDataFrame (as trackintel positionfixes)
+    tpls : Triplegs
+    pfs : Positionfixes
 
     Returns
     -------
-    tpls: GeoDataFrame (as trackintel triplegs)
+    tpls: Triplegs
         original tpls with invalid geometries removed.
 
-    pfs: GeoDataFrame (as trackintel positionfixes)
+    pfs: Positionfixes
         original pfs with invalid tripleg id set to pd.NA.
 
     Notes

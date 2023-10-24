@@ -11,7 +11,7 @@ def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.
 
     Parameters
     ----------
-    staypoints: GeoDataFrame (as trackintel staypoints)
+    staypoints: Staypoints
 
     method: {'time_threshold'}, default = 'time_threshold'
         - 'time_threshold' : All staypoints with a duration greater than the time_threshold are considered an activity.
@@ -24,12 +24,12 @@ def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.
 
     Returns
     -------
-    staypoints : GeoDataFrame (as trackintel staypoints)
+    staypoints : Staypoints
         Original staypoints with the additional activity column
 
     Examples
     --------
-    >>> sp  = sp.as_staypoints.create_activity_flag(method='time_threshold', time_threshold=15)
+    >>> sp  = sp.create_activity_flag(method='time_threshold', time_threshold=15)
     >>> print(sp['is_activity'])
     """
     if method == "time_threshold":
@@ -51,7 +51,7 @@ def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
 
     Parameters
     ----------
-    triplegs: GeoDataFrame (as trackintel triplegs)
+    triplegs: Triplegs
 
     method: {'simple-coarse'}, default 'simple-coarse'
         The following methods are available for transport mode inference/prediction:
@@ -59,7 +59,7 @@ def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
 
     Returns
     -------
-    triplegs : GeoDataFrame (as trackintel triplegs)
+    triplegs : Triplegs
         The triplegs with added column mode, containing the predicted transport modes.
 
     Notes
@@ -72,7 +72,7 @@ def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
 
     Examples
     --------
-    >>> tpls  = tpls.as_triplegs.predict_transport_mode()
+    >>> tpls  = tpls.predict_transport_mode()
     >>> print(tpls["mode"])
     """
     if method == "simple-coarse":
@@ -95,7 +95,7 @@ def _predict_transport_mode_simple_coarse(triplegs_in, categories):
 
     Parameters
     ----------
-    triplegs_in : GeoDataFrame (as trackintel triplegs)
+    triplegs_in : Triplegs
         The triplegs for the transport mode prediction.
 
     categories : dict, optional

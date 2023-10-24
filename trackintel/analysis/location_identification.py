@@ -8,7 +8,7 @@ def location_identifier(staypoints, method="FREQ", pre_filter=True, **pre_filter
 
     Parameters
     ----------
-    staypoints : Geodataframe (as trackintel staypoints)
+    staypoints : Staypoints
         Staypoints with column "location_id".
 
     method : {'FREQ', 'OSNA'}, default "FREQ"
@@ -26,7 +26,7 @@ def location_identifier(staypoints, method="FREQ", pre_filter=True, **pre_filter
 
     Returns
     -------
-    sp: Geodataframe (as trackintel staypoints)
+    sp: Staypoints
         With additional column `purpose` assigning one of three activity labels {'home', 'work', None}.
 
     Note
@@ -51,7 +51,7 @@ def location_identifier(staypoints, method="FREQ", pre_filter=True, **pre_filter
     if "location_id" not in sp.columns:
         raise KeyError(
             (
-                "To derive activity labels the GeoDataFrame (as trackintel staypoints) must have a column "
+                "To derive activity labels the Staypoints must have a column "
                 f"named 'location_id' but it has [{', '.join(sp.columns)}]"
             )
         )
@@ -86,7 +86,7 @@ def pre_filter_locations(
 
     Parameters
     ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
+    staypoints : Staypoints
         Staypoints with the column "location_id".
 
     agg_level: {"user", "dataset"}, default "user"
@@ -172,7 +172,7 @@ def freq_method(staypoints, *labels):
 
     Parameters
     ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
+    staypoints : Staypoints
         Staypoints with the column "location_id".
 
     labels : collection of str, default ("home", "work")
@@ -180,7 +180,7 @@ def freq_method(staypoints, *labels):
 
     Returns
     -------
-    sp: GeoDataFrame (as trackintel staypoints)
+    sp: Staypoints
         The input staypoints with additional column "purpose".
 
     Examples
@@ -250,12 +250,12 @@ def osna_method(staypoints):
 
     Parameters
     ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
+    staypoints : Staypoints
         Staypoints with the column "location_id".
 
     Returns
     -------
-    GeoDataFrame (as trackintel staypoints)
+    Staypoints
         The input staypoints with additional column "purpose".
 
     Note

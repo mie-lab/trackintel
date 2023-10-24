@@ -69,14 +69,6 @@ All trackintel objects have an ID that is the index of the dataframe [Issue 97](
 See [issue 117](https://github.com/mie-lab/trackintel/issues/117)
 - All docstrings follow the [numpy format](https://numpydoc.readthedocs.io/en/latest/format.html).
 - The example section is mandatory.
-- Naming of trackintel data types in the docstring:
-  - Positionfixes: `GeoDataFrame (as trackintel positionfixes)`  
-  - Staypoints: `GeoDataFrame (as trackintel staypoints)`
-  - Triplegs: `GeoDataFrame (as trackintel triplegs)`
-  - Locations: `GeoDataFrame (as trackintel locations)`  
-  - Trips: `(Geo)DataFrame (as trackintel trips)`
-  - Tours: `DataFrame (as trackintel tours)` 
-
 
 ### Performance benchmarking
 - We use [airspeed velocity](https://asv.readthedocs.io/en/stable/) to benchmark key trackintel functions. 

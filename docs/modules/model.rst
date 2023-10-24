@@ -44,7 +44,7 @@ do not extend the given DataFrame constructs, we provide accessors that validate
 corresponds to a set of constraints, and make functions available on the DataFrames. For example::
 
     df = trackintel.read_positionfixes_csv('data.csv')
-    df.as_positionfixes.generate_staypoints()
+    df.generate_staypoints()
 
 This will read a CSV into a format compatible with the trackintel understanding of a collection of 
 positionfixes, and the second line will wrap the DataFrame with an accessor providing functions such 

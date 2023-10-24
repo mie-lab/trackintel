@@ -66,8 +66,8 @@ pfs, _ = ti.io.dataset_reader.read_geolife(".\tests\data\geolife_long")
 **[2.]** Data model generation. 
 ```python
 # generate staypoints and triplegs
-pfs, sp = pfs.as_positionfixes.generate_staypoints(method='sliding')
-pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp, method='between_staypoints')
+pfs, sp = pfs.generate_staypoints(method='sliding')
+pfs, tpls = pfs.generate_triplegs(sp, method='between_staypoints')
 ```
 
 **[3.]** Visualization.
@@ -79,7 +79,7 @@ ti.plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, radius_sp=10)
 **[4.]** Analysis.
  ```python
 # e.g., predict travel mode labels based on travel speed
-tpls = tpls.as_triplegs.predict_transport_mode()
+tpls = tpls.predict_transport_mode()
 # or calculate the temporal tracking coverage of users
 tracking_coverage = ti.temporal_tracking_quality(tpls, granularity='all')
 ```
@@ -87,8 +87,8 @@ tracking_coverage = ti.temporal_tracking_quality(tpls, granularity='all')
 **[5.]** Save results.
  ```python
 # save the generated results as csv file 
-sp.as_staypoints.to_csv('.\examples\data\sp.csv')
-tpls.as_triplegs.to_csv('.\examples\data\tpls.csv')
+sp.to_csv(r'.\examples\data\sp.csv')
+tpls.to_csv(r'.\examples\data\tpls.csv')
 ```
 
 For example, the plot below shows the generated staypoints and triplegs from the imported raw positionfix data.

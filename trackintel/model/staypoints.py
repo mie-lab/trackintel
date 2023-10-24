@@ -40,7 +40,7 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
 
     Examples
     --------
-    >>> df.as_staypoints.generate_locations()
+    >>> staypoints.generate_locations()
     """
 
     def __init__(self, *args, validate=True, **kwargs):

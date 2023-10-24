@@ -21,9 +21,7 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, geom_co
     Read positionfixes from csv file.
 
     Wraps the pandas read_csv function, extracts longitude and latitude and
-    builds a geopandas GeoDataFrame (POINT). This also validates that the ingested data
-    conforms to the trackintel understanding of positionfixes (see
-    :doc:`/modules/model`).
+    builds a POINT GeoSeries.
 
     Parameters
     ----------
@@ -55,8 +53,7 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, geom_co
 
     Returns
     -------
-    pfs : GeoDataFrame (as trackintel positionfixes)
-        A GeoDataFrame containing the positionfixes.
+    pfs : Positionfixes
 
     Notes
     -----
@@ -97,7 +94,7 @@ def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
 
     Parameters
     ----------
-    positionfixes : GeoDataFrame (as trackintel positionfixes)
+    positionfixes : Positionfixes
 
     filename : str
         The file to write to.
@@ -115,7 +112,7 @@ def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
 
     Examples
     ---------
-    >>> pfs.as_positionfixes.to_csv("export_pfs.csv")
+    >>> pfs.to_csv("export_pfs.csv")
     >>> ti.io.write_positionfixes_csv(pfs, "export_pfs.csv")
     """
     gdf = positionfixes.copy()
@@ -132,8 +129,7 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, geom_col="ge
     Read triplegs from csv file.
 
     Wraps the pandas read_csv function, extracts a WKT for the tripleg geometry (LINESTRING)
-    and builds a geopandas GeoDataFrame. This also validates that the ingested data
-    conforms to the trackintel understanding of triplegs (see :doc:`/modules/model`).
+    and builds a Triplegs instance.
 
     Parameters
     ----------
@@ -165,8 +161,7 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, geom_col="ge
 
     Returns
     -------
-    tpls : GeoDataFrame (as trackintel triplegs)
-        A GeoDataFrame containing the triplegs.
+    tpls : Triplegs
 
     Examples
     --------
@@ -188,7 +183,7 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, geom_col="ge
 
 @doc(
     _shared_docs["write_csv"],
-    first_arg="\ntriplegs : GeoDataFrame (as trackintel triplegs)\n",
+    first_arg="\ntriplegs : Triplegs\n",
     long="triplegs",
     short="tpls",
 )
@@ -201,10 +196,8 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=None, geom_col="
     """
     Read staypoints from csv file.
 
-    Wraps the pandas read_csv function, extracts a WKT for the staypoint
-    geometry (POINT) and builds a geopandas GeoDataFrame. This also validates that
-    the ingested data conforms to the trackintel understanding of staypoints
-    (see :doc:`/modules/model`).
+    Wraps the pandas read_csv function, extracts a WKT for the staypoint geometry (Point)
+    and builds a Staypoints instance.
 
     Parameters
     ----------
@@ -236,8 +229,7 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=None, geom_col="
 
     Returns
     -------
-    sp : GeoDataFrame (as trackintel staypoints)
-        A GeoDataFrame containing the staypoints.
+    sp : Staypoints
 
     Examples
     --------
@@ -259,7 +251,7 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=None, geom_col="
 
 @doc(
     _shared_docs["write_csv"],
-    first_arg="\nstaypoints : GeoDataFrame (as trackintel staypoints)\n",
+    first_arg="\nstaypoints : Staypoints\n",
     long="staypoints",
     short="sp",
 )
@@ -272,10 +264,8 @@ def read_locations_csv(*args, columns=None, index_col=None, crs=None, **kwargs):
     """
     Read locations from csv file.
 
-    Wraps the pandas read_csv function, extracts a WKT for the location
-    center (POINT) (and extent (POLYGON)) and builds a geopandas GeoDataFrame. This also
-    validates that the ingested data conforms to the trackintel understanding
-    of locations (see :doc:`/modules/model`).
+    Wraps the pandas read_csv function, extracts a WKT for the location center geometry (POINT)
+    (and optional extent (POLYGON)) and builds a Locations instance.
 
     Parameters
     ----------
@@ -300,8 +290,7 @@ def read_locations_csv(*args, columns=None, index_col=None, crs=None, **kwargs):
 
     Returns
     -------
-    locs : GeoDataFrame (as trackintel locations)
-        A GeoDataFrame containing the locations.
+    locs : Locations
 
     Examples
     --------
@@ -324,7 +313,7 @@ def read_locations_csv(*args, columns=None, index_col=None, crs=None, **kwargs):
 
 @doc(
     _shared_docs["write_csv"],
-    first_arg="\nlocations : GeoDataFrame (as trackintel locations)\n",
+    first_arg="\nlocations : Locations\n",
     long="locations",
     short="locs",
 )
@@ -336,10 +325,6 @@ def write_locations_csv(locations, filename, *args, **kwargs):
 def read_trips_csv(*args, columns=None, tz=None, index_col=None, geom_col=None, crs=None, **kwargs):
     """
     Read trips from csv file.
-
-    Wraps the pandas read_csv function and extracts proper datetimes. This also
-    validates that the ingested data conforms to the trackintel understanding
-    of trips (see :doc:`/modules/model`).
 
     Parameters
     ----------
@@ -373,8 +358,8 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=None, geom_col=None, 
 
     Returns
     -------
-    trips : (Geo)DataFrame (as trackintel trips)
-        A DataFrame containing the trips. GeoDataFrame if geometry column exists.
+    trips : Trips
+        A TripsDataFrame containing the trips. TripsGeoDataFrame if geometry column exists.
 
     Notes
     -----
@@ -406,9 +391,7 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=None, geom_col=None, 
     return read_trips_gpd(trips, geom_col=geom_col, crs=crs, tz=tz)
 
 
-@doc(
-    _shared_docs["write_csv"], first_arg="\ntrips : (Geo)DataFrame (as trackintel trips)\n", long="trips", short="trips"
-)
+@doc(_shared_docs["write_csv"], first_arg="\ntrips : Trips\n", long="trips", short="trips")
 def write_trips_csv(trips, filename, *args, **kwargs):
     if isinstance(trips, GeoDataFrame):
         trips = trips.to_wkt(rounding_precision=-1, trim=False)
@@ -420,10 +403,6 @@ def write_trips_csv(trips, filename, *args, **kwargs):
 def read_tours_csv(*args, columns=None, index_col=None, tz=None, **kwargs):
     """
     Read tours from csv file.
-
-    Wraps the pandas read_csv function and extracts proper datetimes. This also
-    validates that the ingested data conforms to the trackintel understanding
-    of tours (see :doc:`/modules/model`).
 
     Parameters
     ----------
@@ -444,8 +423,7 @@ def read_tours_csv(*args, columns=None, index_col=None, tz=None, **kwargs):
 
     Returns
     -------
-    tours : DataFrame (as trackintel tours)
-        A DataFrame containing the tours.
+    tours : Tours
 
     Examples
     --------
@@ -462,6 +440,6 @@ def read_tours_csv(*args, columns=None, index_col=None, tz=None, **kwargs):
     return read_tours_gpd(tours, tz=tz)
 
 
-@doc(_shared_docs["write_csv"], first_arg="\ntours : DataFrame (as trackintel tours)\n", long="tours", short="tours")
+@doc(_shared_docs["write_csv"], first_arg="\ntours : Tours\n", long="tours", short="tours")
 def write_tours_csv(tours, filename, *args, **kwargs):
     pd.DataFrame.to_csv(tours, filename, index=True, *args, **kwargs)

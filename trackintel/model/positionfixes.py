@@ -38,7 +38,7 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
 
     Examples
     --------
-    >>> df.as_positionfixes.generate_staypoints()
+    >>> positionfixes.generate_staypoints()
     """
 
     def __init__(self, *args, validate=True, **kwargs):
