@@ -12,6 +12,7 @@ from sklearn.neighbors import NearestNeighbors
 from tqdm import tqdm
 
 from trackintel.preprocessing.util import calc_temp_overlap
+from trackintel import Positionfixes, Staypoints, Triplegs
 
 FEET2METER = 0.3048
 CRS_WGS84 = 4326
@@ -113,7 +114,7 @@ def read_geolife(geolife_path, print_progress=False):
     labels = _get_labels(geolife_path, uids)
     # get the dfs in form of an generator and concatinate them
     gdf = pd.concat(_get_df(geolife_path, uids, print_progress), axis=0, ignore_index=True)
-    gdf = gpd.GeoDataFrame(gdf, geometry="geom", crs=CRS_WGS84)
+    gdf = Positionfixes(gdf, geometry="geom", crs=CRS_WGS84)
     gdf["accuracy"] = np.nan
     gdf.index.name = "id"
     return gdf, labels
@@ -437,7 +438,7 @@ def read_mzmv(mzmv_path):
     tpls = pd.merge(tpls, vp, on=["user_id", "ETNR"], how="left")
 
     # # with the geometry we can build GeoDataFrame
-    tpls = gpd.GeoDataFrame(tpls, geometry="geometry", crs=CRS_WGS84)
+    tpls = Triplegs(tpls, geometry="geometry", crs=CRS_WGS84)
     tpls.index.name = "tripleg_id"
 
     # # set invalid geometries as missing geometries
@@ -669,7 +670,7 @@ def _mzmv_generate_sp(tpls, zf):
 
     sp["XY"] = gpd.points_from_xy(sp["X"], sp["Y"], crs=CRS_WGS84)
     sp["XY_CH1904"] = gpd.points_from_xy(sp["X_CH1903"], sp["Y_CH1903"], crs=CRS_CH1903)
-    sp = gpd.GeoDataFrame(sp, geometry="XY", crs=CRS_WGS84)
+    sp = Staypoints(sp, geometry="XY", crs=CRS_WGS84)
     sp.index.name = "staypoint_id"
 
     # fix datetime dtype

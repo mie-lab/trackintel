@@ -1,9 +1,9 @@
 import os
 import pytest
+import geopandas as gpd
 from shapely.geometry import Point
 
 import trackintel as ti
-from trackintel import TripsDataFrame, TripsGeoDataFrame
 
 
 @pytest.fixture
@@ -11,7 +11,8 @@ def testdata_trips():
     """Read trips test data from file."""
     path = os.path.join("tests", "data", "geolife_long", "trips.csv")
     test_trips = ti.read_trips_csv(path, index_col="id", geom_col="geom")
-    return test_trips
+    # we want test the accessor of GeoDataFrames and not Trips
+    return gpd.GeoDataFrame(test_trips)
 
 
 class TestTrips:

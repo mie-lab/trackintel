@@ -302,6 +302,12 @@ class TestGenerate_staypoints:
         with pytest.warns(UserWarning, match=warn_string):
             pfs, sp = pfs.as_positionfixes.generate_staypoints()
 
+    def test_sp_type(self):
+        """Test if sp are really Staypoints"""
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        _, sp = pfs.generate_staypoints()
+        assert isinstance(sp, ti.Staypoints)
+
 
 class Test_Generate_staypoints_sliding_user:
     """Test for _generate_staypoints_sliding_user."""
@@ -554,3 +560,8 @@ class TestGenerate_triplegs:
         # set user ID to string
         pfs["user_id"] = pfs["user_id"].astype(str) + "not_numerical_interpretable_str"
         pfs, _ = pfs.as_positionfixes.generate_triplegs()
+
+    def test_tpls_type(self, example_positionfixes_isolated):
+        """Test that Tripleg generation returns correct type"""
+        _, tpls = example_positionfixes_isolated.as_positionfixes.generate_triplegs()
+        assert isinstance(tpls, ti.Triplegs)

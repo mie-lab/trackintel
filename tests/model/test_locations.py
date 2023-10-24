@@ -1,6 +1,7 @@
 import os
 
 import pytest
+import geopandas as gpd
 from shapely.geometry import LineString
 
 import trackintel as ti
@@ -16,7 +17,8 @@ def testdata_locs():
         method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
     )
     locs.as_locations
-    return locs
+    # we want test the accessor of GeoDataFrames and not Locations
+    return gpd.GeoDataFrame(locs)
 
 
 class TestLocations:

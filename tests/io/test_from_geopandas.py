@@ -34,9 +34,8 @@ def example_positionfixes():
         {"user_id": 0, "tracked_at": t2, "geom": p2},
         {"user_id": 1, "tracked_at": t3, "geom": p3},
     ]
-    pfs = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+    pfs = ti.Positionfixes(data=list_dict, geometry="geom", crs="EPSG:4326")
     pfs.index.name = "id"
-    pfs.as_positionfixes
     return pfs
 
 
@@ -142,6 +141,12 @@ class TestRead_Positionfixes_Gpd:
         example_positionfixes.rename(columns=mapper, inplace=True)
         assert_geodataframe_equal(example_positionfixes, pfs)
 
+    def test_type(self, example_positionfixes):
+        """Test if return value is of right type"""
+        pfs = gpd.GeoDataFrame(example_positionfixes)
+        pfs = read_positionfixes_gpd(pfs)
+        assert isinstance(pfs, ti.Positionfixes)
+
 
 class TestRead_Triplegs_Gpd:
     """Test `read_triplegs_gpd()` function."""
@@ -170,6 +175,12 @@ class TestRead_Triplegs_Gpd:
         gdf.rename(columns=mapper, inplace=True)
 
         assert_index_equal(tpls.columns, gdf.columns)
+
+    def test_type(self):
+        """Test if return value is of right type"""
+        tpls = gpd.read_file(os.path.join("tests", "data", "triplegs.geojson"))
+        tpls = read_triplegs_gpd(tpls, user_id="User", geom_col="geometry", crs="EPSG:4326", tz="utc")
+        assert isinstance(tpls, ti.Triplegs)
 
 
 class TestRead_Staypoints_Gpd:
@@ -200,6 +211,12 @@ class TestRead_Staypoints_Gpd:
 
         assert_index_equal(gdf.columns, sp.columns)
 
+    def test_type(self):
+        """Test if return value is of right type"""
+        gdf = gpd.read_file(os.path.join("tests", "data", "staypoints.geojson"))
+        sp = read_staypoints_gpd(gdf, "start_time", "end_time", geom_col="geometry", crs="EPSG:4326", tz="utc")
+        assert isinstance(sp, ti.Staypoints)
+
 
 @pytest.fixture()
 def example_locations():
@@ -212,14 +229,13 @@ def example_locations():
         {"user_id": 0, "center": p2},
         {"user_id": 1, "center": p2},
     ]
-    locs = gpd.GeoDataFrame(data=list_dict, geometry="center", crs="EPSG:4326")
+    locs = ti.Locations(data=list_dict, geometry="center", crs="EPSG:4326")
     locs.index.name = "id"
 
     coords = [[8.45, 47.6], [8.45, 47.4], [8.55, 47.4], [8.55, 47.6], [8.45, 47.6]]
     extent = Polygon(coords)
     locs["extent"] = extent  # broadcasting
     locs["extent"] = gpd.GeoSeries(locs["extent"])  # dtype
-    locs.as_locations
     return locs
 
 
@@ -257,6 +273,12 @@ class TestRead_Locations_Gpd:
         example_locations.rename(columns=mapper, inplace=True)
         assert_geodataframe_equal(locs, example_locations)
 
+    def test_type(self):
+        """Test if return value is of right type"""
+        gdf = gpd.read_file(os.path.join("tests", "data", "locations.geojson"))
+        locs = read_locations_gpd(gdf, user_id="User", center="geometry", crs="EPSG:4326")
+        assert isinstance(locs, ti.Locations)
+
 
 @pytest.fixture
 def example_trips():
@@ -275,9 +297,8 @@ def example_trips():
     for n, d in enumerate(list_dict):
         d["started_at"] = start + 4 * n * h
         d["finished_at"] = d["started_at"] + h
-    trips = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:2056")
+    trips = ti.Trips(data=list_dict, geometry="geom", crs="EPSG:2056")
     trips.index.name = "id"
-    trips.as_trips
     return trips
 
 
@@ -309,7 +330,7 @@ class TestRead_Trips_Gpd:
     def test_without_geometry(self, example_trips):
         """Test if DataFrame without geometry stays the same."""
         columns_without_geom = example_trips.columns.difference(["geom"])
-        trips = pd.DataFrame(example_trips[columns_without_geom], copy=True)
+        trips = ti.Trips(example_trips[columns_without_geom], copy=True)
         trips_after_function = read_trips_gpd(trips)
         assert_frame_equal(trips, trips_after_function)
 
@@ -333,6 +354,12 @@ class TestRead_Trips_Gpd:
         example_trips["started_at"] = pd.to_datetime(example_trips["started_at"], utc=True)
         assert_geodataframe_equal(example_trips, trips)
 
+    def test_type(self, example_trips):
+        """Test if return value is of right type"""
+        df = gpd.GeoDataFrame(example_trips)
+        trips = read_trips_gpd(df, tz="utc")
+        assert isinstance(trips, ti.TripsGeoDataFrame)
+
 
 @pytest.fixture
 def example_tours():
@@ -345,9 +372,8 @@ def example_tours():
         {"user_id": 0, "started_at": start + 2 * h, "finished_at": start + 3 * h},
         {"user_id": 1, "started_at": start + 4 * h, "finished_at": start + 5 * h},
     ]
-    tours = pd.DataFrame(data=list_dict)
+    tours = ti.Tours(data=list_dict)
     tours.index.name = "id"
-    tours.as_tours
     return tours
 
 
@@ -371,3 +397,9 @@ class TestRead_Tours_Gpd:
         tours = read_tours_gpd(example_tours, mapper=mapper)
         example_tours.rename(columns=mapper, inplace=True)
         assert_frame_equal(tours, example_tours)
+
+    def test_type(self, example_tours):
+        """Test if return value is of right type"""
+        gdf = pd.DataFrame(example_tours)
+        tours = read_tours_gpd(gdf, tz="utc")
+        assert isinstance(tours, ti.Tours)

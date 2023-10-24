@@ -389,6 +389,12 @@ class TestGenerate_trips:
         with pytest.raises(AssertionError, match=error_msg):
             generate_trips(sp, tpls)
 
+    def test_trips_type(self, example_triplegs):
+        """Test if trips are really Trips"""
+        sp, tpls = example_triplegs
+        _, _, trips = generate_trips(sp, tpls)
+        assert isinstance(trips, ti.TripsGeoDataFrame)
+
 
 def _create_debug_sp_tpls_data(sp, tpls, gap_threshold):
     """Preprocess sp and tpls for "test_generate_trips_*."""

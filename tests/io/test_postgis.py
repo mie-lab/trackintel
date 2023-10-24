@@ -64,9 +64,8 @@ def example_positionfixes():
         {"user_id": 0, "tracked_at": t2, "geom": p2},
         {"user_id": 1, "tracked_at": t3, "geom": p3},
     ]
-    pfs = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+    pfs = ti.Positionfixes(data=list_dict, geometry="geom", crs="EPSG:4326")
     pfs.index.name = "id"
-    pfs.as_positionfixes
     return pfs
 
 
@@ -87,9 +86,8 @@ def example_staypoints():
         {"user_id": 0, "started_at": t2, "finished_at": t3, "geom": p2},
         {"user_id": 1, "started_at": t3, "finished_at": t3 + one_hour, "geom": p3},
     ]
-    sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+    sp = ti.Staypoints(data=list_dict, geometry="geom", crs="EPSG:4326")
     sp.index.name = "id"
-    sp.as_staypoints
     return sp
 
 
@@ -112,10 +110,9 @@ def example_triplegs():
         {"id": 2, "user_id": 1, "started_at": t3, "finished_at": t3 + one_hour, "geom": g3},
     ]
 
-    tpls = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+    tpls = ti.Triplegs(data=list_dict, geometry="geom", crs="EPSG:4326")
     tpls.set_index("id", inplace=True)
 
-    tpls.as_triplegs
     return tpls
 
 
@@ -131,9 +128,8 @@ def example_locations():
         {"user_id": 0, "center": p2},
         {"user_id": 1, "center": p3},
     ]
-    locs = gpd.GeoDataFrame(data=list_dict, geometry="center", crs="EPSG:4326")
+    locs = ti.Locations(data=list_dict, geometry="center", crs="EPSG:4326")
     locs.index.name = "id"
-    locs.as_locations
     return locs
 
 
@@ -156,9 +152,8 @@ def example_trips():
             "destination_staypoint_id": 1,
         },
     ]
-    trips = pd.DataFrame(data=list_dict)
+    trips = ti.Trips(data=list_dict)
     trips.index.name = "id"
-    trips.as_trips
     return trips
 
 
@@ -175,9 +170,8 @@ def example_tours():
         {"user_id": 0, "started_at": t2, "finished_at": t2 + h},
         {"user_id": 1, "started_at": t3, "finished_at": t3 + h},
     ]
-    tours = pd.DataFrame(data=list_dict)
+    tours = ti.Tours(data=list_dict)
     tours.index.name = "id"
-    tours.as_tours
     return tours
 
 
@@ -651,7 +645,7 @@ class TestTrips:
         """Test if read with geometry works."""
         mp1 = MultiPoint([(0.0, 0.0), (1.0, 1.0)])
         mp2 = MultiPoint([(2.0, 2.0), (3.0, 3.0)])
-        trips = gpd.GeoDataFrame(example_trips, copy=True, geometry=[mp1, mp2, mp2], crs="EPSG:4326")
+        trips = ti.Trips(example_trips, copy=True, geometry=[mp1, mp2, mp2], crs="EPSG:4326")
         conn_string, conn = conn_postgis
         table = "trips"
         sql = f"SELECT * FROM {table}"

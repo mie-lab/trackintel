@@ -478,6 +478,13 @@ class TestGenerate_locations:
         with pytest.raises(KeyError, match=msg):
             example_staypoints.as_staypoints.generate_locations(activities_only=True)
 
+    def test_location_type(self, example_staypoints):
+        """Test that returned locations is of type Locations"""
+        _, locs = example_staypoints.as_staypoints.generate_locations(
+            method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="dataset"
+        )
+        assert isinstance(locs, ti.Locations)
+
 
 class TestMergeStaypoints:
     def test_merge_staypoints(self, example_staypoints_merge):

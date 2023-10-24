@@ -1,6 +1,8 @@
 import pytest
 import os
 
+import geopandas as gpd
+
 import trackintel as ti
 from trackintel import Tours
 
@@ -10,7 +12,8 @@ def test_tours():
     """Read test data from file"""
     tours_file = os.path.join("tests", "data", "tours.csv")
     tours = ti.read_tours_csv(tours_file, sep=";", index_col="id")
-    return tours
+    # we want test the accessor of GeoDataFrames and not Tours
+    return gpd.GeoDataFrame(tours)
 
 
 class TestTours:

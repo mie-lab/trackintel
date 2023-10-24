@@ -172,7 +172,7 @@ class TripsGeoDataFrame(TrackintelGeoDataFrame, TripsDataFrame, gpd.GeoDataFrame
     fallback_class = TripsDataFrame
 
     def __init__(self, *args, validate=True, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, validate=validate, **kwargs)
         if validate:
             TripsGeoDataFrame.validate(self)
 

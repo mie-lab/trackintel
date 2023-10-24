@@ -1,6 +1,7 @@
 import os
 
 import pytest
+import geopandas as gpd
 from shapely.geometry import Point
 
 import trackintel as ti
@@ -13,8 +14,8 @@ def testdata_tpls():
     pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
     pfs, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
     _, tpls = pfs.as_positionfixes.generate_triplegs(sp, method="between_staypoints")
-
-    return tpls
+    # we want test the accessor of GeoDataFrames and not Triplegs
+    return gpd.GeoDataFrame(tpls)
 
 
 class TestTriplegs:
