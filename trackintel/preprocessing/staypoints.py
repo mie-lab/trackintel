@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.cluster import DBSCAN
 import warnings
 
-from trackintel import Staypoints, Locations
+from trackintel import Staypoints, Locations, Triplegs
 from trackintel.geogr.distances import meters_to_decimal_degrees, check_gdf_planar
 from trackintel.preprocessing.util import applyParallel, angle_centroid_multipoints
 
@@ -187,7 +187,7 @@ def generate_locations(
     sp["location_id"] = sp["location_id"].astype("Int64")
     # user_id of locs should be the same as sp
     locs["user_id"] = locs["user_id"].astype(sp["user_id"].dtype)
-    if len(locs) <= 0:
+    if len(locs) == 0:
         warnings.warn("No locations can be generated, returning empty locs.")
         return sp, locs
     return Staypoints(sp), Locations(locs)

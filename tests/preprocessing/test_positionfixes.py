@@ -562,5 +562,6 @@ class TestGenerate_triplegs:
         pfs, _ = pfs.as_positionfixes.generate_triplegs()
 
     def test_tpls_type(self, example_positionfixes_isolated):
+        """Test that Tripleg generation returns correct type"""
         _, tpls = example_positionfixes_isolated.as_positionfixes.generate_triplegs()
         assert isinstance(tpls, ti.Triplegs)

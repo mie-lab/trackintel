@@ -159,7 +159,7 @@ def generate_staypoints(
     # user_id of sp should be the same as ret_pfs
     sp["user_id"] = sp["user_id"].astype(pfs["user_id"].dtype)
 
-    if len(sp) <= 0:
+    if len(sp) == 0:
         warnings.warn("No staypoints can be generated, returning empty sp.")
         return pfs, sp
 
@@ -388,7 +388,7 @@ def generate_triplegs(
 
         # user_id of tpls should be the same as pfs
         tpls["user_id"] = tpls["user_id"].astype(pfs["user_id"].dtype)
-        if len(tpls) <= 0:
+        if len(tpls) == 0:
             warnings.warn("No triplegs can be generated, returning empty tpls.")
             return pfs, tpls
 
