@@ -326,6 +326,8 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=None, geom_col=None, 
     """
     Read trips from csv file.
 
+    Wraps the pandas read_csv function and builds a Trips instance.
+
     Parameters
     ----------
     args
