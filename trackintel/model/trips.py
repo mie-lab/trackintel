@@ -43,7 +43,7 @@ class Trips:
 
     Examples
     --------
-    >>> df.as_trips.generate_tours()
+    >>> trips.generate_tours()
     """
 
     def __new__(cls, *args, **kwargs):
@@ -86,7 +86,7 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
 
     Examples
     --------
-    >>> df.as_trips.generate_tours()
+    >>> trips.generate_tours()
     """
 
     def __init__(self, *args, validate=True, **kwargs):
@@ -166,7 +166,7 @@ class TripsGeoDataFrame(TrackintelGeoDataFrame, TripsDataFrame, gpd.GeoDataFrame
 
     Examples
     --------
-    >>> df.as_trips.generate_tours()
+    >>> trips.generate_tours()
     """
 
     fallback_class = TripsDataFrame

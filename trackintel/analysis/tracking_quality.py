@@ -10,7 +10,7 @@ def temporal_tracking_quality(source, granularity="all"):
 
     Parameters
     ----------
-    df : GeoDataFrame (as trackintel datamodels)
+    df : Trackintel class
         The source dataframe to calculate temporal tracking quality.
 
     granularity : {"all", "day", "week", "weekday", "hour"}
@@ -132,7 +132,7 @@ def _get_tracking_quality_user(df, granularity="all"):
 
     Parameters
     ----------
-    df : GeoDataFrame (as trackintel datamodels)
+    df : Trackintel class
         The source dataframe
 
     granularity : {"all", "day", "weekday", "week", "hour"}, default "all"
@@ -175,7 +175,7 @@ def _split_overlaps(source, granularity="day"):
 
     Parameters
     ----------
-    source : GeoDataFrame (as trackintel datamodels)
+    source : Trackintel class
         The GeoDataFrame to perform the split on.
 
     granularity : {'day', 'hour'}, default 'day'
@@ -184,8 +184,8 @@ def _split_overlaps(source, granularity="day"):
 
     Returns
     -------
-    GeoDataFrame (as trackintel datamodels)
-        The GeoDataFrame object after the splitting
+    Trackintel class
+        The input object after the splitting
     """
     freq = "H" if granularity == "hour" else "D"
     gdf = source.copy()

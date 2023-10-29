@@ -9,7 +9,7 @@ def calculate_modal_split(tpls, freq=None, metric="count", per_user=False, norm=
 
     Parameters
     ----------
-    tpls : GeoDataFrame (as trackintel triplegs)
+    tpls : Triplegs
         triplegs require the column `mode`.
     freq : str
         frequency string passed on as `freq` keyword to the pandas.Grouper class. If `freq=None` the modal split is
@@ -82,7 +82,7 @@ def _calculate_length(tpls):
 
     Parameters
     ----------
-    tpls : GeoDataFrame (as trackintel triplegs)
+    tpls : Triplegs
     """
     if check_gdf_planar(tpls):
         return tpls.length  # if planar use geopandas function

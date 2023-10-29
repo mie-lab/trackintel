@@ -36,7 +36,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
 
     Examples
     --------
-    >>> df.as_triplegs.generate_trips()
+    >>> triplegs.generate_trips()
     """
 
     def __init__(self, *args, validate=True, **kwargs):

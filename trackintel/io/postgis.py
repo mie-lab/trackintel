@@ -129,7 +129,7 @@ def read_positionfixes_postgis(
 
 @doc(
     _shared_docs["write_postgis"],
-    first_arg="\npositionfixes : GeoDataFrame (as trackintel positionfixes)\n    The positionfixes to store to the database.\n",
+    first_arg="\npositionfixes : Positionfixes\n    The positionfixes to store to the database.\n",
     long="positionfixes",
     short="pfs",
 )
@@ -226,7 +226,7 @@ def read_triplegs_postgis(
 
 @doc(
     _shared_docs["write_postgis"],
-    first_arg="\ntriplegs : GeoDataFrame (as trackintel triplegs)\n    The triplegs to store to the database.\n",
+    first_arg="\ntriplegs : Triplegs\n    The triplegs to store to the database.\n",
     long="triplegs",
     short="tpls",
 )
@@ -335,7 +335,7 @@ def read_staypoints_postgis(
 
 @doc(
     _shared_docs["write_postgis"],
-    first_arg="\nstaypoints : GeoDataFrame (as trackintel staypoints)\n    The staypoints to store to the database.\n",
+    first_arg="\nstaypoints : Staypoints\n    The staypoints to store to the database.\n",
     long="staypoints",
     short="sp",
 )
@@ -450,7 +450,7 @@ def read_locations_postgis(
 
 @doc(
     _shared_docs["write_postgis"],
-    first_arg="\nlocations : GeoDataFrame (as trackintel locations)\n    The locations to store to the database.\n",
+    first_arg="\nlocations : Locations\n    The locations to store to the database.\n",
     long="locations",
     short="locs",
 )
@@ -586,7 +586,7 @@ def read_trips_postgis(
 
 @doc(
     _shared_docs["write_postgis"],
-    first_arg="\ntrips : GeoDataFrame (as trackintel trips)\n    The trips to store to the database.\n",
+    first_arg="\ntrips : Trips\n    The trips to store to the database.\n",
     long="trips",
     short="trips",
 )
@@ -680,8 +680,7 @@ def read_tours_postgis(
 
     Returns
     -------
-    GeoDataFrame (as trackintel tours)
-        A GeoDataFrame containing the tours.
+    Tours
 
     Examples
     --------
@@ -717,7 +716,7 @@ def read_tours_postgis(
 
 @doc(
     _shared_docs["write_postgis"],
-    first_arg="\ntours : GeoDataFrame (as trackintel tours)\n    The tours to store to the database.\n",
+    first_arg="\ntours : Tours\n    The tours to store to the database.\n",
     long="tours",
     short="tours",
 )

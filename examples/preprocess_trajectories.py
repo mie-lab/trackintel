@@ -15,7 +15,7 @@ logging.basicConfig(filename="examples/log/preprocessing.log", level=logging.INF
 pfs = ti.read_positionfixes_csv("examples/data/geolife_trajectory.csv", sep=";", crs="EPSG:4326", index_col=None)
 ti.plot(filename="examples/out/gps_trajectory_positionfixes.png", positionfixes=pfs, plot_osm=True)
 
-_, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=100, time_threshold=5)
+_, sp = pfs.generate_staypoints(method="sliding", dist_threshold=100, time_threshold=5)
 ti.plot(
     filename="examples/out/gps_trajectory_staypoints.png",
     staypoints=sp,
@@ -24,7 +24,7 @@ ti.plot(
     plot_osm=True,
 )
 
-_, locs = sp.as_staypoints.generate_locations(method="dbscan", epsilon=100, num_samples=3)
+_, locs = sp.generate_locations(method="dbscan", epsilon=100, num_samples=3)
 ti.plot(
     filename="examples/out/gps_trajectory_locations.png",
     locations=locs,
@@ -35,7 +35,7 @@ ti.plot(
     plot_osm=True,
 )
 
-_, tpls = pfs.as_positionfixes.generate_triplegs(staypoints=sp)
+_, tpls = pfs.generate_triplegs(staypoints=sp)
 ti.plot(
     filename="examples/out/gpsies_trajectory_triplegs.png", triplegs=tpls, staypoints=sp, radius_sp=100, plot_osm=True
 )
@@ -44,7 +44,7 @@ ti.plot(
 pfs = ti.read_positionfixes_csv("examples/data/geolife_trajectory.csv", sep=";", crs="EPSG:4326", index_col=None)
 ti.plot(filename="examples/out/geolife_trajectory_positionfixes.png", positionfixes=pfs)
 
-_, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=100, time_threshold=10)
+_, sp = pfs.generate_staypoints(method="sliding", dist_threshold=100, time_threshold=10)
 ti.plot(
     filename="examples/out/geolife_trajectory_staypoints.png",
     staypoints=sp,
@@ -55,7 +55,7 @@ ti.plot(
 
 # Google trajectory.
 pfs = ti.read_positionfixes_csv("examples/data/google_trajectory.csv", sep=";", crs="EPSG:4326", index_col=None)
-_, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=75, time_threshold=10)
+_, sp = pfs.generate_staypoints(method="sliding", dist_threshold=75, time_threshold=10)
 ti.plot(
     filename="examples/out/google_trajectory_staypoints.png",
     staypoints=sp,
@@ -68,7 +68,7 @@ ti.plot(
 pfs = ti.read_positionfixes_csv(
     "examples/data/posmo_trajectory.csv", sep=";", crs="EPSG:4326", index_col=None, tz="UTC"
 )
-_, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=50, time_threshold=1)
+_, sp = pfs.generate_staypoints(method="sliding", dist_threshold=50, time_threshold=1)
 ti.plot(
     filename="examples/out/posmo_trajectory_staypoints.png",
     staypoints=sp,

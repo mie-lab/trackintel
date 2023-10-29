@@ -33,7 +33,7 @@ class Tours(TrackintelBase, TrackintelDataFrame):
 
     Examples
     --------
-    >>> df.as_tours.to_csv("filename.csv")
+    >>> tours.to_csv("filename.csv")
     """
 
     def __init__(self, *args, validate=True, **kwargs):

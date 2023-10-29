@@ -41,7 +41,7 @@ def read_positionfixes_gpd(
 
     Returns
     -------
-    pfs : GeoDataFrame (as trackintel positionfixes)
+    pfs : Positionfixes
         A GeoDataFrame containing the positionfixes.
 
     Examples
@@ -101,7 +101,7 @@ def read_staypoints_gpd(
 
     Returns
     -------
-    sp : GeoDataFrame (as trackintel staypoints)
+    sp : Staypoints
         A GeoDataFrame containing the staypoints
 
     Examples
@@ -162,7 +162,7 @@ def read_triplegs_gpd(
 
     Returns
     -------
-    tpls : GeoDataFrame (as trackintel triplegs)
+    tpls : Triplegs
         A GeoDataFrame containing the triplegs
 
     Examples
@@ -230,8 +230,7 @@ def read_trips_gpd(
 
     Returns
     -------
-    trips : (Geo)DataFrame (as trackintel trips)
-        A (Geo)DataFrame containing the trips.
+    trips : Trips
 
     Examples
     --------
@@ -282,8 +281,7 @@ def read_locations_gpd(gdf, user_id="user_id", center="center", extent=None, crs
 
     Returns
     -------
-    locs : GeoDataFrame (as trackintel locations)
-        A GeoDataFrame containing the locations.
+    locs : Locations
 
     Examples
     --------
@@ -338,8 +336,7 @@ def read_tours_gpd(
 
     Returns
     -------
-    tours : GeoDataFrame (as trackintel tours)
-        A GeoDataFrame containing the tours
+    tours : Tours
     """
     columns = {
         user_id: "user_id",

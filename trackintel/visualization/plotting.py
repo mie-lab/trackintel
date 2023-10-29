@@ -177,10 +177,10 @@ def _prepare_frames(positionfixes, staypoints, triplegs, locations):
 
     Parameters
     ----------
-    positionfixes : GeoDataFrame (as trackintel positionfixes)
-    staypoints : GeoDataFrame (as trackintel staypoints)
-    triplegs : GeoDataFrame (as trackintel triplegs)
-    locations : GeoDataFrame (as trackintel locations)
+    positionfixes : Positionfixes
+    staypoints : Staypoints
+    triplegs : Triplegs
+    locations : Locations
 
     Returns
     -------
@@ -203,10 +203,10 @@ def _calculate_bounds(positionfixes, staypoints, triplegs, locations):
 
     Parameters
     ----------
-    positionfixes : GeoDataFrame (as trackintel positionfixes)
-    staypoints : GeoDataFrame (as trackintel staypoints)
-    triplegs : GeoDataFrame (as trackintel triplegs)
-    locations : GeoDataFrame (as trackintel locations)
+    positionfixes : Positionfixes
+    staypoints : Staypoints
+    triplegs : Triplegs
+    locations : Locations
 
     Returns
     -------
@@ -244,10 +244,10 @@ def _plot_frames(positionfixes, staypoints, triplegs, locations, radius_sp, radi
 
     Parameters
     ----------
-    positionfixes : GeoDataFrame (as trackintel positionfixes)
-    staypoints : GeoDataFrame (as trackintel staypoints)
-    triplegs : GeoDataFrame (as trackintel triplegs)
-    locations : GeoDataFrame (as trackintel locations)
+    positionfixes : Positionfixes
+    staypoints : Staypoints
+    triplegs : Triplegs
+    locations : Locations
     radius_sp : float
     radius_locs : float
     ax : matplotlib.pyplot.Artist
@@ -292,13 +292,13 @@ def plot(
 
     Parameters
     ----------
-    positionfixes : GeoDataFrame (as trackintel positionfixes), optional
+    positionfixes : Positionfixes, optional
         Positionfixes to plot, by default None
-    staypoints : GeoDataFrame (as trackintel staypoints), optional
+    staypoints : Staypoints, optional
         Staypoints to plot, by default None
-    triplegs : GeoDataFrame (as trackintel triplegs), optional
+    triplegs : Triplegs, optional
         Triplegs to plot, by default None
-    locations : GeoDataFrame (as trackintel locations), optional
+    locations : Locations, optional
         Locations to plot, by default None
     radius_sp : float, optional
         Radius in meter for circles around staypoints, default 100

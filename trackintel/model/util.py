@@ -203,7 +203,7 @@ dtype: dict of column name to SQL type, default None
 
 Examples
 --------
->>> {short}.as_{long}.to_postgis(conn_string, table_name)
+>>> {short}.to_postgis(conn_string, table_name)
 >>> ti.io.postgis.write_{long}_postgis({short}, conn_string, table_name)
 """
 
@@ -228,5 +228,5 @@ kwargs
 
 Examples
 --------
->>> {short}.as_{long}.to_csv("export_{long}.csv")
+>>> {short}.to_csv("export_{long}.csv")
 """

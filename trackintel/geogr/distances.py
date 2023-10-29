@@ -92,9 +92,9 @@ def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kw
 
     Parameters
     ----------
-    X : GeoDataFrame (as trackintel model)
+    X : Trackintel class
 
-    Y : GeoDataFrame (as trackintel model), optional
+    Y : Trackintel class, optional
         Should be of the same type as X
 
     dist_metric: {{'haversine', 'euclidean', 'dtw', 'frechet'}}, optional
@@ -130,7 +130,7 @@ def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kw
     --------
     >>> calculate_distance_matrix(staypoints, dist_metric="haversine")
     >>> calculate_distance_matrix(triplegs_1, triplegs_2, dist_metric="dtw")
-    >>> pfs.as_positionfixes.calculate_distance_matrix(dist_metric="haversine")
+    >>> pfs.calculate_distance_matrix(dist_metric="haversine")
     """
     geom_type = X.geometry.iat[0].geom_type
     if Y is None:
@@ -335,11 +335,11 @@ def get_speed_positionfixes(positionfixes):
 
     Parameters
     ----------
-    positionfixes : GeoDataFrame (as trackintel positionfixes)
+    positionfixes : Positionfixes
 
     Returns
     -------
-    pfs: GeoDataFrame (as trackintel positionfixes)
+    pfs: Positionfixes
         Copy of the original positionfixes with a new column ``[`speed`]``. The speed is given in m/s
 
     Notes
@@ -374,9 +374,9 @@ def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
 
     Parameters
     ----------
-    triplegs: GeoDataFrame (as trackintel triplegs)
+    triplegs: Triplegs
 
-    positionfixes: GeoDataFrame (as trackintel positionfixes), optional
+    positionfixes: Positionfixes, optional
         Only required if the method is 'pfs_mean_speed'.
         In addition to the standard columns positionfixes must include the column ``[`tripleg_id`]``.
 
@@ -387,7 +387,7 @@ def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
 
     Returns
     -------
-    tpls: GeoDataFrame (as trackintel triplegs)
+    tpls: Triplegs
         The original triplegs with a new column ``[`speed`]``. The speed is given in m/s.
     """
     Triplegs.validate(triplegs)

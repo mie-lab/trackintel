@@ -36,7 +36,7 @@ def read_geolife(geolife_path, print_progress=False):
 
     Returns
     -------
-    gdf: GeoDataFrame (as trackintel positionfixes)
+    gdf: Positionfixes
         Contains all loaded geolife positionfixes
 
     labels: dict
@@ -204,7 +204,7 @@ def geolife_add_modes_to_triplegs(
 
     Parameters
     ----------
-    triplegs : GeoDataFrame (as trackintel triplegs)
+    triplegs : Triplegs
         Geolife triplegs.
 
     labels : dictionary
@@ -222,7 +222,7 @@ def geolife_add_modes_to_triplegs(
 
     Returns
     -------
-    tpls : GeoDataFrame (as trackintel triplegs)
+    tpls : Triplegs
         triplegs with mode labels.
 
     Notes
@@ -234,8 +234,8 @@ def geolife_add_modes_to_triplegs(
     ----------
     >>> from trackintel.io.dataset_reader import read_geolife, geolife_add_modes_to_triplegs
     >>> pfs, mode_labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'))
-    >>> pfs, sp = pfs.as_positionfixes.generate_staypoints()
-    >>> pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp)
+    >>> pfs, sp = pfs.generate_staypoints()
+    >>> pfs, tpls = pfs.generate_triplegs(sp)
     >>> tpls = geolife_add_modes_to_triplegs(tpls, mode_labels)
     """
     tpls = triplegs.copy()
@@ -311,7 +311,7 @@ def _calc_overlap_for_candidates(candidates, tpls_this, labels_this, ratio_thres
         columns: nb of neighbors, sorted by temporal distance
         values: Reference to position in the tpls_this dataframe
 
-    tpls_this : GeoDataFrame (as trackintel triplegs)
+    tpls_this : Triplegs
         triplegs of a single user
 
     labels_this : DataFrame
@@ -375,9 +375,9 @@ def read_mzmv(mzmv_path):
 
     Returns
     -------
-    trips : GeoDataFrame (as trackintel trips)
-    sp : GeoDataFrame (as trackintel staypoints)
-    tpls : GeoDataFrame (as trackintel triplegs)
+    trips : Trips
+    sp : Staypoints
+    tpls : Triplegs
 
     Notes
     -----
@@ -556,7 +556,7 @@ def _mzmv_generate_sp(tpls, zf):
 
     Returns
     -------
-    staypoints : GeoDataFrame (as trackintel staypoints)
+    staypoints : Staypoints
         staypoints with mandatory columns, all the columns for staypoints from mzmv,
         and additionally "prev_trip_id", "trip_id", "next_trip_id", "is_activity",
         "purpose", "purpose_tpls"

@@ -25,7 +25,7 @@ def generate_locations(
 
     Parameters
     ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
+    staypoints : Staypoints
 
     method : {'dbscan'}
         Method to create locations.
@@ -62,15 +62,15 @@ def generate_locations(
 
     Returns
     -------
-    sp: GeoDataFrame (as trackintel staypoints)
+    sp: Staypoints
         The original staypoints with a new column ``[`location_id`]``.
 
-    locs: GeoDataFrame (as trackintel locations)
+    locs: Locations
         The generated locations.
 
     Examples
     --------
-    >>> sp.as_staypoints.generate_locations(method='dbscan', epsilon=100, num_samples=1)
+    >>> sp.generate_locations(method='dbscan', epsilon=100, num_samples=1)
     """
     Staypoints.validate(staypoints)
     if agg_level not in ["user", "dataset"]:
@@ -200,13 +200,13 @@ def _gen_locs_dbscan(sp, distance_metric, db):
 
     Parameters
     ----------
-    sp : GeoDataFrame (as trackintel staypoints)
+    sp : Staypoints
     distance_metric : str
     db : sklearn.cluster.DBSCAN
 
     Returns
     -------
-    sp : GeoDataFrame (as trackintel staypoints)
+    sp : Staypoints
         Staypoints with new column "location_id"
     """
     p = np.array([sp.geometry.x, sp.geometry.y]).transpose()
@@ -223,10 +223,10 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
 
     Parameters
     ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
+    staypoints : Staypoints
         The staypoints must contain a column `location_id` (see `generate_locations` function)
 
-    triplegs: GeoDataFrame (as trackintel triplegs)
+    triplegs: Triplegs
 
     max_time_gap : str or pd.Timedelta, default "10min"
         Maximum duration between staypoints to still be merged.
@@ -242,7 +242,7 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
 
     Returns
     -------
-    sp: GeoDataFrame (as trackintel staypoints)
+    sp: Staypoints
         The new staypoints with the default columns and columns in `agg`, where staypoints at same location and close in
         time are aggregated.
 
@@ -260,7 +260,7 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     >>> # direct function call
     >>> ti.preprocessing.staypoints.merge_staypoints(staypoints=sp, triplegs=tpls)
     >>> # or using the trackintel datamodel
-    >>> sp.as_staypoints.merge_staypoints(triplegs, max_time_gap="1h", agg={"geom":"first"})
+    >>> sp.merge_staypoints(triplegs, max_time_gap="1h", agg={"geom":"first"})
     """
     if isinstance(max_time_gap, str):
         max_time_gap = pd.to_timedelta(max_time_gap)
