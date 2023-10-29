@@ -21,7 +21,7 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, geom_co
     Read positionfixes from csv file.
 
     Wraps the pandas read_csv function, extracts longitude and latitude and
-    builds a POINT GeoSeries.
+    builds a POINT GeoSeries, extracts datetime from column `tracked_at`.
 
     Parameters
     ----------
@@ -129,7 +129,7 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, geom_col="ge
     Read triplegs from csv file.
 
     Wraps the pandas read_csv function, extracts a WKT for the tripleg geometry (LINESTRING)
-    and builds a Triplegs instance.
+    and builds a Triplegs instance, extracts datetime from column `started_at` & `finished_at`.
 
     Parameters
     ----------
@@ -197,7 +197,7 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=None, geom_col="
     Read staypoints from csv file.
 
     Wraps the pandas read_csv function, extracts a WKT for the staypoint geometry (Point)
-    and builds a Staypoints instance.
+    and builds a Staypoints instance, extracts datetime from column `started_at` & `finished_at`.
 
     Parameters
     ----------
@@ -265,7 +265,8 @@ def read_locations_csv(*args, columns=None, index_col=None, crs=None, **kwargs):
     Read locations from csv file.
 
     Wraps the pandas read_csv function, extracts a WKT for the location center geometry (POINT)
-    (and optional extent (POLYGON)) and builds a Locations instance.
+    (and optional extent (POLYGON)) and builds a Locations instance, extracts datetime from
+    column `started_at` & `finished_at`.
 
     Parameters
     ----------
@@ -327,6 +328,7 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=None, geom_col=None, 
     Read trips from csv file.
 
     Wraps the pandas read_csv function and builds a Trips instance.
+    Extracts datetime from column `started_at` & `finished_at`.
 
     Parameters
     ----------
@@ -405,6 +407,8 @@ def write_trips_csv(trips, filename, *args, **kwargs):
 def read_tours_csv(*args, columns=None, index_col=None, tz=None, **kwargs):
     """
     Read tours from csv file.
+    
+    Extracts datetime from column `started_at` & `finished_at`.
 
     Parameters
     ----------
