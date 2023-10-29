@@ -129,13 +129,9 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
             self, method=method, time_threshold=time_threshold, activity_column_name=activity_column_name
         )
 
+    @doc(TrackintelGeoDataFrame.spatial_filter, klass="Staypoints")
     def spatial_filter(self, areas, method="within", re_project=False):
-        """
-        Filter Staypoints on a geo extent.
-
-        See :func:`trackintel.preprocessing.spatial_filter` for full documentation.
-        """
-        return ti.preprocessing.spatial_filter(self, areas, method=method, re_project=re_project)
+        return super().spatial_filter(areas, method, re_project)
 
     @doc(_shared_docs["write_csv"], first_arg="", long="staypoints", short="sp")
     def to_csv(self, filename, *args, **kwargs):

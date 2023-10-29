@@ -164,3 +164,7 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         See :func:`trackintel.geogr.get_speed_positionfixes` for full documentation.
         """
         return ti.geogr.distances.get_speed_positionfixes(self)
+
+    @doc(TrackintelGeoDataFrame.spatial_filter, klass="Positionfixes")
+    def spatial_filter(self, areas, method="within", re_project=False):
+        return super().spatial_filter(areas, method, re_project)

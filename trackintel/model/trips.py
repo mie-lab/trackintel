@@ -184,3 +184,7 @@ class TripsGeoDataFrame(TrackintelGeoDataFrame, TripsDataFrame, gpd.GeoDataFrame
         ), "Not all geometries are valid. Try x[~x.geometry.is_valid] where x is you GeoDataFrame"
         if self.geometry.iloc[0].geom_type != "MultiPoint":
             raise ValueError("The geometry must be a MultiPoint (only first checked).")
+
+    @doc(TrackintelGeoDataFrame.spatial_filter, klass="Triplegs")
+    def spatial_filter(self, areas, method="within", re_project=False):
+        return super().spatial_filter(areas, method, re_project)

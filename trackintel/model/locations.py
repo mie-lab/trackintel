@@ -66,10 +66,6 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
     ):
         ti.io.postgis.write_locations_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
+    @doc(TrackintelGeoDataFrame.spatial_filter, klass="Locations")
     def spatial_filter(self, areas, method="within", re_project=False):
-        """
-        Filter Locations on a geo extent.
-
-        See :func:`trackintel.preprocessing.spatial_filter` for full documentation.
-        """
-        return ti.preprocessing.spatial_filter(self, areas, method=method, re_project=re_project)
+        return super().spatial_filter(areas, method, re_project)

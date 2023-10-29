@@ -92,13 +92,9 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
         """
         return ti.geogr.calculate_distance_matrix(self, Y=Y, dist_metric=dist_metric, n_jobs=n_jobs, **kwds)
 
+    @doc(TrackintelGeoDataFrame.spatial_filter, klass="Triplegs")
     def spatial_filter(self, areas, method="within", re_project=False):
-        """
-        Filter Triplegs on a geo extent.
-
-        See :func:`trackintel.preprocessing.spatial_filter` for full documentation.
-        """
-        return ti.preprocessing.filter.spatial_filter(self, areas, method=method, re_project=re_project)
+        return super().spatial_filter(areas, method, re_project)
 
     def generate_trips(self, staypoints, gap_threshold=15, add_geometry=True):
         """

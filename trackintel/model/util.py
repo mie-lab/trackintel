@@ -5,6 +5,53 @@ from textwrap import dedent
 import pandas as pd
 from geopandas import GeoDataFrame
 
+import trackintel as ti
+
+# doc is derived from pandas.util._decorators (2.1.0)
+# module https://github.com/pandas-dev/pandas/blob/main/LICENSE
+
+
+def doc(*docstrings, **params):
+    """
+    A decorator to take docstring templates, concatenate them and perform string
+    substitution on them.
+
+    This decorator will add a variable "_docstring_components" to the wrapped
+    callable to keep track the original docstring template for potential usage.
+    If it should be consider as a template, it will be saved as a string.
+    Otherwise, it will be saved as callable, and later user __doc__ and dedent
+    to get docstring.
+
+    Parameters
+    ----------
+    *docstrings : None, str, or callable
+        The string / docstring / docstring template to be appended in order
+        after default docstring under callable.
+    **params
+        The string which would be used to format docstring template.
+    """
+
+    def decorator(decorated):
+        # collecting docstring and docstring templates
+        components = []
+        if decorated.__doc__:
+            components.append(dedent(decorated.__doc__))
+
+        for docstring in docstrings:
+            if docstring is None:
+                continue
+            if hasattr(docstring, "_docstring_components"):
+                components.extend(docstring._docstring_components)
+            elif isinstance(docstring, str) or docstring.__doc__:
+                components.append(docstring)
+
+        decorated._docstring_components = components
+        params_applied = (c.format(**params) if (isinstance(c, str) and params) else c for c in components)
+        decorated.__doc__ = "".join(c if isinstance(c, str) else dedent(c.__doc__ or "") for c in params_applied)
+        return decorated
+
+    return decorator
+
 
 def _wrapped_gdf_method(func):
     """Decorator function that downcast types to trackintel class if is (Geo)DataFrame and has the required columns."""
@@ -65,6 +112,15 @@ class TrackintelGeoDataFrame(GeoDataFrame):
     def merge(self, *args, **kwargs):
         return super().merge(*args, **kwargs)
 
+    @doc(klass="TrackintelGeoDataFrame")
+    def spatial_filter(self, areas, method="within", re_project=False):
+        """
+        Filter {klass} on a geo extent.
+
+        See :func:`trackintel.preprocessing.spatial_filter` for full documentation.
+        """
+        return ti.preprocessing.spatial_filter(self, areas, method=method, re_project=re_project)
+
 
 class TrackintelDataFrame(pd.DataFrame):
     """Helper class to subtype DataFrame and handle fallback"""
@@ -111,52 +167,6 @@ def _register_trackintel_accessor(name: str):
         setattr(DataFrame, name, NonCachedAccessor(name, accessor))
         DataFrame._accessors.add(name)
         return accessor
-
-    return decorator
-
-
-# doc is derived from pandas.util._decorators (2.1.0)
-# module https://github.com/pandas-dev/pandas/blob/main/LICENSE
-
-
-def doc(*docstrings, **params):
-    """
-    A decorator to take docstring templates, concatenate them and perform string
-    substitution on them.
-
-    This decorator will add a variable "_docstring_components" to the wrapped
-    callable to keep track the original docstring template for potential usage.
-    If it should be consider as a template, it will be saved as a string.
-    Otherwise, it will be saved as callable, and later user __doc__ and dedent
-    to get docstring.
-
-    Parameters
-    ----------
-    *docstrings : None, str, or callable
-        The string / docstring / docstring template to be appended in order
-        after default docstring under callable.
-    **params
-        The string which would be used to format docstring template.
-    """
-
-    def decorator(decorated):
-        # collecting docstring and docstring templates
-        components = []
-        if decorated.__doc__:
-            components.append(dedent(decorated.__doc__))
-
-        for docstring in docstrings:
-            if docstring is None:
-                continue
-            if hasattr(docstring, "_docstring_components"):
-                components.extend(docstring._docstring_components)
-            elif isinstance(docstring, str) or docstring.__doc__:
-                components.append(docstring)
-
-        decorated._docstring_components = components
-        params_applied = (c.format(**params) if (isinstance(c, str) and params) else c for c in components)
-        decorated.__doc__ = "".join(c if isinstance(c, str) else dedent(c.__doc__ or "") for c in params_applied)
-        return decorated
 
     return decorator
 
