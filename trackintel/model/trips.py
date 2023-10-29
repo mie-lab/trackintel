@@ -184,7 +184,7 @@ class TripsGeoDataFrame(TrackintelGeoDataFrame, TripsDataFrame, gpd.GeoDataFrame
         ), "Not all geometries are valid. Try x[~x.geometry.is_valid] where x is you GeoDataFrame"
         if self.geometry.iloc[0].geom_type != "MultiPoint":
             raise ValueError("The geometry must be a MultiPoint (only first checked).")
-    
+
     @doc(TrackintelGeoDataFrame.calculate_distance_matrix)
     def calculate_distance_matrix(self, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
         return super().calculate_distance_matrix(Y, dist_metric, n_jobs, **kwds)
