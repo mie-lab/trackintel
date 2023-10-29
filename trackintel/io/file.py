@@ -407,7 +407,7 @@ def write_trips_csv(trips, filename, *args, **kwargs):
 def read_tours_csv(*args, columns=None, index_col=None, tz=None, **kwargs):
     """
     Read tours from csv file.
-    
+
     Extracts datetime from column `started_at` & `finished_at`.
 
     Parameters
