@@ -73,3 +73,7 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
         See :func:`trackintel.preprocessing.spatial_filter` for full documentation.
         """
         return ti.preprocessing.spatial_filter(self, areas, method=method, re_project=re_project)
+
+    @doc(TrackintelGeoDataFrame.calculate_distance_matrix)
+    def calculate_distance_matrix(self, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
+        return super().calculate_distance_matrix(Y, dist_metric, n_jobs, **kwds)

@@ -154,3 +154,7 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         See :func:`trackintel.analysis.temporal_tracking_quality` for full documentation.
         """
         return ti.analysis.tracking_quality.temporal_tracking_quality(self, granularity=granularity)
+
+    @doc(TrackintelGeoDataFrame.calculate_distance_matrix)
+    def calculate_distance_matrix(self, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
+        return super().calculate_distance_matrix(Y, dist_metric, n_jobs, **kwds)

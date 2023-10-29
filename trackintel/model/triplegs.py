@@ -84,13 +84,9 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
     ):
         ti.io.postgis.write_triplegs_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
+    @doc(TrackintelGeoDataFrame.calculate_distance_matrix)
     def calculate_distance_matrix(self, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
-        """
-        Calculate a distance matrix based on a specific distance metric.
-
-        See :func:`trackintel.geogr.calculate_distance_matrix` for full documentation.
-        """
-        return ti.geogr.calculate_distance_matrix(self, Y=Y, dist_metric=dist_metric, n_jobs=n_jobs, **kwds)
+        return super().calculate_distance_matrix(Y, dist_metric, n_jobs, **kwds)
 
     def spatial_filter(self, areas, method="within", re_project=False):
         """
