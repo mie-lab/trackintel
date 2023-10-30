@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 import pandas as pd
+from pandas.testing import assert_series_equal
 from shapely.geometry import Point
 
 import trackintel as ti
@@ -46,7 +47,7 @@ class TestRadius_gyration:
         s = radius_gyration(staypoints, method="count")
         v1 = np.sqrt((4 * 3**2) / 3)  # center is (3, 12)
         v2 = np.sqrt((2 * (2**3 + 4**2)) / 3)  # center is (2, 11)
-        pd.testing.assert_series_equal(s, pd.Series([v1, v2]), check_index=False, check_names=False)
+        assert_series_equal(s, pd.Series([v1, v2]), check_index=False, check_names=False)
 
     def test_duration(self, staypoints):
         """Test duration-method with a planar crs."""
@@ -54,7 +55,7 @@ class TestRadius_gyration:
         s = radius_gyration(staypoints, method="duration")
         v1 = np.sqrt(4 * 3**2 / 4)  # center is (3, 12) weight is 4 due to duration
         v2 = 0  # center lies on p1 and only p1 remains -> 0 variance
-        pd.testing.assert_series_equal(s, pd.Series([v1, v2]), check_index=False, check_names=False)
+        assert_series_equal(s, pd.Series([v1, v2]), check_index=False, check_names=False)
 
     def test_haversine(self, staypoints):
         """Test haversine distance calculations"""
@@ -68,8 +69,14 @@ class TestRadius_gyration:
         d2 = point_haversine_dist(x[f2], y[f2], 2, 11)
         v1 = np.sqrt(np.mean(d1**2))
         v2 = np.sqrt(np.mean(d2**2))
-        pd.testing.assert_series_equal(s, pd.Series([v1, v2]), check_index=False, check_names=False)
+        assert_series_equal(s, pd.Series([v1, v2]), check_index=False, check_names=False)
 
     def test_tqdm(self, staypoints):
         """Test if tqdm works fine"""
         radius_gyration(staypoints, print_progress=True)
+
+    def test_staypoints_method(self, staypoints):
+        """Test if staypoint method returns same result"""
+        sfunc = radius_gyration(staypoints)
+        smeth = staypoints.radius_gyration()
+        assert_series_equal(sfunc, smeth)

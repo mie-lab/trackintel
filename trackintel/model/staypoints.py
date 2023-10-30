@@ -164,3 +164,11 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         return ti.preprocessing.triplegs.generate_trips(
             self, triplegs, gap_threshold=gap_threshold, add_geometry=add_geometry
         )
+
+    def radius_gyration(self, method="count", print_progress=False):
+        """
+        Calculate radius for gyration for Staypoints
+
+        See :func:`trackintel.analysis.radius_gyration` for full documentation.
+        """
+        return ti.analysis.radius_gyration(self, method, print_progress)
