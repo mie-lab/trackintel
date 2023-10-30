@@ -1,6 +1,5 @@
-import tqdm
-import pandas as pd
 import numpy as np
+from tqdm import tqdm
 
 from trackintel.geogr import point_haversine_dist, check_gdf_planar
 
