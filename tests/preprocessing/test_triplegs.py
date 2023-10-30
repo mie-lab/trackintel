@@ -122,7 +122,7 @@ class TestGenerate_trips:
 
             assert correct_dest_point == dest_point_trips
 
-    def test_accessor(self, example_triplegs):
+    def test_accessor_triplegs(self, example_triplegs):
         """Test if the accessor leads to the same results as the explicit function."""
         sp, tpls = example_triplegs
 
@@ -131,6 +131,21 @@ class TestGenerate_trips:
 
         # generate trips using the accessor
         sp_acc, tpls_acc, trips_acc = tpls.as_triplegs.generate_trips(sp, gap_threshold=15)
+
+        # test if generated trips are equal
+        assert_geodataframe_equal(trips_expl, trips_acc)
+        assert_geodataframe_equal(sp_expl, sp_acc)
+        assert_geodataframe_equal(tpls_acc, tpls_expl)
+
+    def test_accessor_staypoints(self, example_triplegs):
+        """Test if the accessor leads to the same results as the explicit function."""
+        sp, tpls = example_triplegs
+
+        # generate trips using the explicit function import
+        sp_expl, tpls_expl, trips_expl = ti.preprocessing.triplegs.generate_trips(sp, tpls, gap_threshold=15)
+
+        # generate trips using the accessor
+        sp_acc, tpls_acc, trips_acc = sp.as_staypoints.generate_trips(tpls, gap_threshold=15)
 
         # test if generated trips are equal
         assert_geodataframe_equal(trips_expl, trips_acc)

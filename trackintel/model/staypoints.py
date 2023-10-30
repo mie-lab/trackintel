@@ -154,3 +154,13 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         See :func:`trackintel.analysis.temporal_tracking_quality` for full documentation.
         """
         return ti.analysis.tracking_quality.temporal_tracking_quality(self, granularity=granularity)
+
+    def generate_trips(self, triplegs, gap_threshold=15, add_geometry=True):
+        """
+        Generate trips based on staypoints and triplegs.
+
+        See :func:`trackintel.preprocessing.generate_triplegs` for full documentation.
+        """
+        return ti.preprocessing.triplegs.generate_trips(
+            self, triplegs, gap_threshold=gap_threshold, add_geometry=add_geometry
+        )
