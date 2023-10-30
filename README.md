@@ -46,7 +46,7 @@ The image below explicitly shows the definition of **locations** as clustered **
 You can enter the *trackintel* framework if your data corresponds to any of the above mentioned movement data representation. Here are some of the functionalities that we provide: 
 
 * **Import**: Import from the following data formats is supported: `geopandas dataframes` (recommended), `csv files` in a specified format, `postGIS` databases. We also provide specific dataset readers for popular public datasets (e.g, geolife).
-* **Aggregation**: We provide functionalities to aggregate into the next level of our data model. E.g., positionfixes->staypoints; positionfixes->triplegs; staypoints->locations; staypoints+triplegs->trips; trips->tours
+* **Aggregation**: We provide functionalities to aggregate into the next level of our data model. E.g., positionfixes&rarr;staypoints; positionfixes&rarr;triplegs; staypoints&rarr;locations; staypoints+triplegs&rarr;trips; trips&rarr;tours
 * **Enrichment**: Activity semantics for staypoints; Mode of transport semantics for triplegs; High level semantics for locations
 
 ## How it works
@@ -58,9 +58,9 @@ import geopandas as gpd
 import trackintel as ti
 
 # read pfs from csv file
-pfs = ti.io.file.read_positionfixes_csv(".\examples\data\pfs.csv", sep=";", index_col="id")
+pfs = ti.io.read_positionfixes_csv(".\examples\data\pfs.csv", sep=";", index_col="id")
 # or with predefined dataset readers (here geolife) 
-pfs, _ = ti.io.dataset_reader.read_geolife(".\tests\data\geolife_long")
+pfs, _ = ti.io.read_geolife(".\tests\data\geolife_long")
 ```
 
 **[2.]** Data model generation. 
