@@ -31,3 +31,8 @@ Location Identification
 .. autofunction:: trackintel.analysis.location_identification.freq_method
 
 .. autofunction:: trackintel.analysis.location_identification.osna_method
+
+Metrics
+=======
+
+.. autofunction:: trackintel.analysis.radius_gyration
