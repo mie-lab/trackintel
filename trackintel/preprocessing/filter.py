@@ -13,7 +13,7 @@ def spatial_filter(source, areas, method="within", re_project=False):
 
     method : {'within', 'intersects', 'crosses'}, optional
         The method to filter the 'source' GeoDataFrame, by default 'within'
-        
+
         - `within`: return instances in 'source' where no points of these instances lies in the
           exterior of the 'areas' and at least one point of the interior of these instances lies
           in the interior of 'areas'.
