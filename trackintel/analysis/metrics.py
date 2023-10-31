@@ -14,9 +14,10 @@ def radius_gyration(sp, method="count", print_progress=False):
 
     method: string, {"count", "duration"}
         Weighting for center of mass and average distance calculation.
-        - "count": assigns each Point the same weight of 1.
-        - "duration": assigns each Point a weight based on duration.
-           Additionally needs Timedelta column "duration" in sp.
+
+        - `count`: assigns each Point the same weight of 1.
+        - `duration`: assigns each Point a weight based on duration.
+          Additionally needs Timedelta column "duration" in sp.
 
     print_progress: bool, default False
         Show per-user progress if set to True.

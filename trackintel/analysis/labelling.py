@@ -55,6 +55,7 @@ def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
 
     method: {'simple-coarse'}, default 'simple-coarse'
         The following methods are available for transport mode inference/prediction:
+
         - 'simple-coarse' : Uses simple heuristics to predict coarse transport classes.
 
     Returns

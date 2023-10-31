@@ -36,24 +36,20 @@ def temporal_tracking_quality(source, granularity="all"):
     and the columns for the returned ``quality`` df for different ``granularity`` are:
 
     - ``all``:
-        - time extent: between the latest "finished_at" and the earliest "started_at" for each user.
-        - columns: ``['user_id', 'quality']``.
-
+        - `time extent`: between the latest "finished_at" and the earliest "started_at" for each user.
+        - `columns`: ``['user_id', 'quality']``.
     - ``week``:
-        - time extent: the whole week (604800 sec) for each user.
-        - columns: ``['user_id', 'week_monday', 'quality']``.
-
+        - `time extent`: the whole week (604800 sec) for each user.
+        - `columns`: ``['user_id', 'week_monday', 'quality']``.
     - ``day``:
-        - time extent: the whole day (86400 sec) for each user
-        - columns: ``['user_id', 'day', 'quality']``
-
+        - `time extent`: the whole day (86400 sec) for each user
+        - `columns`: ``['user_id', 'day', 'quality']``
     - ``weekday``
-        - time extent: the whole day (86400 sec) * number of tracked weeks for each user for each user
-        - columns: ``['user_id', 'weekday', 'quality']``
-
+        - `time extent`: the whole day (86400 sec) * number of tracked weeks for each user for each user
+        - `columns`: ``['user_id', 'weekday', 'quality']``
     - ``hour``:
-        - time extent: the whole hour (3600 sec) * number of tracked days for each user
-        - columns: ``['user_id', 'hour', 'quality']``
+        - `time extent`: the whole hour (3600 sec) * number of tracked days for each user
+        - `columns`: ``['user_id', 'hour', 'quality']``
 
     Examples
     --------

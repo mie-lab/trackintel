@@ -82,12 +82,11 @@ def read_positionfixes_postgis(
     parse_dates : list or dict, default None
         - List of column names to parse as dates.
         - Dict of ``{column_name: format string}`` where format string is
-            strftime compatible in case of parsing string times, or is one of
-            (D, s, ns, ms, us) in case of parsing integer timestamps.
-        - Dict of ``{column_name: arg dict}``, where the arg dict
-            corresponds to the keyword arguments of
-            :func:`pandas.to_datetime`. Especially useful with databases
-            without native Datetime support, such as SQLite.
+          strftime compatible in case of parsing string times, or is one of
+          (D, s, ns, ms, us) in case of parsing integer timestamps.
+        - Dict of ``{column_name: arg dict}`` where the arg dict corresponds
+          to the keyword arguments of :func:`pandas.to_datetime`. Especially
+          useful with databases without native Datetime support, such as SQLite.
 
     params : list, tuple or dict, optional, default None
         List of parameters to pass to execute method.
@@ -180,12 +179,11 @@ def read_triplegs_postgis(
     parse_dates : list or dict, default None
         - List of column names to parse as dates.
         - Dict of ``{column_name: format string}`` where format string is
-            strftime compatible in case of parsing string times, or is one of
-            (D, s, ns, ms, us) in case of parsing integer timestamps.
-        - Dict of ``{column_name: arg dict}``, where the arg dict
-            corresponds to the keyword arguments of
-            :func:`pandas.to_datetime`. Especially useful with databases
-            without native Datetime support, such as SQLite.
+          strftime compatible in case of parsing string times, or is one of
+          (D, s, ns, ms, us) in case of parsing integer timestamps.
+        - Dict of ``{column_name: arg dict}``, where the arg dict corresponds
+          to the keyword arguments of :func:`pandas.to_datetime`. Especially
+          useful with databases without native Datetime support, such as SQLite.
 
     params : list, tuple or dict, optional, default None
         List of parameters to pass to execute method.
@@ -287,12 +285,11 @@ def read_staypoints_postgis(
     parse_dates : list or dict, default None
         - List of column names to parse as dates.
         - Dict of ``{column_name: format string}`` where format string is
-            strftime compatible in case of parsing string times, or is one of
-            (D, s, ns, ms, us) in case of parsing integer timestamps.
-        - Dict of ``{column_name: arg dict}``, where the arg dict
-            corresponds to the keyword arguments of
-            :func:`pandas.to_datetime`. Especially useful with databases
-            without native Datetime support, such as SQLite.
+          strftime compatible in case of parsing string times, or is one of
+          (D, s, ns, ms, us) in case of parsing integer timestamps.
+        - Dict of ``{column_name: arg dict}``, where the arg dict corresponds
+          to the keyword arguments of :func:`pandas.to_datetime`. Especially
+          useful with databases without native Datetime support, such as SQLite.
 
     params : list, tuple or dict, optional, default None
         List of parameters to pass to execute method.
@@ -397,12 +394,11 @@ def read_locations_postgis(
     parse_dates : list or dict, default None
         - List of column names to parse as dates.
         - Dict of ``{column_name: format string}`` where format string is
-            strftime compatible in case of parsing string times, or is one of
-            (D, s, ns, ms, us) in case of parsing integer timestamps.
-        - Dict of ``{column_name: arg dict}``, where the arg dict
-            corresponds to the keyword arguments of
-            :func:`pandas.to_datetime`. Especially useful with databases
-            without native Datetime support, such as SQLite.
+          strftime compatible in case of parsing string times, or is one of
+          (D, s, ns, ms, us) in case of parsing integer timestamps.
+        - Dict of ``{column_name: arg dict}``, where the arg dict corresponds
+          to the keyword arguments of :func:`pandas.to_datetime`. Especially
+          useful with databases without native Datetime support, such as SQLite.
 
     params : list, tuple or dict, optional, default None
         List of parameters to pass to execute method.
@@ -525,12 +521,11 @@ def read_trips_postgis(
     parse_dates : list or dict, default None
         - List of column names to parse as dates.
         - Dict of ``{column_name: format string}`` where format string is
-            strftime compatible in case of parsing string times, or is one of
-            (D, s, ns, ms, us) in case of parsing integer timestamps.
-        - Dict of ``{column_name: arg dict}``, where the arg dict
-            corresponds to the keyword arguments of
-            :func:`pandas.to_datetime`. Especially useful with databases
-            without native Datetime support, such as SQLite.
+          strftime compatible in case of parsing string times, or is one of
+          (D, s, ns, ms, us) in case of parsing integer timestamps.
+        - Dict of ``{column_name: arg dict}``, where the arg dict corresponds
+          to the keyword arguments of :func:`pandas.to_datetime`. Especially
+          useful with databases without native Datetime support, such as SQLite.
 
     params : list, tuple or dict, optional, default None
         List of parameters to pass to execute method.
@@ -659,12 +654,11 @@ def read_tours_postgis(
     parse_dates : list or dict, default None
         - List of column names to parse as dates.
         - Dict of ``{column_name: format string}`` where format string is
-            strftime compatible in case of parsing string times, or is one of
-            (D, s, ns, ms, us) in case of parsing integer timestamps.
-        - Dict of ``{column_name: arg dict}``, where the arg dict
-            corresponds to the keyword arguments of
-            :func:`pandas.to_datetime`. Especially useful with databases
-            without native Datetime support, such as SQLite.
+          strftime compatible in case of parsing string times, or is one of
+          (D, s, ns, ms, us) in case of parsing integer timestamps.
+        - Dict of ``{column_name: arg dict}``, where the arg dict corresponds
+          to the keyword arguments of :func:`pandas.to_datetime`. Especially
+          useful with databases without native Datetime support, such as SQLite.
 
     params : list, tuple or dict, optional, default None
         List of parameters to pass to execute method.

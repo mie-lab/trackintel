@@ -29,7 +29,8 @@ def generate_locations(
 
     method : {'dbscan'}
         Method to create locations.
-        - 'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
+
+        - `dbscan` : Uses the DBSCAN algorithm to cluster staypoints.
 
     epsilon : float, default 100
         The epsilon for the 'dbscan' method. if 'distance_metric' is 'haversine'
@@ -44,8 +45,9 @@ def generate_locations(
 
     agg_level: {'user','dataset'}
         The level of aggregation when generating locations:
-        - 'user'      : locations are generated independently per-user.
-        - 'dataset'   : shared locations are generated for all users.
+
+        - `user`: locations are generated independently per-user.
+        - `dataset`: shared locations are generated for all users.
 
     activities_only: bool, default False (requires "activity" column)
         Flag to set if locations should be generated only from staypoints on which the value for "activity" is True.

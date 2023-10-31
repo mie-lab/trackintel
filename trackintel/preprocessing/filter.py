@@ -13,14 +13,15 @@ def spatial_filter(source, areas, method="within", re_project=False):
 
     method : {'within', 'intersects', 'crosses'}, optional
         The method to filter the 'source' GeoDataFrame, by default 'within'
-        - 'within'    : return instances in 'source' where no points of these instances lies in the
-            exterior of the 'areas' and at least one point of the interior of these instances lies
-            in the interior of 'areas'.
-        - 'intersects': return instances in 'source' where the boundary or interior of these instances
-            intersect in any way with those of the 'areas'
-        - 'crosses'   : return instances in 'source' where the interior of these instances intersects
-            the interior of the 'areas' but does not contain it, and the dimension of the intersection
-            is less than the dimension of the one of the 'areas'.
+
+        - `within`: return instances in 'source' where no points of these instances lies in the
+          exterior of the 'areas' and at least one point of the interior of these instances lies
+          in the interior of 'areas'.
+        - `intersects`: return instances in 'source' where the boundary or interior of these instances
+          intersect in any way with those of the 'areas'
+        - `crosses`: return instances in 'source' where the interior of these instances intersects
+          the interior of the 'areas' but does not contain it, and the dimension of the intersection
+          is less than the dimension of the one of the 'areas'.
 
     re_project : bool, default False
         If this is set to True, the 'source' will be projected to the coordinate reference system of 'areas'
