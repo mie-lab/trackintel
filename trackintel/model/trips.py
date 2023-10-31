@@ -14,7 +14,7 @@ from trackintel.model.util import (
 
 @_register_trackintel_accessor("as_trips")
 class Trips:
-    """A pandas accessor to treat (Geo)DataFrames as collections of trips.
+    """Class to treat (Geo)DataFrames as collections of trips.
 
     The class constructor will create a TripsDataFrame or a TripsGeoDataFrame depending if a geometry column is present.
 
