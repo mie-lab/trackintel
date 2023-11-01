@@ -92,7 +92,7 @@ def read_geolife(geolife_path, print_progress=False):
 
     Example
     ----------
-    >>> from trackintel.io.dataset_reader import read_geolife
+    >>> from trackintel.io import read_geolife
     >>> pfs, mode_labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'))
     """
     # u are strings in the format "052", "002".
@@ -232,7 +232,7 @@ def geolife_add_modes_to_triplegs(
 
     Example
     ----------
-    >>> from trackintel.io.dataset_reader import read_geolife, geolife_add_modes_to_triplegs
+    >>> from trackintel.io import read_geolife, geolife_add_modes_to_triplegs
     >>> pfs, mode_labels = read_geolife(os.path.join('downloads', 'Geolife Trajectories 1.3'))
     >>> pfs, sp = pfs.generate_staypoints()
     >>> pfs, tpls = pfs.generate_triplegs(sp)

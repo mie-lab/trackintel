@@ -58,13 +58,13 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
 
     @doc(_shared_docs["write_csv"], first_arg="", long="locations", short="locs")
     def to_csv(self, filename, *args, **kwargs):
-        ti.io.file.write_locations_csv(self, filename, *args, **kwargs)
+        ti.io.write_locations_csv(self, filename, *args, **kwargs)
 
     @doc(_shared_docs["write_postgis"], first_arg="", long="locations", short="locs")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        ti.io.postgis.write_locations_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
+        ti.io.write_locations_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
     def spatial_filter(self, areas, method="within", re_project=False):
         """

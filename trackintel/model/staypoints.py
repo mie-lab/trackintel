@@ -99,7 +99,7 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
 
         See :func:`trackintel.preprocessing.generate_locations` for full documentation.
         """
-        return ti.preprocessing.staypoints.generate_locations(
+        return ti.preprocessing.generate_locations(
             self,
             method=method,
             epsilon=epsilon,
@@ -115,9 +115,9 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         """
         Aggregate staypoints horizontally via time threshold.
 
-        See :func:`trackintel.preprocessing.staypoints.merge_staypoints` for full documentation.
+        See :func:`trackintel.preprocessing.merge_staypoints` for full documentation.
         """
-        return ti.preprocessing.staypoints.merge_staypoints(self, triplegs, max_time_gap=max_time_gap, agg=agg)
+        return ti.preprocessing.merge_staypoints(self, triplegs, max_time_gap=max_time_gap, agg=agg)
 
     def create_activity_flag(self, method="time_threshold", time_threshold=15.0, activity_column_name="is_activity"):
         """
@@ -139,13 +139,13 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
 
     @doc(_shared_docs["write_csv"], first_arg="", long="staypoints", short="sp")
     def to_csv(self, filename, *args, **kwargs):
-        ti.io.file.write_staypoints_csv(self, filename, *args, **kwargs)
+        ti.io.write_staypoints_csv(self, filename, *args, **kwargs)
 
     @doc(_shared_docs["write_postgis"], first_arg="", long="staypoints", short="sp")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        ti.io.postgis.write_staypoints_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
+        ti.io.write_staypoints_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
     def temporal_tracking_quality(self, granularity="all"):
         """
@@ -153,7 +153,7 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
 
         See :func:`trackintel.analysis.temporal_tracking_quality` for full documentation.
         """
-        return ti.analysis.tracking_quality.temporal_tracking_quality(self, granularity=granularity)
+        return ti.analysis.temporal_tracking_quality(self, granularity=granularity)
 
     def generate_trips(self, triplegs, gap_threshold=15, add_geometry=True):
         """
@@ -161,9 +161,7 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
 
         See :func:`trackintel.preprocessing.generate_triplegs` for full documentation.
         """
-        return ti.preprocessing.triplegs.generate_trips(
-            self, triplegs, gap_threshold=gap_threshold, add_geometry=add_geometry
-        )
+        return ti.preprocessing.generate_trips(self, triplegs, gap_threshold=gap_threshold, add_geometry=add_geometry)
 
     def radius_gyration(self, method="count", print_progress=False):
         """

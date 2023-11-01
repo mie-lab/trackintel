@@ -112,13 +112,13 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
 
     @doc(_shared_docs["write_csv"], first_arg="", long="trips", short="trips")
     def to_csv(self, filename, *args, **kwargs):
-        ti.io.file.write_trips_csv(self, filename, *args, **kwargs)
+        ti.io.write_trips_csv(self, filename, *args, **kwargs)
 
     @doc(_shared_docs["write_postgis"], first_arg="", long="trips", short="trips")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        ti.io.postgis.write_trips_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
+        ti.io.write_trips_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
     def temporal_tracking_quality(self, granularity="all"):
         """
@@ -134,7 +134,7 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
 
         See :func:`trackintel.preprocessing.generate_tours` for full documentation.
         """
-        return ti.preprocessing.trips.generate_tours(trips=self, **kwargs)
+        return ti.preprocessing.generate_tours(trips=self, **kwargs)
 
 
 # added GeoDataFrame manually afterwards such that our methods always come first

@@ -100,7 +100,7 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
 
         See :func:`trackintel.preprocessing.generate_staypoints` for full documentation.
         """
-        return ti.preprocessing.positionfixes.generate_staypoints(
+        return ti.preprocessing.generate_staypoints(
             self,
             method=method,
             distance_metric=distance_metric,
@@ -125,7 +125,7 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
 
         See :func:`trackintel.preprocessing.generate_triplegs` for full documentation.
         """
-        return ti.preprocessing.positionfixes.generate_triplegs(
+        return ti.preprocessing.generate_triplegs(
             self,
             staypoints=staypoints,
             method=method,
@@ -139,15 +139,13 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
 
         See :func:`trackintel.io.write_positionfixes_csv` for full documentation.
         """
-        ti.io.file.write_positionfixes_csv(self, filename, *args, **kwargs)
+        ti.io.write_positionfixes_csv(self, filename, *args, **kwargs)
 
     @doc(_shared_docs["write_postgis"], first_arg="", long="positionfixes", short="pfs")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        ti.io.postgis.write_positionfixes_postgis(
-            self, name, con, schema, if_exists, index, index_label, chunksize, dtype
-        )
+        ti.io.write_positionfixes_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
     def calculate_distance_matrix(self, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
         """
@@ -155,7 +153,7 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
 
         See :func:`trackintel.geogr.calculate_distance_matrix` for full documentation.
         """
-        return ti.geogr.distances.calculate_distance_matrix(self, Y=Y, dist_metric=dist_metric, n_jobs=n_jobs, **kwds)
+        return ti.geogr.calculate_distance_matrix(self, Y=Y, dist_metric=dist_metric, n_jobs=n_jobs, **kwds)
 
     def get_speed(self):
         """
@@ -163,4 +161,4 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
 
         See :func:`trackintel.geogr.get_speed_positionfixes` for full documentation.
         """
-        return ti.geogr.distances.get_speed_positionfixes(self)
+        return ti.geogr.get_speed_positionfixes(self)

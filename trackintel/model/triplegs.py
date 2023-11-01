@@ -76,13 +76,13 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
 
     @doc(_shared_docs["write_csv"], first_arg="", long="triplegs", short="tpls")
     def to_csv(self, filename, *args, **kwargs):
-        ti.io.file.write_triplegs_csv(self, filename, *args, **kwargs)
+        ti.io.write_triplegs_csv(self, filename, *args, **kwargs)
 
     @doc(_shared_docs["write_postgis"], first_arg="", long="triplegs", short="tpls")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        ti.io.postgis.write_triplegs_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
+        ti.io.write_triplegs_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
     def calculate_distance_matrix(self, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
         """
@@ -98,7 +98,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
 
         See :func:`trackintel.preprocessing.spatial_filter` for full documentation.
         """
-        return ti.preprocessing.filter.spatial_filter(self, areas, method=method, re_project=re_project)
+        return ti.preprocessing.spatial_filter(self, areas, method=method, re_project=re_project)
 
     def generate_trips(self, staypoints, gap_threshold=15, add_geometry=True):
         """
@@ -106,17 +106,15 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
 
         See :func:`trackintel.preprocessing.generate_triplegs` for full documentation.
         """
-        return ti.preprocessing.triplegs.generate_trips(
-            staypoints, self, gap_threshold=gap_threshold, add_geometry=add_geometry
-        )
+        return ti.preprocessing.generate_trips(staypoints, self, gap_threshold=gap_threshold, add_geometry=add_geometry)
 
     def predict_transport_mode(self, method="simple-coarse", **kwargs):
         """
         Predict the transport mode of triplegs.
 
-        See :func:`trackintel.analysis.labelling.predict_transport_mode` for full documentation.
+        See :func:`trackintel.analysis.predict_transport_mode` for full documentation.
         """
-        return ti.analysis.labelling.predict_transport_mode(self, method=method, **kwargs)
+        return ti.analysis.predict_transport_mode(self, method=method, **kwargs)
 
     def calculate_modal_split(self, freq=None, metric="count", per_user=False, norm=False):
         """
