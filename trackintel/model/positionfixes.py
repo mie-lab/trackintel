@@ -15,10 +15,7 @@ _required_columns = ["user_id", "tracked_at"]
 
 @_register_trackintel_accessor("as_positionfixes")
 class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
-    """A pandas accessor to treat (Geo)DataFrames as collections of `Positionfixes`.
-
-    This will define certain methods and accessors, as well as make sure that the DataFrame
-    adheres to some requirements.
+    """Trackintel class to treat GeoDataFrames as collections of `Positionfixes`.
 
     Requires at least the following columns:
     ['user_id', 'tracked_at']

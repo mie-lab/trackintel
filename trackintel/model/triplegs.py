@@ -14,10 +14,7 @@ _required_columns = ["user_id", "started_at", "finished_at"]
 
 @_register_trackintel_accessor("as_triplegs")
 class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
-    """A pandas accessor to treat a GeoDataFrame as a collections of `Tripleg`.
-
-    This will define certain methods and accessors, as well as make sure that the DataFrame
-    adheres to some requirements.
+    """Trackintel class to treat a GeoDataFrame as a collections of `Tripleg`.
 
     Requires at least the following columns:
     ['user_id', 'started_at', 'finished_at']

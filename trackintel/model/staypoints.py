@@ -14,10 +14,7 @@ _required_columns = ["user_id", "started_at", "finished_at"]
 
 @_register_trackintel_accessor("as_staypoints")
 class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
-    """A pandas accessor to treat a GeoDataFrame as collections of `Staypoints`.
-
-    This will define certain methods and accessors, as well as make sure that the DataFrame
-    adheres to some requirements.
+    """Trackintel class to treat a GeoDataFrame as collections of `Staypoints`.
 
     Requires at least the following columns:
     ['user_id', 'started_at', 'finished_at']

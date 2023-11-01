@@ -14,7 +14,7 @@ _required_columns = ["user_id", "started_at", "finished_at"]
 
 @_register_trackintel_accessor("as_tours")
 class Tours(TrackintelBase, TrackintelDataFrame):
-    """A pandas accessor to treat DataFrames as collections of `Tours`.
+    """Trackintel class to treat DataFrames as collections of `Tours`.
 
     Requires at least the following columns:
     ['user_id', 'started_at', 'finished_at']
