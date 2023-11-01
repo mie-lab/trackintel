@@ -5,7 +5,7 @@ from pandas.testing import assert_series_equal
 from shapely.geometry import Point
 
 import trackintel as ti
-from trackintel.analysis import radius_gyration
+from trackintel.analysis import radius_gyration, jump_length
 from trackintel.geogr import point_haversine_dist
 
 
@@ -23,12 +23,12 @@ def staypoints():
     h = pd.Timedelta(hours=1)
 
     list_dict = [
-        {"id": 1, "user_id": 0, "started_at": t, "finished_at": t + 1 * h, "geom": p1},
-        {"id": 2, "user_id": 0, "started_at": t, "finished_at": t + 2 * h, "geom": p2},
-        {"id": 3, "user_id": 0, "started_at": t, "finished_at": t + 1 * h, "geom": p3},
-        {"id": 4, "user_id": 1, "started_at": t, "finished_at": t + 1 * h, "geom": p1},
-        {"id": 7, "user_id": 1, "started_at": t, "finished_at": t + 1 * h, "geom": p1},
-        {"id": 8, "user_id": 1, "started_at": t, "finished_at": t + 0 * h, "geom": p3},
+        {"id": 1, "user_id": 0, "started_at": t + 0 * h, "finished_at": t + 1 * h, "geom": p1},
+        {"id": 2, "user_id": 0, "started_at": t + 1 * h, "finished_at": t + 3 * h, "geom": p2},
+        {"id": 3, "user_id": 0, "started_at": t + 3 * h, "finished_at": t + 4 * h, "geom": p3},
+        {"id": 4, "user_id": 1, "started_at": t + 0 * h, "finished_at": t + 1 * h, "geom": p1},
+        {"id": 7, "user_id": 1, "started_at": t + 1 * h, "finished_at": t + 2 * h, "geom": p1},
+        {"id": 8, "user_id": 1, "started_at": t + 2 * h, "finished_at": t + 2 * h, "geom": p3},
     ]
     sp = ti.Staypoints(data=list_dict, geometry="geom", crs="EPSG:2056")
     return sp
@@ -79,4 +79,45 @@ class TestRadius_gyration:
         """Test if staypoint method returns same result"""
         sfunc = radius_gyration(staypoints)
         smeth = staypoints.radius_gyration()
+        assert_series_equal(sfunc, smeth)
+
+
+class TestJump_length:
+    def test_planar(self, staypoints):
+        """Test planar jump length implementation"""
+        s = jump_length(staypoints)
+        s_test = pd.Series([np.sqrt(18), np.sqrt(18), np.nan, 0, np.sqrt(72), np.nan])
+        assert_series_equal(s, s_test, check_names=False)
+
+    def test_haversine(self, staypoints):
+        """Test haversine jump length implementation"""
+        staypoints = staypoints.set_crs(4326, allow_override=True)
+        s = jump_length(staypoints)
+        g = staypoints.geometry
+        j1 = point_haversine_dist(g.iloc[0].x, g.iloc[0].y, g.iloc[1].x, g.iloc[1].y, float_flag=True)
+        j2 = point_haversine_dist(g.iloc[1].x, g.iloc[1].y, g.iloc[2].x, g.iloc[2].y, float_flag=True)
+        j3 = point_haversine_dist(g.iloc[-2].x, g.iloc[-2].y, g.iloc[-1].x, g.iloc[-1].y, float_flag=True)
+        s_test = pd.Series([j1, j2, np.nan, 0, j3, np.nan])
+        assert_series_equal(s, s_test, check_names=False)
+
+    def test_unordered(self, staypoints):
+        """Test if staypoints get sorted correctly"""
+        s1 = jump_length(staypoints)
+        staypoints = staypoints.sample(frac=1)
+        s2 = jump_length(staypoints)
+        s2 = s2.sort_index()
+        assert_series_equal(s1, s2)
+
+    def test_random_index(self, staypoints):
+        """Test if does not need consecutive index"""
+        s1 = jump_length(staypoints)
+        staypoints.index = [100, 1, 10, 1000, 1001, 999]
+        s2 = jump_length(staypoints)
+        s1.index = staypoints.index
+        assert_series_equal(s1, s2)
+
+    def test_staypoints_method(self, staypoints):
+        """Test if staypoint method returns same result"""
+        sfunc = jump_length(staypoints)
+        smeth = staypoints.jump_length()
         assert_series_equal(sfunc, smeth)

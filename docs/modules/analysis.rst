@@ -36,3 +36,5 @@ Metrics
 =======
 
 .. autofunction:: trackintel.analysis.radius_gyration
+
+.. autofunction:: trackintel.analysis.jump_length
