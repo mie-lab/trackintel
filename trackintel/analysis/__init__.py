@@ -10,7 +10,7 @@ from .location_identification import location_identifier
 from .location_identification import pre_filter_locations
 from .location_identification import freq_method, osna_method
 
-from .metrics import radius_gyration
+from .metrics import radius_gyration, jump_length
 
 __all__ = [
     "temporal_tracking_quality",
@@ -23,4 +23,5 @@ __all__ = [
     "freq_method",
     "osna_method",
     "radius_gyration",
+    "jump_length",
 ]

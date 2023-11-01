@@ -172,3 +172,11 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
         See :func:`trackintel.analysis.radius_gyration` for full documentation.
         """
         return ti.analysis.radius_gyration(self, method, print_progress)
+
+    def jump_length(self):
+        """
+        Calculate jump length per user between consecutive staypoints.
+
+        See :func:`trackintel.analysis.radius_gyration` for full documentation.
+        """
+        return ti.analysis.jump_length(self)
