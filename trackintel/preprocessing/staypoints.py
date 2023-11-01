@@ -5,7 +5,7 @@ from sklearn.cluster import DBSCAN
 import warnings
 
 from trackintel import Staypoints, Locations
-from trackintel.geogr.distances import meters_to_decimal_degrees, check_gdf_planar
+from trackintel.geogr import meters_to_decimal_degrees, check_gdf_planar
 from trackintel.preprocessing.util import applyParallel, angle_centroid_multipoints
 
 
@@ -260,7 +260,7 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     Examples
     --------
     >>> # direct function call
-    >>> ti.preprocessing.staypoints.merge_staypoints(staypoints=sp, triplegs=tpls)
+    >>> ti.preprocessing.merge_staypoints(staypoints=sp, triplegs=tpls)
     >>> # or using the trackintel datamodel
     >>> sp.merge_staypoints(triplegs, max_time_gap="1h", agg={"geom":"first"})
     """

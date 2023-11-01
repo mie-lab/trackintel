@@ -61,7 +61,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
 
     Examples
     --------
-    >>> from trackintel.preprocessing.triplegs import generate_trips
+    >>> from trackintel.preprocessing import generate_trips
     >>> staypoints, triplegs, trips = generate_trips(staypoints, triplegs)
 
     trips can also be directly generated using the tripleg accessor

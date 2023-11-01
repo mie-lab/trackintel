@@ -204,7 +204,7 @@ dtype: dict of column name to SQL type, default None
 Examples
 --------
 >>> {short}.to_postgis(conn_string, table_name)
->>> ti.io.postgis.write_{long}_postgis({short}, conn_string, table_name)
+>>> ti.io.write_{long}_postgis({short}, conn_string, table_name)
 """
 
 _shared_docs[

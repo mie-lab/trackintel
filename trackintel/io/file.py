@@ -60,7 +60,7 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, geom_co
     Note that this function is primarily useful if data is available in a
     longitude/latitude format. If your data already contains a WKT column,
     might be easier to just use the GeoPandas import functions
-    :func:`trackintel.io.from_geopandas.read_positionfixes_gpd`.
+    :func:`trackintel.io.read_positionfixes_gpd`.
 
     Examples
     --------

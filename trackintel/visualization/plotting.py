@@ -11,7 +11,7 @@ from networkx.exception import NetworkXPointlessConcept
 from pandas.api.types import is_datetime64_any_dtype
 from pint import UnitRegistry
 
-from trackintel.geogr.distances import check_gdf_planar, meters_to_decimal_degrees
+from trackintel.geogr import check_gdf_planar, meters_to_decimal_degrees
 
 
 def a4_figsize(fig_height_mm=None, columns=2):
@@ -150,7 +150,7 @@ def plot_osm_streets(north, south, east, west, ax):
 
     Examples
     --------
-    >>> ti.visualization.osm.plot_osm_street(47.392, 47.364, 8.557, 8.509, ax)
+    >>> ti.visualization.plotting.plot_osm_street(47.392, 47.364, 8.557, 8.509, ax)
     """
     try:
         G = ox.graph_from_bbox(north, south, east, west, network_type="drive")
@@ -355,7 +355,7 @@ def plot_modal_split(
     bar_kws=None,
 ):
     """
-    Plot modal split as returned by `trackintel.analysis.modal_split.calculate_modal_split`
+    Plot modal split as returned by `trackintel.analysis.calculate_modal_split`
 
     Parameters
     ----------

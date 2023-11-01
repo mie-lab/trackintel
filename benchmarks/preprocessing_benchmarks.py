@@ -86,7 +86,7 @@ class BM_Generate_TRIPS:
 
     def common_func(self):
         """Generate Trips"""
-        _, _, trips = ti.preprocessing.triplegs.generate_trips(self.sp, self.tpls)
+        _, _, trips = ti.preprocessing.generate_trips(self.sp, self.tpls)
         return trips
 
     def time_gen_trips_geolife_long(self):
@@ -109,11 +109,11 @@ class BM_Generate_TOURS:
         pfs, sp = pfs.as_positionfixes.generate_staypoints(method="sliding", dist_threshold=25, time_threshold=5)
         pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp, method="between_staypoints")
         sp = sp.as_staypoints.create_activity_flag(time_threshold=15)
-        _, _, self.trips = ti.preprocessing.triplegs.generate_trips(sp, tpls)
+        _, _, self.trips = ti.preprocessing.generate_trips(sp, tpls)
 
     def common_func(self):
         """Generate Tours"""
-        _, tours = ti.preprocessing.trips.generate_tours(self.trips, max_dist=100)
+        _, tours = ti.preprocessing.generate_tours(self.trips, max_dist=100)
         return tours
 
     def time_gen_tours_geolife_long(self):

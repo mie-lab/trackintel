@@ -44,7 +44,7 @@ def location_identifier(staypoints, method="FREQ", pre_filter=True, **pre_filter
 
     Examples
     --------
-    >>> from ti.analysis.location_identification import location_identifier
+    >>> from ti.analysis import location_identifier
     >>> location_identifier(staypoints, pre_filter=True, method="FREQ")
     """
     sp = staypoints.copy()
@@ -117,7 +117,7 @@ def pre_filter_locations(
 
     Examples
     --------
-    >>> from ti.analysis.location_identification import pre_filter_locations
+    >>> from ti.analysis import pre_filter_locations
     >>> mask = pre_filter_locations(staypoints)
     >>> staypoints = staypoints[mask]
     """
@@ -185,7 +185,7 @@ def freq_method(staypoints, *labels):
 
     Examples
     --------
-    >>> from ti.analysis.location_identification import freq_method
+    >>> from ti.analysis import freq_method
     >>> staypoints = freq_method(staypoints, "home", "work")
     """
     sp = staypoints.copy()
@@ -273,7 +273,7 @@ def osna_method(staypoints):
 
     Examples
     --------
-    >>> from ti.analysis.location_identification import osna_method
+    >>> from ti.analysis import osna_method
     >>> staypoints = osna_method(staypoints)
     """
     sp_in = staypoints  # no copy --> used to join back later.

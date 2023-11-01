@@ -1,6 +1,6 @@
 import pandas as pd
 
-from trackintel.geogr.distances import check_gdf_planar, calculate_haversine_length
+from trackintel.geogr import check_gdf_planar, calculate_haversine_length
 
 
 def calculate_modal_split(tpls, freq=None, metric="count", per_user=False, norm=False):
@@ -34,7 +34,7 @@ def calculate_modal_split(tpls, freq=None, metric="count", per_user=False, norm=
     ------
         `freq='W-MON'` is used for a weekly aggregation that starts on mondays.
         If `freq=None` and `per_user=False` are passed the modal split collapses to a single column.
-        The modal split can be visualized using :func:`trackintel.visualization.plot_modal_split`
+        The modal split can be visualized using :func:`trackintel.plot_modal_split`
 
     Examples
     --------

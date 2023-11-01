@@ -59,37 +59,37 @@ The following accessors are available within *trackintel*.
 Positionfixes
 ---------------------
 
-.. autoclass:: trackintel.model.positionfixes.Positionfixes
+.. autoclass:: trackintel.Positionfixes
 	:members:
 
 Staypoints
 ------------------
 
-.. autoclass:: trackintel.model.staypoints.Staypoints
+.. autoclass:: trackintel.Staypoints
 	:members:
 
 Triplegs
 ----------------
 
-.. autoclass:: trackintel.model.triplegs.Triplegs
+.. autoclass:: trackintel.Triplegs
 	:members:
 
 Locations
 -----------------
 
-.. autoclass:: trackintel.model.locations.Locations
+.. autoclass:: trackintel.Locations
 	:members:
 
 Trips
 -------------
 
-.. autoclass:: trackintel.model.trips.Trips
+.. autoclass:: trackintel.Trips
 	:members:
 
 Tours
 -------------
 
-.. autoclass:: trackintel.model.tours.Tours
+.. autoclass:: trackintel.Tours
 	:members:
 
 

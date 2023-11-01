@@ -64,10 +64,10 @@ class Tours(TrackintelBase, TrackintelDataFrame):
 
     @doc(_shared_docs["write_csv"], first_arg="", long="tours", short="tours")
     def to_csv(self, filename, *args, **kwargs):
-        ti.io.file.write_tours_csv(self, filename, *args, **kwargs)
+        ti.io.write_tours_csv(self, filename, *args, **kwargs)
 
     @doc(_shared_docs["write_postgis"], first_arg="", long="tours", short="tours")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        ti.io.postgis.write_tours_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
+        ti.io.write_tours_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
