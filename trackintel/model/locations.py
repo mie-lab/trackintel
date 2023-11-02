@@ -12,10 +12,7 @@ _required_columns = ["user_id", "center"]
 
 @_register_trackintel_accessor("as_locations")
 class Locations(TrackintelBase, TrackintelGeoDataFrame):
-    """A pandas accessor to treat a GeoDataFrames as a collections of locations.
-
-    This will define certain methods and accessors, as well as make sure that the DataFrame
-    adheres to some requirements.
+    """Trackintel class to treat a GeoDataFrames as a collections of locations.
 
     Requires at least the following columns:
     ['user_id', 'center']
