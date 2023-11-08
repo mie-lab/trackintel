@@ -80,5 +80,5 @@ __all__ = [
     "read_geolife",
     "read_mzmv",
     "geolife_add_modes_to_triplegs",
-    "read_gpx"
+    "read_gpx",
 ]
