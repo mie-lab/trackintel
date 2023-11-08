@@ -702,7 +702,8 @@ def read_gpx(path):
     pattern = os.path.join(path, "*.gpx")
     pfs_list = []
     track_fid_offset = 0
-    for file in glob.glob(pattern):
+    # sorted to make result deterministic
+    for file in sorted(glob.glob(pattern)):
         pfs = _read_single_gpx_file(file)
         # give each track an unique ID
         pfs["track_fid"] += track_fid_offset
