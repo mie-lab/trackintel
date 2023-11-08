@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<gpx version="1.1" creator="HiWi" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+<metadata>
+    <name>2023-11-08_15-56_Tue</name>
+    <time>2023-11-08T15:00:00Z</time>
+  </metadata>
+<trk>
+    <trkseg>
+      <trkpt lat="47.0" lon="8.0">
+        <ele>1000.0</ele>
+        <time>2023-11-08T10:00:00Z</time>
+        <hdop>10.0</hdop>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

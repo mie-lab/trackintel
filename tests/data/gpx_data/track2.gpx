@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<gpx version="1.1" creator="HiWi" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+<metadata>
+    <name>2023-11-08_15-56_Tue</name>
+    <time>2023-11-08T15:00:00Z</time>
+  </metadata>
+<trk>
+    <trkseg>
+      <trkpt lat="48.0" lon="9.0">
+        <ele>1001.0</ele>
+        <time>2023-11-08T11:00:00Z</time>
+        <hdop>11.0</hdop>
+        <extensions> <!-- cannot be read by fiora -->
+          <osmand:speed>0.2</osmand:speed>
+        </extensions>
+      </trkpt>
+      <trkpt lat="49.0" lon="10.0">
+        <ele>1002.0</ele>
+        <time>2023-11-08T12:00:00Z</time>
+        <hdop>12.0</hdop>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>
