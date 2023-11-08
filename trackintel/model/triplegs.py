@@ -101,7 +101,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
         """
         Generate trips based on staypoints and triplegs.
 
-        See :func:`trackintel.preprocessing.generate_triplegs` for full documentation.
+        See :func:`trackintel.preprocessing.generate_trips` for full documentation.
         """
         return ti.preprocessing.generate_trips(staypoints, self, gap_threshold=gap_threshold, add_geometry=add_geometry)
 
