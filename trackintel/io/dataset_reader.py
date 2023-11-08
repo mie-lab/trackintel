@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 from trackintel.preprocessing.util import calc_temp_overlap
 from trackintel import Positionfixes, Staypoints, Triplegs
+from trackintel.io import read_positionfixes_gpd
 
 FEET2METER = 0.3048
 CRS_WGS84 = 4326
@@ -683,3 +684,49 @@ def _mzmv_generate_sp(tpls, zf):
     added_cols = [b + c for b in ("S_", "Z_") for c in col[-7:]]
     tpls.drop(columns=added_cols, inplace=True)
     return sp
+
+
+def read_gpx(path):
+    """
+    Read gpx data and return it as Positionfixes of a single user
+
+    Parameters
+    ----------
+    path : str
+        Path to directory of gpx files. Non gpx files are ignored.
+
+    Returns
+    -------
+    Positionfixes
+    """
+    pattern = os.path.join(path, "*.gpx")
+    pfs_list = []
+    track_fid_offset = 0
+    for file in glob.glob(pattern):
+        pfs = _read_single_gpx_file(file)
+        # give each track an unique ID
+        pfs["track_fid"] += track_fid_offset
+        track_fid_offset = pfs["track_fid"].max() + 1
+        pfs_list.append(pfs)
+    return pd.concat(pfs_list, ignore_index=True)
+
+
+def _read_single_gpx_file(path):
+    """
+    Read track points out from single gpx file
+
+    Extension types are not supported by fiona and therefore dropped.
+
+    Parameters
+    ----------
+    path : str
+        Path to `.gpx` file with track
+
+    Returns
+    -------
+    Positionfixes
+    """
+    gdf = gpd.read_file(path, layer="track_points")
+    gdf = gdf.dropna(axis="columns", how="all")  # drop empty columns
+    gdf["user_id"] = 0  # maybe we have a smarter way for this
+    return read_positionfixes_gpd(gdf, tracked_at="time")
