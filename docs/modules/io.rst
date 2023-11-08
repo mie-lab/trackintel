@@ -104,3 +104,10 @@ We support easy parsing of the Geolife dataset including available mode labels.
 .. autofunction:: trackintel.io.read_geolife
 
 .. autofunction:: trackintel.io.geolife_add_modes_to_triplegs
+
+
+GPX
+-----------
+Load multiple tracks of the same user with this function.
+
+.. autofunction:: trackintel.io.read_gpx

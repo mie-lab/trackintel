@@ -37,6 +37,7 @@ from .from_geopandas import read_tours_gpd
 from .dataset_reader import read_geolife
 from .dataset_reader import read_mzmv
 from .dataset_reader import geolife_add_modes_to_triplegs
+from .dataset_reader import read_gpx
 
 __all__ = [
     # positionfixes
@@ -79,4 +80,5 @@ __all__ = [
     "read_geolife",
     "read_mzmv",
     "geolife_add_modes_to_triplegs",
+    "read_gpx"
 ]
