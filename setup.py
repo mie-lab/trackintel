@@ -13,7 +13,7 @@ from setuptools import find_packages, setup
 NAME = "trackintel"
 DESCRIPTION = "Human mobility and movement analysis framework."
 URL = "https://github.com/mie-lab/trackintel"
-EMAIL = "dobucher@ethz.ch, martinhe@ethz.ch"
+EMAIL = "dobucher@ethz.ch, martinhe@ethz.ch, hongy@ethz.ch"
 AUTHOR = "Dominik Bucher, Henry Martin, Ye Hong"
 REQUIRES_PYTHON = ">=3.6.0"
 VERSION = None
