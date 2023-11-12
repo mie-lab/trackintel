@@ -52,7 +52,7 @@ def read_geolife(geolife_path, print_progress=False):
     For some users, travel mode labels are provided as .txt file. These labels are read and returned as label dictionary.
     The label dictionary contains the user ids as keys and DataFrames with the available labels as values.
     Labels can be added to each user at the tripleg level, see
-    :func:`trackintel.io.dataset_reader.geolife_add_modes_to_triplegs` for more details.
+    :func:`trackintel.io.geolife_add_modes_to_triplegs` for more details.
 
     The folder structure within the geolife directory needs to be identical with the folder structure
     available from the official download. The means that the top level folder (provided with 'geolife_path')
