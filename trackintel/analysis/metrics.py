@@ -18,7 +18,6 @@ def radius_gyration(sp, method="count", print_progress=False):
 
         - `count`: assigns each Point the same weight of 1.
         - `duration`: assigns each Point a weight based on duration.
-          Additionally needs Timedelta column "duration" in sp.
 
     print_progress: bool, default False
         Show per-user progress if set to True.
@@ -65,7 +64,8 @@ def _radius_gyration_user(sp, method):
     y = sp.geometry.y
 
     if method == "duration":
-        w = sp["duration"].dt.total_seconds()
+        duration = sp["finished_at"] - sp["started_at"]
+        w = duration.dt.total_seconds()
     else:  # method == count (check is done in upper level)
         w = np.ones_like(x)
 

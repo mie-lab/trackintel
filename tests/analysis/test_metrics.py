@@ -51,7 +51,6 @@ class TestRadius_gyration:
 
     def test_duration(self, staypoints):
         """Test duration-method with a planar crs."""
-        staypoints["duration"] = staypoints["finished_at"] - staypoints["started_at"]
         s = radius_gyration(staypoints, method="duration")
         v1 = np.sqrt(4 * 3**2 / 4)  # center is (3, 12) weight is 4 due to duration
         v2 = 0  # center lies on p1 and only p1 remains -> 0 variance
