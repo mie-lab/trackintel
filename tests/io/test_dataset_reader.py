@@ -268,3 +268,8 @@ class TestGpx_reader:
         }
         pfs_test = Positionfixes(data, geometry="geometry", crs=4326)
         assert_geodataframe_equal(pfs, pfs_test)
+
+    def test_missing_files(self):
+        """Test if useful message is output if directory has no gpx files"""
+        with pytest.raises(FileNotFoundError, match="Found no gpx files"):
+            read_gpx(os.path.join("tests", "data"))

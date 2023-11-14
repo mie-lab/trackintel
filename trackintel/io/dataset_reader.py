@@ -700,10 +700,13 @@ def read_gpx(path):
     Positionfixes
     """
     pattern = os.path.join(path, "*.gpx")
+    # sorted to make result deterministic
+    files = sorted(glob.glob(pattern))
+    if not files:
+        raise FileNotFoundError(f'Found no gpx files in path "{path}"')
     pfs_list = []
     track_fid_offset = 0
-    # sorted to make result deterministic
-    for file in sorted(glob.glob(pattern)):
+    for file in files:
         pfs = _read_single_gpx_file(file)
         # give each track an unique ID
         pfs["track_fid"] += track_fid_offset
