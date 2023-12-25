@@ -14,7 +14,7 @@ def locs_from_geolife():
     sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
 
     # cluster staypoints to locations
-    _, locs = sp.as_staypoints.generate_locations(
+    _, locs = sp.generate_locations(
         method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
     )
 
@@ -34,16 +34,16 @@ class TestSpatial_filter:
         extent = gpd.read_file(os.path.join("tests", "data", "area", "tsinghua.geojson"))
 
         # the projection needs to be defined: WGS84
-        within_sp = sp.as_staypoints.spatial_filter(areas=extent, method="within", re_project=True)
-        intersects_sp = sp.as_staypoints.spatial_filter(areas=extent, method="intersects", re_project=True)
-        crosses_sp = sp.as_staypoints.spatial_filter(areas=extent, method="crosses", re_project=True)
+        within_sp = sp.spatial_filter(areas=extent, method="within", re_project=True)
+        intersects_sp = sp.spatial_filter(areas=extent, method="intersects", re_project=True)
+        crosses_sp = sp.spatial_filter(areas=extent, method="crosses", re_project=True)
 
         # the result obtained from ArcGIS
         gis_within_num = 13
 
-        assert len(within_sp) == gis_within_num, (
-            "The spatial filtered sp number should be the same as" + "the one from the result with ArcGIS"
-        )
+        assert (
+            len(within_sp) == gis_within_num
+        ), "The spatial filtered sp number should be the same as the one from the result with ArcGIS"
         assert len(crosses_sp) == 0, "There will be no point crossing area"
 
         # For staypoints the result of within and intersects should be the same
@@ -57,9 +57,9 @@ class TestSpatial_filter:
         extent = gpd.read_file(os.path.join("tests", "data", "area", "tsinghua.geojson"))
 
         # the projection needs to be defined: WGS84
-        within_tl = tpls.as_triplegs.spatial_filter(areas=extent, method="within", re_project=True)
-        intersects_tl = tpls.as_triplegs.spatial_filter(areas=extent, method="intersects", re_project=True)
-        crosses_tl = tpls.as_triplegs.spatial_filter(areas=extent, method="crosses", re_project=True)
+        within_tl = tpls.spatial_filter(areas=extent, method="within", re_project=True)
+        intersects_tl = tpls.spatial_filter(areas=extent, method="intersects", re_project=True)
+        crosses_tl = tpls.spatial_filter(areas=extent, method="crosses", re_project=True)
 
         # the result obtained from ArcGIS
         gis_within_num = 9
@@ -82,9 +82,9 @@ class TestSpatial_filter:
         extent = gpd.read_file(os.path.join("tests", "data", "area", "tsinghua.geojson"), crs="epsg:4326")
 
         # filter locations with the area
-        within_loc = locs.as_locations.spatial_filter(areas=extent, method="within", re_project=True)
-        intersects_loc = locs.as_locations.spatial_filter(areas=extent, method="intersects", re_project=True)
-        crosses_loc = locs.as_locations.spatial_filter(areas=extent, method="crosses", re_project=True)
+        within_loc = locs.spatial_filter(areas=extent, method="within", re_project=True)
+        intersects_loc = locs.spatial_filter(areas=extent, method="intersects", re_project=True)
+        crosses_loc = locs.spatial_filter(areas=extent, method="crosses", re_project=True)
 
         # the result obtained from ArcGIS
         gis_within_num = 12
@@ -103,12 +103,12 @@ class TestSpatial_filter:
         extent = gpd.read_file(os.path.join("tests", "data", "area", "tsinghua.geojson"))
 
         # filter locations with the area, reproject
-        within_loc_reProj = locs.as_locations.spatial_filter(areas=extent, method="within", re_project=True)
+        within_loc_reProj = locs.spatial_filter(areas=extent, method="within", re_project=True)
 
         # manual reproject
         init_crs = locs.crs
         locs = locs.to_crs(extent.crs)
-        within_loc = locs.as_locations.spatial_filter(areas=extent, method="within", re_project=False)
+        within_loc = locs.spatial_filter(areas=extent, method="within", re_project=False)
         within_loc = within_loc.to_crs(init_crs)
 
         assert_geodataframe_equal(within_loc_reProj, within_loc, check_less_precise=True)
@@ -118,4 +118,4 @@ class TestSpatial_filter:
         locs = locs_from_geolife
         extent = gpd.read_file(os.path.join("tests", "data", "area", "tsinghua.geojson"))
         with pytest.raises(AttributeError):
-            locs.as_locations.spatial_filter(areas=extent, method=12345)
+            locs.spatial_filter(areas=extent, method=12345)

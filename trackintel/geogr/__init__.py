@@ -6,6 +6,8 @@ from .distances import get_speed_positionfixes
 from .distances import get_speed_triplegs
 from .distances import check_gdf_planar
 
+from .filter import spatial_filter
+
 __all__ = [
     "calculate_distance_matrix",
     "calculate_haversine_length",
@@ -14,4 +16,5 @@ __all__ = [
     "get_speed_positionfixes",
     "get_speed_triplegs",
     "check_gdf_planar",
+    "spatial_filter",
 ]

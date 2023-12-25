@@ -67,6 +67,6 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
         """
         Filter Locations on a geo extent.
 
-        See :func:`trackintel.preprocessing.spatial_filter` for full documentation.
+        See :func:`trackintel.geogr.spatial_filter` for full documentation.
         """
-        return ti.preprocessing.spatial_filter(self, areas, method=method, re_project=re_project)
+        return ti.geogr.spatial_filter(self, areas, method=method, re_project=re_project)
