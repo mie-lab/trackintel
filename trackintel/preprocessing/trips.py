@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 import trackintel as ti
 from trackintel import Tours, Trips
+from trackintel.preprocessing.util import applyParallel
 
 
 def get_trips_grouped(trips, tours):
@@ -59,6 +60,7 @@ def generate_tours(
     max_time="1d",
     max_nr_gaps=0,
     print_progress=False,
+    n_jobs=1,
 ):
     """
     Generate trackintel-tours from trips
@@ -84,6 +86,12 @@ def generate_tours(
 
     print_progress : bool, default False
         If print_progress is True, the progress bar is displayed
+
+    n_jobs: int, default 1
+        The maximum number of concurrently running jobs. If -1 all CPUs are used. If 1 is given, no parallel
+        computing code is used at all, which is useful for debugging. See
+        https://joblib.readthedocs.io/en/latest/parallel.html#parallel-reference-documentation
+        for a detailed description
 
     Returns
     -------
@@ -150,19 +158,14 @@ def generate_tours(
         "geom_col": geom_col,
         "crs_is_projected": crs_is_projected,
     }
-    if print_progress:
-        tqdm.pandas(desc="User tour generation")
-        tours = (
-            trips_input.groupby(["user_id"], group_keys=False, as_index=False)
-            .progress_apply(_generate_tours_user, **kwargs)
-            .reset_index(drop=True)
-        )
-    else:
-        tours = (
-            trips_input.groupby(["user_id"], group_keys=False, as_index=False)
-            .apply(_generate_tours_user, **kwargs)
-            .reset_index(drop=True)
-        )
+
+    tours = applyParallel(
+        trips_input.groupby("user_id", group_keys=False, as_index=False),
+        _generate_tours_user,
+        print_progress=print_progress,
+        n_jobs=n_jobs,
+        **kwargs
+    )
 
     # No tours found
     if len(tours) == 0:
