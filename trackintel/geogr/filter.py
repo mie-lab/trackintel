@@ -1,6 +1,6 @@
 def spatial_filter(source, areas, method="within", re_project=False):
     """
-    Filter a GeoDataFrame on a geo extent.
+    Filter a GeoDataFrame on a geo extent. Using spatial indexing for improved performance.
 
     Parameters
     ----------
