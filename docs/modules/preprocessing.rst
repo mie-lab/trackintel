@@ -67,3 +67,8 @@ one trip can also be part of mulitple tours. A helper function can be used to ge
 
 .. autofunction:: trackintel.preprocessing.trips.get_trips_grouped
 
+Utils
+=============
+.. autofunction:: trackintel.preprocessing.calc_temp_overlap
+
+.. autofunction:: trackintel.preprocessing.applyParallel
