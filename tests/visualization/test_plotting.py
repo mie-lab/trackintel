@@ -224,6 +224,5 @@ class TestPlot:
         """Test call without set axis nor output file then call plt.show()."""
         pfs, sp, tpls, locs = test_data
         # agg cannot show plt.show() but locally we get a warning for it (except in Linux)
-        warnings.filterwarnings("ignore", "Matplotlib is currently using agg", category=UserWarning)
-        plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs)
-        warnings.resetwarnings()
+        with pytest.warns(UserWarning):
+            plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs)
