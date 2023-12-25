@@ -138,6 +138,8 @@ If you want to contribute, send a pull request and put yourself in the `AUTHORS.
 ## <span id="citelink">Citation</span>
 
 If you find this code useful for your work or use it in your project, please consider citing:
+
+Martin, H., Hong, Y., Wiedemann, N., Bucher, D., & Raubal, M. (2023). [Trackintel: An open-source Python library for human mobility analysis](https://doi.org/10.1016/j.compenvurbsys.2023.101938). Computers, Environment and Urban Systems, 101, 101938.
 ```
 @article{Martin_2023_trackintel,
   doi = {10.1016/j.compenvurbsys.2023.101938},
