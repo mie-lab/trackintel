@@ -286,10 +286,12 @@ class TestCheck_gdf_planar:
     def test_if_planer(self):
         """Check if planer crs is successfully checked."""
         p1 = Point(8.5067847, 47.4)
+        p2 = Point(8.60, 47.4)
         t1 = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
 
         list_dict = [
             {"user_id": 0, "started_at": t1, "finished_at": t1, "geom": p1},
+            {"user_id": 0, "started_at": t1, "finished_at": t1, "geom": p2},
         ]
         # a geographic crs different than wgs1984
         sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4610")

@@ -249,15 +249,19 @@ class TestGenerate_trips:
         sp_tpls_loaded["started_at_next"] = pd.to_datetime(sp_tpls_loaded["started_at_next"], utc=True)
         sp_tpls_loaded["finished_at"] = pd.to_datetime(sp_tpls_loaded["finished_at"], utc=True)
 
+        sp_tpls_loaded["trip_id"] = sp_tpls_loaded["trip_id"].astype("Int64")
+        sp_tpls_loaded["prev_trip_id"] = sp_tpls_loaded["prev_trip_id"].astype("Int64")
+        sp_tpls_loaded["next_trip_id"] = sp_tpls_loaded["next_trip_id"].astype("Int64")
+
         # generate trips and a joint staypoint/triplegs dataframe
         sp_proc, tpls_proc, trips = generate_trips(sp_in, tpls_in, gap_threshold=gap_threshold, add_geometry=False)
         sp_tpls = _create_debug_sp_tpls_data(sp_proc, tpls_proc, gap_threshold=gap_threshold)
 
         # test if generated trips are equal
-        pd.testing.assert_frame_equal(trips_loaded, trips)
+        assert_frame_equal(trips_loaded, trips)
 
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
-        assert_frame_equal(sp_tpls_loaded, sp_tpls, check_dtype=False)
+        assert_frame_equal(sp_tpls_loaded, sp_tpls)
 
     def test_generate_trips_id_management(self, example_triplegs_higher_gap_threshold):
         """Test if we can generate the example trips based on example data."""
@@ -265,6 +269,10 @@ class TestGenerate_trips:
         sp_tpls_loaded["started_at"] = pd.to_datetime(sp_tpls_loaded["started_at"])
         sp_tpls_loaded["started_at_next"] = pd.to_datetime(sp_tpls_loaded["started_at_next"])
         sp_tpls_loaded["finished_at"] = pd.to_datetime(sp_tpls_loaded["finished_at"])
+
+        sp_tpls_loaded["trip_id"] = sp_tpls_loaded["trip_id"].astype("Int64")
+        sp_tpls_loaded["prev_trip_id"] = sp_tpls_loaded["prev_trip_id"].astype("Int64")
+        sp_tpls_loaded["next_trip_id"] = sp_tpls_loaded["next_trip_id"].astype("Int64")
 
         sp, tpls = example_triplegs_higher_gap_threshold
 
@@ -274,7 +282,7 @@ class TestGenerate_trips:
         sp_tpls = _create_debug_sp_tpls_data(sp, tpls, gap_threshold=gap_threshold)
 
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
-        assert_frame_equal(sp_tpls_loaded, sp_tpls, check_dtype=False)
+        assert_frame_equal(sp_tpls_loaded, sp_tpls)
 
     def test_only_staypoints_in_trip(self):
         """Test that trips with only staypoints (non-activities) are deleted."""
