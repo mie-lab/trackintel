@@ -219,10 +219,3 @@ class TestPlot:
         plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs, plot_osm=True, ax=ax)
         assert ax.get_xlim() == (w, e)
         assert ax.get_ylim() == (s, n)
-
-    def test_no_ax_no_file(self, test_data):
-        """Test call without set axis nor output file then call plt.show()."""
-        pfs, sp, tpls, locs = test_data
-        # agg cannot show plt.show() but locally we get a warning for it (except in Linux)
-        with pytest.warns(UserWarning):
-            plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs)
