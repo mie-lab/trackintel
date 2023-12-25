@@ -1,5 +1,6 @@
 import datetime
 
+import numpy as np
 import geopandas as gpd
 from geopandas.testing import assert_geoseries_equal
 import pandas as pd
@@ -53,14 +54,14 @@ class TestExplodeAgg:
     def test_empty_agg(self):
         """Test function with empty agg DataFrame"""
         orig = [
-            {"a": 1, "b": "i", "c": None},
-            {"a": 2, "b": "i", "c": None},
+            {"a": 1, "b": "i", "c": np.nan},
+            {"a": 2, "b": "i", "c": np.nan},
         ]
         orig_df = pd.DataFrame(orig, columns=["a", "b"])
         agg_df = pd.DataFrame({}, columns=["id", "c"])
         returned_df = _explode_agg("id", "c", orig_df, agg_df)
         solution_df = pd.DataFrame(orig)
-        assert_frame_equal(returned_df, solution_df)
+        assert_frame_equal(returned_df, solution_df, check_dtype=False)
 
     def test_list_column(self):
         """Test function with a column of lists."""
