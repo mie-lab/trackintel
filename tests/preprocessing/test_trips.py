@@ -274,8 +274,8 @@ class TestGenerate_tours:
 
     def test_index_stability(self, example_trip_data):
         """Test if the index of the trips remains stable"""
-        trips, sp_locs = example_trip_data
-        trips_out, tours = ti.preprocessing.trips.generate_tours(trips, print_progress=True)
+        trips, _ = example_trip_data
+        trips_out, _ = ti.preprocessing.trips.generate_tours(trips, print_progress=False)
 
         assert trips.index.equals(trips_out.index)
 
