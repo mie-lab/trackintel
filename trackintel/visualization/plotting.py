@@ -54,7 +54,7 @@ def a4_figsize(fig_height_mm=None, columns=2):
         logging.warning(f"fig_height too large: {fig_height_mm}, so will reduce to {max_figh_height_mm}.")
         fig_height_mm = max_figh_height_mm
 
-    inch = 1/25.4  # millimeter in inches
+    inch = 1 / 25.4  # millimeter in inches
 
     logging.info(f"Creating figure of {fig_width_mm}x{fig_height_mm}.")
     return fig_width_mm * inch, fig_height_mm * inch
