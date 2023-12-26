@@ -119,7 +119,6 @@ ti.print_version()
 * Numpy
 * GeoPandas
 * Matplotlib 
-* Pint
 * NetworkX
 * GeoAlchemy2
 * scikit-learn
