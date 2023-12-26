@@ -41,7 +41,6 @@ autodoc_mock_imports = [
     "shapely.ops",
     "sklearn",
     "sklearn.neighbors",
-    "pint",
     "networkx",
     "networkx.exception",
     "osmnx",

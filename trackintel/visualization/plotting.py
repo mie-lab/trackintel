@@ -9,7 +9,6 @@ import osmnx as ox
 from matplotlib.collections import LineCollection
 from networkx.exception import NetworkXPointlessConcept
 from pandas.api.types import is_datetime64_any_dtype
-from pint import UnitRegistry
 
 from trackintel.geogr import check_gdf_planar, meters_to_decimal_degrees
 
@@ -55,14 +54,10 @@ def a4_figsize(fig_height_mm=None, columns=2):
         logging.warning(f"fig_height too large: {fig_height_mm}, so will reduce to {max_figh_height_mm}.")
         fig_height_mm = max_figh_height_mm
 
-    ureg = UnitRegistry()
-    fig_height_mm *= ureg.millimeter
-    fig_width_mm *= ureg.millimeter
-    fig_width = fig_width_mm.to(ureg.inch).magnitude
-    fig_height = fig_height_mm.to(ureg.inch).magnitude
+    inch = 1/25.4  # millimeter in inches
 
     logging.info(f"Creating figure of {fig_width_mm}x{fig_height_mm}.")
-    return fig_width, fig_height
+    return fig_width_mm * inch, fig_height_mm * inch
 
 
 def regular_figure():

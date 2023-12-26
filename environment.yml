@@ -9,7 +9,6 @@ dependencies:
 - geopandas>=0.12.0
 - scikit-learn
 - networkx 
-- pint
 - pip 
 - geoalchemy2 
 - osmnx 
