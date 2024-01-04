@@ -1,3 +1,4 @@
+import itertools
 import math
 import multiprocessing
 import warnings
@@ -82,44 +83,41 @@ def point_haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000, float_flag=False
     return r * np.arccos(cos_lat_d - cos_lat1 * cos_lat2 * (1 - cos_lon_d))
 
 
-def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
+def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=None, **kwds):
     """
-    Calculate a distance matrix based on a specific distance metric.
+    Compute the distance matrix from a vector array X and optional Y.
 
+    X and Y can either be Point geometries or LineString geometries.
     If only X is given, the pair-wise distances between all elements in X are calculated.
     If X and Y are given, the distances between all combinations of X and Y are calculated.
-    Distances between elements of X and X, and distances between elements of Y and Y are not calculated.
 
     Parameters
     ----------
-    X : Trackintel class
+    X : GeoDataFrame
 
-    Y : Trackintel class, optional
-        Should be of the same type as X
+    Y : GeoDataFrame, optional
+        Should have same geometry type as X
 
     dist_metric: {{'haversine', 'euclidean', 'dtw', 'frechet'}}, optional
         The distance metric to be used for calculating the matrix. By default 'haversine.
 
-        For staypoints or positionfixes, a common choice is 'haversine' or 'euclidean'. This function wraps around
-        the ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
-        ``scipy.spatial.distance.cdist`` function if X and Y are given.
+        For Point geometries we provide the 'haversine' metric.
+        This function then wraps `sklearn.metrics.pairwise_distances`.
         Therefore the following metrics are also accepted:
 
-        via ``scikit-learn``: `['cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan']`
+        - via ``scikit-learn``: `['cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan']`
 
-        via ``scipy.spatial.distance``: `['braycurtis', 'canberra', 'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
+        - via ``scipy.spatial.distance``: `['braycurtis', 'canberra', 'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
         'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener',
         'sokalsneath', 'sqeuclidean', 'yule']`
 
-        For triplegs, common choice is 'dtw' or 'frechet'. This function uses the implementation
-        from similaritymeasures.
+        For LineStrings, we provide the metrics {'dtw', 'frechet'} via the implementation from similaritymeasures.
 
     n_jobs: int, optional
-        Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available
-        if only X is given) are parallelized. By default 1.
+        Number of cores to use. Only used for Point-distances. Default uses all possible cores
 
     **kwds:
-        optional keywords passed to the distance functions.
+        Optional keywords passed to the distance functions.
 
     Returns
     -------
@@ -133,108 +131,47 @@ def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kw
     >>> pfs.calculate_distance_matrix(dist_metric="haversine")
     """
     geom_type = X.geometry.iat[0].geom_type
-    if Y is None:
-        Y = X
-    assert (
-        Y.geometry.iat[0].geom_type == Y.geometry.iat[0].geom_type
-    ), "x and y need same geometry type (only first column checked)"
+    if Y is not None and Y.geometry.iloc[0].geom_type != geom_type:
+        raise ValueError("X and Y need to have same geometry type.")
+    if geom_type not in ["Point", "LineString"]:
+        raise ValueError(f"We only support 'Point' and 'LineString'. Your geometry is {geom_type}")
 
     if geom_type == "Point":
-        x1 = X.geometry.x.values
-        y1 = X.geometry.y.values
-        x2 = Y.geometry.x.values
-        y2 = Y.geometry.y.values
+        if dist_metric == "haversine":  # curry our haversine distance
+            dist_metric = lambda a, b, **_: point_haversine_dist(*a, *b, float_flag=True)
+        X = shapely.get_coordinates(X.geometry)
+        Y = shapely.get_coordinates(Y.geometry) if Y is not None else X
+        print(X)
+        print(Y)
+        return pairwise_distances(X, Y, metric=dist_metric, n_jobs=n_jobs, **kwds)
 
-        if dist_metric == "haversine":
-            # create point pairs for distance calculation
-            nx = len(X)
-            ny = len(Y)
-
-            # if y != x they could have different dimensions
-            if ny >= nx:
-                ix_1, ix_2 = np.triu_indices(nx, k=1, m=ny)
-                trilix = np.tril_indices(nx, k=-1, m=ny)
-            else:
-                ix_1, ix_2 = np.tril_indices(nx, k=-1, m=ny)
-                trilix = np.triu_indices(nx, k=1, m=ny)
-
-            x1 = x1[ix_1]
-            y1 = y1[ix_1]
-            x2 = x2[ix_2]
-            y2 = y2[ix_2]
-
-            d = point_haversine_dist(x1, y1, x2, y2)
-
-            D = np.zeros((nx, ny))
-            D[(ix_1, ix_2)] = d
-
-            # mirror triangle matrix to be conform with scikit-learn format and to
-            # allow for non-symmetric distances in the future
-            D[trilix] = D.T[trilix]
-
-        else:
-            xy1 = np.concatenate((x1.reshape(-1, 1), y1.reshape(-1, 1)), axis=1)
-
-            if Y is not None:
-                xy2 = np.concatenate((x2.reshape(-1, 1), y2.reshape(-1, 1)), axis=1)
-                D = cdist(xy1, xy2, metric=dist_metric, **kwds)
-            else:
-                D = pairwise_distances(xy1, metric=dist_metric, n_jobs=n_jobs)
-
-        return D
-
-    elif geom_type == "LineString":
-        if dist_metric in ["dtw", "frechet"]:
-            # these are the preparation steps for all distance functions based only on coordinates
-
-            if dist_metric == "dtw":
-                d_fun = partial(similaritymeasures.dtw, **kwds)
-            else:
-                d_fun = partial(similaritymeasures.frechet_dist, **kwds)
-
-            # get combinations of distances that have to be calculated
-            nx = len(X)
-            ny = len(Y)
-
-            if ny >= nx:
-                ix_1, ix_2 = np.triu_indices(nx, k=1, m=ny)
-                trilix = np.tril_indices(nx, k=-1, m=ny)
-            else:
-                ix_1, ix_2 = np.tril_indices(nx, k=-1, m=ny)
-                trilix = np.triu_indices(nx, k=1, m=ny)
-
-            # get the coordinates as list of each LineString
-            left = list(X.iloc[ix_1].geometry.apply(lambda x: x.coords))
-            right = list(Y.iloc[ix_2].geometry.apply(lambda x: x.coords))
-
-            # map the combinations to the distance function
-            if n_jobs == -1 or n_jobs > 1:
-                if n_jobs == -1:
-                    n_jobs = multiprocessing.cpu_count()
-                with multiprocessing.Pool(processes=n_jobs) as pool:
-                    left_right = list(zip(left, right))
-                    res = list(pool.starmap(d_fun, left_right))
-            else:
-                res = list(map(d_fun, left, right))
-
-            if dist_metric == "dtw":
-                # the first return is the dtw distance, see docs of similaritymeasures.dtw
-                d = [dist[0] for dist in res]
-            else:
-                d = res
-
-            # write results to (symmetric) distance matrix
-            D = np.zeros((nx, ny))
-            D[(ix_1, ix_2)] = d
-            D[trilix] = D.T[trilix]
-            return D
-
-        else:
-            raise AttributeError(
-                "Metric unknown. We only support ['dtw', 'frechet'] for LineStrings. " f"You passed {dist_metric}"
-            )
+    # geom_type == "LineString"
+    # for LineStrings we cannot use pairwise_distance because it enforces float in its array
+    if dist_metric == "dtw":
+        dist_metric = lambda a, b, **kwd: similaritymeasures.dtw(a, b, **kwd)[0]
+    elif dist_metric == "frechet":
+        dist_metric = similaritymeasures.frechet_dist
     else:
-        raise AttributeError(f"We only support 'Point' and 'LineString'. Your geometry is {geom_type}")
+        raise ValueError(f"Metric '{dist_metric}' unknown. We only support ['dtw', 'frechet'] for LineStrings")
+    X = X.geometry.values
+    Y = Y.geometry.values if Y is not None else X
+
+    # the following code is adapted from scikit-learn pairwise_distance
+    # https://github.com/scikit-learn/scikit-learn/blob/3f89022fa04d293152f1d32fbc2a5bdaaf2df364/sklearn/metrics/pairwise.py#L1784
+    out = np.zeros((len(X), len(Y)), dtype="float")
+    if X is Y:
+        # Only calculate metric for upper triangle
+        iterator = itertools.combinations(range(len(X)), 2)
+        for i, j in iterator:
+            out[i, j] = dist_metric(X[i].coords, Y[j].coords, **kwds)
+        # Make symmetric
+        out = out + out.T
+    else:
+        # Calculate all cells
+        iterator = itertools.product(range(len(X)), range(len(Y)))
+        for i, j in iterator:
+            out[i, j] = dist_metric(X[i].coords, Y[j].coords, **kwds)
+    return out
 
 
 def meters_to_decimal_degrees(meters, latitude):
