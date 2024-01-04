@@ -137,8 +137,12 @@ def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=None, *
         raise ValueError(f"We only support 'Point' and 'LineString'. Your geometry is {geom_type}")
 
     if geom_type == "Point":
-        if dist_metric == "haversine":  # curry our haversine distance
-            dist_metric = lambda a, b, **_: point_haversine_dist(*a, *b, float_flag=True)
+        if dist_metric == "haversine":
+            # curry our haversine distance
+            def haversine_curry(a, b, **_):
+                return point_haversine_dist(*a, *b, float_flag=True)
+
+            dist_metric = haversine_curry
         X = shapely.get_coordinates(X.geometry)
         Y = shapely.get_coordinates(Y.geometry) if Y is not None else X
         return pairwise_distances(X, Y, metric=dist_metric, n_jobs=n_jobs, **kwds)
@@ -146,7 +150,11 @@ def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=None, *
     # geom_type == "LineString"
     # for LineStrings we cannot use pairwise_distance because it enforces float in its array
     if dist_metric == "dtw":
-        dist_metric = lambda a, b, **kwd: similaritymeasures.dtw(a, b, **kwd)[0]
+
+        def dtw(a, b, **kwds):
+            return similaritymeasures.dtw(a, b, **kwds)[0]
+
+        dist_metric = dtw
     elif dist_metric == "frechet":
         dist_metric = similaritymeasures.frechet_dist
     else:
