@@ -309,6 +309,14 @@ class TestCalculate_distance_matrix:
         with pytest.raises(ValueError, match="We only support 'Point' and 'LineString'."):
             calculate_distance_matrix(X=gdf, dist_metric="dtw", n_jobs=1)
 
+    def test_same_geometry_type(self, single_linestring, geolife_tpls):
+        """Test if error is raised if X and Y have different geometries"""
+        multi = MultiLineString([single_linestring, single_linestring])
+        t = [(0, multi), (1, multi)]
+        gdf = gpd.GeoDataFrame(t, columns=["id", "geometry"], geometry="geometry", crs="wgs84")
+        with pytest.raises(ValueError, match="X and Y need to have same geometry type."):
+            calculate_distance_matrix(gdf, geolife_tpls)
+
 
 class TestCheck_gdf_planar:
     """Tests for check_gdf_planar() method."""

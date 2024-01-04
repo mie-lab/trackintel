@@ -141,8 +141,6 @@ def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=None, *
             dist_metric = lambda a, b, **_: point_haversine_dist(*a, *b, float_flag=True)
         X = shapely.get_coordinates(X.geometry)
         Y = shapely.get_coordinates(Y.geometry) if Y is not None else X
-        print(X)
-        print(Y)
         return pairwise_distances(X, Y, metric=dist_metric, n_jobs=n_jobs, **kwds)
 
     # geom_type == "LineString"
