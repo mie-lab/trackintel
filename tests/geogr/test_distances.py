@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from geopandas.testing import assert_geodataframe_equal
+import shapely
 from shapely import wkt
 from shapely.geometry import LineString, MultiLineString, Point
 from sklearn.metrics import pairwise_distances
@@ -81,6 +82,44 @@ def example_triplegs():
     pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp)
     return pfs, tpls
 
+@pytest.fixture
+def geolife_sp():
+    """Load stored geolife staypoints"""
+    sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+    return ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+
+@pytest.fixture
+def two_pfs():
+    """Generate two Positionfixes with their euclidean distance"""
+    p1 = Point(0, 0)
+    p2 = Point(0, 4)
+    p3 = Point(3, 4)  # euclidean dist p1 to p3 = 5
+    p4 = Point(3, 0)  # euclidean dist p2 to p4 = 5
+
+    t = pd.Timestamp.now(tz="utc")  # time doesn't matter
+
+    data0 = [
+        {"user_id": 0, "tracked_at": t, "geom": p1},
+        {"user_id": 0, "tracked_at": t, "geom": p2},
+        {"user_id": 0, "tracked_at": t, "geom": p3}
+    ]
+    pfs0 = ti.Positionfixes(data=data0, geometry="geom", crs="EPSG:4326")
+    pfs0.index.name = "id"
+
+    data1 = [
+        {"user_id": 0, "tracked_at": t, "geom": p1},
+        {"user_id": 0, "tracked_at": t, "geom": p4},
+    ]
+    pfs1 = ti.Positionfixes(data=data1, geometry="geom", crs="EPSG:4326")
+    pfs1.index.name = "id"
+    euc00 = np.array([[0., 4., 5.],
+                      [4., 0., 3.],
+                      [5., 3., 0.]])
+    euc01 = np.array([[0., 3.],
+                      [4., 5.],
+                      [5., 4.]])
+    return pfs0, euc00, pfs1, euc01
+
 
 class TestHaversineDist:
     def test_haversine_dist(self):
@@ -108,11 +147,9 @@ class TestHaversineDist:
             haversine_output = point_haversine_dist(latlng[0], latlng[1], latlng[2], latlng[3])
             assert np.isclose(haversine_output, haversine, atol=0.1)
 
-    def test_haversine_vectorized(self):
-        sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
-        x = sp.geometry.x.values
-        y = sp.geometry.y.values
+    def test_haversine_vectorized(self, geolife_sp):
+        x = geolife_sp.geometry.x.values
+        y = geolife_sp.geometry.y.values
 
         n = len(x)
         # our distance
@@ -149,12 +186,9 @@ class TestHaversineDist:
 class TestCalculate_distance_matrix:
     """Tests for the calculate_distance_matrix() function."""
 
-    def test_shape_for_different_array_length(self):
-        sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
-
-        x = sp.iloc[0:5]
-        y = sp.iloc[5:15]
+    def test_shape_for_different_array_length(self, geolife_sp):
+        x = geolife_sp.iloc[0:5]
+        y = geolife_sp.iloc[5:15]
 
         d_euc1 = calculate_distance_matrix(X=x, Y=y, dist_metric="euclidean")
         d_euc2 = calculate_distance_matrix(X=y, Y=x, dist_metric="euclidean")
@@ -166,12 +200,9 @@ class TestCalculate_distance_matrix:
         assert np.isclose(0, np.sum(np.abs(d_euc1 - d_euc2.T)))
         assert np.isclose(0, np.sum(np.abs(d_hav1 - d_hav2.T)))
 
-    def test_keyword_combinations(self):
-        sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
-
-        x = sp.iloc[0:5]
-        y = sp.iloc[5:15]
+    def test_keyword_combinations(self, geolife_sp):
+        x = geolife_sp.iloc[0:5]
+        y = geolife_sp.iloc[5:15]
 
         _ = calculate_distance_matrix(X=x, Y=y, dist_metric="euclidean", n_jobs=-1)
         _ = calculate_distance_matrix(X=y, Y=x, dist_metric="haversine", n_jobs=-1)
@@ -182,14 +213,12 @@ class TestCalculate_distance_matrix:
         assert not np.array_equal(d_mink1, d_mink2)
         assert np.array_equal(d_euc, d_mink2)
 
-    def test_compare_haversine_to_scikit_xy(self):
+    def test_compare_haversine_to_scikit_xy(self, geolife_sp):
         """Test the results using our haversine function and scikit function."""
-        sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
-        our_d_matrix = calculate_distance_matrix(X=sp, Y=sp, dist_metric="haversine")
+        our_d_matrix = calculate_distance_matrix(X=geolife_sp, Y=geolife_sp, dist_metric="haversine")
 
-        x = sp.geometry.x.values
-        y = sp.geometry.y.values
+        x = geolife_sp.geometry.x.values
+        y = geolife_sp.geometry.y.values
 
         x_rad = np.asarray([radians(_) for _ in x])
         y_rad = np.asarray([radians(_) for _ in y])
@@ -198,6 +227,25 @@ class TestCalculate_distance_matrix:
         their_d_matrix = pairwise_distances(yx, metric="haversine") * 6371000
         # atol = 10mm
         assert np.allclose(our_d_matrix, their_d_matrix, atol=0.01)
+
+    def test_compare_haversine_to_scikit_xy_with_Y(self, two_pfs):
+        pfs0, _, pfs1, _ = two_pfs
+        res01 = calculate_distance_matrix(X=pfs0, Y=pfs1, dist_metric="haversine")
+        rad0 = np.radians(shapely.get_coordinates(pfs0.geometry))
+        rad1 = np.radians(shapely.get_coordinates(pfs1.geometry))
+        sol01 = pairwise_distances(rad0, rad1, metric="haversine") * 6371000
+        # atol = 10mm
+        assert np.allclose(res01, sol01, atol=0.01)
+    
+    def test_known_euclidean_distance(self, two_pfs):
+        """Test the result comparing to known euclidean distances"""
+        pfs0, euc00, pfs1, euc01 = two_pfs
+        res00 = calculate_distance_matrix(X=pfs0, dist_metric="euclidean")
+        res01 = calculate_distance_matrix(X=pfs0, Y=pfs1, dist_metric="euclidean")
+        print(res00)
+        assert np.all(euc00 == res00)
+        assert np.all(euc01 == res01)
+    
 
     def test_trajectory_distance_dtw(self, geolife_tpls):
         """Calculate Linestring length using dtw, single and multi core."""
