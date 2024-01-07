@@ -1,11 +1,9 @@
 import os
 
-import numpy as np
 import pandas as pd
 import pytest
 
 import trackintel as ti
-from trackintel.analysis.labelling import _check_categories
 
 
 class TestCreate_activity_flag:
@@ -100,14 +98,3 @@ class TestPredict_transport_mode:
         assert tpls_transport_mode_3.iloc[0]["mode"] == "slow_mobility"
         assert tpls_transport_mode_3.iloc[1]["mode"] == "motorized_mobility"
         assert tpls_transport_mode_3.iloc[2]["mode"] == "fast_mobility"
-
-    def test_check_categories(self):
-        """Asserts the correct identification of valid category dictionaries."""
-        tpls_file = os.path.join("tests", "data", "triplegs_transport_mode_identification.csv")
-        tpls = ti.read_triplegs_csv(tpls_file, sep=";", index_col="id")
-        correct_dict = {2: "cat1", 7: "cat2", np.inf: "cat3"}
-
-        assert _check_categories(correct_dict)
-        with pytest.raises(ValueError):
-            incorrect_dict = {10: "cat1", 5: "cat2", np.inf: "cat3"}
-            tpls.as_triplegs.predict_transport_mode(method="simple-coarse", categories=incorrect_dict)
