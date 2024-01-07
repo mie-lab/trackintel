@@ -231,10 +231,11 @@ class TestCalculate_distance_matrix:
         res01 = calculate_distance_matrix(X=pfs0, Y=pfs1, dist_metric="haversine")
         rad0 = np.radians(shapely.get_coordinates(pfs0.geometry))
         rad1 = np.radians(shapely.get_coordinates(pfs1.geometry))
+        # pairwise distance takes lat, lon input. Points are lon, lat
+        rad0 = np.roll(rad0, 1, axis=1)
+        rad1 = np.roll(rad1, 1, axis=1)
         sol01 = pairwise_distances(rad0, rad1, metric="haversine") * 6371000
-        # TODO: increase precision of haversine dist such we can lower the tolerance
-        # see issue #593 for more information
-        assert np.allclose(res01, sol01, rtol=1e-2)
+        assert np.allclose(res01, sol01)
 
     def test_known_euclidean_distance(self, two_pfs):
         """Test the result comparing to known euclidean distances"""
