@@ -114,7 +114,9 @@ def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=None, *
         For LineStrings, we provide the metrics {'dtw', 'frechet'} via the implementation from similaritymeasures.
 
     n_jobs: int, optional
-        Number of cores to use. Only used for Point-distances. Default uses all possible cores
+        The number of jobs to use for the computation. Ignored for LineStrings.
+        None means 1 unless in a joblib.parallel_backend context. -1 means using all processors.
+        See `sklearn.metrics.pairwise_distances` for more informations.
 
     **kwds:
         Optional keywords passed to the distance functions.
