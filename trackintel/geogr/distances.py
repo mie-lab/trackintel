@@ -1,18 +1,15 @@
 import itertools
 import math
-import multiprocessing
 import warnings
-from functools import partial
 from math import cos, pi
 
 import numpy as np
 import pandas as pd
 import shapely
 import similaritymeasures
-from scipy.spatial.distance import cdist
 from sklearn.metrics import pairwise_distances
 
-from trackintel import Positionfixes, Triplegs
+from trackintel import Triplegs
 
 
 def point_haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000, float_flag=False):
