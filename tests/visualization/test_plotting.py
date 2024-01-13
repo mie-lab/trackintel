@@ -1,6 +1,5 @@
 import datetime
 import os
-import warnings
 
 import matplotlib
 import numpy as np
