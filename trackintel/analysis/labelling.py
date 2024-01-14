@@ -38,7 +38,7 @@ def create_activity_flag(staypoints, method="time_threshold", time_threshold=15.
             minutes=time_threshold
         )
     else:
-        raise AttributeError(f"Method {method} not known for creating activity flag.")
+        raise ValueError(f"Method {method} not known for creating activity flag.")
 
     return staypoints
 
@@ -86,7 +86,7 @@ def predict_transport_mode(triplegs, method="simple-coarse", **kwargs):
         triplegs["mode"] = _predict_transport_mode_simple_coarse(triplegs, categories)
         return triplegs
     else:
-        raise AttributeError(f"Method {method} not known for predicting tripleg transport modes.")
+        raise ValueError(f"Method {method} not known for predicting tripleg transport modes.")
 
 
 def _predict_transport_mode_simple_coarse(triplegs, categories):

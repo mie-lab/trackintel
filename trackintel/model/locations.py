@@ -51,7 +51,7 @@ class Locations(TrackintelBase, TrackintelGeoDataFrame):
         if obj["center"].iloc[0].geom_type != "Point":
             # todo: We could think about allowing both geometry types for locations (point and polygon)
             # One for extend and one for the center
-            raise ValueError("The center geometry must be a Point (only first checked).")
+            raise TypeError("The center geometry must be a Point (only first checked).")
 
     @doc(_shared_docs["write_csv"], first_arg="", long="locations", short="locs")
     def to_csv(self, filename, *args, **kwargs):

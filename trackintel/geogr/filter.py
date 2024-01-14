@@ -61,9 +61,7 @@ def spatial_filter(source, areas, method="within", re_project=False):
     elif method == "crosses":
         ret_gdf = possible_matches.loc[possible_matches.crosses(areas.unary_union)]
     else:
-        raise AttributeError(
-            "method unknown. We only support ['within', 'intersects', 'crosses']. " f"You passed {method}"
-        )
+        raise ValueError("method unknown. We only support ['within', 'intersects', 'crosses']. " f"You passed {method}")
 
     if re_project:
         return ret_gdf.to_crs(init_crs)

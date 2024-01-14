@@ -506,10 +506,10 @@ class TestPfsMeanSpeedTriplegs:
         assert_geodataframe_equal(tpls_speed_acc, tpls_speed_normal)
 
     def test_pfs_input_assertion(self, example_triplegs):
-        """Test whether an AttributeError is raised if no positionfixes are provided as input"""
+        """Test whether an ValueError is raised if no positionfixes are provided as input"""
         error_msg = 'Method "pfs_mean_speed" requires positionfixes as input.'
         _, tpls = example_triplegs
-        with pytest.raises(AttributeError, match=error_msg):
+        with pytest.raises(ValueError, match=error_msg):
             ti.geogr.distances.get_speed_triplegs(tpls, None, method="pfs_mean_speed")
 
     def test_pfs_tripleg_id_assertion(self, example_triplegs):
@@ -548,8 +548,9 @@ class TestSimpleSpeedTriplegs:
         tpls_speed_normal = ti.geogr.distances.get_speed_triplegs(tpls)
         assert_geodataframe_equal(tpls_speed_acc, tpls_speed_normal)
 
-    def test_method_error(self):
+    def test_method_error(self, example_triplegs):
         """Test whether an error is triggered if wrong posistionfixes are used as input"""
-        with pytest.raises(Exception) as e_info:
-            _ = ti.geogr.distances.get_speed_triplegs(None, None, method="wrong_method")
-            assert e_info == "Method wrong_method not known for speed computation."
+        meth = "wrong_method"
+        _, tpls = example_triplegs
+        with pytest.raises(ValueError, match=f"Method {meth} not known for speed computation."):
+            _ = ti.geogr.distances.get_speed_triplegs(tpls, None, method=meth)

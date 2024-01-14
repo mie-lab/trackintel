@@ -108,7 +108,7 @@ def temporal_tracking_quality(source, granularity="all"):
         column_name = "hour"
 
     else:
-        raise AttributeError(
+        raise ValueError(
             f"granularity unknown. We only support ['all', 'day', 'week', 'weekday', 'hour']. You passed {granularity}"
         )
 
@@ -159,7 +159,7 @@ def _get_tracking_quality_user(df, granularity="all"):
         # (entries from multiple days may be grouped together)
         extent = (60 * 60) * (df["day"].max() - df["day"].min() + 1)
     else:
-        raise AttributeError(
+        raise ValueError(
             f"granularity unknown. We only support ['all', 'day', 'week', 'weekday', 'hour']. You passed {granularity}"
         )
     return pd.Series([tracked_duration / extent], index=["quality"])

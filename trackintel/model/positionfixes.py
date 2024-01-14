@@ -71,7 +71,7 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
 
         if obj.geometry.iloc[0].geom_type != "Point":
-            raise AttributeError("The geometry must be a Point (only first checked).")
+            raise TypeError("The geometry must be a Point (only first checked).")
 
     @property
     def center(self):

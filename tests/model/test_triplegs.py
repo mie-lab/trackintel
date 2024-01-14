@@ -44,7 +44,7 @@ class TestTriplegs:
         tpls = testdata_tpls.copy()
 
         # check geometry type
-        with pytest.raises(AttributeError, match="The geometry must be a LineString"):
+        with pytest.raises(TypeError, match="The geometry must be a LineString"):
             tpls["geom"] = Point([(13.476808430, 48.573711823)])
             tpls.as_triplegs
 

@@ -348,7 +348,7 @@ def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
     # Pfs-based method: compute speed per positionfix and average then
     elif method == "pfs_mean_speed":
         if positionfixes is None:
-            raise AttributeError('Method "pfs_mean_speed" requires positionfixes as input.')
+            raise ValueError('Method "pfs_mean_speed" requires positionfixes as input.')
         if "tripleg_id" not in positionfixes:
             raise AttributeError('Positionfixes must include column "tripleg_id".')
         # group positionfixes by triplegs and compute average speed for each collection of positionfixes
@@ -359,7 +359,7 @@ def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
         return tpls
 
     else:
-        raise AttributeError(f"Method {method} not known for speed computation.")
+        raise ValueError(f"Method {method} not known for speed computation.")
 
 
 def _single_tripleg_mean_speed(positionfixes):
