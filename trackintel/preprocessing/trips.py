@@ -1,13 +1,11 @@
 import warnings
 from datetime import timedelta
 
-import geopandas as gpd
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 
 import trackintel as ti
-from trackintel import Tours, Trips
+from trackintel import Tours
 from trackintel.preprocessing.util import applyParallel
 
 

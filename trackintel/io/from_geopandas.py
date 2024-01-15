@@ -1,7 +1,6 @@
 import warnings
 import pandas as pd
 import geopandas as gpd
-import pytz
 
 from trackintel import Positionfixes, Staypoints, Triplegs, Locations, Trips, Tours
 
