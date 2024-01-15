@@ -313,8 +313,8 @@ class Test_Generate_staypoints_sliding_user:
     """Test for _generate_staypoints_sliding_user."""
 
     def test_unknown_distance_metric(self, example_positionfixes):
-        """Test if the distance metric is unknown, an AttributeError will be raised."""
-        with pytest.raises(AttributeError):
+        """Test if the distance metric is unknown, an ValueError will be raised."""
+        with pytest.raises(ValueError):
             example_positionfixes.as_positionfixes.generate_staypoints(
                 method="sliding", dist_threshold=100, time_threshold=5, distance_metric="unknown"
             )
@@ -508,12 +508,12 @@ class TestGenerate_triplegs:
         assert (tpls_case2.index == np.arange(len(tpls_case2))).any()
 
     def test_invalid_inputs(self, geolife_pfs_sp_long):
-        """Test if AttributeError will be raised after invalid method input."""
+        """Test if ValueError will be raised after invalid method input."""
         pfs, sp = geolife_pfs_sp_long
 
-        with pytest.raises(AttributeError, match="Method unknown"):
+        with pytest.raises(ValueError, match="Method unknown"):
             pfs.as_positionfixes.generate_triplegs(sp, method="random")
-        with pytest.raises(AttributeError, match="Method unknown"):
+        with pytest.raises(ValueError, match="Method unknown"):
             pfs.as_positionfixes.generate_triplegs(sp, method=12345)
 
     def test_temporal(self, geolife_pfs_sp_long):

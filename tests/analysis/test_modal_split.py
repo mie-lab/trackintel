@@ -204,7 +204,7 @@ class TestModalSplit:
         """Check if error is raised if unknown metric is passed."""
         metric = "unknown_metric"
         error_msg = f"Metric {metric} unknown, only metrics {{'count', 'distance', 'duration'}} are supported."
-        with pytest.raises(AttributeError, match=error_msg):
+        with pytest.raises(ValueError, match=error_msg):
             calculate_modal_split(test_triplegs_modal_split, metric=metric)
 
 

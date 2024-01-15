@@ -55,7 +55,7 @@ def calculate_modal_split(tpls, freq=None, metric="count", per_user=False, norm=
         metric = "mode"  # count on mode
     else:
         error_msg = f"Metric {metric} unknown, only metrics {{'count', 'distance', 'duration'}} are supported."
-        raise AttributeError(error_msg)
+        raise ValueError(error_msg)
 
     group = []
     if per_user:

@@ -40,7 +40,7 @@ class TestStaypoints:
         sp = testdata_sp.copy()
 
         # check geometry type
-        with pytest.raises(AttributeError, match="The geometry must be a Point"):
+        with pytest.raises(TypeError, match="The geometry must be a Point"):
             sp["geom"] = LineString([(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)])
             sp.as_staypoints
 

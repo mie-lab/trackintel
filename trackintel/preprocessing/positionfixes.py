@@ -395,7 +395,7 @@ def generate_triplegs(
         return pfs, Triplegs(tpls)
 
     else:
-        raise AttributeError(f"Method unknown. We only support 'between_staypoints'. You passed {method}")
+        raise ValueError(f"Method unknown. We only support 'between_staypoints'. You passed {method}")
 
 
 def _generate_staypoints_sliding_user(
@@ -405,7 +405,7 @@ def _generate_staypoints_sliding_user(
     if distance_metric == "haversine":
         dist_func = point_haversine_dist
     else:
-        raise AttributeError("distance_metric unknown. We only support ['haversine']. " f"You passed {distance_metric}")
+        raise ValueError("distance_metric unknown. We only support ['haversine']. " f"You passed {distance_metric}")
 
     df = df.sort_index(kind="stable").sort_values(by=["tracked_at"], kind="stable")
 

@@ -76,9 +76,9 @@ def generate_locations(
     """
     Staypoints.validate(staypoints)
     if agg_level not in ["user", "dataset"]:
-        raise AttributeError(f"agg_level '{agg_level}' is unknown. Supported values are ['user', 'dataset'].")
+        raise ValueError(f"agg_level '{agg_level}' is unknown. Supported values are ['user', 'dataset'].")
     if method not in ["dbscan"]:
-        raise AttributeError(f"method '{method}' is unknown. Supported value is ['dbscan'].")
+        raise ValueError(f"method '{method}' is unknown. Supported value is ['dbscan'].")
 
     # initialize the return GeoDataFrames
     sp = staypoints.copy()

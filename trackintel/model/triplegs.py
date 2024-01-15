@@ -69,7 +69,7 @@ class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
             obj.geometry.is_valid.all()
         ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
         if obj.geometry.iloc[0].geom_type != "LineString":
-            raise AttributeError("The geometry must be a LineString (only first checked).")
+            raise TypeError("The geometry must be a LineString (only first checked).")
 
     @doc(_shared_docs["write_csv"], first_arg="", long="triplegs", short="tpls")
     def to_csv(self, filename, *args, **kwargs):

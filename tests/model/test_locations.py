@@ -34,7 +34,7 @@ class TestLocations:
         testdata_locs["center"] = LineString(
             [(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)]
         )
-        with pytest.raises(ValueError, match="The center geometry must be a Point"):
+        with pytest.raises(TypeError, match="The center geometry must be a Point"):
             testdata_locs.as_locations
 
     def test_accessor_empty(self, testdata_locs):

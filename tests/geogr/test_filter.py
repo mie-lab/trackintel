@@ -117,5 +117,5 @@ class TestSpatial_filter:
         """Test if the an error is raised when passing unknown 'method' to spatial_filter()."""
         locs = locs_from_geolife
         extent = gpd.read_file(os.path.join("tests", "data", "area", "tsinghua.geojson"))
-        with pytest.raises(AttributeError):
+        with pytest.raises(ValueError):
             locs.spatial_filter(areas=extent, method=12345)
