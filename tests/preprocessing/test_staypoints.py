@@ -23,7 +23,7 @@ def example_staypoints():
     The following staypoint ids should be noise (2, 7)
 
     for agg_level="dataset"
-    The following staypoint ids should form a location (1, 15), (5,6, 80, 3),
+    The following staypoint ids should form a location (1, 15), (5, 6, 80, 3),
     The following staypoint ids should be noise (2, 7)
     """
     p1 = Point(8.5067847, 47.4)
@@ -50,8 +50,7 @@ def example_staypoints():
     ]
     sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     sp = sp.set_index("id")
-    sp.as_staypoints
-    return sp
+    return ti.Staypoints(sp)
 
 
 @pytest.fixture
@@ -85,11 +84,10 @@ def example_staypoints_merge():
     ]
     sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     sp = sp.set_index("id")
-    sp.as_staypoints
 
     # generate empty triplegs for the merge function
     tpls = pd.DataFrame([], columns=["user_id", "started_at", "finished_at"])
-    return sp, tpls
+    return ti.Staypoints(sp), tpls
 
 
 @pytest.fixture
@@ -139,17 +137,36 @@ class TestGenerate_locations:
         sp = example_staypoints
 
         # without parallel computing code
-        sp_ori, locs_ori = sp.as_staypoints.generate_locations(
+        sp_ori, locs_ori = sp.generate_locations(
             method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user", n_jobs=1
         )
         # using two cores
-        sp_para, locs_para = sp.as_staypoints.generate_locations(
+        sp_para, locs_para = sp.generate_locations(
             method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user", n_jobs=2
         )
 
         # the result of parallel computing should be identical
         assert_geodataframe_equal(locs_ori, locs_para)
         assert_geodataframe_equal(sp_ori, sp_para)
+
+    def test_extent_buffer(self):
+        """Extent geometry shall be buffered with epsilon."""
+        sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
+
+        epsilon = 100
+        # haversine calculation using sklearn.metrics.pairwise_distances
+        sp, locs = sp.as_staypoints.generate_locations(
+            method="dbscan", epsilon=epsilon, num_samples=1, distance_metric="haversine", agg_level="dataset"
+        )
+
+        # use extent as geometry
+        locs = gpd.GeoDataFrame(locs.drop(columns={"center"}), geometry="extent", crs="EPSG:4326")
+        # WGS_1984_UTM_Zone_49N
+        locs = locs.to_crs("epsg:32649")
+
+        # area shall be buffered -> thus larger than the circle with buffer as radius
+        assert (locs.area > epsilon**2 * np.pi).all()
 
     def test_dbscan_hav_euc(self):
         """Test if using haversine and euclidean distances will generate the same location result."""
@@ -403,7 +420,7 @@ class TestGenerate_locations:
     def test_index_stability(self, example_staypoints):
         """Test if the index of the staypoints remains stable"""
         sp = example_staypoints
-        sp2, locs = sp.as_staypoints.generate_locations(
+        sp2, _ = sp.as_staypoints.generate_locations(
             method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user"
         )
         assert sp.index.equals(sp2.index)
