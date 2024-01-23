@@ -68,7 +68,7 @@ def generate_locations(
         The original staypoints with a new column ``[`location_id`]``.
 
     locs: Locations
-        The generated locations.
+        The generated locations, with geometry columns ``[`center` (default geometry), `extent`]``. Depending on the contained staypoints, `center` is their centroid, and `extent` is their convex hull with a buffer distance of `epsilon`.
 
     Examples
     --------
