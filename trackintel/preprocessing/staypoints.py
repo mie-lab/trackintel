@@ -68,7 +68,7 @@ def generate_locations(
         The original staypoints with a new column ``[`location_id`]``.
 
     locs: Locations
-        The generated locations.
+        The generated locations, with geometry columns ``[`center` (default geometry), `extent`]``. Depending on the contained staypoints, `center` is their centroid, and `extent` is their convex hull with a buffer distance of `epsilon`.
 
     Examples
     --------
@@ -157,17 +157,17 @@ def generate_locations(
 
         # extent is the convex hull of the geometry
         locs["extent"] = locs.geometry.convex_hull
-        # convex_hull of Point is Point, and MultiPoint with two Points is a LineString
-        # we change them into Polygon by creating a buffer of epsilon around them.
-        pointLine_idx = (locs["extent"].geom_type == "LineString") | (locs["extent"].geom_type == "Point")
 
+        # We create a buffer of distance epsilon around the convex_hull to denote location extent
         # Perform meter to decimal conversion if the distance metric is haversine
         if distance_metric == "haversine":
-            locs.loc[pointLine_idx, "extent"] = locs.loc[pointLine_idx].apply(
-                lambda p: p["extent"].buffer(meters_to_decimal_degrees(epsilon, p["center"].y)), axis=1
+            locs["extent"] = locs.apply(
+                lambda p: p["extent"].buffer(meters_to_decimal_degrees(epsilon, p["center"].y)),
+                axis=1,
+                result_type="reduce",
             )
         else:
-            locs.loc[pointLine_idx, "extent"] = locs.loc[pointLine_idx, "extent"].buffer(epsilon)
+            locs["extent"] = locs["extent"].buffer(epsilon)
 
         locs = locs.set_geometry("center", crs=sp.crs)
         locs = locs[["user_id", "location_id", "center", "extent"]]
