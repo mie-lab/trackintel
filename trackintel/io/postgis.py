@@ -7,8 +7,11 @@ from shapely import wkb
 import pandas as pd
 from geoalchemy2 import Geometry
 from sqlalchemy import create_engine
+from sqlalchemy.types import JSON
 
 import trackintel as ti
+from trackintel.io.util import _index_warning_default_none
+from trackintel.model.util import doc, _shared_docs
 
 
 def _handle_con_string(func):
@@ -39,6 +42,7 @@ def _handle_con_string(func):
     return wrapper
 
 
+@_index_warning_default_none
 @_handle_con_string
 def read_positionfixes_postgis(
     sql,
@@ -50,7 +54,7 @@ def read_positionfixes_postgis(
     parse_dates=None,
     params=None,
     chunksize=None,
-    **kwargs
+    read_gpd_kws=None,
 ):
     """Reads positionfixes from a PostGIS database.
 
@@ -59,8 +63,8 @@ def read_positionfixes_postgis(
     sql : str
         SQL query e.g. "SELECT * FROM positionfixes"
 
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        active connection to PostGIS database.
 
     geom_col : str, default 'geom'
         The geometry column of the table.
@@ -78,12 +82,11 @@ def read_positionfixes_postgis(
     parse_dates : list or dict, default None
         - List of column names to parse as dates.
         - Dict of ``{column_name: format string}`` where format string is
-            strftime compatible in case of parsing string times, or is one of
-            (D, s, ns, ms, us) in case of parsing integer timestamps.
-        - Dict of ``{column_name: arg dict}``, where the arg dict
-            corresponds to the keyword arguments of
-            :func:`pandas.to_datetime`. Especially useful with databases
-            without native Datetime support, such as SQLite.
+          strftime compatible in case of parsing string times, or is one of
+          (D, s, ns, ms, us) in case of parsing integer timestamps.
+        - Dict of ``{column_name: arg dict}`` where the arg dict corresponds
+          to the keyword arguments of :func:`pandas.to_datetime`. Especially
+          useful with databases without native Datetime support, such as SQLite.
 
     params : list, tuple or dict, optional, default None
         List of parameters to pass to execute method.
@@ -92,7 +95,7 @@ def read_positionfixes_postgis(
         If specified, return an iterator where chunksize is the number
         of rows to include in each chunk.
 
-    **kwargs
+    read_gpd_kws : dict, default None
         Further keyword arguments as available in trackintels trackintel.io.read_positionfixes_gpd().
         Especially useful to rename column names from the SQL table to trackintel conform column names.
         See second example how to use it in code.
@@ -106,7 +109,8 @@ def read_positionfixes_postgis(
     --------
     >>> pfs = ti.io.read_positionfixes_postgis("SELECT * FROM positionfixes", con, geom_col="geom")
     >>> pfs = ti.io.read_positionfixes_postgis("SELECT * FROM positionfixes", con, geom_col="geom",
-    ...                                        index_col="id", user_id="USER", tracked_at="time")
+    ...                                        index_col="id",
+                                               read_gpd_kws={"user_id"="USER", "tracked_at": "time"})
     """
     pfs = gpd.GeoDataFrame.from_postgis(
         sql,
@@ -119,25 +123,23 @@ def read_positionfixes_postgis(
         params=params,
         chunksize=chunksize,
     )
-    return ti.io.read_positionfixes_gpd(pfs, **kwargs)
+    return ti.io.read_positionfixes_gpd(pfs, **(read_gpd_kws or {}))
 
 
+@doc(
+    _shared_docs["write_postgis"],
+    first_arg="\npositionfixes : Positionfixes\n    The positionfixes to store to the database.\n",
+    long="positionfixes",
+    short="pfs",
+)
 @_handle_con_string
 def write_positionfixes_postgis(
     positionfixes, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
-    positionfixes.to_postgis(
-        name,
-        con,
-        schema=schema,
-        if_exists=if_exists,
-        index=index,
-        index_label=index_label,
-        chunksize=chunksize,
-        dtype=dtype,
-    )
+    gpd.GeoDataFrame.to_postgis(positionfixes, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
 
+@_index_warning_default_none
 @_handle_con_string
 def read_triplegs_postgis(
     sql,
@@ -149,7 +151,7 @@ def read_triplegs_postgis(
     parse_dates=None,
     params=None,
     chunksize=None,
-    **kwargs
+    read_gpd_kws=None,
 ):
     """Reads triplegs from a PostGIS database.
 
@@ -158,8 +160,8 @@ def read_triplegs_postgis(
     sql : str
         SQL query e.g. "SELECT * FROM triplegs"
 
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        active connection to PostGIS database.
 
     geom_col : str, default 'geom'
         The geometry column of the table.
@@ -177,12 +179,11 @@ def read_triplegs_postgis(
     parse_dates : list or dict, default None
         - List of column names to parse as dates.
         - Dict of ``{column_name: format string}`` where format string is
-            strftime compatible in case of parsing string times, or is one of
-            (D, s, ns, ms, us) in case of parsing integer timestamps.
-        - Dict of ``{column_name: arg dict}``, where the arg dict
-            corresponds to the keyword arguments of
-            :func:`pandas.to_datetime`. Especially useful with databases
-            without native Datetime support, such as SQLite.
+          strftime compatible in case of parsing string times, or is one of
+          (D, s, ns, ms, us) in case of parsing integer timestamps.
+        - Dict of ``{column_name: arg dict}``, where the arg dict corresponds
+          to the keyword arguments of :func:`pandas.to_datetime`. Especially
+          useful with databases without native Datetime support, such as SQLite.
 
     params : list, tuple or dict, optional, default None
         List of parameters to pass to execute method.
@@ -191,7 +192,7 @@ def read_triplegs_postgis(
         If specified, return an iterator where chunksize is the number
         of rows to include in each chunk.
 
-    **kwargs
+    read_gpd_kws : dict, default None
         Further keyword arguments as available in trackintels trackintel.io.read_triplegs_gpd().
         Especially useful to rename column names from the SQL table to trackintel conform column names.
         See second example how to use it in code.
@@ -205,7 +206,7 @@ def read_triplegs_postgis(
     --------
     >>> tpls = ti.io.read_triplegs_postgis("SELECT * FROM triplegs", con, geom_col="geom")
     >>> tpls = ti.io.read_triplegs_postgis("SELECT * FROM triplegs", con, geom_col="geom", index_col="id",
-    ...                                    started_at="start_time", finished_at="end_time", user_id="USER")
+    ...                                    read_gpd_kws={"user_id": "USER"})
     """
     tpls = gpd.GeoDataFrame.from_postgis(
         sql,
@@ -218,14 +219,21 @@ def read_triplegs_postgis(
         params=params,
         chunksize=chunksize,
     )
-    return ti.io.read_triplegs_gpd(tpls, **kwargs)
+    return ti.io.read_triplegs_gpd(tpls, **(read_gpd_kws or {}))
 
 
+@doc(
+    _shared_docs["write_postgis"],
+    first_arg="\ntriplegs : Triplegs\n    The triplegs to store to the database.\n",
+    long="triplegs",
+    short="tpls",
+)
 @_handle_con_string
 def write_triplegs_postgis(
     triplegs, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
-    triplegs.to_postgis(
+    gpd.GeoDataFrame.to_postgis(
+        triplegs,
         name,
         con,
         schema=schema,
@@ -237,6 +245,7 @@ def write_triplegs_postgis(
     )
 
 
+@_index_warning_default_none
 @_handle_con_string
 def read_staypoints_postgis(
     sql,
@@ -248,7 +257,7 @@ def read_staypoints_postgis(
     parse_dates=None,
     params=None,
     chunksize=None,
-    **kwargs
+    read_gpd_kws=None,
 ):
     """Read staypoints from a PostGIS database.
 
@@ -257,8 +266,8 @@ def read_staypoints_postgis(
     sql : str
         SQL query e.g. "SELECT * FROM staypoints"
 
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        active connection to PostGIS database.
 
     geom_col : str, default 'geom'
         The geometry column of the table.
@@ -276,12 +285,11 @@ def read_staypoints_postgis(
     parse_dates : list or dict, default None
         - List of column names to parse as dates.
         - Dict of ``{column_name: format string}`` where format string is
-            strftime compatible in case of parsing string times, or is one of
-            (D, s, ns, ms, us) in case of parsing integer timestamps.
-        - Dict of ``{column_name: arg dict}``, where the arg dict
-            corresponds to the keyword arguments of
-            :func:`pandas.to_datetime`. Especially useful with databases
-            without native Datetime support, such as SQLite.
+          strftime compatible in case of parsing string times, or is one of
+          (D, s, ns, ms, us) in case of parsing integer timestamps.
+        - Dict of ``{column_name: arg dict}``, where the arg dict corresponds
+          to the keyword arguments of :func:`pandas.to_datetime`. Especially
+          useful with databases without native Datetime support, such as SQLite.
 
     params : list, tuple or dict, optional, default None
         List of parameters to pass to execute method.
@@ -290,7 +298,7 @@ def read_staypoints_postgis(
         If specified, return an iterator where chunksize is the number
         of rows to include in each chunk.
 
-    **kwargs
+    read_gpd_kws : dict, default None
         Further keyword arguments as available in trackintels trackintel.io.read_staypoints_gpd().
         Especially useful to rename column names from the SQL table to trackintel conform column names.
         See second example how to use it in code.
@@ -305,7 +313,7 @@ def read_staypoints_postgis(
     --------
     >>> sp = ti.io.read_staypoints_postgis("SELECT * FROM staypoints", con, geom_col="geom")
     >>> sp = ti.io.read_staypoints_postgis("SELECT * FROM staypoints", con, geom_col="geom", index_col="id",
-    ...                                      started_at="start_time", finished_at="end_time", user_id="USER")
+    ...                                    read_gpd_kws={"user_id": "USER"})
     """
     sp = gpd.GeoDataFrame.from_postgis(
         sql,
@@ -319,14 +327,21 @@ def read_staypoints_postgis(
         chunksize=chunksize,
     )
 
-    return ti.io.read_staypoints_gpd(sp, **kwargs)
+    return ti.io.read_staypoints_gpd(sp, **(read_gpd_kws or {}))
 
 
+@doc(
+    _shared_docs["write_postgis"],
+    first_arg="\nstaypoints : Staypoints\n    The staypoints to store to the database.\n",
+    long="staypoints",
+    short="sp",
+)
 @_handle_con_string
 def write_staypoints_postgis(
     staypoints, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
-    staypoints.to_postgis(
+    gpd.GeoDataFrame.to_postgis(
+        staypoints,
         name,
         con,
         schema=schema,
@@ -338,6 +353,7 @@ def write_staypoints_postgis(
     )
 
 
+@_index_warning_default_none
 @_handle_con_string
 def read_locations_postgis(
     sql,
@@ -349,7 +365,8 @@ def read_locations_postgis(
     parse_dates=None,
     params=None,
     chunksize=None,
-    **kwargs
+    extent=None,
+    read_gpd_kws=None,
 ):
     """Reads locations from a PostGIS database.
 
@@ -358,8 +375,8 @@ def read_locations_postgis(
     sql : str
         SQL query e.g. "SELECT * FROM locations"
 
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        active connection to PostGIS database.
 
     center : str, default 'center'
         The geometry column of the table. For the center of the location.
@@ -377,12 +394,11 @@ def read_locations_postgis(
     parse_dates : list or dict, default None
         - List of column names to parse as dates.
         - Dict of ``{column_name: format string}`` where format string is
-            strftime compatible in case of parsing string times, or is one of
-            (D, s, ns, ms, us) in case of parsing integer timestamps.
-        - Dict of ``{column_name: arg dict}``, where the arg dict
-            corresponds to the keyword arguments of
-            :func:`pandas.to_datetime`. Especially useful with databases
-            without native Datetime support, such as SQLite.
+          strftime compatible in case of parsing string times, or is one of
+          (D, s, ns, ms, us) in case of parsing integer timestamps.
+        - Dict of ``{column_name: arg dict}``, where the arg dict corresponds
+          to the keyword arguments of :func:`pandas.to_datetime`. Especially
+          useful with databases without native Datetime support, such as SQLite.
 
     params : list, tuple or dict, optional, default None
         List of parameters to pass to execute method.
@@ -391,7 +407,10 @@ def read_locations_postgis(
         If specified, return an iterator where chunksize is the number
         of rows to include in each chunk.
 
-    **kwargs
+    extent : string, default None
+        If specified read the extent column as geometry column.
+
+    read_gpd_kws : dict, default None
         Further keyword arguments as available in trackintels trackintel.io.read_locations_gpd().
         Especially useful to rename column names from the SQL table to trackintel conform column names.
         See second example how to use it in code.
@@ -405,7 +424,7 @@ def read_locations_postgis(
     --------
     >>> locs = ti.io.read_locations_postgis("SELECT * FROM locations", con, center="center")
     >>> locs = ti.io.read_locations_postgis("SELECT * FROM locations", con, center="geom", index_col="id",
-    ...                                     user_id="USER", extent="extent")
+    ...                                     extent="extent, read_gpd_kws={"user_id": "USER"})
     )
     """
     locs = gpd.GeoDataFrame.from_postgis(
@@ -419,12 +438,18 @@ def read_locations_postgis(
         params=params,
         chunksize=chunksize,
     )
-    if "extent" in kwargs:
-        locs[kwargs["extent"]] = gpd.GeoSeries.from_wkb(locs[kwargs["extent"]])
+    if extent is not None:
+        locs[extent] = gpd.GeoSeries.from_wkb(locs[extent])
 
-    return ti.io.read_locations_gpd(locs, center=center, **kwargs)
+    return ti.io.read_locations_gpd(locs, center=center, **(read_gpd_kws or {}))
 
 
+@doc(
+    _shared_docs["write_postgis"],
+    first_arg="\nlocations : Locations\n    The locations to store to the database.\n",
+    long="locations",
+    short="locs",
+)
 @_handle_con_string
 def write_locations_postgis(
     locations, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
@@ -443,7 +468,8 @@ def write_locations_postgis(
         locations = locations.copy()
         locations["extent"] = locations["extent"].apply(lambda x: wkb.dumps(x, srid=srid, hex=True))
 
-    locations.to_postgis(
+    gpd.GeoDataFrame.to_postgis(
+        locations,
         name,
         con,
         schema=schema,
@@ -455,6 +481,7 @@ def write_locations_postgis(
     )
 
 
+@_index_warning_default_none
 @_handle_con_string
 def read_trips_postgis(
     sql,
@@ -466,7 +493,7 @@ def read_trips_postgis(
     parse_dates=None,
     params=None,
     chunksize=None,
-    **kwargs
+    read_gpd_kws=None,
 ):
     """Read trips from a PostGIS database.
 
@@ -475,8 +502,8 @@ def read_trips_postgis(
     sql : str
         SQL query e.g. "SELECT * FROM trips"
 
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        active connection to PostGIS database.
 
     geom_col : str, optional
         The geometry column of the table (if exists). Start and endpoint of the trip.
@@ -494,12 +521,11 @@ def read_trips_postgis(
     parse_dates : list or dict, default None
         - List of column names to parse as dates.
         - Dict of ``{column_name: format string}`` where format string is
-            strftime compatible in case of parsing string times, or is one of
-            (D, s, ns, ms, us) in case of parsing integer timestamps.
-        - Dict of ``{column_name: arg dict}``, where the arg dict
-            corresponds to the keyword arguments of
-            :func:`pandas.to_datetime`. Especially useful with databases
-            without native Datetime support, such as SQLite.
+          strftime compatible in case of parsing string times, or is one of
+          (D, s, ns, ms, us) in case of parsing integer timestamps.
+        - Dict of ``{column_name: arg dict}``, where the arg dict corresponds
+          to the keyword arguments of :func:`pandas.to_datetime`. Especially
+          useful with databases without native Datetime support, such as SQLite.
 
     params : list, tuple or dict, optional, default None
         List of parameters to pass to execute method.
@@ -508,7 +534,7 @@ def read_trips_postgis(
         If specified, return an iterator where chunksize is the number
         of rows to include in each chunk.
 
-    **kwargs
+    read_gpd_kws : dict, default None
         Further keyword arguments as available in trackintels trackintel.io.read_trips_gpd().
         Especially useful to rename column names from the SQL table to trackintel conform column names.
         See second example how to use it in code.
@@ -523,8 +549,8 @@ def read_trips_postgis(
     --------
     >>> trips = ti.io.read_trips_postgis("SELECT * FROM trips", con)
     >>> trips = ti.io.read_trips_postgis("SELECT * FROM trips", con, geom_col="geom", index_col="id",
-    ...                                  started_at="start_time", finished_at="end_time", user_id="USER",
-    ...                                  origin_staypoint_id="ORIGIN", destination_staypoint_id="DEST")
+    ...                                  read_gpd_kws={"user_id": "USER", "origin_staypoint_id": "ORIGIN",
+                                                       "destination_staypoint_id": "DEST"})
 
     """
     if geom_col is None:
@@ -550,15 +576,22 @@ def read_trips_postgis(
             chunksize=chunksize,
         )
 
-    return ti.io.read_trips_gpd(trips, **kwargs)
+    return ti.io.read_trips_gpd(trips, **(read_gpd_kws or {}))
 
 
+@doc(
+    _shared_docs["write_postgis"],
+    first_arg="\ntrips : Trips\n    The trips to store to the database.\n",
+    long="trips",
+    short="trips",
+)
 @_handle_con_string
 def write_trips_postgis(
     trips, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
     if isinstance(trips, gpd.GeoDataFrame):
-        trips.to_postgis(
+        gpd.GeoDataFrame.to_postgis(
+            trips,
             name,
             con,
             schema=schema,
@@ -581,6 +614,7 @@ def write_trips_postgis(
         )
 
 
+@_index_warning_default_none
 @_handle_con_string
 def read_tours_postgis(
     sql,
@@ -592,7 +626,7 @@ def read_tours_postgis(
     parse_dates=None,
     params=None,
     chunksize=None,
-    **kwargs
+    read_gpd_kws=None,
 ):
     """Read tours from a PostGIS database.
 
@@ -601,8 +635,8 @@ def read_tours_postgis(
     sql : str
         SQL query e.g. "SELECT * FROM tours"
 
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Active connection to PostGIS database.
 
     geom_col : str, optional
         The geometry column of the table (if exists).
@@ -620,12 +654,11 @@ def read_tours_postgis(
     parse_dates : list or dict, default None
         - List of column names to parse as dates.
         - Dict of ``{column_name: format string}`` where format string is
-            strftime compatible in case of parsing string times, or is one of
-            (D, s, ns, ms, us) in case of parsing integer timestamps.
-        - Dict of ``{column_name: arg dict}``, where the arg dict
-            corresponds to the keyword arguments of
-            :func:`pandas.to_datetime`. Especially useful with databases
-            without native Datetime support, such as SQLite.
+          strftime compatible in case of parsing string times, or is one of
+          (D, s, ns, ms, us) in case of parsing integer timestamps.
+        - Dict of ``{column_name: arg dict}``, where the arg dict corresponds
+          to the keyword arguments of :func:`pandas.to_datetime`. Especially
+          useful with databases without native Datetime support, such as SQLite.
 
     params : list, tuple or dict, optional, default None
         List of parameters to pass to execute method.
@@ -634,21 +667,20 @@ def read_tours_postgis(
         If specified, return an iterator where chunksize is the number
         of rows to include in each chunk.
 
-    **kwargs
+    read_gpd_kws : dict, default None
         Further keyword arguments as available in trackintels trackintel.io.read_tours_gpd().
         Especially useful to rename column names from the SQL table to trackintel conform column names.
         See second example how to use it in code.
 
     Returns
     -------
-    GeoDataFrame (as trackintel tours)
-        A GeoDataFrame containing the tours.
+    Tours
 
     Examples
     --------
     >>> tours = ti.io.read_tours_postgis("SELECT * FROM tours", con)
-    >>> tours = ti.io.read_tours_postgis("SELECT * FROM tours", con, index_col="id", started_at="start_time",
-    ...                                  finished_at="end_time", user_id="USER")
+    >>> tours = ti.io.read_tours_postgis("SELECT * FROM tours", con, index_col="id",
+                                         read_gpd_kws={"user_id": "USER"})
     """
     if geom_col is None:
         tours = pd.read_sql(
@@ -673,17 +705,25 @@ def read_tours_postgis(
             chunksize=chunksize,
         )
 
-    return ti.io.read_tours_gpd(tours, **kwargs)
+    return ti.io.read_tours_gpd(tours, **(read_gpd_kws or {}))
 
 
+@doc(
+    _shared_docs["write_postgis"],
+    first_arg="\ntours : Tours\n    The tours to store to the database.\n",
+    long="tours",
+    short="tours",
+)
 @_handle_con_string
 def write_tours_postgis(
     tours, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
 ):
-    write_trips_postgis(
-        tours,
-        name=name,
-        con=con,
+    if "trips" in tours.columns:
+        dtype = dtype or {}
+        dtype.setdefault("trips", JSON)
+    tours.to_sql(
+        name,
+        con,
         schema=schema,
         if_exists=if_exists,
         index=index,
@@ -691,55 +731,3 @@ def write_tours_postgis(
         chunksize=chunksize,
         dtype=dtype,
     )
-
-
-# helper docstring to change __doc__ of all write functions conveniently in one place
-__doc = """Stores {long} to PostGIS. Usually, this is directly called on a {long}
-    DataFrame (see example below).
-
-    Parameters
-    ----------
-    {long} : GeoDataFrame (as trackintel {long})
-        The {long} to store to the database.
-
-    name : str
-        The name of the table to write to.
-
-    con : str, sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
-        Connection string or active connection to PostGIS database.
-
-    schema : str, optional
-        The schema (if the database supports this) where the table resides.
-
-    if_exists : str, {{'fail', 'replace', 'append'}}, default 'fail'
-        How to behave if the table already exists.
-
-        - fail: Raise a ValueError.
-        - replace: Drop the table before inserting new values.
-        - append: Insert new values to the existing table.
-
-    index : bool, default True
-        Write DataFrame index as a column. Uses index_label as the column name in the table.
-
-    index_label : str or sequence, default None
-        Column label for index column(s). If None is given (default) and index is True, then the index names are used.
-
-    chunksize : int, optional
-        How many entries should be written at the same time.
-
-    dtype: dict of column name to SQL type, default None
-        Specifying the datatype for columns.
-        The keys should be the column names and the values should be the SQLAlchemy types.
-
-    Examples
-    --------
-    >>> {short}.as_{long}.to_postgis(conn_string, table_name)
-    >>> ti.io.postgis.write_{long}_postgis({short}, conn_string, table_name)
-"""
-
-write_positionfixes_postgis.__doc__ = __doc.format(long="positionfixes", short="pfs")
-write_triplegs_postgis.__doc__ = __doc.format(long="triplegs", short="tpls")
-write_staypoints_postgis.__doc__ = __doc.format(long="staypoints", short="sp")
-write_locations_postgis.__doc__ = __doc.format(long="locations", short="locs")
-write_trips_postgis.__doc__ = __doc.format(long="trips", short="trips")
-write_tours_postgis.__doc__ = __doc.format(long="tours", short="tours")

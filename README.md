@@ -1,18 +1,23 @@
-# The trackintel Framework
+# The trackintel framework
 
 
 [![PyPI version](https://badge.fury.io/py/trackintel.svg)](https://badge.fury.io/py/trackintel)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/trackintel.svg)](https://anaconda.org/conda-forge/trackintel)
 [![Actions Status](https://github.com/mie-lab/trackintel/workflows/Tests/badge.svg)](https://github.com/mie-lab/trackintel/actions?query=workflow%3ATests)
 [![Documentation Status](https://readthedocs.org/projects/trackintel/badge/?version=latest)](https://trackintel.readthedocs.io/en/latest/?badge=latest)
 [![codecov.io](https://codecov.io/gh/mie-lab/trackintel/coverage.svg?branch=master)](https://codecov.io/gh/mie-lab/trackintel)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![asv](http://img.shields.io/badge/benchmarked%20by-asv-green.svg?style=flat)](https://mie-lab.github.io/trackintel/)
+[![Downloads](https://static.pepy.tech/badge/trackintel)](https://pepy.tech/project/trackintel)
 
-*trackintel* is a library for the analysis of spatio-temporal tracking data with a focus on human mobility. The core of *trackintel* is the hierachical data model for movement data that is used in GIS, transport planning and related fields [[1]](#1). We provide functionalities for the full life-cycle of human mobility data analysis: import and export of tracking data of different types (e.g, trackpoints, check-ins, trajectories), preprocessing, data quality assessment, semantic enrichment, quantitative analysis and mining tasks, and visualization of data and results.
-Trackintel is based on [Pandas](https://pandas.pydata.org/) and [GeoPandas](https://geopandas.org/#)
+*trackintel* is a library for the analysis of spatio-temporal tracking data with a focus on human mobility. The core of *trackintel* is the hierarchical data model for movement data that is used in GIS, transport planning and related fields. We provide functionalities for the full life-cycle of human mobility data analysis: import and export of tracking data of different types (e.g, trackpoints, check-ins, trajectories), preprocessing, data quality assessment, semantic enrichment, quantitative analysis and mining tasks, and visualization of data and results.
+Trackintel is based on [Pandas](https://pandas.pydata.org/) and [GeoPandas](https://geopandas.org/#). 
 
-You can find the documentation on the [trackintel documentation page](https://trackintel.readthedocs.io/en/latest).
+You can find the documentation on the [trackintel documentation page](https://trackintel.readthedocs.io/en/latest). 
 
 Try *trackintel* online in a MyBinder notebook: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/mie-lab/trackintel/HEAD?filepath=%2Fexamples%2Ftrackintel_basic_tutorial.ipynb)
+
+Please star this repo and [cite](#citelink) our paper if you find our work is helpful for you.
 
 ## Data model
 
@@ -41,7 +46,7 @@ The image below explicitly shows the definition of **locations** as clustered **
 You can enter the *trackintel* framework if your data corresponds to any of the above mentioned movement data representation. Here are some of the functionalities that we provide: 
 
 * **Import**: Import from the following data formats is supported: `geopandas dataframes` (recommended), `csv files` in a specified format, `postGIS` databases. We also provide specific dataset readers for popular public datasets (e.g, geolife).
-* **Aggregation**: We provide functionalities to aggregate into the next level of our data model. E.g., positionfixes->staypoints; positionfixes->triplegs; staypoints->locations; staypoints+triplegs->trips; trips->tours
+* **Aggregation**: We provide functionalities to aggregate into the next level of our data model. E.g., positionfixes&rarr;staypoints; positionfixes&rarr;triplegs; staypoints&rarr;locations; staypoints+triplegs&rarr;trips; trips&rarr;tours
 * **Enrichment**: Activity semantics for staypoints; Mode of transport semantics for triplegs; High level semantics for locations
 
 ## How it works
@@ -53,28 +58,28 @@ import geopandas as gpd
 import trackintel as ti
 
 # read pfs from csv file
-pfs = ti.io.file.read_positionfixes_csv(".\examples\data\pfs.csv", sep=";", index_col="id")
+pfs = ti.io.read_positionfixes_csv(".\examples\data\pfs.csv", sep=";", index_col="id")
 # or with predefined dataset readers (here geolife) 
-pfs, _ = ti.io.dataset_reader.read_geolife(".\tests\data\geolife_long")
+pfs, _ = ti.io.read_geolife(".\tests\data\geolife_long")
 ```
 
 **[2.]** Data model generation. 
 ```python
 # generate staypoints and triplegs
-pfs, sp = pfs.as_positionfixes.generate_staypoints(method='sliding')
-pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp, method='between_staypoints')
+pfs, sp = pfs.generate_staypoints(method='sliding')
+pfs, tpls = pfs.generate_triplegs(sp, method='between_staypoints')
 ```
 
 **[3.]** Visualization.
  ```python
 # plot the generated tripleg result
-tpls.as_triplegs.plot(positionfixes=pfs, staypoints=sp, staypoints_radius=10)
+ti.plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, radius_sp=10)
 ```
 
 **[4.]** Analysis.
  ```python
 # e.g., predict travel mode labels based on travel speed
-tpls = tpls.as_triplegs.predict_transport_mode()
+tpls = tpls.predict_transport_mode()
 # or calculate the temporal tracking coverage of users
 tracking_coverage = ti.temporal_tracking_quality(tpls, granularity='all')
 ```
@@ -82,8 +87,8 @@ tracking_coverage = ti.temporal_tracking_quality(tpls, granularity='all')
 **[5.]** Save results.
  ```python
 # save the generated results as csv file 
-sp.as_staypoints.to_csv('.\examples\data\sp.csv')
-tpls.as_triplegs.to_csv('.\examples\data\tpls.csv')
+sp.to_csv(r'.\examples\data\sp.csv')
+tpls.to_csv(r'.\examples\data\tpls.csv')
 ```
 
 For example, the plot below shows the generated staypoints and triplegs from the imported raw positionfix data.
@@ -92,7 +97,12 @@ For example, the plot below shows the generated staypoints and triplegs from the
 </p>
 
 ## Installation and Usage
-*trackintel* is on [pypi.org](https://pypi.org/project/trackintel/), you can install it in a `GeoPandas` available environment using: 
+*trackintel* is on [pypi.org](https://pypi.org/project/trackintel/) and [conda-forge](https://anaconda.org/conda-forge/trackintel). We recommend installing trackintel via conda-forge:
+```{python}
+conda install -c conda-forge trackintel
+```
+
+Alternatively, you can install it with pip in a `GeoPandas` available environment using: 
 ```{python}
 pip install trackintel
 ```
@@ -109,14 +119,12 @@ ti.print_version()
 * Numpy
 * GeoPandas
 * Matplotlib 
-* Pint
 * NetworkX
 * GeoAlchemy2
 * scikit-learn
 * tqdm
 * OSMnx
 * similaritymeasures
-* pygeos
 
 ## Development
 You can find the development roadmap under `ROADMAP.md` and further development guidelines under `CONTRIBUTING.md`.
@@ -126,7 +134,20 @@ You can find the development roadmap under `ROADMAP.md` and further development 
 *trackintel* is primarily maintained by the Mobility Information Engineering Lab at ETH Zurich ([mie-lab.ethz.ch](http://mie-lab.ethz.ch)).
 If you want to contribute, send a pull request and put yourself in the `AUTHORS.md` file.
 
-## References
-<a id="1">[1]</a>
-[Axhausen, K. W. (2007). Definition Of Movement and Activity For Transport Modelling. In Handbook of Transport Modelling. Emerald Group Publishing Limited.](
-https://www.researchgate.net/publication/251791517_Definition_of_movement_and_activity_for_transport_modelling)
+## <span id="citelink">Citation</span>
+
+If you find this code useful for your work or use it in your project, please consider citing:
+
+Martin, H., Hong, Y., Wiedemann, N., Bucher, D., & Raubal, M. (2023). [Trackintel: An open-source Python library for human mobility analysis](https://doi.org/10.1016/j.compenvurbsys.2023.101938). Computers, Environment and Urban Systems, 101, 101938.
+```
+@article{Martin_2023_trackintel,
+  doi = {10.1016/j.compenvurbsys.2023.101938},
+  volume = {101},
+  pages = {101938},
+  author = {Henry Martin and Ye Hong and Nina Wiedemann and Dominik Bucher and Martin Raubal},
+  keywords = {Human mobility analysis, Open-source software, Transport planning, Data mining, Python, Tracking studies},
+  title = {Trackintel: An open-source Python library for human mobility analysis},
+  journal = {Computers, Environment and Urban Systems},
+  year = {2023},
+}
+```

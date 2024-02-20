@@ -1,13 +1,10 @@
 numpy
 matplotlib
-pandas
-geopandas>=0.9.0
+geopandas>=0.12.0
 scikit-learn
 networkx 
-pint 
 geoalchemy2 
 osmnx 
 psycopg2
 tqdm
 similaritymeasures
-pygeos>=0.10.0

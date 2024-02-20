@@ -1,11 +1,8 @@
-import warnings
-from functools import wraps
-from inspect import signature
+import ast
 
 import geopandas as gpd
 import pandas as pd
 from geopandas.geodataframe import GeoDataFrame
-from shapely import wkt
 from trackintel.io.from_geopandas import (
     read_locations_gpd,
     read_positionfixes_gpd,
@@ -14,22 +11,8 @@ from trackintel.io.from_geopandas import (
     read_triplegs_gpd,
     read_trips_gpd,
 )
-
-
-def _index_warning_default_none(func):
-    """Decorator function that warns if index_col None is not set explicit."""
-
-    @wraps(func)  # copy all metadata
-    def wrapper(*args, **kwargs):
-        bound_values = signature(func).bind(*args, **kwargs)  # binds only available args and kwargs
-        if "index_col" not in bound_values.arguments:
-            warnings.warn(
-                "Assuming default index as unique identifier. "
-                "Pass 'index_col=None' as explicit argument to avoid a warning when reading csv files."
-            )
-        return func(*args, **kwargs)
-
-    return wrapper
+from trackintel.io.util import _index_warning_default_none
+from trackintel.model.util import doc, _shared_docs
 
 
 @_index_warning_default_none
@@ -38,9 +21,7 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, geom_co
     Read positionfixes from csv file.
 
     Wraps the pandas read_csv function, extracts longitude and latitude and
-    builds a geopandas GeoDataFrame (POINT). This also validates that the ingested data
-    conforms to the trackintel understanding of positionfixes (see
-    :doc:`/modules/model`).
+    builds a POINT GeoSeries, extracts datetime from column `tracked_at`.
 
     Parameters
     ----------
@@ -72,15 +53,14 @@ def read_positionfixes_csv(*args, columns=None, tz=None, index_col=None, geom_co
 
     Returns
     -------
-    pfs : GeoDataFrame (as trackintel positionfixes)
-        A GeoDataFrame containing the positionfixes.
+    pfs : Positionfixes
 
     Notes
     -----
     Note that this function is primarily useful if data is available in a
     longitude/latitude format. If your data already contains a WKT column,
     might be easier to just use the GeoPandas import functions
-    :func:`trackintel.io.from_geopandas.read_positionfixes_gpd`.
+    :func:`trackintel.io.read_positionfixes_gpd`.
 
     Examples
     --------
@@ -114,8 +94,7 @@ def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
 
     Parameters
     ----------
-    positionfixes : GeoDataFrame (as trackintel positionfixes)
-        The positionfixes to store to the CSV file.
+    positionfixes : Positionfixes
 
     filename : str
         The file to write to.
@@ -133,7 +112,8 @@ def write_positionfixes_csv(positionfixes, filename, *args, **kwargs):
 
     Examples
     ---------
-    >>> ps.as_positionfixes.to_csv("export_pfs.csv")
+    >>> pfs.to_csv("export_pfs.csv")
+    >>> ti.io.write_positionfixes_csv(pfs, "export_pfs.csv")
     """
     gdf = positionfixes.copy()
     gdf["longitude"] = positionfixes.geometry.x
@@ -149,8 +129,7 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, geom_col="ge
     Read triplegs from csv file.
 
     Wraps the pandas read_csv function, extracts a WKT for the tripleg geometry (LINESTRING)
-    and builds a geopandas GeoDataFrame. This also validates that the ingested data
-    conforms to the trackintel understanding of triplegs (see :doc:`/modules/model`).
+    and builds a Triplegs instance, extracts datetime from column `started_at` & `finished_at`.
 
     Parameters
     ----------
@@ -182,8 +161,7 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, geom_col="ge
 
     Returns
     -------
-    tpls : GeoDataFrame (as trackintel triplegs)
-        A GeoDataFrame containing the triplegs.
+    tpls : Triplegs
 
     Examples
     --------
@@ -203,35 +181,14 @@ def read_triplegs_csv(*args, columns=None, tz=None, index_col=None, geom_col="ge
     return read_triplegs_gpd(df, geom_col=geom_col, crs=crs, tz=tz, mapper=columns)
 
 
+@doc(
+    _shared_docs["write_csv"],
+    first_arg="\ntriplegs : Triplegs\n",
+    long="triplegs",
+    short="tpls",
+)
 def write_triplegs_csv(triplegs, filename, *args, **kwargs):
-    """
-    Write triplegs to csv file.
-
-    Wraps the pandas to_csv function, but transforms the geometry into WKT
-    before writing.
-
-    Parameters
-    ----------
-    triplegs : GeoDataFrame (as trackintel triplegs)
-        The triplegs to store to the CSV file.
-
-    filename : str
-        The file to write to.
-
-    args
-        Additional arguments passed to pd.DataFrame.to_csv().
-
-    kwargs
-        Additional keyword arguments passed to pd.DataFrame.to_csv().
-
-    Examples
-    --------
-    >>> tpls.as_triplegs.to_csv("export_tpls.csv")
-    """
-    geo_col_name = triplegs.geometry.name
-    df = pd.DataFrame(triplegs, copy=True)
-    df[geo_col_name] = triplegs.geometry.apply(wkt.dumps)
-    df.to_csv(filename, index=True, *args, **kwargs)
+    pd.DataFrame.to_csv(triplegs.to_wkt(rounding_precision=-1, trim=False), filename, index=True, *args, **kwargs)
 
 
 @_index_warning_default_none
@@ -239,10 +196,8 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=None, geom_col="
     """
     Read staypoints from csv file.
 
-    Wraps the pandas read_csv function, extracts a WKT for the staypoint
-    geometry (POINT) and builds a geopandas GeoDataFrame. This also validates that
-    the ingested data conforms to the trackintel understanding of staypoints
-    (see :doc:`/modules/model`).
+    Wraps the pandas read_csv function, extracts a WKT for the staypoint geometry (Point)
+    and builds a Staypoints instance, extracts datetime from column `started_at` & `finished_at`.
 
     Parameters
     ----------
@@ -274,8 +229,7 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=None, geom_col="
 
     Returns
     -------
-    sp : GeoDataFrame (as trackintel staypoints)
-        A GeoDataFrame containing the staypoints.
+    sp : Staypoints
 
     Examples
     --------
@@ -295,35 +249,14 @@ def read_staypoints_csv(*args, columns=None, tz=None, index_col=None, geom_col="
     return read_staypoints_gpd(df, geom_col=geom_col, crs=crs, tz=tz)
 
 
+@doc(
+    _shared_docs["write_csv"],
+    first_arg="\nstaypoints : Staypoints\n",
+    long="staypoints",
+    short="sp",
+)
 def write_staypoints_csv(staypoints, filename, *args, **kwargs):
-    """
-    Write staypoints to csv file.
-
-    Wraps the pandas to_csv function, but transforms the geometry into WKT
-    before writing.
-
-    Parameters
-    ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
-        The staypoints to store to the CSV file.
-
-    filename : str
-        The file to write to.
-
-    args
-        Additional arguments passed to pd.DataFrame.to_csv().
-
-    kwargs
-        Additional keyword arguments passed to pd.DataFrame.to_csv().
-
-    Examples
-    --------
-    >>> tpls.as_triplegs.to_csv("export_tpls.csv")
-    """
-    geo_col_name = staypoints.geometry.name
-    df = pd.DataFrame(staypoints, copy=True)
-    df[geo_col_name] = staypoints.geometry.apply(wkt.dumps)
-    df.to_csv(filename, index=True, *args, **kwargs)
+    pd.DataFrame.to_csv(staypoints.to_wkt(rounding_precision=-1, trim=False), filename, index=True, *args, **kwargs)
 
 
 @_index_warning_default_none
@@ -331,10 +264,9 @@ def read_locations_csv(*args, columns=None, index_col=None, crs=None, **kwargs):
     """
     Read locations from csv file.
 
-    Wraps the pandas read_csv function, extracts a WKT for the location
-    center (POINT) (and extent (POLYGON)) and builds a geopandas GeoDataFrame. This also
-    validates that the ingested data conforms to the trackintel understanding
-    of locations (see :doc:`/modules/model`).
+    Wraps the pandas read_csv function, extracts a WKT for the location center geometry (POINT)
+    (and optional extent (POLYGON)) and builds a Locations instance, extracts datetime from
+    column `started_at` & `finished_at`.
 
     Parameters
     ----------
@@ -359,8 +291,7 @@ def read_locations_csv(*args, columns=None, index_col=None, crs=None, **kwargs):
 
     Returns
     -------
-    locs : GeoDataFrame (as trackintel locations)
-        A GeoDataFrame containing the locations.
+    locs : Locations
 
     Examples
     --------
@@ -381,36 +312,14 @@ def read_locations_csv(*args, columns=None, index_col=None, crs=None, **kwargs):
     return read_locations_gpd(df, crs=crs)
 
 
+@doc(
+    _shared_docs["write_csv"],
+    first_arg="\nlocations : Locations\n",
+    long="locations",
+    short="locs",
+)
 def write_locations_csv(locations, filename, *args, **kwargs):
-    """
-    Write locations to csv file.
-
-    Wraps the pandas to_csv function, but transforms the center (and
-    extent) into WKT before writing.
-
-    Parameters
-    ----------
-    locations : GeoDataFrame (as trackintel locations)
-        The locations to store to the CSV file.
-
-    filename : str
-        The file to write to.
-
-    args
-        Additional arguments passed to pd.DataFrame.to_csv().
-
-    kwargs
-        Additional keyword arguments passed to pd.DataFrame.to_csv().
-
-    Examples
-    --------
-    >>> locs.as_locations.to_csv("export_locs.csv")
-    """
-    df = pd.DataFrame(locations, copy=True)
-    df["center"] = locations["center"].apply(wkt.dumps)
-    if "extent" in df.columns:
-        df["extent"] = locations["extent"].apply(wkt.dumps)
-    df.to_csv(filename, index=True, *args, **kwargs)
+    pd.DataFrame.to_csv(locations.to_wkt(rounding_precision=-1, trim=False), filename, index=True, *args, **kwargs)
 
 
 @_index_warning_default_none
@@ -418,9 +327,8 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=None, geom_col=None, 
     """
     Read trips from csv file.
 
-    Wraps the pandas read_csv function and extracts proper datetimes. This also
-    validates that the ingested data conforms to the trackintel understanding
-    of trips (see :doc:`/modules/model`).
+    Wraps the pandas read_csv function and builds a Trips instance.
+    Extracts datetime from column `started_at` & `finished_at`.
 
     Parameters
     ----------
@@ -454,8 +362,8 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=None, geom_col=None, 
 
     Returns
     -------
-    trips : (Geo)DataFrame (as trackintel trips)
-        A DataFrame containing the trips. GeoDataFrame if geometry column exists.
+    trips : Trips
+        A TripsDataFrame containing the trips. TripsGeoDataFrame if geometry column exists.
 
     Notes
     -----
@@ -469,8 +377,8 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=None, geom_col=None, 
     id
     0         1 2015-11-27 08:00:00+00:00 2015-11-27 08:15:00+00:00                    2                         5
     1         1 2015-11-27 08:20:22+00:00 2015-11-27 08:35:22+00:00                    5                         3
-                                geom  
-    id                                                     
+                                geom
+    id
     0   MULTIPOINT (116.31842 39.98470, 116.29873 39.999729)
     1   MULTIPOINT (116.29873 39.98402, 116.32480 40.009269)
     """
@@ -487,36 +395,12 @@ def read_trips_csv(*args, columns=None, tz=None, index_col=None, geom_col=None, 
     return read_trips_gpd(trips, geom_col=geom_col, crs=crs, tz=tz)
 
 
+@doc(_shared_docs["write_csv"], first_arg="\ntrips : Trips\n", long="trips", short="trips")
 def write_trips_csv(trips, filename, *args, **kwargs):
-    """
-    Write trips to csv file.
-
-    Wraps the pandas to_csv function.
-    Geometry get transformed to WKT before writing.
-
-    Parameters
-    ----------
-    trips : (Geo)DataFrame (as trackintel trips)
-        The trips to store to the CSV file.
-
-    filename : str
-        The file to write to.
-
-    args
-        Additional arguments passed to pd.DataFrame.to_csv().
-
-    kwargs
-        Additional keyword arguments passed to pd.DataFrame.to_csv().
-
-    Examples
-    --------
-    >>> trips.as_trips.to_csv("export_trips.csv")
-    """
-    df = trips.copy()
-    if isinstance(df, GeoDataFrame):
-        geom_col_name = df.geometry.name
-        df[geom_col_name] = df[geom_col_name].to_wkt()
-    df.to_csv(filename, index=True, *args, **kwargs)
+    if isinstance(trips, GeoDataFrame):
+        trips = trips.to_wkt(rounding_precision=-1, trim=False)
+    # static call necessary as TripsDataFrame has a to_csv method as well.
+    pd.DataFrame.to_csv(trips, filename, index=True, *args, **kwargs)
 
 
 @_index_warning_default_none
@@ -524,9 +408,7 @@ def read_tours_csv(*args, columns=None, index_col=None, tz=None, **kwargs):
     """
     Read tours from csv file.
 
-    Wraps the pandas read_csv function and extracts proper datetimes. This also
-    validates that the ingested data conforms to the trackintel understanding
-    of tours (see :doc:`/modules/model`).
+    Extracts datetime from column `started_at` & `finished_at`.
 
     Parameters
     ----------
@@ -547,14 +429,14 @@ def read_tours_csv(*args, columns=None, index_col=None, tz=None, **kwargs):
 
     Returns
     -------
-    tours : DataFrame (as trackintel tours)
-        A DataFrame containing the tours.
+    tours : Tours
 
     Examples
     --------
     >>> trackintel.read_tours_csv('data.csv', columns={'uuid':'user_id'})
     """
     columns = {} if columns is None else columns
+    kwargs.setdefault("converters", {}).setdefault("trips", ast.literal_eval)
     tours = pd.read_csv(*args, index_col=index_col, **kwargs)
     tours.rename(columns=columns, inplace=True)
 
@@ -564,28 +446,6 @@ def read_tours_csv(*args, columns=None, index_col=None, tz=None, **kwargs):
     return read_tours_gpd(tours, tz=tz)
 
 
+@doc(_shared_docs["write_csv"], first_arg="\ntours : Tours\n", long="tours", short="tours")
 def write_tours_csv(tours, filename, *args, **kwargs):
-    """
-    Write tours to csv file.
-
-    Wraps the pandas to_csv function.
-
-    Parameters
-    ----------
-    tours : DataFrame (as trackintel tours)
-        The tours to store to the CSV file.
-
-    filename : str
-        The file to write to.
-
-    args
-        Additional arguments passed to pd.DataFrame.to_csv().
-
-    kwargs
-        Additional keyword arguments passed to pd.DataFrame.to_csv().
-
-    Examples
-    --------
-    >>> tours.as_tours.to_csv("export_tours.csv")
-    """
-    tours.to_csv(filename, index=True, *args, **kwargs)
+    pd.DataFrame.to_csv(tours, filename, index=True, *args, **kwargs)

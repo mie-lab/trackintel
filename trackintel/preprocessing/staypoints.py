@@ -1,14 +1,12 @@
-from math import radians
-
 import numpy as np
 import geopandas as gpd
 import pandas as pd
-from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
 import warnings
 
-from trackintel.geogr.distances import meters_to_decimal_degrees
-from trackintel.preprocessing.util import applyParallel
+from trackintel import Staypoints, Locations
+from trackintel.geogr import meters_to_decimal_degrees, check_gdf_planar
+from trackintel.preprocessing.util import applyParallel, angle_centroid_multipoints
 
 
 def generate_locations(
@@ -18,6 +16,7 @@ def generate_locations(
     num_samples=1,
     distance_metric="haversine",
     agg_level="user",
+    activities_only=False,
     print_progress=False,
     n_jobs=1,
 ):
@@ -26,13 +25,12 @@ def generate_locations(
 
     Parameters
     ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
-        The staypoints have to follow the standard definition for staypoints DataFrames.
+    staypoints : Staypoints
 
     method : {'dbscan'}
         Method to create locations.
 
-        - 'dbscan' : Uses the DBSCAN algorithm to cluster staypoints.
+        - `dbscan` : Uses the DBSCAN algorithm to cluster staypoints.
 
     epsilon : float, default 100
         The epsilon for the 'dbscan' method. if 'distance_metric' is 'haversine'
@@ -47,8 +45,13 @@ def generate_locations(
 
     agg_level: {'user','dataset'}
         The level of aggregation when generating locations:
-        - 'user'      : locations are generated independently per-user.
-        - 'dataset'   : shared locations are generated for all users.
+
+        - `user`: locations are generated independently per-user.
+        - `dataset`: shared locations are generated for all users.
+
+    activities_only: bool, default False (requires "activity" column)
+        Flag to set if locations should be generated only from staypoints on which the value for "activity" is True.
+        Useful if activites represent more significant places.
 
     print_progress : bool, default False
         If print_progress is True, the progress bar is displayed
@@ -61,44 +64,45 @@ def generate_locations(
 
     Returns
     -------
-    sp: GeoDataFrame (as trackintel staypoints)
+    sp: Staypoints
         The original staypoints with a new column ``[`location_id`]``.
 
-    locs: GeoDataFrame (as trackintel locations)
-        The generated locations.
+    locs: Locations
+        The generated locations, with geometry columns ``[`center` (default geometry), `extent`]``. Depending on the contained staypoints, `center` is their centroid, and `extent` is their convex hull with a buffer distance of `epsilon`.
 
     Examples
     --------
-    >>> sp.as_staypoints.generate_locations(method='dbscan', epsilon=100, num_samples=1)
+    >>> sp.generate_locations(method='dbscan', epsilon=100, num_samples=1)
     """
+    Staypoints.validate(staypoints)
     if agg_level not in ["user", "dataset"]:
-        raise AttributeError("The parameter agg_level must be one of ['user', 'dataset'].")
+        raise ValueError(f"agg_level '{agg_level}' is unknown. Supported values are ['user', 'dataset'].")
     if method not in ["dbscan"]:
-        raise AttributeError("The parameter method must be one of ['dbscan'].")
+        raise ValueError(f"method '{method}' is unknown. Supported value is ['dbscan'].")
 
     # initialize the return GeoDataFrames
     sp = staypoints.copy()
+    non_activities = None
+    if activities_only:
+        if "activity" not in sp.columns:
+            raise KeyError('staypoints must contain column "activity" if "activities_only" flag is set.')
+        non_activities = sp[~sp["activity"]]
+        sp = sp[sp["activity"]]
     sp = sp.sort_values(["user_id", "started_at"])
     geo_col = sp.geometry.name
 
     if method == "dbscan":
-
-        if distance_metric == "haversine":
-            # The input and output of sklearn's harvarsine metrix are both in radians,
-            # see https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.haversine_distances.html
-            # here the 'epsilon' is directly applied to the metric's output.
-            # convert to radius
-            db = DBSCAN(eps=epsilon / 6371000, min_samples=num_samples, algorithm="ball_tree", metric=distance_metric)
-        else:
-            db = DBSCAN(eps=epsilon, min_samples=num_samples, algorithm="ball_tree", metric=distance_metric)
+        eps = epsilon / 6371000 if distance_metric == "haversine" else epsilon
+        # scikit haversine_distance wants radian. (We assume that this is good enough)
+        # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.haversine_distances.html
+        db = DBSCAN(eps=eps, min_samples=num_samples, algorithm="ball_tree", metric=distance_metric)
 
         if agg_level == "user":
             sp = applyParallel(
                 sp.groupby("user_id", as_index=False),
-                _generate_locations_per_user,
+                _gen_locs_dbscan,
                 n_jobs=n_jobs,
                 print_progress=print_progress,
-                geo_col=geo_col,
                 distance_metric=distance_metric,
                 db=db,
             )
@@ -126,14 +130,7 @@ def generate_locations(
             sp.sort_values(["user_id", "started_at"], inplace=True)
 
         else:
-            if distance_metric == "haversine":
-                # the input is converted to list of (lat, lon) tuples in radians unit
-                p = np.array([[radians(g.y), radians(g.x)] for g in sp.geometry])
-            else:
-                p = np.array([[g.x, g.y] for g in sp.geometry])
-            labels = db.fit_predict(p)
-
-            sp["location_id"] = labels
+            _gen_locs_dbscan(sp, db=db, distance_metric=distance_metric)
 
         ### create locations as grouped staypoints
         temp_sp = sp[["user_id", "location_id", sp.geometry.name]]
@@ -143,59 +140,47 @@ def generate_locations(
         else:
             ## generate user-location pairs with same geometries across users
             # get user-location pairs
-            locs = temp_sp.dissolve(by=["user_id", "location_id"], as_index=False).drop(columns={temp_sp.geometry.name})
+            locs = temp_sp[["user_id", "location_id"]].drop_duplicates(ignore_index=True)
             # get location geometries
-            geom_df = temp_sp.dissolve(by=["location_id"], as_index=False).drop(columns={"user_id"})
+            geom_gdf = temp_sp.dissolve(by=["location_id"], as_index=False).drop(columns={"user_id"})
             # merge pairs with location geometries
-            locs = locs.merge(geom_df, on="location_id", how="left")
+            locs = geom_gdf.merge(locs, on="location_id", how="right")
 
         # filter staypoints not belonging to locations
         locs = locs.loc[locs["location_id"] != -1]
 
-        locs["center"] = None  # initialize
-        # locations with only one staypoints is of type "Point"
-        point_idx = locs.geom_type == "Point"
-        if not locs.loc[point_idx].empty:
-            locs.loc[point_idx, "center"] = locs.loc[point_idx, locs.geometry.name]
-        # locations with multiple staypoints is of type "MultiPoint"
-        if not locs.loc[~point_idx].empty:
-            locs.loc[~point_idx, "center"] = locs.loc[~point_idx, locs.geometry.name].apply(
-                lambda p: Point(np.array(p)[:, 0].mean(), np.array(p)[:, 1].mean())
-            )
+        if check_gdf_planar(locs):
+            locs["center"] = locs.geometry.centroid
+        else:
+            # error of wrapping e.g. mean([-180, +180]) -> own function needed
+            locs["center"] = angle_centroid_multipoints(locs.geometry)
 
         # extent is the convex hull of the geometry
-        locs["extent"] = None  # initialize
-        if not locs.empty:
-            locs["extent"] = locs[locs.geometry.name].apply(lambda p: p.convex_hull)
-            # convex_hull of one point would be a Point and two points a Linestring,
-            # we change them into Polygon by creating a buffer of epsilon around them.
-            pointLine_idx = (locs["extent"].geom_type == "LineString") | (locs["extent"].geom_type == "Point")
+        locs["extent"] = locs.geometry.convex_hull
 
-            if not locs.loc[pointLine_idx].empty:
-                # Perform meter to decimal conversion if the distance metric is haversine
-                if distance_metric == "haversine":
-                    locs.loc[pointLine_idx, "extent"] = locs.loc[pointLine_idx].apply(
-                        lambda p: p["extent"].buffer(meters_to_decimal_degrees(epsilon, p["center"].y)), axis=1
-                    )
-                else:
-                    locs.loc[pointLine_idx, "extent"] = locs.loc[pointLine_idx].apply(
-                        lambda p: p["extent"].buffer(epsilon), axis=1
-                    )
+        # We create a buffer of distance epsilon around the convex_hull to denote location extent
+        # Perform meter to decimal conversion if the distance metric is haversine
+        if distance_metric == "haversine":
+            locs["extent"] = locs.apply(
+                lambda p: p["extent"].buffer(meters_to_decimal_degrees(epsilon, p["center"].y)),
+                axis=1,
+                result_type="reduce",
+            )
+        else:
+            locs["extent"] = locs["extent"].buffer(epsilon)
 
-        locs = locs.set_geometry("center")
+        locs = locs.set_geometry("center", crs=sp.crs)
         locs = locs[["user_id", "location_id", "center", "extent"]]
 
         # index management
         locs.rename(columns={"location_id": "id"}, inplace=True)
         locs.set_index("id", inplace=True)
 
-    # staypoints not linked to a location receive np.nan in 'location_id'
-    sp.loc[sp["location_id"] == -1, "location_id"] = np.nan
+        # staypoints not linked to a location receive np.nan in 'location_id'
+        sp.loc[sp["location_id"] == -1, "location_id"] = np.nan
 
-    if len(locs) > 0:
-        locs.as_locations
-    else:
-        warnings.warn("No locations can be generated, returning empty locs.")
+    # merge non_activities back if "activities_only" flag is set
+    sp = pd.concat([sp, non_activities])
 
     ## dtype consistency
     # locs id (generated by this function) should be int64
@@ -204,26 +189,34 @@ def generate_locations(
     sp["location_id"] = sp["location_id"].astype("Int64")
     # user_id of locs should be the same as sp
     locs["user_id"] = locs["user_id"].astype(sp["user_id"].dtype)
+    if len(locs) == 0:
+        warnings.warn("No locations can be generated, returning empty locs.")
+        return sp, locs
+    # keep class of staypoints
+    sp = Staypoints(sp) if isinstance(staypoints, Staypoints) else sp
+    return sp, Locations(locs)
 
-    return sp, locs
 
+def _gen_locs_dbscan(sp, distance_metric, db):
+    """Small helper function that takes staypoints and apply them to DBSCAN.
 
-def _generate_locations_per_user(user_staypoints, distance_metric, db, geo_col):
-    """function called after groupby: should only contain records of one user;
-    see generate_locations() function for parameter meaning."""
+    Parameters
+    ----------
+    sp : Staypoints
+    distance_metric : str
+    db : sklearn.cluster.DBSCAN
 
+    Returns
+    -------
+    sp : Staypoints
+        Staypoints with new column "location_id"
+    """
+    p = np.array([sp.geometry.x, sp.geometry.y]).transpose()
     if distance_metric == "haversine":
-        # the input is converted to list of (lat, lon) tuples in radians unit
-        p = np.array([[radians(q.y), radians(q.x)] for q in (user_staypoints[geo_col])])
-    else:
-        p = np.array([[q.x, q.y] for q in (user_staypoints[geo_col])])
+        p = np.deg2rad(p)  # haversine distance metric assumes input is in rad
     labels = db.fit_predict(p)
-
-    # add staypoint - location matching to original staypoints
-    user_staypoints["location_id"] = labels
-    user_staypoints = gpd.GeoDataFrame(user_staypoints, geometry=geo_col)
-
-    return user_staypoints
+    sp["location_id"] = labels
+    return sp
 
 
 def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
@@ -232,12 +225,10 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
 
     Parameters
     ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
-        The staypoints must contain a column `location_id` (see `generate_locations` function) and have to follow the
-        standard trackintel definition for staypoints DataFrames.
+    staypoints : Staypoints
+        The staypoints must contain a column `location_id` (see `generate_locations` function)
 
-    triplegs: GeoDataFrame (as trackintel triplegs)
-        The triplegs have to follow the standard definition for triplegs DataFrames.
+    triplegs: Triplegs
 
     max_time_gap : str or pd.Timedelta, default "10min"
         Maximum duration between staypoints to still be merged.
@@ -253,7 +244,7 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
 
     Returns
     -------
-    sp: DataFrame
+    sp: Staypoints
         The new staypoints with the default columns and columns in `agg`, where staypoints at same location and close in
         time are aggregated.
 
@@ -269,9 +260,9 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     Examples
     --------
     >>> # direct function call
-    >>> ti.preprocessing.staypoints.merge_staypoints(staypoints=sp, triplegs=tpls)
+    >>> ti.preprocessing.merge_staypoints(staypoints=sp, triplegs=tpls)
     >>> # or using the trackintel datamodel
-    >>> sp.as_staypoints.merge_staypoints(triplegs, max_time_gap="1h", agg={"geom":"first"})
+    >>> sp.merge_staypoints(triplegs, max_time_gap="1h", agg={"geom":"first"})
     """
     if isinstance(max_time_gap, str):
         max_time_gap = pd.to_timedelta(max_time_gap)
@@ -293,6 +284,7 @@ def merge_staypoints(staypoints, triplegs, max_time_gap="10min", agg={}):
     # a joined dataframe sp_tpls is constructed to add the columns 'type' and 'next_type' to the 'sp_merge' table
     # concat and sort by time
     sp_tpls = pd.concat([sp_merge, tpls_merge]).sort_values(by=["user_id", "started_at"])
+    # TODO: we want to make tpls as argumtent optional and adapt this logic here. See issue #463.
     sp_tpls.index.rename(index_name, inplace=True)
     # get information whether the there is a tripleg after a staypoint
     sp_tpls["next_type"] = sp_tpls["type"].shift(-1)

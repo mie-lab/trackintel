@@ -1,0 +1,23 @@
+name: trackintel-dev
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+- python
+- numpy
+- matplotlib
+- geopandas>=0.12.0
+- scikit-learn
+- networkx
+- pip
+- geoalchemy2
+- osmnx
+- psycopg2
+- tqdm
+- similaritymeasures
+# additional dependencies for development
+- black   # linting
+- jupyter # notebooks
+- pytest  # testing
+- sphinx  # documentation
+- sphinx_rtd_theme

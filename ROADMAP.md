@@ -6,17 +6,17 @@ This document explains the functionality planned for various releases.
 * :heavy_check_mark: Parallelization.
 * More method to predict activity without context data. [#213](https://github.com/mie-lab/trackintel/issues/213)
 * Add context data to movement trajectories (using spatio-temporal map algebra). [#63](https://github.com/mie-lab/trackintel/issues/63) 
-* Implement *tours* (starting and ending at a persons home location). [#287](https://github.com/mie-lab/trackintel/pull/287)
-* Speed calculation for triplegs/positionfixes. [#191](https://github.com/mie-lab/trackintel/issues/191)
+* :heavy_check_mark: Implement *tours* (starting and ending at a persons home location). [#287](https://github.com/mie-lab/trackintel/pull/287)
+* :heavy_check_mark: Speed calculation for triplegs/positionfixes. [#191](https://github.com/mie-lab/trackintel/issues/191)
 * CodePeerReview: Next milestone after 1.0. [#86](https://github.com/mie-lab/trackintel/issues/86) 
 * Include the calculation of common mobility indicators (e.g., radius of gyration)
 
 ## Ideas that are on the list
 I/O:
-* Read *tours* from files.
-* Read *tours* from PostGIS.
-* Write *tours* to files.
-* Write *tours* to PostGIS.
+* :heavy_check_mark: Read *tours* from files.
+* :heavy_check_mark: Read *tours* from PostGIS.
+* :heavy_check_mark: Write *tours* to files.
+* :heavy_check_mark: Write *tours* to PostGIS.
 * Include data input/output methods for more common datasets
 
 Preprocessing:

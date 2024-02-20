@@ -7,7 +7,8 @@ from geopandas.testing import assert_geodataframe_equal
 from shapely.geometry import Point
 
 import trackintel as ti
-from trackintel.io.dataset_reader import _get_df, _get_labels, geolife_add_modes_to_triplegs, read_geolife
+from trackintel.io.dataset_reader import _get_df, _get_labels, geolife_add_modes_to_triplegs, read_geolife, read_gpx
+from trackintel import Positionfixes
 
 
 @pytest.fixture
@@ -99,8 +100,6 @@ class TestReadGeolife:
         read_geolife(g_path, print_progress=False)
         captured_noprint = capsys.readouterr()
         assert captured_noprint.err == ""
-
-        assert True
 
     def test_label_reading(self):
         """Test data types of the labels returned by read_geolife."""
@@ -246,3 +245,31 @@ class TestGeolife_add_modes_to_triplegs:
 
         tpls = geolife_add_modes_to_triplegs(tpls, labels)
         assert pd.isna(tpls.iloc[0]["mode"])
+
+
+class TestGpx_reader:
+    def test_simple_input(self):
+        """Test if gpx_reader works on simple input"""
+        pfs = read_gpx(os.path.join("tests", "data", "gpx_data"))
+        elev = 1000.0
+        h = pd.Timedelta(hours=1)
+        time = pd.Timestamp("2023-11-08 10:00:00+00:00")
+        hdop = 10.0
+        x, y = 8, 47
+        data = {
+            "track_fid": [0, 1, 1],  # track 0 with 1 point, track 1 with 2 points
+            "track_seg_id": [0, 0, 0],  # each track has 1 segment
+            "track_seg_point_id": [0, 0, 1],
+            "ele": [elev, elev + 1, elev + 2],
+            "tracked_at": [time, time + h, time + 2 * h],
+            "hdop": [hdop, hdop + 1, hdop + 2],
+            "geometry": [Point(x, y), Point(x + 1, y + 1), Point(x + 2, y + 2)],
+            "user_id": [0, 0, 0],
+        }
+        pfs_test = Positionfixes(data, geometry="geometry", crs=4326)
+        assert_geodataframe_equal(pfs, pfs_test)
+
+    def test_missing_files(self):
+        """Test if useful message is output if directory has no gpx files"""
+        with pytest.raises(FileNotFoundError, match="Found no gpx files"):
+            read_gpx(os.path.join("tests", "data"))

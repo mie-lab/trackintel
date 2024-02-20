@@ -39,57 +39,56 @@ GeoPandas Implementation
 
 .. highlight:: python
 
-In trackintel, we assume that all these classes are available as (Geo)Pandas (Geo)DataFrames. While we
-do not extend the given DataFrame constructs, we provide accessors that validate that a given DataFrame
-corresponds to a set of constraints, and make functions available on the DataFrames. For example::
+In trackintel we provide 5 classes that subclass DataFrames or GeoDataFrames, depending if there is a
+geometry or not. That means all trackintel classes work like (Geo)DataFrames with some additional features, 
+like: data validation and new methods for analyzing mobility data.
+For example::
 
     df = trackintel.read_positionfixes_csv('data.csv')
-    df.as_positionfixes.generate_staypoints()
+    df.generate_staypoints()
 
-This will read a CSV into a format compatible with the trackintel understanding of a collection of 
-positionfixes, and the second line will wrap the DataFrame with an accessor providing functions such 
-as ``generate_staypoints()``. You can read up more on Pandas accessors in `the Pandas documentation 
-<https://pandas.pydata.org/pandas-docs/stable/development/extending.html>`_.
+This will read a CSV into a `Positionfixes` trackintel class and validate the input data corresponding to
+our model. This allows access to the trackintel methods such as ``generate_staypoints()``.
 
-Available Accessors
+Trackintel Classes
 ===================
 
-The following accessors are available within *trackintel*.
+The following classes are implemented within *trackintel*.
 
-PositionfixesAccessor
+Positionfixes
 ---------------------
 
-.. autoclass:: trackintel.model.positionfixes.PositionfixesAccessor
+.. autoclass:: trackintel.Positionfixes
 	:members:
 
-StaypointsAccessor
+Staypoints
 ------------------
 
-.. autoclass:: trackintel.model.staypoints.StaypointsAccessor
+.. autoclass:: trackintel.Staypoints
 	:members:
 
-TriplegsAccessor
+Triplegs
 ----------------
 
-.. autoclass:: trackintel.model.triplegs.TriplegsAccessor
+.. autoclass:: trackintel.Triplegs
 	:members:
 
-LocationsAccessor
+Locations
 -----------------
 
-.. autoclass:: trackintel.model.locations.LocationsAccessor
+.. autoclass:: trackintel.Locations
 	:members:
 
-TripsAccessor
+Trips
 -------------
 
-.. autoclass:: trackintel.model.trips.TripsAccessor
+.. autoclass:: trackintel.Trips
 	:members:
 
-ToursAccessor
+Tours
 -------------
 
-.. autoclass:: trackintel.model.tours.ToursAccessor
+.. autoclass:: trackintel.Tours
 	:members:
 
 

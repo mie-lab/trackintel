@@ -1,7 +1,5 @@
 import warnings
 
-import geopandas as gpd
-import numpy as np
 import pandas as pd
 
 
@@ -11,7 +9,7 @@ def temporal_tracking_quality(source, granularity="all"):
 
     Parameters
     ----------
-    df : GeoDataFrame (as trackintel datamodels)
+    df : Trackintel class
         The source dataframe to calculate temporal tracking quality.
 
     granularity : {"all", "day", "week", "weekday", "hour"}
@@ -37,29 +35,20 @@ def temporal_tracking_quality(source, granularity="all"):
     and the columns for the returned ``quality`` df for different ``granularity`` are:
 
     - ``all``:
-
-        - time extent: between the latest "finished_at" and the earliest "started_at" for each user.
-        - columns: ``['user_id', 'quality']``.
-
+        - `time extent`: between the latest "finished_at" and the earliest "started_at" for each user.
+        - `columns`: ``['user_id', 'quality']``.
     - ``week``:
-
-        - time extent: the whole week (604800 sec) for each user.
-        - columns: ``['user_id', 'week_monday', 'quality']``.
-
+        - `time extent`: the whole week (604800 sec) for each user.
+        - `columns`: ``['user_id', 'week_monday', 'quality']``.
     - ``day``:
-
-        - time extent: the whole day (86400 sec) for each user
-        - columns: ``['user_id', 'day', 'quality']``
-
+        - `time extent`: the whole day (86400 sec) for each user
+        - `columns`: ``['user_id', 'day', 'quality']``
     - ``weekday``
-
-        - time extent: the whole day (86400 sec) * number of tracked weeks for each user for each user
-        - columns: ``['user_id', 'weekday', 'quality']``
-
+        - `time extent`: the whole day (86400 sec) * number of tracked weeks for each user for each user
+        - `columns`: ``['user_id', 'weekday', 'quality']``
     - ``hour``:
-
-        - time extent: the whole hour (3600 sec) * number of tracked days for each user
-        - columns: ``['user_id', 'hour', 'quality']``
+        - `time extent`: the whole hour (3600 sec) * number of tracked days for each user
+        - `columns`: ``['user_id', 'hour', 'quality']``
 
     Examples
     --------
@@ -72,8 +61,7 @@ def temporal_tracking_quality(source, granularity="all"):
     if any([c not in source.columns for c in required_columns]):
         raise KeyError(
             "To successfully calculate the user-level tracking quality, "
-            + "the source dataframe must have the columns [%s], but it has [%s]."
-            % (", ".join(required_columns), ", ".join(source.columns))
+            f"the source dataframe must have the columns {required_columns}, but it has [{', '.join(source.columns)}]."
         )
 
     df = source.copy()
@@ -84,7 +72,7 @@ def temporal_tracking_quality(source, granularity="all"):
     df = df.loc[df["duration"] > 0].copy()
     # ensure proper handle of empty dataframes
     if len(df) == 0:
-        warnings.warn(f"The input dataframe does not contain any record with positive duration. Please check.")
+        warnings.warn("The input dataframe does not contain any record with positive duration. Please check.")
         return None
 
     if granularity == "all":
@@ -103,8 +91,8 @@ def temporal_tracking_quality(source, granularity="all"):
 
     elif granularity == "weekday":
         # get the tracked week relative to the first day
-        start_date = df["started_at"].min().date()
-        df["week"] = df["started_at"].apply(lambda x: (x.date() - start_date).days // 7)
+        start_date = df["started_at"].min().floor(freq="D")
+        df["week"] = ((df["started_at"] - start_date)).dt.days // 7
 
         grouper = df["started_at"].dt.weekday
         column_name = "weekday"
@@ -112,14 +100,14 @@ def temporal_tracking_quality(source, granularity="all"):
     elif granularity == "hour":
         df = _split_overlaps(df, granularity="hour")
         # get the tracked day relative to the first day
-        start_date = df["started_at"].min().date()
-        df["day"] = df["started_at"].apply(lambda x: (x.date() - start_date).days)
+        start_date = df["started_at"].min().floor(freq="D")
+        df["day"] = (df["started_at"] - start_date).dt.days
 
         grouper = df["started_at"].dt.hour
         column_name = "hour"
 
     else:
-        raise AttributeError(
+        raise ValueError(
             f"granularity unknown. We only support ['all', 'day', 'week', 'weekday', 'hour']. You passed {granularity}"
         )
 
@@ -139,7 +127,7 @@ def _get_tracking_quality_user(df, granularity="all"):
 
     Parameters
     ----------
-    df : GeoDataFrame (as trackintel datamodels)
+    df : Trackintel class
         The source dataframe
 
     granularity : {"all", "day", "weekday", "week", "hour"}, default "all"
@@ -170,7 +158,7 @@ def _get_tracking_quality_user(df, granularity="all"):
         # (entries from multiple days may be grouped together)
         extent = (60 * 60) * (df["day"].max() - df["day"].min() + 1)
     else:
-        raise AttributeError(
+        raise ValueError(
             f"granularity unknown. We only support ['all', 'day', 'week', 'weekday', 'hour']. You passed {granularity}"
         )
     return pd.Series([tracked_duration / extent], index=["quality"])
@@ -182,7 +170,7 @@ def _split_overlaps(source, granularity="day"):
 
     Parameters
     ----------
-    source : GeoDataFrame (as trackintel datamodels)
+    source : Trackintel class
         The GeoDataFrame to perform the split on.
 
     granularity : {'day', 'hour'}, default 'day'
@@ -191,14 +179,14 @@ def _split_overlaps(source, granularity="day"):
 
     Returns
     -------
-    GeoDataFrame (as trackintel datamodels)
-        The GeoDataFrame object after the splitting
+    Trackintel class
+        The input object after the splitting
     """
     freq = "H" if granularity == "hour" else "D"
     gdf = source.copy()
     gdf[["started_at", "finished_at"]] = gdf.apply(_get_times, axis="columns", result_type="expand", freq=freq)
     # must call DataFrame.explode directly because GeoDataFrame.explode cannot be used on multiple columns
-    gdf = super(type(gdf), gdf).explode(["started_at", "finished_at"], ignore_index=True)
+    gdf = pd.DataFrame.explode(gdf, ["started_at", "finished_at"], ignore_index=True)
     if "duration" in gdf.columns:
         gdf["duration"] = gdf["finished_at"] - gdf["started_at"]
     return gdf

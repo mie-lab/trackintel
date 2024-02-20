@@ -2,29 +2,21 @@ name: test
 channels:
   - conda-forge
 dependencies:
-- python=3.9
-
-# required
-- matplotlib
+- python
 - numpy
-- pandas
+- matplotlib
+- geopandas>=0.12.0
 - scikit-learn
-- networkx 
-- pint
-- pip 
-- geoalchemy2 
-- osmnx 
+- networkx
+- pip
+- geoalchemy2
+- osmnx
 - psycopg2
 - tqdm
 - similaritymeasures
 - jupyter
-- geopandas>=0.9.0
-- shapely
-- pygeos>=0.10.0
 
 # tests
 - pytest
 - pytest-cov
 - pytest-xdist
-
-  

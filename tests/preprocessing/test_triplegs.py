@@ -60,7 +60,7 @@ class TestGenerate_trips:
         """Test if we can generate the example trips based on example data."""
         # load pregenerated trips
         path = os.path.join("tests", "data", "geolife_long", "trips.csv")
-        trips_loaded = ti.read_trips_csv(path, index_col="id", geom_col="geom", crs=None)
+        trips_loaded = ti.read_trips_csv(path, index_col="id", geom_col="geom", crs="EPSG:4326")
 
         # create trips from geolife (based on positionfixes) - with gap_threshold 1e6
         sp, tpls = example_triplegs_higher_gap_threshold
@@ -71,7 +71,7 @@ class TestGenerate_trips:
             ["user_id", "started_at", "finished_at", "origin_staypoint_id", "destination_staypoint_id", "geom"]
         ]
         # test if generated trips are equal
-        assert_geodataframe_equal(trips_loaded, trips)
+        assert_geodataframe_equal(trips_loaded, trips, check_less_precise=True)
 
     def test_trip_wo_geom(self, example_triplegs_higher_gap_threshold):
         """Test if the add_geometry parameter shows correct behavior"""
@@ -122,7 +122,7 @@ class TestGenerate_trips:
 
             assert correct_dest_point == dest_point_trips
 
-    def test_accessor(self, example_triplegs):
+    def test_accessor_triplegs(self, example_triplegs):
         """Test if the accessor leads to the same results as the explicit function."""
         sp, tpls = example_triplegs
 
@@ -135,26 +135,22 @@ class TestGenerate_trips:
         # test if generated trips are equal
         assert_geodataframe_equal(trips_expl, trips_acc)
         assert_geodataframe_equal(sp_expl, sp_acc)
-        assert_geodataframe_equal(tpls_expl, tpls_acc)
+        assert_geodataframe_equal(tpls_acc, tpls_expl)
 
-    def test_accessor_arguments(self, example_triplegs):
-        """Test if the accessor is robust to different ways to receive arguments"""
+    def test_accessor_staypoints(self, example_triplegs):
+        """Test if the accessor leads to the same results as the explicit function."""
         sp, tpls = example_triplegs
 
-        # accessor with only arguments (not allowed)
-        with pytest.raises(AssertionError):
-            _, _, _ = tpls.as_triplegs.generate_trips(sp, 15)
+        # generate trips using the explicit function import
+        sp_expl, tpls_expl, trips_expl = ti.preprocessing.triplegs.generate_trips(sp, tpls, gap_threshold=15)
 
-        # accessor with only keywords
-        sp_1, tpls_1, trips_1 = tpls.as_triplegs.generate_trips(staypoints=sp, gap_threshold=15)
+        # generate trips using the accessor
+        sp_acc, tpls_acc, trips_acc = sp.as_staypoints.generate_trips(tpls, gap_threshold=15)
 
-        # accessor with mixed arguments/keywords
-        sp_2, tpls_2, trips_2 = tpls.as_triplegs.generate_trips(staypoints=sp, gap_threshold=15)
-
-        # test if generated trips are equal (1,2)
-        assert_geodataframe_equal(sp_1, sp_2)
-        assert_geodataframe_equal(tpls_1, tpls_2)
-        assert_geodataframe_equal(trips_1, trips_2)
+        # test if generated trips are equal
+        assert_geodataframe_equal(trips_expl, trips_acc)
+        assert_geodataframe_equal(sp_expl, sp_acc)
+        assert_geodataframe_equal(tpls_acc, tpls_expl)
 
     def test_generate_trips_missing_link(self, example_triplegs):
         """Test nan is assigned for missing link between sp and trips, and tpls and trips."""
@@ -226,7 +222,6 @@ class TestGenerate_trips:
             sep=";",
             index_col="id",
             parse_dates=[0, 1],
-            infer_datetime_format=True,
             dayfirst=True,
         )
         sp_in["geom"] = Point(1, 1)
@@ -238,7 +233,6 @@ class TestGenerate_trips:
             sep=";",
             index_col="id",
             parse_dates=[0, 1],
-            infer_datetime_format=True,
             dayfirst=True,
         )
         tpls_in["geom"] = LineString([[1, 1], [2, 2]])
@@ -255,15 +249,19 @@ class TestGenerate_trips:
         sp_tpls_loaded["started_at_next"] = pd.to_datetime(sp_tpls_loaded["started_at_next"], utc=True)
         sp_tpls_loaded["finished_at"] = pd.to_datetime(sp_tpls_loaded["finished_at"], utc=True)
 
+        sp_tpls_loaded["trip_id"] = sp_tpls_loaded["trip_id"].astype("Int64")
+        sp_tpls_loaded["prev_trip_id"] = sp_tpls_loaded["prev_trip_id"].astype("Int64")
+        sp_tpls_loaded["next_trip_id"] = sp_tpls_loaded["next_trip_id"].astype("Int64")
+
         # generate trips and a joint staypoint/triplegs dataframe
         sp_proc, tpls_proc, trips = generate_trips(sp_in, tpls_in, gap_threshold=gap_threshold, add_geometry=False)
         sp_tpls = _create_debug_sp_tpls_data(sp_proc, tpls_proc, gap_threshold=gap_threshold)
 
         # test if generated trips are equal
-        pd.testing.assert_frame_equal(trips_loaded, trips)
+        assert_frame_equal(trips_loaded, trips)
 
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
-        assert_frame_equal(sp_tpls_loaded, sp_tpls, check_dtype=False)
+        assert_frame_equal(sp_tpls_loaded, sp_tpls)
 
     def test_generate_trips_id_management(self, example_triplegs_higher_gap_threshold):
         """Test if we can generate the example trips based on example data."""
@@ -271,6 +269,10 @@ class TestGenerate_trips:
         sp_tpls_loaded["started_at"] = pd.to_datetime(sp_tpls_loaded["started_at"])
         sp_tpls_loaded["started_at_next"] = pd.to_datetime(sp_tpls_loaded["started_at_next"])
         sp_tpls_loaded["finished_at"] = pd.to_datetime(sp_tpls_loaded["finished_at"])
+
+        sp_tpls_loaded["trip_id"] = sp_tpls_loaded["trip_id"].astype("Int64")
+        sp_tpls_loaded["prev_trip_id"] = sp_tpls_loaded["prev_trip_id"].astype("Int64")
+        sp_tpls_loaded["next_trip_id"] = sp_tpls_loaded["next_trip_id"].astype("Int64")
 
         sp, tpls = example_triplegs_higher_gap_threshold
 
@@ -280,11 +282,11 @@ class TestGenerate_trips:
         sp_tpls = _create_debug_sp_tpls_data(sp, tpls, gap_threshold=gap_threshold)
 
         # test if generated staypoints/triplegs are equal (especially important for trip ids)
-        assert_frame_equal(sp_tpls_loaded, sp_tpls, check_dtype=False)
+        assert_frame_equal(sp_tpls_loaded, sp_tpls)
 
     def test_only_staypoints_in_trip(self):
         """Test that trips with only staypoints (non-activities) are deleted."""
-        start = pd.Timestamp("2021-07-11 8:00:00")
+        start = pd.Timestamp("2021-07-11 8:00:00", tz="utc")
         h = pd.to_timedelta("1h")
         sp_tpls = [
             {"is_activity": True, "type": "staypoint"},
@@ -299,8 +301,12 @@ class TestGenerate_trips:
             d["started_at"] = start + n * h
             d["finished_at"] = d["started_at"] + h
         sp_tpls = pd.DataFrame(sp_tpls)
-        sp = sp_tpls[sp_tpls["type"] == "staypoint"]
-        tpls = sp_tpls[sp_tpls["type"] == "tripleg"]
+        sp = sp_tpls[sp_tpls["type"] == "staypoint"].copy()
+        tpls = sp_tpls[sp_tpls["type"] == "tripleg"].copy()
+        sp["geom"] = Point(0, 0)
+        tpls["geom"] = LineString([[1, 1], [2, 2]])
+        sp = gpd.GeoDataFrame(sp, geometry="geom")
+        tpls = gpd.GeoDataFrame(tpls, geometry="geom")
         sp_, tpls_, trips = generate_trips(sp, tpls, add_geometry=False)
         trip_id_truth = pd.Series([None, None, None, 0, None], dtype="Int64")
         trip_id_truth.index = sp_.index  # don't check index
@@ -310,7 +316,7 @@ class TestGenerate_trips:
 
     def test_sp_tpls_index(self):
         """Test if staypoint and tripleg index are identical before and after generating trips."""
-        start = pd.Timestamp("2021-07-11 8:00:00")
+        start = pd.Timestamp("2021-07-11 8:00:00", tz="utc")
         h = pd.to_timedelta("1h")
         sp_tpls = [
             {"is_activity": True, "type": "staypoint"},
@@ -325,8 +331,12 @@ class TestGenerate_trips:
             d["finished_at"] = d["started_at"] + h
 
         sp_tpls = pd.DataFrame(sp_tpls)
-        sp = sp_tpls[sp_tpls["type"] == "staypoint"]
-        tpls = sp_tpls[sp_tpls["type"] != "staypoint"]
+        sp = sp_tpls[sp_tpls["type"] == "staypoint"].copy()
+        tpls = sp_tpls[sp_tpls["type"] != "staypoint"].copy()
+        sp["geom"] = Point(0, 0)
+        tpls["geom"] = LineString([(0, 0), (1, 1)])
+        sp = gpd.GeoDataFrame(sp, geometry="geom")
+        tpls = gpd.GeoDataFrame(tpls, geometry="geom")
         tpls.index.name = "something_long_and_obscure"
         sp.index.name = "even_obscurer"
         sp_, tpls_, _ = generate_trips(sp, tpls, add_geometry=False)
@@ -373,6 +383,41 @@ class TestGenerate_trips:
         with pytest.raises(AttributeError, match=error_msg):
             generate_trips(sp, tpls)
 
+    def test_crs(self, example_triplegs):
+        """Test that the resulting GeoDataFrame has the correct crs or a warning or error is thrown if not set"""
+        sp, tpls = example_triplegs
+        # Case 1: sp crs None --> throw warning and set to tpls crs
+        sp.crs = None
+        with pytest.warns(UserWarning):
+            _, _, trips = generate_trips(sp, tpls)
+            assert trips.crs == tpls.crs
+        # Case 2: Both crs None --> warn and set to None
+        tpls.crs = None
+        with pytest.warns(UserWarning):
+            _, _, trips = generate_trips(sp, tpls)
+            assert trips.crs is None
+        # Case 3: tpls crs is None --> throw warning and set to sp crs
+        sp.crs = "EPSG:4326"
+        with pytest.warns(UserWarning):
+            _, _, trips = generate_trips(sp, tpls)
+            assert trips.crs == "EPSG:4326"
+        # Case 4: Both crs set and correspond
+        tpls.crs = "EPSG:2056"
+        sp.crs = "EPSG:2056"
+        _, _, trips = generate_trips(sp, tpls)
+        assert trips.crs == "EPSG:2056"
+        # Case 5: Both crs set but differ --> throw error
+        sp.crs = "EPSG:4326"
+        error_msg = "CRS of staypoints and triplegs differ. Geometry cannot be joined safely."
+        with pytest.raises(AssertionError, match=error_msg):
+            generate_trips(sp, tpls)
+
+    def test_trips_type(self, example_triplegs):
+        """Test if trips are really Trips"""
+        sp, tpls = example_triplegs
+        _, _, trips = generate_trips(sp, tpls)
+        assert isinstance(trips, ti.TripsGeoDataFrame)
+
 
 def _create_debug_sp_tpls_data(sp, tpls, gap_threshold):
     """Preprocess sp and tpls for "test_generate_trips_*."""
@@ -384,7 +429,7 @@ def _create_debug_sp_tpls_data(sp, tpls, gap_threshold):
     sp_tpls = pd.concat((sp[cols_sp], tpls[cols_tpls]))
 
     # transform nan to bool
-    sp_tpls["is_activity"] = sp_tpls["is_activity"] == True
+    sp_tpls["is_activity"] = sp_tpls["is_activity"].__eq__(True)
     sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
     sp_tpls["started_at_next"] = sp_tpls["started_at"].shift(-1)
     sp_tpls["activity_next"] = sp_tpls["is_activity"].shift(-1)
@@ -468,7 +513,7 @@ def _generate_trips_old(sp_input, tpls_input, gap_threshold=15, print_progress=F
     sp_tpls["id"] = sp_tpls.index
 
     # transform nan to bool
-    sp_tpls["is_activity"] = sp_tpls["is_activity"] == True
+    sp_tpls["is_activity"] = sp_tpls["is_activity"].__eq__(True)
 
     sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
     sp_tpls["started_at_next"] = sp_tpls["started_at"].shift(-1)
@@ -557,7 +602,6 @@ def _generate_trips_user(df, gap_threshold):
     trip_ls = []
 
     for _, row in df.iterrows():
-
         # check if we can start a new trip
         # (we make sure that we start the trip with the most recent activity)
         if in_trip is False:
@@ -581,7 +625,6 @@ def _generate_trips_user(df, gap_threshold):
             # check if trip ends regularly
             is_gap = row["started_at_next"] - row["finished_at"] > datetime.timedelta(minutes=gap_threshold)
             if row["is_activity"] is True:
-
                 # if there are no triplegs in the trip, set the current activity as origin and start over
                 if not _check_trip_stack_has_tripleg(temp_trip_stack):
                     origin_activity = row
@@ -647,7 +690,6 @@ def _generate_trips_user(df, gap_threshold):
             )
         )
 
-    # print(trip_ls)
     trips = pd.DataFrame(trip_ls)
     return trips
 
@@ -704,9 +746,9 @@ def _create_trip_from_stack(temp_trip_stack, origin_activity, destination_activi
     assert origin_activity["user_id"] == last_trip_element["user_id"]
 
     # double check if trip requirements are fulfilled
-    assert origin_activity["is_activity"] == True
-    assert destination_activity["is_activity"] == True
-    assert first_trip_element["is_activity"] == False
+    assert origin_activity["is_activity"] is True
+    assert destination_activity["is_activity"] is True
+    assert first_trip_element["is_activity"] is False
 
     trip_dict_entry = {
         "user_id": origin_activity["user_id"],

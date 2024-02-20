@@ -127,17 +127,11 @@ class TestModalSplit:
                     for norm in norm_list:
                         calculate_modal_split(tpls, metric=metric, freq=freq, per_user=per_user, norm=norm)
 
-        # we only check if it runs through successfully
-        assert True
-
     def test_run_modal_split_with_geolife_accessors(self, read_geolife_with_modes):
         """check if we can access `calculate_modal_split` via the tripelg accessor"""
 
         tpls = read_geolife_with_modes
         tpls.as_triplegs.calculate_modal_split(metric="count", freq="D")
-
-        # we only check if it runs through successfully
-        assert True
 
     def test_modal_split_total_count(self, test_triplegs_modal_split):
         """Check counts per user and mode without temporal binning"""
@@ -210,7 +204,7 @@ class TestModalSplit:
         """Check if error is raised if unknown metric is passed."""
         metric = "unknown_metric"
         error_msg = f"Metric {metric} unknown, only metrics {{'count', 'distance', 'duration'}} are supported."
-        with pytest.raises(AttributeError, match=error_msg):
+        with pytest.raises(ValueError, match=error_msg):
             calculate_modal_split(test_triplegs_modal_split, metric=metric)
 
 

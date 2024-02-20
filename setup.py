@@ -13,7 +13,7 @@ from setuptools import find_packages, setup
 NAME = "trackintel"
 DESCRIPTION = "Human mobility and movement analysis framework."
 URL = "https://github.com/mie-lab/trackintel"
-EMAIL = "dobucher@ethz.ch, martinhe@ethz.ch"
+EMAIL = "dobucher@ethz.ch, martinhe@ethz.ch, hongy@ethz.ch"
 AUTHOR = "Dominik Bucher, Henry Martin, Ye Hong"
 REQUIRES_PYTHON = ">=3.6.0"
 VERSION = None
@@ -22,10 +22,9 @@ LICENSE = "MIT"
 # What packages are required for this module to be executed?
 REQUIRED = [
     "pandas",
-    "geopandas>=0.9.0",
+    "geopandas>=0.12.0",
     "matplotlib",
     "numpy",
-    "pint",
     "shapely",
     "networkx",
     "geoalchemy2",
@@ -33,23 +32,20 @@ REQUIRED = [
     "scikit-learn",
     "tqdm",
     "similaritymeasures",
-    "pygeos>=0.10.0",
 ]
 
 install_requires = [
     "pandas",
     "matplotlib",
     "numpy",
-    "pint",
     "shapely",
     "networkx",
     "geoalchemy2",
     "osmnx",
     "scikit-learn",
     "tqdm",
-    "geopandas>=0.9.0",
+    "geopandas>=0.12.0",
     "similaritymeasures",
-    "pygeos>=0.10.0",
 ]
 
 # What packages are optional?

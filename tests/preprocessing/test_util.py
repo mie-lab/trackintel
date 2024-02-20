@@ -1,10 +1,14 @@
 import datetime
 
+import numpy as np
+import geopandas as gpd
+from geopandas.testing import assert_geoseries_equal
 import pandas as pd
-from pandas.testing import assert_frame_equal
 import pytest
+from pandas.testing import assert_frame_equal
+from shapely.geometry import MultiPoint, Point
 
-from trackintel.preprocessing.util import calc_temp_overlap, _explode_agg
+from trackintel.preprocessing.util import _explode_agg, calc_temp_overlap, angle_centroid_multipoints
 
 
 @pytest.fixture
@@ -50,14 +54,14 @@ class TestExplodeAgg:
     def test_empty_agg(self):
         """Test function with empty agg DataFrame"""
         orig = [
-            {"a": 1, "b": "i", "c": None},
-            {"a": 2, "b": "i", "c": None},
+            {"a": 1, "b": "i", "c": np.nan},
+            {"a": 2, "b": "i", "c": np.nan},
         ]
         orig_df = pd.DataFrame(orig, columns=["a", "b"])
         agg_df = pd.DataFrame({}, columns=["id", "c"])
         returned_df = _explode_agg("id", "c", orig_df, agg_df)
         solution_df = pd.DataFrame(orig)
-        assert_frame_equal(returned_df, solution_df)
+        assert_frame_equal(returned_df, solution_df, check_dtype=False)
 
     def test_list_column(self):
         """Test function with a column of lists."""
@@ -75,16 +79,31 @@ class TestExplodeAgg:
         agg_df = pd.DataFrame(agg)
         returned_df = _explode_agg("id", "c", orig_df, agg_df)
         solution_df = pd.DataFrame(orig)
+
         assert_frame_equal(returned_df, solution_df)
 
     def test_index_dtype_with_None(self):
         """Test if dtype of index isn't changed with None values."""
-        orig = [
-            {"a": 1, "c": 0},
-        ]
+        orig = [{"a": 1, "c": 0}]
         agg = [{"id": [0, 1], "c": 0}, {"id": [], "c": 1}]
         orig_df = pd.DataFrame(orig, columns=["a"])
         agg_df = pd.DataFrame(agg)
         returned_df = _explode_agg("id", "c", orig_df, agg_df)
         solution_df = pd.DataFrame(orig)
+
         assert_frame_equal(returned_df, solution_df)
+
+
+class TestAngleCentroidMultipoints:
+    """Test util method angle_centroid_multipoints"""
+
+    # test adapted from https://rosettacode.org/wiki/Averages/Mean_angle
+    a = Point((130, 45))
+    b = MultiPoint([(160, 10), (-170, 20)])
+    c = MultiPoint([(20, 0), (30, 10), (40, 20)])
+    d = MultiPoint([(350, 0), (10, 0)])
+    e = MultiPoint([(90, 0), (180, 0), (270, 0), (360, 0)])
+    g = gpd.GeoSeries([a, b, c, d, e])
+    g_solution = gpd.GeoSeries([a, Point([175, 15]), Point([30, 10]), Point(0, 0), Point(-90, 0)])
+    g = gpd.GeoSeries(angle_centroid_multipoints(g))
+    assert_geoseries_equal(g, g_solution, check_less_precise=True)

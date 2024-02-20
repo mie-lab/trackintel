@@ -174,9 +174,10 @@ class TestGenerate_staypoints:
         """Test if using large thresholds, stp extraction yield no pfs."""
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
         warn_string = "No staypoints can be generated, returning empty sp."
+        max_time = pd.Timedelta.max.total_seconds() // 60
         with pytest.warns(UserWarning, match=warn_string):
             _, sp = pfs.as_positionfixes.generate_staypoints(
-                method="sliding", dist_threshold=sys.maxsize, time_threshold=sys.maxsize
+                method="sliding", dist_threshold=sys.maxsize, time_threshold=max_time
             )
         assert len(sp) == 0
 
@@ -184,12 +185,13 @@ class TestGenerate_staypoints:
         """Test nan is assigned for missing link between pfs and sp."""
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
         warn_string = "No staypoints can be generated, returning empty sp."
+        max_time = pd.Timedelta.max.total_seconds() // 60
         with pytest.warns(UserWarning, match=warn_string):
             pfs, _ = pfs.as_positionfixes.generate_staypoints(
-                method="sliding", dist_threshold=sys.maxsize, time_threshold=sys.maxsize
+                method="sliding", dist_threshold=sys.maxsize, time_threshold=max_time
             )
 
-        assert pd.isna(pfs["staypoint_id"]).any()
+        assert pd.isna(pfs["staypoint_id"]).all()
 
     def test_dtype_consistent(self, geolife_pfs_sp_long):
         """Test the dtypes for the generated columns."""
@@ -203,7 +205,7 @@ class TestGenerate_staypoints:
         """Test the generated index start from 0 for different methods."""
         _, sp = geolife_pfs_sp_long
 
-        assert (sp.index == np.arange(len(sp))).any()
+        assert (sp.index == np.arange(len(sp))).all()
 
     def test_include_last(self):
         """Test if the include_last arguement will include the last pfs as stp."""
@@ -278,7 +280,7 @@ class TestGenerate_staypoints:
             },
         ]
         df = pd.DataFrame(pfs_dict)
-        pfs = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude))
+        pfs = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs="epsg:4326")
         pfs.as_positionfixes
 
         # using the default gap_threshold will generate no sp
@@ -290,6 +292,50 @@ class TestGenerate_staypoints:
         # using large gap_threshold one sp will be generated
         _, sp = pfs.as_positionfixes.generate_staypoints(gap_threshold=1e8, include_last=True)
         assert len(sp) == 1
+
+    def test_str_userid(self, example_positionfixes):
+        """Staypoint generation should also run without error if the user_id is a string"""
+        # the pfs would not generate staypoints with the default parameters
+        pfs = example_positionfixes
+        pfs["user_id"] = pfs["user_id"].astype(str)
+        warn_string = "No staypoints can be generated, returning empty sp."
+        with pytest.warns(UserWarning, match=warn_string):
+            pfs, sp = pfs.as_positionfixes.generate_staypoints()
+
+    def test_sp_type(self):
+        """Test if sp are really Staypoints"""
+        pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife_long"))
+        _, sp = pfs.generate_staypoints()
+        assert isinstance(sp, ti.Staypoints)
+
+
+class Test_Generate_staypoints_sliding_user:
+    """Test for _generate_staypoints_sliding_user."""
+
+    def test_unknown_distance_metric(self, example_positionfixes):
+        """Test if the distance metric is unknown, an ValueError will be raised."""
+        with pytest.raises(ValueError):
+            example_positionfixes.as_positionfixes.generate_staypoints(
+                method="sliding", dist_threshold=100, time_threshold=5, distance_metric="unknown"
+            )
+
+
+class Test__create_new_staypoints:
+    """Test __create_new_staypoints."""
+
+    def test_planar_crs(self, geolife_pfs_sp_long):
+        """Test if planar crs are handled as well"""
+        pfs, _ = geolife_pfs_sp_long
+        _, sp_wgs84 = pfs.as_positionfixes.generate_staypoints(
+            method="sliding", dist_threshold=100, time_threshold=5.0, include_last=True
+        )
+        pfs = pfs.set_crs(2056, allow_override=True)
+        _, sp_lv95 = pfs.as_positionfixes.generate_staypoints(
+            method="sliding", dist_threshold=100, time_threshold=5.0, include_last=True
+        )
+        sp_lv95.set_crs(4326, allow_override=True, inplace=True)
+        # planar and non-planar differ only if we experience a wrap in coords like [+180, -180]
+        assert_geodataframe_equal(sp_wgs84, sp_lv95, check_less_precise=True)
 
 
 class TestGenerate_triplegs:
@@ -462,12 +508,12 @@ class TestGenerate_triplegs:
         assert (tpls_case2.index == np.arange(len(tpls_case2))).any()
 
     def test_invalid_inputs(self, geolife_pfs_sp_long):
-        """Test if AttributeError will be raised after invalid method input."""
+        """Test if ValueError will be raised after invalid method input."""
         pfs, sp = geolife_pfs_sp_long
 
-        with pytest.raises(AttributeError, match="Method unknown"):
+        with pytest.raises(ValueError, match="Method unknown"):
             pfs.as_positionfixes.generate_triplegs(sp, method="random")
-        with pytest.raises(AttributeError, match="Method unknown"):
+        with pytest.raises(ValueError, match="Method unknown"):
             pfs.as_positionfixes.generate_triplegs(sp, method=12345)
 
     def test_temporal(self, geolife_pfs_sp_long):
@@ -505,3 +551,21 @@ class TestGenerate_triplegs:
 
             # all values have to greater or equal to zero. Otherwise there is an overlap
             assert all(diff >= np.timedelta64(datetime.timedelta()))
+
+    def test_str_userid(self, example_positionfixes_isolated):
+        """Tripleg generation should also work if the user IDs are strings"""
+        pfs = example_positionfixes_isolated
+        # remove isolated - not needed for this test
+        pfs = pfs[~pfs.index.isin([1, 2])].copy()
+        # set user ID to string
+        pfs["user_id"] = pfs["user_id"].astype(str) + "not_numerical_interpretable_str"
+        pfs, _ = pfs.as_positionfixes.generate_triplegs()
+
+    def test_tpls_type(self, example_positionfixes_isolated):
+        """Test that Tripleg generation returns correct type"""
+        # remove isolated - not needed for this test
+        pfs = example_positionfixes_isolated
+        pfs = pfs[~pfs.index.isin([1, 2])].copy()
+
+        _, tpls = pfs.as_positionfixes.generate_triplegs()
+        assert isinstance(tpls, ti.Triplegs)

@@ -39,7 +39,7 @@ You can import one of these by executing the following steps::
     conn_string = 'postgresql://test:1234@localhost:5432/' + database_name
 
     pfs = ti.read_positionfixes_csv('examples/data/posmo_trajectory_2.csv', sep=';')
-    pfs.as_positionfixes.to_postgis('positionfixes', conn_string, if_exists='append')
+    pfs.to_postgis('positionfixes', conn_string, if_exists='append')
 
 This will fill the positionfixes of ``posmo_trajectory_2.csv`` into the table
 ``positionfixes`` of the database ``trackintel-tests``. Make sure that you update the
@@ -47,21 +47,21 @@ connection string with your proper username and password.
 
 We now can for example plot the positionfixes::
 
-    pfs.as_positionfixes.plot('positionfixes.png')
+    ti.plot(positionfixes=pfs, filename="positionfixes.png")
 
 Of course, we can start our analysis, for example by detecting staypoints (aggregated positionfixes 
 where the user stayed for a certain amount of time)::
 
-    _, locs = pfs.as_positionfixes.generate_staypoints(method='sliding')
-    sp.as_staypoints.plot(out_filename='staypoints.png', radius=10, positionfixes=pfs, plot_osm=True)
+    _, sp = pfs.generate_staypoints(method='sliding')
+    ti.plot(filename="staypoints.png", radius_sp=10, staypoints=sp, positionfixes=pfs, plot_osm=True)
 
 This will additionally plot the original positionfixes, as well as the underlying 
 street network from OSM. We can for example continue by extracting and plotting locations 
 (locations that "contain" multiple staypoints, i.e., are visited often by a user)::
 
-    _, locs = sp.as_staypoints.generate_locations(method='dbscan', epsilon=100, num_samples=1)
-    locs.as_locations.plot(out_filename='locations.png', radius=125, positionfixes=pfs, 
-        staypoints=sp, staypoints_radius=100, plot_osm=True)
+    _, locs = sp.generate_locations(method='dbscan', epsilon=100, num_samples=1)
+    ti.plot(filename="locations.png", locations=locs, radius_locs=125, positionfixes=pfs,
+            staypoints=sp, radius_sp=100, plot_osm=True)
     
 This will extract locations and plot them to a file called ``locations.png``, additionally 
 plotting the original positionfixes and staypoints, as well as the street network.

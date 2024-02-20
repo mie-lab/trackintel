@@ -1,24 +1,20 @@
 import pandas as pd
+
 import trackintel as ti
+from trackintel.model.util import (
+    TrackintelBase,
+    TrackintelGeoDataFrame,
+    _register_trackintel_accessor,
+    _shared_docs,
+    doc,
+)
 
-from trackintel.analysis.labelling import predict_transport_mode
-from trackintel.analysis.modal_split import calculate_modal_split
-from trackintel.analysis.tracking_quality import temporal_tracking_quality
-from trackintel.geogr.distances import calculate_distance_matrix
-from trackintel.io.file import write_triplegs_csv
-from trackintel.io.postgis import write_triplegs_postgis
-from trackintel.model.util import _copy_docstring, get_speed_triplegs
-from trackintel.preprocessing.filter import spatial_filter
-from trackintel.preprocessing.triplegs import generate_trips
-from trackintel.visualization.triplegs import plot_triplegs
+_required_columns = ["user_id", "started_at", "finished_at"]
 
 
-@pd.api.extensions.register_dataframe_accessor("as_triplegs")
-class TriplegsAccessor(object):
-    """A pandas accessor to treat (Geo)DataFrames as collections of `Tripleg`.
-
-    This will define certain methods and accessors, as well as make sure that the DataFrame
-    adheres to some requirements.
+@_register_trackintel_accessor("as_triplegs")
+class Triplegs(TrackintelBase, TrackintelGeoDataFrame):
+    """Trackintel class to treat a GeoDataFrame as a collections of `Tripleg`.
 
     Requires at least the following columns:
     ['user_id', 'started_at', 'finished_at']
@@ -37,139 +33,106 @@ class TriplegsAccessor(object):
 
     Examples
     --------
-    >>> df.as_triplegs.plot()
+    >>> triplegs.generate_trips()
     """
 
-    required_columns = ["user_id", "started_at", "finished_at"]
+    def __init__(self, *args, validate=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        if validate:
+            self.validate(self)
 
-    def __init__(self, pandas_obj):
-        self._validate(pandas_obj)
-        self._obj = pandas_obj
+    # create circular reference directly -> avoid second call of init via accessor
+    @property
+    def as_triplegs(self):
+        return self
 
     @staticmethod
-    def _validate(obj):
-        assert obj.shape[0] > 0, "Geodataframe is empty with shape: {}".format(obj.shape)
+    def validate(obj):
+        assert obj.shape[0] > 0, f"Geodataframe is empty with shape: {obj.shape}"
         # check columns
-        if any([c not in obj.columns for c in TriplegsAccessor.required_columns]):
+        if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
-                "To process a DataFrame as a collection of triplegs, "
-                + "it must have the properties [%s], but it has [%s]."
-                % (", ".join(TriplegsAccessor.required_columns), ", ".join(obj.columns))
+                "To process a DataFrame as a collection of triplegs, it must have the properties"
+                f" {_required_columns}, but it has [{', '.join(obj.columns)}]."
             )
-        # check geometry
-        assert obj.geometry.is_valid.all(), (
-            "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
-        )
-        if obj.geometry.iloc[0].geom_type != "LineString":
-            raise AttributeError("The geometry must be a LineString (only first checked).")
 
         # check timestamp dtypes
-        assert pd.api.types.is_datetime64tz_dtype(
-            obj["started_at"]
-        ), "dtype of started_at is {} but has to be datetime64 and timezone aware".format(obj["started_at"].dtype)
-        assert pd.api.types.is_datetime64tz_dtype(
-            obj["finished_at"]
-        ), "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj["finished_at"].dtype)
+        assert isinstance(
+            obj["started_at"].dtype, pd.DatetimeTZDtype
+        ), f"dtype of started_at is {obj['started_at'].dtype} but has to be datetime64 and timezone aware"
+        assert isinstance(
+            obj["finished_at"].dtype, pd.DatetimeTZDtype
+        ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be datetime64 and timezone aware"
 
-    @_copy_docstring(plot_triplegs)
-    def plot(self, *args, **kwargs):
-        """
-        Plot this collection of triplegs.
+        # check geometry
+        assert (
+            obj.geometry.is_valid.all()
+        ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
+        if obj.geometry.iloc[0].geom_type != "LineString":
+            raise TypeError("The geometry must be a LineString (only first checked).")
 
-        See :func:`trackintel.visualization.triplegs.plot_triplegs`.
-        """
-        ti.visualization.triplegs.plot_triplegs(self._obj, *args, **kwargs)
-
-    @_copy_docstring(write_triplegs_csv)
+    @doc(_shared_docs["write_csv"], first_arg="", long="triplegs", short="tpls")
     def to_csv(self, filename, *args, **kwargs):
-        """
-        Store this collection of triplegs as a CSV file.
+        ti.io.write_triplegs_csv(self, filename, *args, **kwargs)
 
-        See :func:`trackintel.io.file.write_triplegs_csv`.
-        """
-        ti.io.file.write_triplegs_csv(self._obj, filename, *args, **kwargs)
-
-    @_copy_docstring(write_triplegs_postgis)
+    @doc(_shared_docs["write_postgis"], first_arg="", long="triplegs", short="tpls")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        """
-        Store this collection of triplegs to PostGIS.
+        ti.io.write_triplegs_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
-        See :func:`trackintel.io.postgis.store_positionfixes_postgis`.
+    def calculate_distance_matrix(self, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
         """
-        ti.io.postgis.write_triplegs_postgis(
-            self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype
-        )
+        Calculate a distance matrix based on a specific distance metric.
 
-    @_copy_docstring(calculate_distance_matrix)
-    def calculate_distance_matrix(self, *args, **kwargs):
+        See :func:`trackintel.geogr.calculate_distance_matrix` for full documentation.
         """
-        Calculate pair-wise distance among triplegs or to other triplegs.
+        return ti.geogr.calculate_distance_matrix(self, Y=Y, dist_metric=dist_metric, n_jobs=n_jobs, **kwds)
 
-        See :func:`trackintel.geogr.distances.calculate_distance_matrix`.
+    def spatial_filter(self, areas, method="within", re_project=False):
         """
-        return ti.geogr.distances.calculate_distance_matrix(self._obj, *args, **kwargs)
+        Filter Triplegs on a geo extent.
 
-    @_copy_docstring(spatial_filter)
-    def spatial_filter(self, *args, **kwargs):
+        See :func:`trackintel.geogr.spatial_filter` for full documentation.
         """
-        Filter triplegs with a geo extent.
+        return ti.geogr.spatial_filter(self, areas, method=method, re_project=re_project)
 
-        See :func:`trackintel.preprocessing.filter.spatial_filter`.
-        """
-        return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
-
-    @_copy_docstring(generate_trips)
-    def generate_trips(self, *args, **kwargs):
+    def generate_trips(self, staypoints, gap_threshold=15, add_geometry=True):
         """
         Generate trips based on staypoints and triplegs.
 
-        See :func:`trackintel.preprocessing.triplegs.generate_trips`.
+        See :func:`trackintel.preprocessing.generate_trips` for full documentation.
         """
-        # if staypoints in kwargs: 'staypoints' can not be in args as it would be the first argument
-        if "staypoints" in kwargs:
-            return ti.preprocessing.triplegs.generate_trips(triplegs=self._obj, **kwargs)
-        # if 'staypoints' no in kwargs it has to be the first argument in 'args'
-        else:
-            assert len(args) <= 1, (
-                "All arguments except 'staypoints' have to be given as keyword arguments. You gave"
-                f" {args[1:]} as positional arguments."
-            )
-            return ti.preprocessing.triplegs.generate_trips(staypoints=args[0], triplegs=self._obj, **kwargs)
+        return ti.preprocessing.generate_trips(staypoints, self, gap_threshold=gap_threshold, add_geometry=add_geometry)
 
-    @_copy_docstring(predict_transport_mode)
-    def predict_transport_mode(self, *args, **kwargs):
+    def predict_transport_mode(self, method="simple-coarse", **kwargs):
         """
-        Predict/impute the transport mode with which each tripleg was likely covered.
+        Predict the transport mode of triplegs.
 
-        See :func:`trackintel.analysis.labelling.predict_transport_mode`.
+        See :func:`trackintel.analysis.predict_transport_mode` for full documentation.
         """
-        return ti.analysis.labelling.predict_transport_mode(self._obj, *args, **kwargs)
+        return ti.analysis.predict_transport_mode(self, method=method, **kwargs)
 
-    @_copy_docstring(calculate_modal_split)
-    def calculate_modal_split(self, *args, **kwargs):
+    def calculate_modal_split(self, freq=None, metric="count", per_user=False, norm=False):
         """
-        Calculate the modal split of the triplegs.
+        Calculate the modal split of triplegs.
 
-        See :func:`trackintel.analysis.modal_split.calculate_modal_split`.
+        See :func:`trackintel.analysis.calculate_modal_split` for full documentation.
         """
-        return ti.analysis.modal_split.calculate_modal_split(self._obj, *args, **kwargs)
+        return ti.analysis.calculate_modal_split(self, freq=freq, metric=metric, per_user=per_user, norm=norm)
 
-    @_copy_docstring(temporal_tracking_quality)
-    def temporal_tracking_quality(self, *args, **kwargs):
+    def temporal_tracking_quality(self, granularity="all"):
         """
         Calculate per-user temporal tracking quality (temporal coverage).
 
-        See :func:`trackintel.analysis.tracking_quality.temporal_tracking_quality`.
+        See :func:`trackintel.analysis.temporal_tracking_quality` for full documentation.
         """
-        return ti.analysis.tracking_quality.temporal_tracking_quality(self._obj, *args, **kwargs)
+        return ti.analysis.temporal_tracking_quality(self, granularity=granularity)
 
-    @_copy_docstring(get_speed_triplegs)
-    def get_speed(self, *args, **kwargs):
+    def get_speed(self, positionfixes=None, method="tpls_speed"):
         """
-        Compute the average speed for each tripleg, given by overall distance and duration (in m/s)
+        Compute the average speed per positionfix for each tripleg (in m/s)
 
-        See :func:`trackintel.model.util.get_speed_triplegs`.
+        See :func:`trackintel.geogr.get_speed_triplegs` for full documentation.
         """
-        return ti.model.util.get_speed_triplegs(self._obj, *args, **kwargs)
+        return ti.geogr.get_speed_triplegs(self, positionfixes=positionfixes, method=method)

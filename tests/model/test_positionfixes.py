@@ -2,6 +2,7 @@ import os
 import pytest
 import numpy as np
 
+import geopandas as gpd
 from shapely.geometry import LineString
 
 import trackintel as ti
@@ -11,16 +12,17 @@ import trackintel as ti
 def testdata_geolife():
     """Read geolife test data from files."""
     pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
-    return pfs
+    # we want test the accessor of GeoDataFrames and not Positionfixes
+    return gpd.GeoDataFrame(pfs)
 
 
 class TestPositionfixes:
-    """Tests for the PositionfixesAccessor."""
+    """Tests for the Positionfixes class."""
 
     def test_accessor_column(self, testdata_geolife):
         """Test if the as_positionfixes accessor checks the required column for positionfixes."""
         pfs = testdata_geolife.copy()
-        assert pfs.as_positionfixes
+        pfs.as_positionfixes
 
         # check user_id
         with pytest.raises(AttributeError, match="To process a DataFrame as a collection of positionfixes"):
@@ -31,7 +33,7 @@ class TestPositionfixes:
         pfs = testdata_geolife.copy()
 
         # check geometry
-        with pytest.raises(AttributeError, match="No geometry data set yet"):
+        with pytest.raises(AttributeError):
             pfs.drop(["geom"], axis=1).as_positionfixes
 
     def test_accessor_geometry_type(self, testdata_geolife):
@@ -39,7 +41,7 @@ class TestPositionfixes:
         pfs = testdata_geolife.copy()
 
         # check geometry type
-        with pytest.raises(AttributeError, match="The geometry must be a Point"):
+        with pytest.raises(TypeError, match="The geometry must be a Point"):
             pfs["geom"] = LineString([(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)])
             pfs.as_positionfixes
 

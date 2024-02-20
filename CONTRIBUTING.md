@@ -30,7 +30,8 @@ You can find the corresponding scripts in `.travis.yml` and `appveyor.yml`.
 Adding [Coveralls](https://coveralls.io) is an open todo.
 
 ### Formatting
-We use [black](https://github.com/psf/black) as our code formatter, run `python -m black . -l 120` in the *trackintel* folder to format your code automatically into black style. Please be sure to format your code before making a pull request.
+We use [black](https://github.com/psf/black) as our code formatter, run `python -m black . -l 120` in the *trackintel* folder to format your code automatically into black style. We additionally use [Flake8](https://github.com/PyCQA/flake8) checker.
+Please be sure to format your code before making a pull request. If you wish, you can add pre-commit hooks for both flake8 and black to make all formatting easier.
 
 ## Coding conventions
 This is a place to collect conventions we agreed upon until we find the right place in the doc for them
@@ -68,13 +69,20 @@ All trackintel objects have an ID that is the index of the dataframe [Issue 97](
 See [issue 117](https://github.com/mie-lab/trackintel/issues/117)
 - All docstrings follow the [numpy format](https://numpydoc.readthedocs.io/en/latest/format.html).
 - The example section is mandatory.
-- Naming of trackintel data types in the docstring:
-  - Positionfixes: `GeoDataFrame (as trackintel positionfixes)`  
-  - Staypoints: `GeoDataFrame (as trackintel staypoints)`
-  - Triplegs: `GeoDataFrame (as trackintel triplegs)`
-  - Locations: `GeoDataFrame (as trackintel locations)`  
-  - Trips: `(Geo)DataFrame (as trackintel trips)`
-  - Tours: `DataFrame (as trackintel tours)` 
+
+### Performance benchmarking
+- We use [airspeed velocity](https://asv.readthedocs.io/en/stable/) to benchmark key trackintel functions. 
+- Benchmarks are written in the airspeed velocity format. 
+- Three types of benchmarks exist (sample at [benchmarks](https://github.com/mie-lab/trackintel/tree/master/benchmarks) folder))
+  - _mem_ which measures the memory of the data structure returned:
+    https://github.com/mie-lab/trackintel/blob/19fcf965fce4a2bca2032f72b2759c7625c02b2f/benchmarks/preprocessing_benchmarks.py#L24
+
+  - _peakmem_ which measure the peak memory usage:
+    https://github.com/mie-lab/trackintel/blob/19fcf965fce4a2bca2032f72b2759c7625c02b2f/benchmarks/preprocessing_benchmarks.py#L27
+  
+  - _time_ which measure run time:
+    https://github.com/mie-lab/trackintel/blob/19fcf965fce4a2bca2032f72b2759c7625c02b2f/benchmarks/preprocessing_benchmarks.py#L21
+- We store the benchmark html files in the `gh-pages` branch for hosting them on the server. Detailed instructions for re-running existing benchmarks can be found in the ASV-BENCHMARKS.MD file [here](https://github.com/mie-lab/trackintel/blob/master/benchmarks/ASV-BENCHMARKING.md). 
 
 ### Others
 - We limit all lines to a maximum of 120 characters.

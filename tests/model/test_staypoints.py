@@ -1,7 +1,7 @@
 import os
 import pytest
-import numpy as np
 
+import geopandas as gpd
 from shapely.geometry import LineString
 
 import trackintel as ti
@@ -12,16 +12,17 @@ def testdata_sp():
     """Read sp test data from files."""
     sp_file = os.path.join("tests", "data", "staypoints.csv")
     sp = ti.read_staypoints_csv(sp_file, sep=";", index_col="id")
-    return sp
+    # we want test the accessor of GeoDataFrames and not Staypoints
+    return gpd.GeoDataFrame(sp)
 
 
 class TestStaypoints:
-    """Tests for the StaypointsAccessor."""
+    """Tests for the Staypoints class."""
 
     def test_accessor_columns(self, testdata_sp):
         """Test if the as_staypoints accessor checks the required column for staypoints."""
         sp = testdata_sp.copy()
-        assert sp.as_staypoints
+        sp.as_staypoints
 
         with pytest.raises(AttributeError, match="To process a DataFrame as a collection of staypoints"):
             sp.drop(["user_id"], axis=1).as_staypoints
@@ -31,7 +32,7 @@ class TestStaypoints:
         sp = testdata_sp.copy()
 
         # geometery
-        with pytest.raises(AttributeError, match="No geometry data set yet"):
+        with pytest.raises(AttributeError):
             sp.drop(["geom"], axis=1).as_staypoints
 
     def test_accessor_geometry_type(self, testdata_sp):
@@ -39,7 +40,7 @@ class TestStaypoints:
         sp = testdata_sp.copy()
 
         # check geometry type
-        with pytest.raises(AttributeError, match="The geometry must be a Point"):
+        with pytest.raises(TypeError, match="The geometry must be a Point"):
             sp["geom"] = LineString([(13.476808430, 48.573711823), (13.506804, 48.939008), (13.4664690, 48.5706414)])
             sp.as_staypoints
 

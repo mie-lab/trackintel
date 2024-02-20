@@ -1,55 +1,122 @@
-import multiprocessing
+import itertools
+import math
 import warnings
-from functools import partial
 from math import cos, pi
 
 import numpy as np
 import pandas as pd
-import pygeos
-from scipy.spatial.distance import cdist
-from sklearn.metrics import pairwise_distances
+import shapely
 import similaritymeasures
+from sklearn.metrics import pairwise_distances
 
-from trackintel.geogr.point_distances import haversine_dist
+from trackintel import Triplegs
 
 
-def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
+def point_haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000, float_flag=False):
     """
-    Calculate a distance matrix based on a specific distance metric.
+    Compute the great circle or haversine distance between two coordinates in WGS84.
 
-    If only X is given, the pair-wise distances between all elements in X are calculated. If X and Y are given, the
-    distances between all combinations of X and Y are calculated. Distances between elements of X and X, and distances
-    between elements of Y and Y are not calculated.
+    Serialized version of the haversine distance.
 
     Parameters
     ----------
-    X : GeoDataFrame (as trackintel staypoints or triplegs)
+    lon_1 : float or numpy.array of shape (-1,)
+        The longitude of the first point.
 
-    Y : GeoDataFrame (as trackintel staypoints or triplegs), optional
+    lat_1 : float or numpy.array of shape (-1,)
+        The latitude of the first point.
 
-    dist_metric: {'haversine', 'euclidean', 'dtw', 'frechet'}
-        The distance metric to be used for calculating the matrix.
+    lon_2 : float or numpy.array of shape (-1,)
+        The longitude of the second point.
 
-        For staypoints, common choice is 'haversine' or 'euclidean'. This function wraps around
-        the ``pairwise_distance`` function from scikit-learn if only `X` is given and wraps around the
-        ``scipy.spatial.distance.cdist`` function if X and Y are given.
+    lat_2 : float or numpy.array of shape (-1,)
+        The latitude of the second point.
+
+    r     : float
+        Radius of the reference sphere for the calculation.
+        The average Earth radius is 6'371'000 m.
+
+    float_flag : bool, default False
+        Optimization flag. Set to True if you are sure that you are only using floats as args.
+
+    Returns
+    -------
+    float or numpy.array
+        An approximation of the distance between two points in WGS84 given in meters.
+
+    Examples
+    --------
+    >>> point_haversine_dist(8.5, 47.3, 8.7, 47.2)
+    18749.056277719905
+
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Haversine_formula
+    https://stackoverflow.com/questions/19413259/efficient-way-to-calculate-distance-matrix-given-latitude-and-longitude-data-in
+    """
+    if float_flag:
+        lon_1 = math.radians(lon_1)
+        lat_1 = math.radians(lat_1)
+        lon_2 = math.radians(lon_2)
+        lat_2 = math.radians(lat_2)
+
+        cos_lat2 = math.cos(lat_2)
+        cos_lat1 = math.cos(lat_1)
+        cos_lat_d = math.cos(lat_1 - lat_2)
+        cos_lon_d = math.cos(lon_1 - lon_2)
+
+        return r * math.acos(cos_lat_d - cos_lat1 * cos_lat2 * (1 - cos_lon_d))
+
+    lon_1 = np.deg2rad(lon_1).ravel()
+    lat_1 = np.deg2rad(lat_1).ravel()
+    lon_2 = np.deg2rad(lon_2).ravel()
+    lat_2 = np.deg2rad(lat_2).ravel()
+
+    cos_lat1 = np.cos(lat_1)
+    cos_lat2 = np.cos(lat_2)
+    cos_lat_d = np.cos(lat_1 - lat_2)
+    cos_lon_d = np.cos(lon_1 - lon_2)
+
+    return r * np.arccos(cos_lat_d - cos_lat1 * cos_lat2 * (1 - cos_lon_d))
+
+
+def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=None, **kwds):
+    """
+    Compute the distance matrix from a vector array X and optional Y.
+
+    X and Y can either be Point geometries or LineString geometries.
+    If only X is given, the pair-wise distances between all elements in X are calculated.
+    If X and Y are given, the distances between all combinations of X and Y are calculated.
+
+    Parameters
+    ----------
+    X : GeoDataFrame
+
+    Y : GeoDataFrame, optional
+        Should have same geometry type as X
+
+    dist_metric: {{'haversine', 'euclidean', 'dtw', 'frechet'}}, optional
+        The distance metric to be used for calculating the matrix. By default 'haversine.
+
+        For Point geometries we provide the 'haversine' metric.
+        This function then wraps `sklearn.metrics.pairwise_distances`.
         Therefore the following metrics are also accepted:
 
-        via ``scikit-learn``: `[‘cityblock’, ‘cosine’, ‘euclidean’, ‘l1’, ‘l2’, ‘manhattan’]`
+        - via ``scikit-learn``: `['cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan']`
 
-        via ``scipy.spatial.distance``: `[‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘correlation’, ‘dice’, ‘hamming’, ‘jaccard’,
-        ‘kulsinski’, ‘mahalanobis’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’,
-        ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]`
+        - via ``scipy.spatial.distance``: `['braycurtis', 'canberra', 'chebyshev', 'correlation', 'dice', 'hamming', 'jaccard',
+        'kulsinski', 'mahalanobis', 'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener',
+        'sokalsneath', 'sqeuclidean', 'yule']`
 
-        For triplegs, common choice is 'dtw' or 'frechet'. This function uses the implementation
-        from similaritymeasures.
+        For LineStrings, we provide the metrics {'dtw', 'frechet'} via the implementation from similaritymeasures.
 
-    n_jobs: int
-        Number of cores to use: 'dtw', 'frechet' and all distance metrics from `pairwise_distance` (only available
-        if only X is given) are parallelized.
+    n_jobs: int, optional
+        The number of jobs to use for the computation. Ignored for LineStrings.
+        None means 1 unless in a joblib.parallel_backend context. -1 means using all processors.
+        See `sklearn.metrics.pairwise_distances` for more informations.
 
     **kwds:
-        optional keywords passed to the distance functions.
+        Optional keywords passed to the distance functions.
 
     Returns
     -------
@@ -60,111 +127,56 @@ def calculate_distance_matrix(X, Y=None, dist_metric="haversine", n_jobs=0, **kw
     --------
     >>> calculate_distance_matrix(staypoints, dist_metric="haversine")
     >>> calculate_distance_matrix(triplegs_1, triplegs_2, dist_metric="dtw")
+    >>> pfs.calculate_distance_matrix(dist_metric="haversine")
     """
     geom_type = X.geometry.iat[0].geom_type
-    if Y is None:
-        Y = X
-    assert Y.geometry.iat[0].geom_type == Y.geometry.iat[0].geom_type, (
-        "x and y need same geometry type " "(only first column checked)"
-    )
+    if Y is not None and Y.geometry.iloc[0].geom_type != geom_type:
+        raise ValueError("X and Y need to have same geometry type.")
+    if geom_type not in ["Point", "LineString"]:
+        raise ValueError(f"We only support 'Point' and 'LineString'. Your geometry is {geom_type}")
 
     if geom_type == "Point":
-        x1 = X.geometry.x.values
-        y1 = X.geometry.y.values
-        x2 = Y.geometry.x.values
-        y2 = Y.geometry.y.values
-
         if dist_metric == "haversine":
-            # create point pairs for distance calculation
-            nx = len(X)
-            ny = len(Y)
+            # curry our haversine distance
+            def haversine_curry(a, b, **_):
+                return point_haversine_dist(*a, *b, float_flag=True)
 
-            # if y != x they could have different dimensions
-            if ny >= nx:
-                ix_1, ix_2 = np.triu_indices(nx, k=1, m=ny)
-                trilix = np.tril_indices(nx, k=-1, m=ny)
-            else:
-                ix_1, ix_2 = np.tril_indices(nx, k=-1, m=ny)
-                trilix = np.triu_indices(nx, k=1, m=ny)
+            dist_metric = haversine_curry
+        X = shapely.get_coordinates(X.geometry)
+        Y = shapely.get_coordinates(Y.geometry) if Y is not None else X
+        return pairwise_distances(X, Y, metric=dist_metric, n_jobs=n_jobs, **kwds)
 
-            x1 = x1[ix_1]
-            y1 = y1[ix_1]
-            x2 = x2[ix_2]
-            y2 = y2[ix_2]
+    # geom_type == "LineString"
+    # for LineStrings we cannot use pairwise_distance because it enforces float in its array
+    if dist_metric == "dtw":
 
-            d = haversine_dist(x1, y1, x2, y2)
+        def dtw(a, b, **kwds):
+            return similaritymeasures.dtw(a, b, **kwds)[0]
 
-            D = np.zeros((nx, ny))
-            D[(ix_1, ix_2)] = d
-
-            # mirror triangle matrix to be conform with scikit-learn format and to
-            # allow for non-symmetric distances in the future
-            D[trilix] = D.T[trilix]
-
-        else:
-            xy1 = np.concatenate((x1.reshape(-1, 1), y1.reshape(-1, 1)), axis=1)
-
-            if Y is not None:
-                xy2 = np.concatenate((x2.reshape(-1, 1), y2.reshape(-1, 1)), axis=1)
-                D = cdist(xy1, xy2, metric=dist_metric, **kwds)
-            else:
-                D = pairwise_distances(xy1, metric=dist_metric, n_jobs=n_jobs)
-
-        return D
-
-    elif geom_type == "LineString":
-
-        if dist_metric in ["dtw", "frechet"]:
-            # these are the preparation steps for all distance functions based only on coordinates
-
-            if dist_metric == "dtw":
-                d_fun = partial(similaritymeasures.dtw, **kwds)
-            else:
-                d_fun = partial(similaritymeasures.frechet_dist, **kwds)
-
-            # get combinations of distances that have to be calculated
-            nx = len(X)
-            ny = len(Y)
-
-            if ny >= nx:
-                ix_1, ix_2 = np.triu_indices(nx, k=1, m=ny)
-                trilix = np.tril_indices(nx, k=-1, m=ny)
-            else:
-                ix_1, ix_2 = np.tril_indices(nx, k=-1, m=ny)
-                trilix = np.triu_indices(nx, k=1, m=ny)
-
-            # get the coordinates as list of each LineString
-            left = list(X.iloc[ix_1].geometry.apply(lambda x: x.coords))
-            right = list(Y.iloc[ix_2].geometry.apply(lambda x: x.coords))
-
-            # map the combinations to the distance function
-            if n_jobs == -1 or n_jobs > 1:
-                if n_jobs == -1:
-                    n_jobs = multiprocessing.cpu_count()
-                with multiprocessing.Pool(processes=n_jobs) as pool:
-                    left_right = list(zip(left, right))
-                    res = list(pool.starmap(d_fun, left_right))
-            else:
-                res = list(map(d_fun, left, right))
-
-            if dist_metric == "dtw":
-                # the first return is the dtw distance, see docs of similaritymeasures.dtw
-                d = [dist[0] for dist in res]
-            else:
-                d = res
-
-            # write results to (symmetric) distance matrix
-            D = np.zeros((nx, ny))
-            D[(ix_1, ix_2)] = d
-            D[trilix] = D.T[trilix]
-            return D
-
-        else:
-            raise AttributeError(
-                "Metric unknown. We only support ['dtw', 'frechet'] for LineStrings. " f"You passed {dist_metric}"
-            )
+        dist_metric = dtw
+    elif dist_metric == "frechet":
+        dist_metric = similaritymeasures.frechet_dist
     else:
-        raise AttributeError(f"We only support 'Point' and 'LineString'. Your geometry is {geom_type}")
+        raise ValueError(f"Metric '{dist_metric}' unknown. We only support ['dtw', 'frechet'] for LineStrings")
+    X = X.geometry.values
+    Y = Y.geometry.values if Y is not None else X
+
+    # the following code is adapted from scikit-learn pairwise_distance
+    # https://github.com/scikit-learn/scikit-learn/blob/3f89022fa04d293152f1d32fbc2a5bdaaf2df364/sklearn/metrics/pairwise.py#L1784
+    out = np.zeros((len(X), len(Y)), dtype="float")
+    if X is Y:
+        # Only calculate metric for upper triangle
+        iterator = itertools.combinations(range(len(X)), 2)
+        for i, j in iterator:
+            out[i, j] = dist_metric(X[i].coords, Y[j].coords, **kwds)
+        # Make symmetric
+        out = out + out.T
+    else:
+        # Calculate all cells
+        iterator = itertools.product(range(len(X)), range(len(Y)))
+        for i, j in iterator:
+            out[i, j] = dist_metric(X[i].coords, Y[j].coords, **kwds)
+    return out
 
 
 def meters_to_decimal_degrees(meters, latitude):
@@ -216,7 +228,7 @@ def check_gdf_planar(gdf, transform=False):
 
     Examples
     --------
-    >>> from trackintel.geogr.distances import check_gdf_planar
+    >>> from trackintel.geogr import check_gdf_planar
     >>> check_gdf_planar(triplegs, transform=False)
     """
     wgs84 = "EPSG:4326"
@@ -248,12 +260,109 @@ def calculate_haversine_length(gdf):
 
     Examples
     --------
-    >>> from trackintel.geogr.distances import calculate_haversine_length
+    >>> from trackintel.geogr import calculate_haversine_length
     >>> triplegs['length'] = calculate_haversine_length(triplegs)
     """
-    geom = pygeos.from_shapely(gdf.geometry)
-    assert np.any(pygeos.get_type_id(geom) == 1)  # 1 is LineStrings
-    geom, index = pygeos.get_coordinates(geom, return_index=True)
+    geom = gdf.geometry
+    assert np.any(shapely.get_type_id(geom) == 1)  # 1 is LineStrings
+    geom, index = shapely.get_coordinates(geom, return_index=True)
     no_mix = index[:-1] == index[1:]  # mask where LineStrings are not overlapping
-    dist = haversine_dist(geom[:-1, 0], geom[:-1, 1], geom[1:, 0], geom[1:, 1])
+    dist = point_haversine_dist(geom[:-1, 0], geom[:-1, 1], geom[1:, 0], geom[1:, 1])
     return np.bincount((index[:-1])[no_mix], weights=dist[no_mix])
+
+
+def get_speed_positionfixes(positionfixes):
+    """
+    Compute speed per positionfix (in m/s)
+
+    Parameters
+    ----------
+    positionfixes : Positionfixes
+
+    Returns
+    -------
+    pfs: Positionfixes
+        Copy of the original positionfixes with a new column ``[`speed`]``. The speed is given in m/s
+
+    Notes
+    -----
+    The speed at one positionfix is computed from the distance and time since the previous positionfix.
+    For the first positionfix, the speed is set to the same value as for the second one.
+    """
+    pfs = positionfixes.copy()
+    is_planar_crs = check_gdf_planar(pfs)
+
+    g = pfs.geometry
+    # get distance and time difference
+    if is_planar_crs:
+        dist = g.distance(g.shift(1)).to_numpy()
+    else:
+        x = g.x.to_numpy()
+        y = g.y.to_numpy()
+        dist = np.zeros(len(pfs), dtype=np.float64)
+        dist[1:] = point_haversine_dist(x[:-1], y[:-1], x[1:], y[1:])
+
+    time_delta = (pfs["tracked_at"] - pfs["tracked_at"].shift(1)).dt.total_seconds().to_numpy()
+    # compute speed (in m/s)
+    speed = dist / time_delta
+    speed[0] = speed[1]  # The first point speed is imputed
+    pfs["speed"] = speed
+    return pfs
+
+
+def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
+    """
+    Compute the average speed per positionfix for each tripleg (in m/s)
+
+    Parameters
+    ----------
+    triplegs: Triplegs
+
+    positionfixes: Positionfixes, optional
+        Only required if the method is 'pfs_mean_speed'.
+        In addition to the standard columns positionfixes must include the column ``[`tripleg_id`]``.
+
+    method: {'tpls_speed', 'pfs_mean_speed'}, optional
+        Method how of speed calculation, default is "tpls_speed"
+        The 'tpls_speed' method divides the tripleg distance by its duration,
+        the 'pfs_mean_speed' method calculates the speed via the mean speed of the positionfixes of a tripleg.
+
+    Returns
+    -------
+    tpls: Triplegs
+        The original triplegs with a new column ``[`speed`]``. The speed is given in m/s.
+    """
+    Triplegs.validate(triplegs)
+    # Simple method: Divide overall tripleg distance by overall duration
+    if method == "tpls_speed":
+        if check_gdf_planar(triplegs):
+            distance = triplegs.length
+        else:
+            distance = calculate_haversine_length(triplegs)
+        duration = (triplegs["finished_at"] - triplegs["started_at"]).dt.total_seconds()
+        # The unit of the speed is m/s
+        tpls = triplegs.copy()
+        tpls["speed"] = distance / duration
+        return tpls
+
+    # Pfs-based method: compute speed per positionfix and average then
+    elif method == "pfs_mean_speed":
+        if positionfixes is None:
+            raise ValueError('Method "pfs_mean_speed" requires positionfixes as input.')
+        if "tripleg_id" not in positionfixes:
+            raise AttributeError('Positionfixes must include column "tripleg_id".')
+        # group positionfixes by triplegs and compute average speed for each collection of positionfixes
+        grouped_pfs = positionfixes.groupby("tripleg_id").apply(_single_tripleg_mean_speed)
+        # add the speed values to the triplegs column
+        tpls = pd.merge(triplegs, grouped_pfs.rename("speed"), how="left", left_index=True, right_index=True)
+        tpls.index = tpls.index.astype("int64")
+        return tpls
+
+    else:
+        raise ValueError(f"Method {method} not known for speed computation.")
+
+
+def _single_tripleg_mean_speed(positionfixes):
+    pfs_sorted = positionfixes.sort_values(by="tracked_at")
+    pfs_speed = get_speed_positionfixes(pfs_sorted)
+    return np.mean(pfs_speed["speed"].values[1:])

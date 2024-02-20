@@ -163,9 +163,9 @@ class TestTemporal_tracking_quality:
         """Test if the an error is raised when passing unknown 'granularity' to temporal_tracking_quality()."""
         sp_tpls = testdata_sp_tpls_geolife_long
 
-        with pytest.raises(AttributeError):
+        with pytest.raises(ValueError):
             ti.analysis.tracking_quality.temporal_tracking_quality(sp_tpls, granularity=12345)
-        with pytest.raises(AttributeError):
+        with pytest.raises(ValueError):
             ti.analysis.tracking_quality.temporal_tracking_quality(sp_tpls, granularity="random")
 
     def test_tracking_quality_wrong_datamodel(self):
@@ -177,7 +177,7 @@ class TestTemporal_tracking_quality:
 
         # generate locations and feed to temporal_tracking_quality()
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
         _, locs = sp.as_staypoints.generate_locations(
             method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
@@ -189,9 +189,9 @@ class TestTemporal_tracking_quality:
         sp_tpls = testdata_sp_tpls_geolife_long
         user_0 = sp_tpls.loc[sp_tpls["user_id"] == 0]
 
-        with pytest.raises(AttributeError):
+        with pytest.raises(ValueError):
             ti.analysis.tracking_quality._get_tracking_quality_user(user_0, granularity=12345)
-        with pytest.raises(AttributeError):
+        with pytest.raises(ValueError):
             ti.analysis.tracking_quality._get_tracking_quality_user(user_0, granularity="random")
 
     def test_staypoints_accessors(self, testdata_all_geolife_long):

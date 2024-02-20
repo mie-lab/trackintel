@@ -41,7 +41,6 @@ autodoc_mock_imports = [
     "shapely.ops",
     "sklearn",
     "sklearn.neighbors",
-    "pint",
     "networkx",
     "networkx.exception",
     "osmnx",
@@ -50,14 +49,13 @@ autodoc_mock_imports = [
     "geoalchemy2",
     "tqdm",
     "similaritymeasures",
-    "pygeos",
 ]
 
 
 # -- Project information -----------------------------------------------------
 
 project = "trackintel"
-copyright = "2019 - 2022, Dominik Bucher, Henry Martin, Ye Hong, Nina Wiedemann"
+copyright = "2019 - 2024, Dominik Bucher, Henry Martin, Ye Hong, Nina Wiedemann"
 author = "Dominik Bucher, Henry Martin, Ye Hong, Nina Wiedemann"
 
 
@@ -75,7 +73,7 @@ def setup(app):
 # The full version, including alpha/beta/rc tags
 # release = version
 
-version = "1.1.9"
+version = "1.2.4"
 release = version
 
 

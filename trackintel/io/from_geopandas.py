@@ -1,7 +1,8 @@
 import warnings
 import pandas as pd
 import geopandas as gpd
-import pytz
+
+from trackintel import Positionfixes, Staypoints, Triplegs, Locations, Trips, Tours
 
 
 def read_positionfixes_gpd(
@@ -39,7 +40,7 @@ def read_positionfixes_gpd(
 
     Returns
     -------
-    pfs : GeoDataFrame (as trackintel positionfixes)
+    pfs : Positionfixes
         A GeoDataFrame containing the positionfixes.
 
     Examples
@@ -51,9 +52,7 @@ def read_positionfixes_gpd(
         columns.update(mapper)
 
     pfs = _trackintel_model(gdf, columns, geom_col, crs, ["tracked_at"], tz)
-    # assert validity of positionfixes
-    pfs.as_positionfixes
-    return pfs
+    return Positionfixes(pfs)
 
 
 def read_staypoints_gpd(
@@ -101,7 +100,7 @@ def read_staypoints_gpd(
 
     Returns
     -------
-    sp : GeoDataFrame (as trackintel staypoints)
+    sp : Staypoints
         A GeoDataFrame containing the staypoints
 
     Examples
@@ -114,9 +113,7 @@ def read_staypoints_gpd(
 
     sp = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
 
-    # assert validity of staypoints
-    sp.as_staypoints
-    return sp
+    return Staypoints(sp)
 
 
 def read_triplegs_gpd(
@@ -164,7 +161,7 @@ def read_triplegs_gpd(
 
     Returns
     -------
-    tpls : GeoDataFrame (as trackintel triplegs)
+    tpls : Triplegs
         A GeoDataFrame containing the triplegs
 
     Examples
@@ -176,9 +173,7 @@ def read_triplegs_gpd(
         columns.update(mapper)
 
     tpls = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
-    # assert validity of triplegs
-    tpls.as_triplegs
-    return tpls
+    return Triplegs(tpls)
 
 
 def read_trips_gpd(
@@ -234,8 +229,7 @@ def read_trips_gpd(
 
     Returns
     -------
-    trips : (Geo)DataFrame (as trackintel trips)
-        A (Geo)DataFrame containing the trips.
+    trips : Trips
 
     Examples
     --------
@@ -253,9 +247,7 @@ def read_trips_gpd(
 
     trips = _trackintel_model(gdf, columns, geom_col, crs, ["started_at", "finished_at"], tz)
 
-    # assert validity of trips
-    trips.as_trips
-    return trips
+    return Trips(trips)
 
 
 def read_locations_gpd(gdf, user_id="user_id", center="center", extent=None, crs=None, mapper=None):
@@ -288,8 +280,7 @@ def read_locations_gpd(gdf, user_id="user_id", center="center", extent=None, crs
 
     Returns
     -------
-    locs : GeoDataFrame (as trackintel locations)
-        A GeoDataFrame containing the locations.
+    locs : Locations
 
     Examples
     --------
@@ -306,9 +297,7 @@ def read_locations_gpd(gdf, user_id="user_id", center="center", extent=None, crs
     if extent is not None:
         locs["extent"] = gpd.GeoSeries(locs["extent"])
 
-    # assert validity of locations
-    locs.as_locations
-    return locs
+    return Locations(locs)
 
 
 def read_tours_gpd(
@@ -346,8 +335,7 @@ def read_tours_gpd(
 
     Returns
     -------
-    tours : GeoDataFrame (as trackintel tours)
-        A GeoDataFrame containing the tours
+    tours : Tours
     """
     columns = {
         user_id: "user_id",
@@ -358,11 +346,7 @@ def read_tours_gpd(
         columns.update(mapper)
 
     tours = _trackintel_model(gdf, set_names=columns, tz_cols=["started_at", "finished_at"], tz=tz)
-
-    # assert validity of tours
-    tours.as_tours
-
-    return tours
+    return Tours(tours)
 
 
 def _trackintel_model(gdf, set_names=None, geom_col=None, crs=None, tz_cols=None, tz=None):
@@ -400,13 +384,8 @@ def _trackintel_model(gdf, set_names=None, geom_col=None, crs=None, tz_cols=None
 
     if tz_cols is not None:
         for col in tz_cols:
-            if not pd.api.types.is_datetime64tz_dtype(gdf[col]):
-                try:
-                    gdf[col] = _localize_timestamp(dt_series=gdf[col], pytz_tzinfo=tz, col_name=col)
-                except ValueError:
-                    # Taken if column contains datetimes with different timezone informations.
-                    # Cast them to UTC in this case.
-                    gdf[col] = pd.to_datetime(gdf[col], utc=True)
+            if not isinstance(gdf[col].dtype, pd.DatetimeTZDtype):
+                gdf[col] = _localize_timestamp(dt_series=gdf[col], pytz_tzinfo=tz, col_name=col)
 
     # If is not GeoDataFrame and no geom_col is set end early.
     # That allows us to handle DataFrames and GeoDataFrames in one function.
@@ -448,8 +427,19 @@ def _localize_timestamp(dt_series, pytz_tzinfo, col_name):
         a timezone aware pandas datetime series
     """
     if pytz_tzinfo is None:
-        warnings.warn("Assuming UTC timezone for column {}".format(col_name))
+        warnings.warn(f"Assuming UTC timezone for column {col_name}")
         pytz_tzinfo = "utc"
 
-    timezone = pytz.timezone(pytz_tzinfo)
-    return dt_series.apply(pd.Timestamp, tz=timezone)
+    def localize(ts, tz):
+        """Localize ts if tz is not set else leave it be"""
+        ts = pd.Timestamp(ts)
+        if ts.tz is not None:
+            return ts
+        return pd.Timestamp.tz_localize(ts, tz)
+
+    # localize all datetimes without a timezone
+    dt_series = dt_series.apply(localize, tz=pytz_tzinfo)
+    # create a Timeseries (utc=False will create warning)
+    dt_series = pd.to_datetime(dt_series, utc=True)
+    # convert it back to right tz
+    return dt_series.dt.tz_convert(pytz_tzinfo)

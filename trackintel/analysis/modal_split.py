@@ -1,14 +1,15 @@
 import pandas as pd
 
-from trackintel.geogr.distances import check_gdf_planar, calculate_haversine_length
+from trackintel.geogr import check_gdf_planar, calculate_haversine_length
 
 
 def calculate_modal_split(tpls, freq=None, metric="count", per_user=False, norm=False):
-    """Calculate the modal split of triplegs
+    """
+    Calculate the modal split of triplegs
 
     Parameters
     ----------
-    tpls : GeoDataFrame (as trackintel triplegs)
+    tpls : Triplegs
         triplegs require the column `mode`.
     freq : str
         frequency string passed on as `freq` keyword to the pandas.Grouper class. If `freq=None` the modal split is
@@ -32,16 +33,13 @@ def calculate_modal_split(tpls, freq=None, metric="count", per_user=False, norm=
     Notes
     ------
         `freq='W-MON'` is used for a weekly aggregation that starts on mondays.
-
         If `freq=None` and `per_user=False` are passed the modal split collapses to a single column.
-
-        The modal split can be visualized using :func:`trackintel.visualization.modal_split.plot_modal_split`
+        The modal split can be visualized using :func:`trackintel.plot_modal_split`
 
     Examples
     --------
     >>> triplegs.calculate_modal_split()
     >>> tripleg.calculate_modal_split(freq='W-MON', metric='distance')
-
     """
     tpls = tpls.copy()  # copy as we add additional columns on tpls
 
@@ -57,7 +55,7 @@ def calculate_modal_split(tpls, freq=None, metric="count", per_user=False, norm=
         metric = "mode"  # count on mode
     else:
         error_msg = f"Metric {metric} unknown, only metrics {{'count', 'distance', 'duration'}} are supported."
-        raise AttributeError(error_msg)
+        raise ValueError(error_msg)
 
     group = []
     if per_user:
@@ -84,7 +82,7 @@ def _calculate_length(tpls):
 
     Parameters
     ----------
-    tpls : GeoDataFrame (as trackintel triplegs)
+    tpls : Triplegs
     """
     if check_gdf_planar(tpls):
         return tpls.length  # if planar use geopandas function

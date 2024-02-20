@@ -20,78 +20,78 @@ and ``**kwargs`` are forwarded to them.
 CSV File Import
 ===============
 
-.. autofunction:: trackintel.io.file.read_positionfixes_csv
+.. autofunction:: trackintel.io.read_positionfixes_csv
 
-.. autofunction:: trackintel.io.file.read_triplegs_csv
+.. autofunction:: trackintel.io.read_triplegs_csv
 
-.. autofunction:: trackintel.io.file.read_staypoints_csv
+.. autofunction:: trackintel.io.read_staypoints_csv
 
-.. autofunction:: trackintel.io.file.read_locations_csv
+.. autofunction:: trackintel.io.read_locations_csv
 
-.. autofunction:: trackintel.io.file.read_trips_csv
+.. autofunction:: trackintel.io.read_trips_csv
 
-.. autofunction:: trackintel.io.file.read_tours_csv
+.. autofunction:: trackintel.io.read_tours_csv
 
 GeoDataFrame Import
 =============================
 
-.. autofunction:: trackintel.io.from_geopandas.read_positionfixes_gpd
+.. autofunction:: trackintel.io.read_positionfixes_gpd
 
-.. autofunction:: trackintel.io.from_geopandas.read_triplegs_gpd
+.. autofunction:: trackintel.io.read_triplegs_gpd
 
-.. autofunction:: trackintel.io.from_geopandas.read_staypoints_gpd
+.. autofunction:: trackintel.io.read_staypoints_gpd
 
-.. autofunction:: trackintel.io.from_geopandas.read_locations_gpd
+.. autofunction:: trackintel.io.read_locations_gpd
 
-.. autofunction:: trackintel.io.from_geopandas.read_trips_gpd
+.. autofunction:: trackintel.io.read_trips_gpd
 
-.. autofunction:: trackintel.io.from_geopandas.read_tours_gpd
+.. autofunction:: trackintel.io.read_tours_gpd
 
 
 PostGIS Import
 ==============
 
-.. autofunction:: trackintel.io.postgis.read_positionfixes_postgis
+.. autofunction:: trackintel.io.read_positionfixes_postgis
 
-.. autofunction:: trackintel.io.postgis.read_triplegs_postgis
+.. autofunction:: trackintel.io.read_triplegs_postgis
 
-.. autofunction:: trackintel.io.postgis.read_staypoints_postgis
+.. autofunction:: trackintel.io.read_staypoints_postgis
 
-.. autofunction:: trackintel.io.postgis.read_locations_postgis
+.. autofunction:: trackintel.io.read_locations_postgis
 
-.. autofunction:: trackintel.io.postgis.read_trips_postgis
+.. autofunction:: trackintel.io.read_trips_postgis
 
-.. autofunction:: trackintel.io.postgis.read_tours_postgis
+.. autofunction:: trackintel.io.read_tours_postgis
 
 CSV File Export
 ===============
 
-.. autofunction:: trackintel.io.file.write_positionfixes_csv
+.. autofunction:: trackintel.io.write_positionfixes_csv
 
-.. autofunction:: trackintel.io.file.write_triplegs_csv
+.. autofunction:: trackintel.io.write_triplegs_csv
 
-.. autofunction:: trackintel.io.file.write_staypoints_csv
+.. autofunction:: trackintel.io.write_staypoints_csv
 
-.. autofunction:: trackintel.io.file.write_locations_csv
+.. autofunction:: trackintel.io.write_locations_csv
 
-.. autofunction:: trackintel.io.file.write_trips_csv
+.. autofunction:: trackintel.io.write_trips_csv
 
-.. autofunction:: trackintel.io.file.write_tours_csv
+.. autofunction:: trackintel.io.write_tours_csv
 
 PostGIS Export
 ==============
 
-.. autofunction:: trackintel.io.postgis.write_positionfixes_postgis
+.. autofunction:: trackintel.io.write_positionfixes_postgis
 
-.. autofunction:: trackintel.io.postgis.write_triplegs_postgis
+.. autofunction:: trackintel.io.write_triplegs_postgis
 
-.. autofunction:: trackintel.io.postgis.write_staypoints_postgis
+.. autofunction:: trackintel.io.write_staypoints_postgis
 
-.. autofunction:: trackintel.io.postgis.write_locations_postgis
+.. autofunction:: trackintel.io.write_locations_postgis
 
-.. autofunction:: trackintel.io.postgis.write_trips_postgis
+.. autofunction:: trackintel.io.write_trips_postgis
 
-.. autofunction:: trackintel.io.postgis.write_tours_postgis
+.. autofunction:: trackintel.io.write_tours_postgis
 
 Predefined dataset readers
 ==========================
@@ -101,6 +101,13 @@ Geolife
 -----------
 We support easy parsing of the Geolife dataset including available mode labels.
 
-.. autofunction:: trackintel.io.dataset_reader.read_geolife
+.. autofunction:: trackintel.io.read_geolife
 
-.. autofunction:: trackintel.io.dataset_reader.geolife_add_modes_to_triplegs
+.. autofunction:: trackintel.io.geolife_add_modes_to_triplegs
+
+
+GPX
+-----------
+Load multiple tracks of the same user with this function.
+
+.. autofunction:: trackintel.io.read_gpx

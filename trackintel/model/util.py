@@ -1,108 +1,232 @@
-from functools import partial, update_wrapper
-import trackintel as ti
-import numpy as np
+import warnings
+from functools import wraps, partial
+from textwrap import dedent
+
 import pandas as pd
-from trackintel.geogr.distances import calculate_haversine_length, check_gdf_planar
-from trackintel.geogr.point_distances import haversine_dist
+from geopandas import GeoDataFrame
 
 
-def get_speed_positionfixes(positionfixes):
+def _wrapped_gdf_method(func):
+    """Decorator function that downcast types to trackintel class if is (Geo)DataFrame and has the required columns."""
+
+    @wraps(func)  # copy all metadata
+    def wrapper(self, *args, **kwargs):
+        result = func(self, *args, **kwargs)
+        if isinstance(result, pd.DataFrame):
+            if isinstance(result, GeoDataFrame):
+                result.__class__ = self.__class__
+            elif self.fallback_class is not None:
+                result.__class__ = self.fallback_class
+        return result
+
+    return wrapper
+
+
+class TrackintelGeoDataFrame(GeoDataFrame):
     """
-    Compute speed per positionfix (in m/s)
+    Helper class to subtype GeoDataFrame correctly and fallback to custom class.
+
+    Three possible outcomes for the _constructor
+    - If GeoDataFrame, keep it a TrackintelGeoDataFrame
+    - If DataFrame without fallback class, just return the DataFrame
+    - If DataFrame with fallback class, fall back to it.
+    """
+
+    # set fallback_class for missing geometry, if None default to pd.DataFrame
+    fallback_class = None
+
+    @property
+    def _constructor(self):
+        """Interface to subtype pandas properly"""
+        super_cons = super()._constructor
+
+        def _constructor_with_fallback(*args, **kwargs):
+            result = super_cons(*args, **kwargs)
+            if isinstance(result, GeoDataFrame):
+                return self.__class__(result, validate=False)
+            # uses DataFrame constructor -> must be DataFrame
+            if self.fallback_class is not None:
+                return self.fallback_class(result, validate=False)
+            return result
+
+        return _constructor_with_fallback
+
+    # Following methods manually set self.__class__ fix to GeoDataFrame.
+    # Thus to properly subtype, we need to downcast them with the _wrapped_gdf_method decorator.
+    @_wrapped_gdf_method
+    def __getitem__(self, key):
+        return super().__getitem__(key)
+
+    @_wrapped_gdf_method
+    def copy(self, deep=True):
+        return super().copy(deep=deep)
+
+    @_wrapped_gdf_method
+    def merge(self, *args, **kwargs):
+        return super().merge(*args, **kwargs)
+
+
+class TrackintelDataFrame(pd.DataFrame):
+    """Helper class to subtype DataFrame and handle fallback"""
+
+    # subclassing DataFrames is significant simpler.
+    @property
+    def _constructor(self):
+        """Interface to subtype pandas properly"""
+        return partial(self.__class__, validate=False)
+
+
+class TrackintelBase(object):
+    """Class for supplying basic functionality to all Trackintel classes."""
+
+    # so far we don't have a lot of methods here
+    # but a lot of IO code can be moved here.
+    pass
+
+
+class NonCachedAccessor:
+    def __init__(self, name: str, accessor) -> None:
+        self._name = name
+        self._accessor = accessor
+
+    def __get__(self, obj, cls):
+        if obj is None:
+            # we're accessing the attribute of the class, i.e., Dataset.geo
+            return self._accessor
+        # copied code from pandas accessor, minus the caching
+        return self._accessor(obj)
+
+
+def _register_trackintel_accessor(name: str):
+    from pandas import DataFrame
+
+    def decorator(accessor):
+        if hasattr(DataFrame, name):
+            warnings.warn(
+                f"registration of accessor {repr(accessor)} under name "
+                f"{repr(name)} for type {repr(DataFrame)} is overriding a preexisting "
+                f"attribute with the same name.",
+                UserWarning,
+            )
+        setattr(DataFrame, name, NonCachedAccessor(name, accessor))
+        DataFrame._accessors.add(name)
+        return accessor
+
+    return decorator
+
+
+# doc is derived from pandas.util._decorators (2.1.0)
+# module https://github.com/pandas-dev/pandas/blob/main/LICENSE
+
+
+def doc(*docstrings, **params):
+    """
+    A decorator to take docstring templates, concatenate them and perform string
+    substitution on them.
+
+    This decorator will add a variable "_docstring_components" to the wrapped
+    callable to keep track the original docstring template for potential usage.
+    If it should be consider as a template, it will be saved as a string.
+    Otherwise, it will be saved as callable, and later user __doc__ and dedent
+    to get docstring.
 
     Parameters
     ----------
-    positionfixes : GeoDataFrame (as trackintel positionfixes)
-        The positionfixes have to follow the standard definition for positionfixes DataFrames.
-
-    Returns
-    -------
-    pfs: GeoDataFrame (as trackintel positionfixes)
-        The original positionfixes with a new column ``[`speed`]``. The speed is given in m/s
-
-    Notes
-    -----
-    The speed at one positionfix is computed from the distance and time since the previous positionfix. For the first
-    positionfix, the speed is set to the same value as for the second one.
+    *docstrings : None, str, or callable
+        The string / docstring / docstring template to be appended in order
+        after default docstring under callable.
+    **params
+        The string which would be used to format docstring template.
     """
-    pfs = positionfixes.copy()
-    is_planar_crs = ti.geogr.distances.check_gdf_planar(pfs)
 
-    g = pfs.geometry
-    # get distance and time difference
-    if is_planar_crs:
-        dist = g.distance(g.shift(1)).to_numpy()
-    else:
-        x = g.x.to_numpy()
-        y = g.y.to_numpy()
-        dist = np.zeros(len(pfs), dtype=np.float64)
-        dist[1:] = haversine_dist(x[:-1], y[:-1], x[1:], y[1:])
+    def decorator(decorated):
+        # collecting docstring and docstring templates
+        components = []
+        if decorated.__doc__:
+            components.append(dedent(decorated.__doc__))
 
-    time_delta = (pfs["tracked_at"] - pfs["tracked_at"].shift(1)).dt.total_seconds().to_numpy()
-    # compute speed (in m/s)
-    speed = dist / time_delta
-    speed[0] = speed[1]  # The first point speed is imputed
-    pfs["speed"] = speed
-    return pfs
+        for docstring in docstrings:
+            if docstring is None:
+                continue
+            if hasattr(docstring, "_docstring_components"):
+                components.extend(docstring._docstring_components)
+            elif isinstance(docstring, str) or docstring.__doc__:
+                components.append(docstring)
 
+        decorated._docstring_components = components
+        params_applied = (c.format(**params) if (isinstance(c, str) and params) else c for c in components)
+        decorated.__doc__ = "".join(c if isinstance(c, str) else dedent(c.__doc__ or "") for c in params_applied)
+        return decorated
 
-def get_speed_triplegs(triplegs, positionfixes=None, method="tpls_speed"):
-    """
-    Compute the average speed per positionfix for each tripleg (in m/s)
-
-    Parameters
-    ----------
-    triplegs: GeoDataFrame (as trackintel triplegs)
-        The generated triplegs as returned by ti.preprocessing.positionfixes.generate_triplegs
-
-    positionfixes (Optional): GeoDataFrame (as trackintel positionfixes)
-        The positionfixes as returned by ti.preprocessing.positionfixes.generate_triplegs. Only required if the method
-        is 'pfs_mean_speed'. In addition the standard columns it must include the column ``[`tripleg_id`]``.
-
-    method: str
-        Method how the speed is computed, one of {tpls_speed, pfs_mean_speed}. The 'tpls_speed' method simply divides
-        the overall tripleg distance by its duration, while the 'pfs_mean_speed' method is the mean pfs speed.
-
-    Returns
-    -------
-    tpls: GeoDataFrame (as trackintel triplegs)
-        The original triplegs with a new column ``[`speed`]``. The speed is given in m/s.
-    """
-    # Simple method: Divide overall tripleg distance by overall duration
-    if method == "tpls_speed":
-        if check_gdf_planar(triplegs):
-            distance = triplegs.length
-        else:
-            distance = calculate_haversine_length(triplegs)
-        duration = (triplegs["finished_at"] - triplegs["started_at"]).dt.total_seconds()
-        # The unit of the speed is m/s
-        tpls = triplegs.copy()
-        tpls["speed"] = distance / duration
-        return tpls
-
-    # Pfs-based method: compute speed per positionfix and average then
-    elif method == "pfs_mean_speed":
-        if positionfixes is None:
-            raise AttributeError('Method "pfs_mean_speed" requires positionfixes as input.')
-        if "tripleg_id" not in positionfixes:
-            raise AttributeError('Positionfixes must include column "tripleg_id".')
-        # group positionfixes by triplegs and compute average speed for each collection of positionfixes
-        grouped_pfs = positionfixes.groupby("tripleg_id").apply(_single_tripleg_mean_speed)
-        # add the speed values to the triplegs column
-        tpls = pd.merge(triplegs, grouped_pfs.rename("speed"), left_index=True, right_index=True)
-        tpls.index = tpls.index.astype("int64")
-        return tpls
-
-    else:
-        raise AttributeError(f"Method {method} not known for speed computation.")
+    return decorator
 
 
-def _single_tripleg_mean_speed(positionfixes):
-    pfs_sorted = positionfixes.sort_values(by="tracked_at")
-    pfs_speed = get_speed_positionfixes(pfs_sorted)
-    return np.mean(pfs_speed["speed"].values[1:])
+_shared_docs = {}
 
+# in _shared_docs as all write_postgis_xyz functions use this docstring
+_shared_docs[
+    "write_postgis"
+] = """
+Stores {long} to PostGIS. Usually, this is directly called on a {long}
+DataFrame (see example below).
 
-def _copy_docstring(wrapped, assigned=("__doc__",), updated=[]):
-    """Thin wrapper for `functools.update_wrapper` to mimic `functools.wraps` but to only copy the docstring."""
-    return partial(update_wrapper, wrapped=wrapped, assigned=assigned, updated=updated)
+Parameters
+----------{first_arg}
+name : str
+    The name of the table to write to.
+
+con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+    active connection to PostGIS database.
+
+schema : str, optional
+    The schema (if the database supports this) where the table resides.
+
+if_exists : str, {{'fail', 'replace', 'append'}}, default 'fail'
+    How to behave if the table already exists.
+
+    - fail: Raise a ValueError.
+    - replace: Drop the table before inserting new values.
+    - append: Insert new values to the existing table.
+
+index : bool, default True
+    Write DataFrame index as a column. Uses index_label as the column name in the table.
+
+index_label : str or sequence, default None
+    Column label for index column(s). If None is given (default) and index is True, then the index names are used.
+
+chunksize : int, optional
+    How many entries should be written at the same time.
+
+dtype: dict of column name to SQL type, default None
+    Specifying the datatype for columns.
+    The keys should be the column names and the values should be the SQLAlchemy types.
+
+Examples
+--------
+>>> {short}.to_postgis(conn_string, table_name)
+>>> ti.io.write_{long}_postgis({short}, conn_string, table_name)
+"""
+
+_shared_docs[
+    "write_csv"
+] = """
+Write {long} to csv file.
+
+Wraps the pandas to_csv function.
+Geometry get transformed to WKT before writing.
+
+Parameters
+----------{first_arg}
+filename : str
+    The file to write to.
+
+args
+    Additional arguments passed to pd.DataFrame.to_csv().
+
+kwargs
+    Additional keyword arguments passed to pd.DataFrame.to_csv().
+
+Examples
+--------
+>>> {short}.to_csv("export_{long}.csv")
+"""

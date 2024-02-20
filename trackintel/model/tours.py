@@ -1,10 +1,20 @@
 import pandas as pd
+
 import trackintel as ti
+from trackintel.model.util import (
+    TrackintelBase,
+    TrackintelDataFrame,
+    _register_trackintel_accessor,
+    _shared_docs,
+    doc,
+)
+
+_required_columns = ["user_id", "started_at", "finished_at"]
 
 
-@pd.api.extensions.register_dataframe_accessor("as_tours")
-class ToursAccessor(object):
-    """A pandas accessor to treat DataFrames as collections of `Tours`.
+@_register_trackintel_accessor("as_tours")
+class Tours(TrackintelBase, TrackintelDataFrame):
+    """Trackintel class to treat DataFrames as collections of `Tours`.
 
     Requires at least the following columns:
     ['user_id', 'started_at', 'finished_at']
@@ -23,54 +33,41 @@ class ToursAccessor(object):
 
     Examples
     --------
-    >>> df.as_tours.plot()
+    >>> tours.to_csv("filename.csv")
     """
 
-    required_columns = ["user_id", "started_at", "finished_at"]
+    def __init__(self, *args, validate=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        if validate:
+            self.validate(self)
 
-    def __init__(self, pandas_obj):
-        self._validate(pandas_obj)
-        self._obj = pandas_obj
+    # createte circular reference directly -> avoid second call of init via accessor
+    @property
+    def as_tours(self):
+        return self
 
     @staticmethod
-    def _validate(obj):
-        if any([c not in obj.columns for c in ToursAccessor.required_columns]):
+    def validate(obj):
+        if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
-                "To process a DataFrame as a collection of tours, "
-                + "it must have the properties [%s], but it has [%s]."
-                % (", ".join(ToursAccessor.required_columns), ", ".join(obj.columns))
+                "To process a DataFrame as a collection of tours, it must have the properties"
+                f" {_required_columns}, but it has {', '.join(obj.columns)}."
             )
 
         # check timestamp dtypes
-        assert pd.api.types.is_datetime64tz_dtype(
-            obj["started_at"]
-        ), "dtype of started_at is {} but has to be datetime64 and timezone aware".format(obj["started_at"].dtype)
-        assert pd.api.types.is_datetime64tz_dtype(
-            obj["finished_at"]
-        ), "dtype of finished_at is {} but has to be datetime64 and timezone aware".format(obj["finished_at"].dtype)
+        assert isinstance(
+            obj["started_at"].dtype, pd.DatetimeTZDtype
+        ), f"dtype of started_at is {obj['started_at'].dtype} but has to be datetime64 and timezone aware"
+        assert isinstance(
+            obj["finished_at"].dtype, pd.DatetimeTZDtype
+        ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be datetime64 and timezone aware"
 
+    @doc(_shared_docs["write_csv"], first_arg="", long="tours", short="tours")
     def to_csv(self, filename, *args, **kwargs):
-        """
-        Store this collection of tours as a CSV file.
+        ti.io.write_tours_csv(self, filename, *args, **kwargs)
 
-        See :func:`trackintel.io.file.write_tours_csv`.
-        """
-        ti.io.file.write_tours_csv(self._obj, filename, *args, **kwargs)
-
+    @doc(_shared_docs["write_postgis"], first_arg="", long="tours", short="tours")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        """
-        Store this collection of tours to PostGIS.
-
-        See :func:`trackintel.io.postgis.write_tours_postgis`.
-        """
-        ti.io.postgis.write_tours_postgis(self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype)
-
-    def plot(self, *args, **kwargs):
-        """
-        Plot this collection of tours.
-
-        See :func:`trackintel.visualization.tours.plot_tours`.
-        """
-        raise NotImplementedError
+        ti.io.write_tours_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)

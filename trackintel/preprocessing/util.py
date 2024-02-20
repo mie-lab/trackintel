@@ -1,6 +1,11 @@
 from datetime import timedelta
+
+import geopandas as gpd
+import numpy as np
 import pandas as pd
+import shapely
 from joblib import Parallel, delayed
+from shapely.geometry.base import BaseGeometry
 from tqdm import tqdm
 
 
@@ -102,4 +107,37 @@ def _explode_agg(column, agg, orig_df, agg_df):
     temp = agg_df.explode(column)
     temp = temp[temp[column].notna()]
     temp.index = temp[column]
-    return orig_df.join(temp[agg], how="left")
+
+    return_df = orig_df.join(temp[agg], how="left")
+    # ensure index dtype the same as input
+    return_df.index = return_df.index.astype(orig_df.index.dtype)
+    return return_df
+
+
+def angle_centroid_multipoints(geometry):
+    """Calculate the mean of angles of MultiPoints
+
+    Parameters
+    ----------
+    geometry : GeoSeries, shapely.geometry.Point, shapely.geometry.MultiPoint
+        Should contain only Points or MultiPoints any other lead to wrong results.
+
+    Returns
+    -------
+    geopandas.GeometryArray
+        Centroid of geometries (shapely.Point)
+    """
+    g, index = shapely.get_coordinates(geometry, return_index=True)
+    # number of coordinate pairs per MultiPoint
+    count = np.bincount(index)
+    x, y = g[:, 0], g[:, 1]
+    # calculate mean of y Coordinates -> no wrapping
+    y = np.bincount(index, weights=y) / count
+    # calculate mean of x Coordinates with wrapping
+    x_rad = np.deg2rad(x)
+    x_sin = np.bincount(index, weights=np.sin(x_rad)) / count
+    x_cos = np.bincount(index, weights=np.cos(x_rad)) / count
+    x = np.rad2deg(np.arctan2(x_sin, x_cos))
+    # shapely Geometry has no crs information
+    crs = None if isinstance(geometry, BaseGeometry) else geometry.crs
+    return gpd.points_from_xy(x, y, crs=crs)

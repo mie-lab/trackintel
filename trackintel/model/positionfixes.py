@@ -1,20 +1,21 @@
+import geopandas as gpd
 import pandas as pd
+
 import trackintel as ti
-from trackintel.geogr.distances import calculate_distance_matrix
-from trackintel.io.file import write_positionfixes_csv
-from trackintel.io.postgis import write_positionfixes_postgis
-from trackintel.model.util import _copy_docstring
-from trackintel.preprocessing.positionfixes import generate_staypoints, generate_triplegs
-from trackintel.visualization.positionfixes import plot_positionfixes
-from trackintel.model.util import get_speed_positionfixes
+from trackintel.model.util import (
+    TrackintelBase,
+    TrackintelGeoDataFrame,
+    _register_trackintel_accessor,
+    _shared_docs,
+    doc,
+)
+
+_required_columns = ["user_id", "tracked_at"]
 
 
-@pd.api.extensions.register_dataframe_accessor("as_positionfixes")
-class PositionfixesAccessor(object):
-    """A pandas accessor to treat (Geo)DataFrames as collections of `Positionfixes`.
-
-    This will define certain methods and accessors, as well as make sure that the DataFrame
-    adheres to some requirements.
+@_register_trackintel_accessor("as_positionfixes")
+class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
+    """Trackintel class to treat GeoDataFrames as collections of `Positionfixes`.
 
     Requires at least the following columns:
     ['user_id', 'tracked_at']
@@ -34,109 +35,127 @@ class PositionfixesAccessor(object):
 
     Examples
     --------
-    >>> df.as_positionfixes.generate_staypoints()
+    >>> positionfixes.generate_staypoints()
     """
 
-    required_columns = ["user_id", "tracked_at"]
+    def __init__(self, *args, validate=True, **kwargs):
+        # could be moved to super class
+        # validate kwarg is necessary as the object is not fully initialised if we call it from _constructor
+        # (geometry-link is missing). thus we need a way to stop validating too early.
+        super().__init__(*args, **kwargs)
+        if validate:
+            self.validate(self)
 
-    def __init__(self, pandas_obj):
-        self._validate(pandas_obj)
-        self._obj = pandas_obj
+    # create circular reference directly -> avoid second call of init via accessor
+    @property
+    def as_positionfixes(self):
+        return self
 
     @staticmethod
-    def _validate(obj):
-        assert obj.shape[0] > 0, "Geodataframe is empty with shape: {}".format(obj.shape)
+    def validate(obj):
+        assert obj.shape[0] > 0, f"Geodataframe is empty with shape: {obj.shape}"
         # check columns
-        if any([c not in obj.columns for c in PositionfixesAccessor.required_columns]):
+        if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
-                "To process a DataFrame as a collection of positionfixes, "
-                + "it must have the properties [%s], but it has [%s]."
-                % (", ".join(PositionfixesAccessor.required_columns), ", ".join(obj.columns))
+                "To process a DataFrame as a collection of positionfixes, it must have the properties"
+                f" {_required_columns}, but it has [{', '.join(obj.columns)}]."
             )
+        # check timestamp dtypes
+        assert isinstance(
+            obj["tracked_at"].dtype, pd.DatetimeTZDtype
+        ), f"dtype of tracked_at is {obj['tracked_at'].dtype} but has to be datetime64 and timezone aware"
 
         # check geometry
-        assert obj.geometry.is_valid.all(), (
-            "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
-        )
+        assert (
+            obj.geometry.is_valid.all()
+        ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
 
         if obj.geometry.iloc[0].geom_type != "Point":
-            raise AttributeError("The geometry must be a Point (only first checked).")
-
-        # check timestamp dtypes
-        assert pd.api.types.is_datetime64tz_dtype(
-            obj["tracked_at"]
-        ), "dtype of tracked_at is {} but has to be datetime64 and timezone aware".format(obj["tracked_at"].dtype)
+            raise TypeError("The geometry must be a Point (only first checked).")
 
     @property
     def center(self):
         """Return the center coordinate of this collection of positionfixes."""
-        lat = self._obj.geometry.y
-        lon = self._obj.geometry.x
+        lat = self.geometry.y
+        lon = self.geometry.x
         return (float(lon.mean()), float(lat.mean()))
 
-    @_copy_docstring(generate_staypoints)
-    def generate_staypoints(self, *args, **kwargs):
+    def generate_staypoints(
+        self,
+        method="sliding",
+        distance_metric="haversine",
+        dist_threshold=100,
+        time_threshold=5.0,
+        gap_threshold=15.0,
+        include_last=False,
+        print_progress=False,
+        exclude_duplicate_pfs=True,
+        n_jobs=1,
+    ):
         """
-        Generate staypoints from this collection of positionfixes.
+        Generate staypoints based on positionfixes.
 
-        See :func:`trackintel.preprocessing.positionfixes.generate_staypoints`.
+        See :func:`trackintel.preprocessing.generate_staypoints` for full documentation.
         """
-        return ti.preprocessing.positionfixes.generate_staypoints(self._obj, *args, **kwargs)
+        return ti.preprocessing.generate_staypoints(
+            self,
+            method=method,
+            distance_metric=distance_metric,
+            dist_threshold=dist_threshold,
+            time_threshold=time_threshold,
+            gap_threshold=gap_threshold,
+            include_last=include_last,
+            print_progress=print_progress,
+            exclude_duplicate_pfs=exclude_duplicate_pfs,
+            n_jobs=n_jobs,
+        )
 
-    @_copy_docstring(generate_triplegs)
-    def generate_triplegs(self, staypoints=None, *args, **kwargs):
+    def generate_triplegs(
+        self,
+        staypoints=None,
+        method="between_staypoints",
+        gap_threshold=15,
+        print_progress=False,
+    ):
         """
-        Generate triplegs from this collection of positionfixes.
+        Generate triplegs from positionfixes.
 
-        See :func:`trackintel.preprocessing.positionfixes.generate_triplegs`.
+        See :func:`trackintel.preprocessing.generate_triplegs` for full documentation.
         """
-        return ti.preprocessing.positionfixes.generate_triplegs(self._obj, staypoints, *args, **kwargs)
+        return ti.preprocessing.generate_triplegs(
+            self,
+            staypoints=staypoints,
+            method=method,
+            gap_threshold=gap_threshold,
+            print_progress=print_progress,
+        )
 
-    @_copy_docstring(plot_positionfixes)
-    def plot(self, *args, **kwargs):
-        """
-        Plot this collection of positionfixes.
-
-        See :func:`trackintel.visualization.positionfixes.plot_positionfixes`.
-        """
-        ti.visualization.positionfixes.plot_positionfixes(self._obj, *args, **kwargs)
-
-    @_copy_docstring(write_positionfixes_csv)
     def to_csv(self, filename, *args, **kwargs):
         """
-        Store this collection of trackpoints as a CSV file.
+        Write positionfixes to csv file.
 
-        See :func:`trackintel.io.file.write_positionfixes_csv`.
+        See :func:`trackintel.io.write_positionfixes_csv` for full documentation.
         """
-        ti.io.file.write_positionfixes_csv(self._obj, filename, *args, **kwargs)
+        ti.io.write_positionfixes_csv(self, filename, *args, **kwargs)
 
-    @_copy_docstring(write_positionfixes_postgis)
+    @doc(_shared_docs["write_postgis"], first_arg="", long="positionfixes", short="pfs")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        """
-        Store this collection of positionfixes to PostGIS.
+        ti.io.write_positionfixes_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
-        See :func:`trackintel.io.postgis.write_positionfixes_postgis`.
+    def calculate_distance_matrix(self, Y=None, dist_metric="haversine", n_jobs=0, **kwds):
         """
-        ti.io.postgis.write_positionfixes_postgis(
-            self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype
-        )
+        Calculate a distance matrix based on a specific distance metric.
 
-    @_copy_docstring(calculate_distance_matrix)
-    def calculate_distance_matrix(self, *args, **kwargs):
+        See :func:`trackintel.geogr.calculate_distance_matrix` for full documentation.
         """
-        Calculate pair-wise distance among positionfixes or to other positionfixes.
+        return ti.geogr.calculate_distance_matrix(self, Y=Y, dist_metric=dist_metric, n_jobs=n_jobs, **kwds)
 
-        See :func:`trackintel.geogr.distances.calculate_distance_matrix`.
-        """
-        return ti.geogr.distances.calculate_distance_matrix(self._obj, *args, **kwargs)
-
-    @_copy_docstring(get_speed_positionfixes)
-    def get_speed(self, *args, **kwargs):
+    def get_speed(self):
         """
         Compute speed per positionfix (in m/s)
 
-        See :func:`trackintel.model.util.get_speed_positionfixes`.
+        See :func:`trackintel.geogr.get_speed_positionfixes` for full documentation.
         """
-        return ti.model.util.get_speed_positionfixes(self._obj, *args, **kwargs)
+        return ti.geogr.get_speed_positionfixes(self)

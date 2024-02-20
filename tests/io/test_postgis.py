@@ -7,6 +7,8 @@ import pandas as pd
 from pandas.testing import assert_frame_equal
 import pytest
 import sqlalchemy
+from sqlalchemy import create_engine
+
 from shapely.geometry import LineString, MultiPoint, Point, Polygon
 
 import trackintel as ti
@@ -25,7 +27,7 @@ def conn_postgis():
 
     dbname = "test_geopandas"
     user = os.environ.get("PGUSER")
-    password = os.environ.get("PGPASSWORD")
+    password = "postgres"
     host = os.environ.get("PGHOST")
     port = os.environ.get("PGPORT")
     conn_string = f"postgresql://{user}:{password}@{host}:{port}/{dbname}"
@@ -62,9 +64,8 @@ def example_positionfixes():
         {"user_id": 0, "tracked_at": t2, "geom": p2},
         {"user_id": 1, "tracked_at": t3, "geom": p3},
     ]
-    pfs = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+    pfs = ti.Positionfixes(data=list_dict, geometry="geom", crs="EPSG:4326")
     pfs.index.name = "id"
-    assert pfs.as_positionfixes
     return pfs
 
 
@@ -85,9 +86,8 @@ def example_staypoints():
         {"user_id": 0, "started_at": t2, "finished_at": t3, "geom": p2},
         {"user_id": 1, "started_at": t3, "finished_at": t3 + one_hour, "geom": p3},
     ]
-    sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+    sp = ti.Staypoints(data=list_dict, geometry="geom", crs="EPSG:4326")
     sp.index.name = "id"
-    assert sp.as_staypoints
     return sp
 
 
@@ -110,10 +110,9 @@ def example_triplegs():
         {"id": 2, "user_id": 1, "started_at": t3, "finished_at": t3 + one_hour, "geom": g3},
     ]
 
-    tpls = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
+    tpls = ti.Triplegs(data=list_dict, geometry="geom", crs="EPSG:4326")
     tpls.set_index("id", inplace=True)
 
-    assert tpls.as_triplegs
     return tpls
 
 
@@ -129,9 +128,8 @@ def example_locations():
         {"user_id": 0, "center": p2},
         {"user_id": 1, "center": p3},
     ]
-    locs = gpd.GeoDataFrame(data=list_dict, geometry="center", crs="EPSG:4326")
+    locs = ti.Locations(data=list_dict, geometry="center", crs="EPSG:4326")
     locs.index.name = "id"
-    assert locs.as_locations
     return locs
 
 
@@ -154,9 +152,8 @@ def example_trips():
             "destination_staypoint_id": 1,
         },
     ]
-    trips = pd.DataFrame(data=list_dict)
+    trips = ti.Trips(data=list_dict)
     trips.index.name = "id"
-    assert trips.as_trips
     return trips
 
 
@@ -173,9 +170,8 @@ def example_tours():
         {"user_id": 0, "started_at": t2, "finished_at": t2 + h},
         {"user_id": 1, "started_at": t3, "finished_at": t3 + h},
     ]
-    tours = pd.DataFrame(data=list_dict)
+    tours = ti.Tours(data=list_dict)
     tours.index.name = "id"
-    assert tours.as_tours
     return tours
 
 
@@ -271,9 +267,9 @@ class TestPositionfixes:
 
         try:
             pfs.as_positionfixes.to_postgis(table, conn_string)
-            pfs_db = ti.io.read_positionfixes_postgis(sql, conn_string, geom_col)
+            with pytest.warns(UserWarning):
+                pfs_db = ti.io.read_positionfixes_postgis(sql, conn, geom_col)
             pfs_db = pfs_db.set_index("id")
-            print(pfs_db)
             assert_geodataframe_equal(pfs, pfs_db)
         finally:
             del_table(conn, table)
@@ -286,9 +282,12 @@ class TestPositionfixes:
         sql = f"SELECT * FROM {table}"
         geom_col = pfs.geometry.name
         pfs.crs = None
+        no_crs_warning = "Could not parse CRS from the GeoDataFrame. Inserting data without defined CRS."
         try:
-            pfs.as_positionfixes.to_postgis(table, conn_string)
-            pfs_db = ti.io.read_positionfixes_postgis(sql, conn_string, geom_col)
+            with pytest.warns(UserWarning, match=no_crs_warning):
+                pfs.as_positionfixes.to_postgis(table, conn_string)
+            with pytest.warns(UserWarning):
+                pfs_db = ti.io.read_positionfixes_postgis(sql, conn, geom_col)
             pfs_db = pfs_db.set_index("id")
             assert_geodataframe_equal(pfs, pfs_db)
         finally:
@@ -305,7 +304,8 @@ class TestPositionfixes:
         pfs.rename(rename_dict, inplace=True)
         try:
             pfs.as_positionfixes.to_postgis(table, conn_string)
-            pfs_db = ti.io.read_positionfixes_postgis(sql, conn_string, geom_col, index_col="id", **rename_dict)
+            with pytest.warns(UserWarning):
+                pfs_db = ti.io.read_positionfixes_postgis(sql, conn, geom_col, index_col="id", read_gpd_kws=rename_dict)
             assert_geodataframe_equal(example_positionfixes, pfs_db)
         finally:
             del_table(conn, table)
@@ -327,7 +327,8 @@ class TestPositionfixes:
         geom_col = pfs.geometry.name
         try:
             pfs.as_positionfixes.to_postgis(table, conn_string)
-            pfs_db = ti.io.read_positionfixes_postgis(sql, conn_string, geom_col, index_col="id")
+            with pytest.warns(UserWarning):
+                pfs_db = ti.io.read_positionfixes_postgis(sql, conn, geom_col, index_col="id")
             assert_geodataframe_equal(pfs, pfs_db)
         finally:
             del_table(conn, table)
@@ -361,7 +362,8 @@ class TestTriplegs:
 
         try:
             tpls.as_triplegs.to_postgis(table, conn_string)
-            tpls_db = ti.io.read_triplegs_postgis(sql, conn_string, geom_col, index_col="id")
+            with pytest.warns(UserWarning):
+                tpls_db = ti.io.read_triplegs_postgis(sql, conn, geom_col, index_col="id")
             assert_geodataframe_equal(tpls, tpls_db)
         finally:
             del_table(conn, table)
@@ -375,9 +377,12 @@ class TestTriplegs:
         geom_col = tpls.geometry.name
         tpls.crs = None
 
+        no_crs_warning = "Could not parse CRS from the GeoDataFrame. Inserting data without defined CRS."
         try:
-            tpls.as_triplegs.to_postgis(table, conn_string)
-            tpls_db = ti.io.read_triplegs_postgis(sql, conn_string, geom_col, index_col="id")
+            with pytest.warns(UserWarning, match=no_crs_warning):
+                tpls.as_triplegs.to_postgis(table, conn_string)
+            with pytest.warns(UserWarning):
+                tpls_db = ti.io.read_triplegs_postgis(sql, conn, geom_col, index_col="id")
             assert_geodataframe_equal(tpls, tpls_db)
         finally:
             del_table(conn, table)
@@ -393,7 +398,8 @@ class TestTriplegs:
         tpls.rename(rename_dict, inplace=True)
         try:
             tpls.as_triplegs.to_postgis(table, conn_string)
-            tpls_db = ti.io.read_triplegs_postgis(sql, conn_string, geom_col, index_col="id", **rename_dict)
+            with pytest.warns(UserWarning):
+                tpls_db = ti.io.read_triplegs_postgis(sql, conn, geom_col, index_col="id", read_gpd_kws=rename_dict)
             assert_geodataframe_equal(example_triplegs, tpls_db)
         finally:
             del_table(conn, table)
@@ -427,7 +433,8 @@ class TestStaypoints:
 
         try:
             sp.as_staypoints.to_postgis(table, conn_string)
-            sp_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col, index_col="id")
+            with pytest.warns(UserWarning):
+                sp_db = ti.io.read_staypoints_postgis(sql, conn, geom_col, index_col="id")
             assert_geodataframe_equal(sp, sp_db)
         finally:
             del_table(conn, table)
@@ -440,9 +447,13 @@ class TestStaypoints:
         sql = f"SELECT * FROM {table}"
         geom_col = example_staypoints.geometry.name
         sp.crs = None
+
+        no_crs_warning = "Could not parse CRS from the GeoDataFrame. Inserting data without defined CRS."
         try:
-            sp.as_staypoints.to_postgis(table, conn_string)
-            sp_db = ti.io.read_staypoints_postgis(sql, conn_string, geom_col, index_col="id")
+            with pytest.warns(UserWarning, match=no_crs_warning):
+                sp.as_staypoints.to_postgis(table, conn_string)
+            with pytest.warns(UserWarning):
+                sp_db = ti.io.read_staypoints_postgis(sql, conn, geom_col, index_col="id")
             assert_geodataframe_equal(sp, sp_db)
         finally:
             del_table(conn, table)
@@ -476,7 +487,8 @@ class TestLocations:
 
         try:
             locs.as_locations.to_postgis(table, conn_string)
-            locs_db = ti.io.read_locations_postgis(sql, conn_string, geom_col, index_col="id")
+            with pytest.warns(UserWarning):
+                locs_db = ti.io.read_locations_postgis(sql, conn, geom_col, index_col="id")
             assert_geodataframe_equal(locs, locs_db)
         finally:
             del_table(conn, table)
@@ -489,9 +501,13 @@ class TestLocations:
         sql = f"SELECT * FROM {table}"
         geom_col = locs.geometry.name
         locs.crs = None
+
+        no_crs_warning = "Could not parse CRS from the GeoDataFrame. Inserting data without defined CRS."
         try:
-            locs.as_locations.to_postgis(table, conn_string)
-            locs_db = ti.io.read_locations_postgis(sql, conn_string, geom_col, index_col="id")
+            with pytest.warns(UserWarning, match=no_crs_warning):
+                locs.as_locations.to_postgis(table, conn_string)
+            with pytest.warns(UserWarning):
+                locs_db = ti.io.read_locations_postgis(sql, conn, geom_col, index_col="id")
             assert_geodataframe_equal(locs, locs_db)
         finally:
             del_table(conn, table)
@@ -529,7 +545,8 @@ class TestLocations:
         example_locations["extent"] = gpd.GeoSeries(example_locations["extent"])  # dtype
         try:
             example_locations.as_locations.to_postgis(table, conn_string)
-            locs_db = ti.io.read_locations_postgis(sql, conn_string, extent="extent", index_col="id")
+            with pytest.warns(UserWarning):
+                locs_db = ti.io.read_locations_postgis(sql, conn, extent="extent", index_col="id")
             assert_geodataframe_equal(example_locations, locs_db)
         finally:
             del_table(conn, table)
@@ -546,7 +563,8 @@ class TestLocations:
         geom_col = locs.geometry.name
         try:
             locs.as_locations.to_postgis(table, conn_string)
-            tpls_db = ti.io.read_locations_postgis(sql, conn_string, geom_col, index_col="id", **rename_dict)
+            with pytest.warns(UserWarning):
+                tpls_db = ti.io.read_locations_postgis(sql, conn, geom_col, index_col="id", read_gpd_kws=rename_dict)
             assert_geodataframe_equal(example_locations, tpls_db)
         finally:
             del_table(conn, table)
@@ -559,8 +577,8 @@ class TestTrips:
         conn_string, conn = conn_postgis
         table = "trips"
         try:
-            trips.as_trips.to_postgis(table, conn_string)
-            columns_db, dtypes = get_table_schema(conn, table)
+            trips.as_trips.to_postgis(table, create_engine(conn_string))
+            columns_db, _ = get_table_schema(conn, table)
             columns = trips.columns.tolist() + [trips.index.name]
             assert len(columns_db) == len(columns)
             assert set(columns_db) == set(columns)
@@ -575,8 +593,9 @@ class TestTrips:
         sql = f"SELECT * FROM {table}"
 
         try:
-            trips.as_trips.to_postgis(table, conn_string)
-            trips_db = ti.io.read_trips_postgis(sql, conn_string, index_col="id")
+            trips.as_trips.to_postgis(table, create_engine(conn_string))
+            with pytest.warns(UserWarning):
+                trips_db = ti.io.read_trips_postgis(sql, conn, index_col="id")
             assert_frame_equal(trips, trips_db)
         finally:
             del_table(conn, table)
@@ -596,8 +615,9 @@ class TestTrips:
         }
         trips.rename(rename_dict, inplace=True)
         try:
-            trips.as_trips.to_postgis(table, conn_string)
-            tpls_db = ti.io.read_trips_postgis(sql, conn_string, index_col="id", **rename_dict)
+            trips.as_trips.to_postgis(table, create_engine(conn_string))
+            with pytest.warns(UserWarning):
+                tpls_db = ti.io.read_trips_postgis(sql, conn, index_col="id", read_gpd_kws=rename_dict)
             assert_frame_equal(example_trips, tpls_db)
         finally:
             del_table(conn, table)
@@ -625,15 +645,16 @@ class TestTrips:
         """Test if read with geometry works."""
         mp1 = MultiPoint([(0.0, 0.0), (1.0, 1.0)])
         mp2 = MultiPoint([(2.0, 2.0), (3.0, 3.0)])
-        trips = gpd.GeoDataFrame(example_trips, copy=True, geometry=[mp1, mp2, mp2], crs="EPSG:4326")
+        trips = ti.Trips(example_trips, copy=True, geometry=[mp1, mp2, mp2], crs="EPSG:4326")
         conn_string, conn = conn_postgis
         table = "trips"
         sql = f"SELECT * FROM {table}"
         geom_col = trips.geometry.name
 
         try:
-            trips.as_trips.to_postgis(table, conn_string)
-            locs_db = ti.io.read_trips_postgis(sql, conn_string, geom_col=geom_col, index_col="id")
+            trips.as_trips.to_postgis(table, create_engine(conn_string))
+            with pytest.warns(UserWarning):
+                locs_db = ti.io.read_trips_postgis(sql, conn, geom_col=geom_col, index_col="id")
             assert_geodataframe_equal(trips, locs_db)
         finally:
             del_table(conn, table)
@@ -648,8 +669,8 @@ class TestTours:
         conn_string, conn = conn_postgis
         table = "tours"
         try:
-            tours.as_tours.to_postgis(table, conn_string)
-            columns_db, dtypes = get_table_schema(conn, table)
+            tours.as_tours.to_postgis(table, create_engine(conn_string))
+            columns_db, _ = get_table_schema(conn, table)
             columns = tours.columns.tolist() + [tours.index.name]
             assert len(columns_db) == len(columns)
             assert set(columns_db) == set(columns)
@@ -663,9 +684,11 @@ class TestTours:
         table = "tours"
         sql = f"SELECT * FROM {table}"
 
+        engine = create_engine(conn_string)
         try:
-            tours.as_tours.to_postgis(table, conn_string)
-            tours_db = ti.io.read_tours_postgis(sql, conn_string, index_col="id")
+            tours.as_tours.to_postgis(table, engine)
+            with pytest.warns(UserWarning):
+                tours_db = ti.io.read_tours_postgis(sql, conn, index_col="id")
             assert_frame_equal(tours, tours_db)
         finally:
             del_table(conn, table)
@@ -676,9 +699,29 @@ class TestTours:
         conn_string, conn = conn_postgis
         table = "tours"
         sql = f"SELECT * FROM {table}"
+
+        engine = create_engine(conn_string)
         try:
-            tours.as_tours.to_postgis(table, conn_string)
-            tours_db = ti.io.read_tours_postgis(sql, conn_string, index_col="id")
+            tours.as_tours.to_postgis(table, engine)
+            with pytest.warns(UserWarning):
+                tours_db = ti.io.read_tours_postgis(sql, conn, index_col="id")
+            assert_frame_equal(tours, tours_db)
+        finally:
+            del_table(conn, table)
+
+    def test_trips_column(self, example_tours, conn_postgis):
+        """Test if list of trips is read correctly."""
+        tours = example_tours
+        tours["trips"] = [[1 + i, 10 + i, 100 + i] for i in range(len(tours))]
+        conn_string, conn = conn_postgis
+        table = "tours"
+        sql = f"SELECT * FROM {table}"
+
+        engine = create_engine(conn_string)
+        try:
+            tours.as_tours.to_postgis(table, engine)
+            with pytest.warns(UserWarning):
+                tours_db = ti.io.read_tours_postgis(sql, conn, index_col="id")
             assert_frame_equal(tours, tours_db)
         finally:
             del_table(conn, table)

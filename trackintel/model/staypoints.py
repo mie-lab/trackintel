@@ -1,21 +1,20 @@
 import pandas as pd
+
 import trackintel as ti
-from trackintel.analysis.labelling import create_activity_flag
-from trackintel.analysis.tracking_quality import temporal_tracking_quality
-from trackintel.io.file import write_staypoints_csv
-from trackintel.io.postgis import write_staypoints_postgis
-from trackintel.model.util import _copy_docstring
-from trackintel.preprocessing.filter import spatial_filter
-from trackintel.preprocessing.staypoints import generate_locations, merge_staypoints
-from trackintel.visualization.staypoints import plot_staypoints
+from trackintel.model.util import (
+    TrackintelBase,
+    TrackintelGeoDataFrame,
+    _register_trackintel_accessor,
+    doc,
+    _shared_docs,
+)
+
+_required_columns = ["user_id", "started_at", "finished_at"]
 
 
-@pd.api.extensions.register_dataframe_accessor("as_staypoints")
-class StaypointsAccessor(object):
-    """A pandas accessor to treat (Geo)DataFrames as collections of `Staypoints`.
-
-    This will define certain methods and accessors, as well as make sure that the DataFrame
-    adheres to some requirements.
+@_register_trackintel_accessor("as_staypoints")
+class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
+    """Trackintel class to treat a GeoDataFrame as collections of `Staypoints`.
 
     Requires at least the following columns:
     ['user_id', 'started_at', 'finished_at']
@@ -38,118 +37,141 @@ class StaypointsAccessor(object):
 
     Examples
     --------
-    >>> df.as_staypoints.generate_locations()
+    >>> staypoints.generate_locations()
     """
 
-    required_columns = ["user_id", "started_at", "finished_at"]
+    def __init__(self, *args, validate=True, **kwargs):
+        super().__init__(*args, **kwargs)
+        if validate:
+            self.validate(self)
 
-    def __init__(self, pandas_obj):
-        self._validate(pandas_obj)
-        self._obj = pandas_obj
+    # create circular reference directly -> avoid second call of init via accessor
+    @property
+    def as_staypoints(self):
+        return self
 
     @staticmethod
-    def _validate(obj):
+    def validate(obj):
         # check columns
-        if any([c not in obj.columns for c in StaypointsAccessor.required_columns]):
+        if any([c not in obj.columns for c in _required_columns]):
             raise AttributeError(
-                "To process a DataFrame as a collection of staypoints, "
-                + "it must have the properties [%s], but it has [%s]."
-                % (", ".join(StaypointsAccessor.required_columns), ", ".join(obj.columns))
+                "To process a DataFrame as a collection of staypoints, it must have the properties"
+                f" {_required_columns}, but it has {', '.join(obj.columns)}."
             )
-        # check geometry
-        assert obj.geometry.is_valid.all(), (
-            "Not all geometries are valid. Try x[~ x.geometry.is_valid] " "where x is you GeoDataFrame"
-        )
-        if obj.geometry.iloc[0].geom_type != "Point":
-            raise AttributeError("The geometry must be a Point (only first checked).")
-
         # check timestamp dtypes
-        assert pd.api.types.is_datetime64tz_dtype(
-            obj["started_at"]
-        ), "dtype of started_at is {} but has to be tz aware datetime64".format(obj["started_at"].dtype)
-        assert pd.api.types.is_datetime64tz_dtype(
-            obj["finished_at"]
-        ), "dtype of finished_at is {} but has to be tz aware datetime64".format(obj["finished_at"].dtype)
+        assert isinstance(
+            obj["started_at"].dtype, pd.DatetimeTZDtype
+        ), f"dtype of started_at is {obj['started_at'].dtype} but has to be tz aware datetime64"
+        assert isinstance(
+            obj["finished_at"].dtype, pd.DatetimeTZDtype
+        ), f"dtype of finished_at is {obj['finished_at'].dtype} but has to be tz aware datetime64"
+
+        # check geometry
+        assert (
+            obj.geometry.is_valid.all()
+        ), "Not all geometries are valid. Try x[~ x.geometry.is_valid] where x is you GeoDataFrame"
+        if obj.geometry.iloc[0].geom_type != "Point":
+            raise TypeError("The geometry must be a Point (only first checked).")
 
     @property
     def center(self):
         """Return the center coordinate of this collection of staypoints."""
-        lat = self._obj.geometry.y
-        lon = self._obj.geometry.x
+        lat = self.geometry.y
+        lon = self.geometry.x
         return (float(lon.mean()), float(lat.mean()))
 
-    @_copy_docstring(generate_locations)
-    def generate_locations(self, *args, **kwargs):
+    def generate_locations(
+        self,
+        method="dbscan",
+        epsilon=100,
+        num_samples=1,
+        distance_metric="haversine",
+        agg_level="user",
+        activities_only=False,
+        print_progress=False,
+        n_jobs=1,
+    ):
         """
-        Generate locations from this collection of staypoints.
+        Generate locations from the staypoints.
 
-        See :func:`trackintel.preprocessing.staypoints.generate_locations`.
+        See :func:`trackintel.preprocessing.generate_locations` for full documentation.
         """
-        return ti.preprocessing.staypoints.generate_locations(self._obj, *args, **kwargs)
+        return ti.preprocessing.generate_locations(
+            self,
+            method=method,
+            epsilon=epsilon,
+            num_samples=num_samples,
+            distance_metric=distance_metric,
+            agg_level=agg_level,
+            activities_only=activities_only,
+            print_progress=print_progress,
+            n_jobs=n_jobs,
+        )
 
-    @_copy_docstring(merge_staypoints)
-    def merge_staypoints(self, *args, **kwargs):
+    def merge_staypoints(self, triplegs, max_time_gap="10min", agg={}):
         """
         Aggregate staypoints horizontally via time threshold.
 
-        See :func:`trackintel.preprocessing.staypoints.merge_staypoints`.
+        See :func:`trackintel.preprocessing.merge_staypoints` for full documentation.
         """
-        return ti.preprocessing.staypoints.merge_staypoints(self._obj, *args, **kwargs)
+        return ti.preprocessing.merge_staypoints(self, triplegs, max_time_gap=max_time_gap, agg=agg)
 
-    @_copy_docstring(create_activity_flag)
-    def create_activity_flag(self, *args, **kwargs):
+    def create_activity_flag(self, method="time_threshold", time_threshold=15.0, activity_column_name="is_activity"):
         """
-        Set a flag if a staypoint is also an activity.
+        Add a flag whether or not a staypoint is considered an activity based on a time threshold.
 
-        See :func:`trackintel.analysis.labelling.create_activity_flag`.
+        See :func:`trackintel.analysis.create_activity_flag` for full documentation.
         """
-        return ti.analysis.labelling.create_activity_flag(self._obj, *args, **kwargs)
+        return ti.analysis.create_activity_flag(
+            self, method=method, time_threshold=time_threshold, activity_column_name=activity_column_name
+        )
 
-    @_copy_docstring(spatial_filter)
-    def spatial_filter(self, *args, **kwargs):
+    def spatial_filter(self, areas, method="within", re_project=False):
         """
-        Filter staypoints with a geo extent.
+        Filter Staypoints on a geo extent.
 
-        See :func:`trackintel.preprocessing.filter.spatial_filter`.
+        See :func:`trackintel.geogr.spatial_filter` for full documentation.
         """
-        return ti.preprocessing.filter.spatial_filter(self._obj, *args, **kwargs)
+        return ti.geogr.spatial_filter(self, areas, method=method, re_project=re_project)
 
-    @_copy_docstring(plot_staypoints)
-    def plot(self, *args, **kwargs):
-        """
-        Plot this collection of staypoints.
-
-        See :func:`trackintel.visualization.staypoints.plot_staypoints`.
-        """
-        ti.visualization.staypoints.plot_staypoints(self._obj, *args, **kwargs)
-
-    @_copy_docstring(write_staypoints_csv)
+    @doc(_shared_docs["write_csv"], first_arg="", long="staypoints", short="sp")
     def to_csv(self, filename, *args, **kwargs):
-        """
-        Store this collection of staypoints as a CSV file.
+        ti.io.write_staypoints_csv(self, filename, *args, **kwargs)
 
-        See :func:`trackintel.io.file.write_staypoints_csv`.
-        """
-        ti.io.file.write_staypoints_csv(self._obj, filename, *args, **kwargs)
-
-    @_copy_docstring(write_staypoints_postgis)
+    @doc(_shared_docs["write_postgis"], first_arg="", long="staypoints", short="sp")
     def to_postgis(
         self, name, con, schema=None, if_exists="fail", index=True, index_label=None, chunksize=None, dtype=None
     ):
-        """
-        Store this collection of staypoints to PostGIS.
+        ti.io.write_staypoints_postgis(self, name, con, schema, if_exists, index, index_label, chunksize, dtype)
 
-        See :func:`trackintel.io.postgis.write_staypoints_postgis`.
-        """
-        ti.io.postgis.write_staypoints_postgis(
-            self._obj, name, con, schema, if_exists, index, index_label, chunksize, dtype
-        )
-
-    @_copy_docstring(temporal_tracking_quality)
-    def temporal_tracking_quality(self, *args, **kwargs):
+    def temporal_tracking_quality(self, granularity="all"):
         """
         Calculate per-user temporal tracking quality (temporal coverage).
 
-        See :func:`trackintel.analysis.tracking_quality.temporal_tracking_quality`.
+        See :func:`trackintel.analysis.temporal_tracking_quality` for full documentation.
         """
-        return ti.analysis.tracking_quality.temporal_tracking_quality(self._obj, *args, **kwargs)
+        return ti.analysis.temporal_tracking_quality(self, granularity=granularity)
+
+    def generate_trips(self, triplegs, gap_threshold=15, add_geometry=True):
+        """
+        Generate trips based on staypoints and triplegs.
+
+        See :func:`trackintel.preprocessing.generate_trips` for full documentation.
+        """
+        return ti.preprocessing.generate_trips(self, triplegs, gap_threshold=gap_threshold, add_geometry=add_geometry)
+
+    def radius_gyration(self, method="count", print_progress=False):
+        """
+        Calculate radius for gyration for Staypoints
+
+        See :func:`trackintel.analysis.radius_gyration` for full documentation.
+        """
+        return ti.analysis.radius_gyration(self, method, print_progress)
+
+    def jump_length(self):
+        """
+        Calculate jump length per user between consecutive staypoints.
+
+        See :func:`trackintel.analysis.jump_length` for full documentation.
+        """
+        return ti.analysis.jump_length(self)

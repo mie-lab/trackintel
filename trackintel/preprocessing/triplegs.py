@@ -5,17 +5,19 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import MultiPoint, Point
 
+from trackintel import Staypoints, Triplegs, Trips
 from trackintel.preprocessing.util import _explode_agg
 
 
 def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
-    """Generate trips based on staypoints and triplegs.
+    """
+    Generate trips based on staypoints and triplegs.
 
     Parameters
     ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
+    staypoints : Staypoints
 
-    triplegs : GeoDataFrame (as trackintel triplegs)
+    triplegs : Triplegs
 
     gap_threshold : float, default 15 (minutes)
         Maximum allowed temporal gap size in minutes. If tracking data is missing for more than
@@ -30,13 +32,13 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
 
     Returns
     -------
-    sp: GeoDataFrame (as trackintel staypoints)
+    sp: Staypoints
         The original staypoints with new columns ``[`trip_id`, `prev_trip_id`, `next_trip_id`]``.
 
-    tpls: GeoDataFrame (as trackintel triplegs)
+    tpls: Triplegs
         The original triplegs with a new column ``[`trip_id`]``.
 
-    trips: (Geo)DataFrame (as trackintel trips)
+    trips: Trips
         The generated trips.
 
     Notes
@@ -59,13 +61,14 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
 
     Examples
     --------
-    >>> from trackintel.preprocessing.triplegs import generate_trips
+    >>> from trackintel.preprocessing import generate_trips
     >>> staypoints, triplegs, trips = generate_trips(staypoints, triplegs)
 
-    trips can also be directly generated using the tripleg accessor
-    >>> staypoints, triplegs, trips = triplegs.as_triplegs.generate_trips(staypoints)
-
+    trips can also be directly generated using the tripleg class method
+    >>> staypoints, triplegs, trips = triplegs.generate_trips(staypoints)
     """
+    Triplegs.validate(triplegs)
+    Staypoints.validate(staypoints)
     gap_threshold = pd.to_timedelta(gap_threshold, unit="min")
     sp_tpls = _concat_staypoints_triplegs(staypoints, triplegs, add_geometry)
 
@@ -86,7 +89,8 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     # assign an incrementing id to all triplegs that start a trip
     # temporary as empty trips are not filtered out yet.
     sp_tpls.loc[new_trip, "temp_trip_id"] = np.arange(new_trip.sum())
-    sp_tpls["temp_trip_id"].fillna(method="ffill", inplace=True)
+    # fill NA with previous entry
+    sp_tpls["temp_trip_id"].ffill(inplace=True)
 
     # exclude activities to aggregate trips together.
     # activity can be thought of as the same aggregation level as trips.
@@ -95,7 +99,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
 
     trips_grouper = sp_tpls_no_act.groupby("temp_trip_id")
     trips = trips_grouper.agg(
-        {"user_id": "first", "started_at": min, "finished_at": max, "type": list, "sp_tpls_id": list}
+        {"user_id": "first", "started_at": "min", "finished_at": "max", "type": list, "sp_tpls_id": list}
     )
 
     def _seperate_ids(row):
@@ -198,9 +202,10 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
             # from tpls table, get the last point of the last tripleg on the trip
             lambda x: Point(tpls.loc[x[-1], tpls.geometry.name].coords[-1])
         )
-        # convert to GeoDataFrame with MultiPoint column
+        # convert to GeoDataFrame with MultiPoint column and crs (not-None if possible)
         trips["geom"] = [MultiPoint([x, y]) for x, y in zip(trips.origin_geom, trips.destination_geom)]
-        trips = gpd.GeoDataFrame(trips, geometry="geom")
+        crs_trips = sp.crs if sp.crs else tpls.crs
+        trips = gpd.GeoDataFrame(trips, geometry="geom", crs=crs_trips)
         # cleanup
         trips.drop(["origin_geom", "destination_geom"], inplace=True, axis=1)
 
@@ -220,7 +225,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     # user_id of trips should be the same as tpls
     trips["user_id"] = trips["user_id"].astype(tpls["user_id"].dtype)
 
-    return sp, tpls, trips
+    return sp, tpls, Trips(trips)
 
 
 def _concat_staypoints_triplegs(staypoints, triplegs, add_geometry):
@@ -228,8 +233,8 @@ def _concat_staypoints_triplegs(staypoints, triplegs, add_geometry):
 
     Parameters
     ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
-    triplegs : GeoDataFrame (as trackintel triplegs)
+    staypoints : Staypoints
+    triplegs : Triplegs
     add_geometry : bool
 
     Returns
@@ -252,7 +257,7 @@ def _concat_staypoints_triplegs(staypoints, triplegs, add_geometry):
 
     # write warnings for columns that we replace
     if "trip_id" in tpls:
-        warnings.warn(f"Override column 'trip_id' in copy of triplegs.")
+        warnings.warn("Override column 'trip_id' in copy of triplegs.")
 
     intersection = sp.columns.intersection(["trip_id", "prev_trip_id", "next_trip_id"])
     if len(intersection):
@@ -269,6 +274,14 @@ def _concat_staypoints_triplegs(staypoints, triplegs, add_geometry):
     sp_tpls["is_activity"].fillna(False, inplace=True)
     sp_tpls["sp_tpls_id"] = sp_tpls.index  # store id for later reassignment
     if add_geometry:
+        # Check if crs is set. Warn if None
+        if sp.crs is None:
+            warnings.warn("Staypoint crs is not set. Assuming same as for triplegs.")
+        if tpls.crs is None:
+            warnings.warn("Tripleg crs is not set. Assuming same as for staypoints.")
+        assert (
+            sp.crs == tpls.crs or sp.crs is None or tpls.crs is None
+        ), "CRS of staypoints and triplegs differ. Geometry cannot be joined safely."
         sp_tpls["geom"] = pd.concat([sp.geometry, tpls.geometry])
 
     sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)

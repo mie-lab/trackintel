@@ -1,6 +1,7 @@
 import os
 import pytest
-from shapely.geometry import Point, MultiPoint
+import geopandas as gpd
+from shapely.geometry import Point
 
 import trackintel as ti
 
@@ -10,16 +11,17 @@ def testdata_trips():
     """Read trips test data from file."""
     path = os.path.join("tests", "data", "geolife_long", "trips.csv")
     test_trips = ti.read_trips_csv(path, index_col="id", geom_col="geom")
-    return test_trips
+    # we want test the accessor of GeoDataFrames and not Trips
+    return gpd.GeoDataFrame(test_trips)
 
 
 class TestTrips:
-    """Tests for the TripsAccessor."""
+    """Tests for the Trips Classes."""
 
     def test_accessor(self, testdata_trips):
         """Test if the as_trips accessor checks the required column for trips."""
         trips = testdata_trips.copy()
-        assert trips.as_trips
+        trips.as_trips
 
         # user_id
         with pytest.raises(AttributeError):
@@ -30,7 +32,7 @@ class TestTrips:
         trips_wrong_geom = testdata_trips.copy()
 
         # check geometry type
-        with pytest.raises(AttributeError, match="The geometry must be a MultiPoint"):
+        with pytest.raises(ValueError, match="The geometry must be a MultiPoint"):
             trips_wrong_geom["geom"] = Point([(13.476808430, 48.573711823)])
             trips_wrong_geom.as_trips
 
@@ -43,5 +45,5 @@ class TestTrips:
         trips_other_geom_name.drop(columns=["geom"], inplace=True)
 
         # check that it works with other geometry name
-        with pytest.raises(AttributeError, match="The geometry must be a MultiPoint"):
+        with pytest.raises(ValueError, match="The geometry must be a MultiPoint"):
             trips_other_geom_name.as_trips

@@ -1,11 +1,12 @@
-from datetime import timedelta
-import geopandas as gpd
-import pandas as pd
-import numpy as np
-from tqdm import tqdm
 import warnings
+from datetime import timedelta
+
+import numpy as np
+import pandas as pd
 
 import trackintel as ti
+from trackintel import Tours
+from trackintel.preprocessing.util import applyParallel
 
 
 def get_trips_grouped(trips, tours):
@@ -13,10 +14,10 @@ def get_trips_grouped(trips, tours):
 
     Parameters
     ----------
-    trips: GeoDataFrame (as trackintel trips)
+    trips: Trips
         Trips dataframe
 
-    tours: GeoDataFrame (as trackintel tours)
+    tours: Tours
         Output of generate_tours function, must contain column "trips" with list of trip ids on tour
 
     Returns
@@ -57,24 +58,23 @@ def generate_tours(
     max_time="1d",
     max_nr_gaps=0,
     print_progress=False,
+    n_jobs=1,
 ):
     """
     Generate trackintel-tours from trips
 
     Parameters
     ----------
-    trips : GeoDataFrame (as trackintel trips)
-        The trips have to follow the standard definition for trips DataFrames
+    trips : Trips
 
-    staypoints : GeoDataFrame (as trackintel staypoints, preprocessed to contain location IDs), default None
-        The staypoints have to follow the standard definition for staypoints DataFrames. The location ID column
-        is necessary to connect trips via locations to a tour. If None, trips will be connected based only on a
-        distance threshold `max_dist`.
+    staypoints : Staypoints, default None
+        Must have `location_id` column to connect trips via locations to a tour.
+        If None, trips will be connected based only by the set distance threshold `max_dist`.
 
     max_dist: float, default 100 (meters)
-        Maximum distance between the end point of one trip and the start point of the next trip on a tour.
-        This is parameter is only used if staypoints is None!
-        Also, if `max_nr_gaps > 0`, a tour can contain larger spatial gaps (see Notes below)
+        Maximum distance between the end point of one trip and the start point of the next trip within a tour.
+        This is parameter is only used if staypoints is `None`!
+        Also, if `max_nr_gaps > 0`, a tour can contain larger spatial gaps (see Notes below for more detail)
 
     max_time: str or pd.Timedelta, default "1d" (1 day)
         Maximum time that a tour is allowed to take
@@ -85,18 +85,23 @@ def generate_tours(
     print_progress : bool, default False
         If print_progress is True, the progress bar is displayed
 
+    n_jobs: int, default 1
+        The maximum number of concurrently running jobs. If -1 all CPUs are used. If 1 is given, no parallel
+        computing code is used at all, which is useful for debugging. See
+        https://joblib.readthedocs.io/en/latest/parallel.html#parallel-reference-documentation
+        for a detailed description
 
     Returns
     -------
-    trips_with_tours: GeoDataFrame (as trackintel trips)
+    trips_with_tours: Trips
         Same as `trips`, but with column `tour_id`, containing a list of the tours that the trip is part of (see notes).
 
-    tours: GeoDataFrame (as trackintel tours)
+    tours: Tours
         The generated tours
 
     Examples
     --------
-    >>> trips.as_trips.generate_tours(staypoints)
+    >>> trips.generate_tours(staypoints)
 
     Notes
     -------
@@ -121,12 +126,14 @@ def generate_tours(
         ), "Staypoints with location ID is required, otherwise tours are generated without location using max_dist"
         geom_col = None  # not used
         crs_is_projected = False  # not used
+        ti.Staypoints.validate(staypoints)
+        ti.TripsDataFrame.validate(trips)
     else:
         # if no location is given, we need the trips table to have a geometry column
-        assert isinstance(trips, gpd.geodataframe.GeoDataFrame), "Trips table must be a GeoDataFrame"
+        ti.TripsGeoDataFrame.validate(trips)
         geom_col = trips.geometry.name
         # get crs
-        crs_is_projected = ti.geogr.distances.check_gdf_planar(trips)
+        crs_is_projected = ti.geogr.check_gdf_planar(trips)
 
     # convert max_time to timedelta
     if isinstance(max_time, str):
@@ -149,19 +156,14 @@ def generate_tours(
         "geom_col": geom_col,
         "crs_is_projected": crs_is_projected,
     }
-    if print_progress:
-        tqdm.pandas(desc="User trip generation")
-        tours = (
-            trips_input.groupby(["user_id"], group_keys=False, as_index=False)
-            .progress_apply(_generate_tours_user, **kwargs)
-            .reset_index(drop=True)
-        )
-    else:
-        tours = (
-            trips_input.groupby(["user_id"], group_keys=False, as_index=False)
-            .apply(_generate_tours_user, **kwargs)
-            .reset_index(drop=True)
-        )
+
+    tours = applyParallel(
+        trips_input.groupby("user_id", group_keys=False, as_index=False),
+        _generate_tours_user,
+        print_progress=print_progress,
+        n_jobs=n_jobs,
+        **kwargs
+    )
 
     # No tours found
     if len(tours) == 0:
@@ -183,7 +185,7 @@ def generate_tours(
     # trips id (generated by this function) should be int64
     tours.index = tours.index.astype("int64")
 
-    return trips_with_tours, tours
+    return trips_with_tours, Tours(tours)
 
 
 def _generate_tours_user(
@@ -200,13 +202,12 @@ def _generate_tours_user(
 
     Parameters
     ----------
-    user_trip_df : GeoDataFrame (as trackintel trips)
+    user_trip_df : Trips
         The trips have to follow the standard definition for trips DataFrames
 
-    staypoints : GeoDataFrame (as trackintel staypoints, preprocessed to contain location IDs), default None
-        The staypoints have to follow the standard definition for staypoints DataFrames. The location ID column
-        is necessary to connect trips via locations to a tour. If None, trips will be connected based only on a
-        distance threshold `max_dist`.
+    staypoints : Staypoints, optional
+        Must contain location ID column to connect trips via locations to a tour.
+        If None, trips will be connected based only on a distance threshold `max_dist`.
 
     max_dist: float, default 100 (meters)
         Maximum distance between the end point of one trip and the start point of the next trip on a tour.
@@ -394,7 +395,7 @@ def _check_max_dist(p1, p2, max_dist, crs_is_projected=False):
     if crs_is_projected:
         dist = p1.distance(p2)
     else:
-        dist = ti.geogr.point_distances.haversine_dist(p1.x, p1.y, p2.x, p2.y)
+        dist = ti.geogr.point_haversine_dist(p1.x, p1.y, p2.x, p2.y)
     dist_below_thresh = dist <= max_dist
     return dist_below_thresh
 

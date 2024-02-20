@@ -1,4 +1,3 @@
-import datetime
 import os
 
 import geopandas as gpd
@@ -7,7 +6,7 @@ import pandas as pd
 import pytest
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
-from geopandas.testing import assert_geodataframe_equal
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 import trackintel as ti
 from trackintel.geogr.distances import calculate_distance_matrix
@@ -24,7 +23,7 @@ def example_staypoints():
     The following staypoint ids should be noise (2, 7)
 
     for agg_level="dataset"
-    The following staypoint ids should form a location (1, 15), (5,6, 80, 3),
+    The following staypoint ids should form a location (1, 15), (5, 6, 80, 3),
     The following staypoint ids should be noise (2, 7)
     """
     p1 = Point(8.5067847, 47.4)
@@ -38,7 +37,6 @@ def example_staypoints():
     t4 = pd.Timestamp("1971-01-02 08:00:00", tz="utc")
     t5 = pd.Timestamp("1971-01-02 09:00:00", tz="utc")
     t6 = pd.Timestamp("1971-01-02 10:00:00", tz="utc")
-    one_hour = datetime.timedelta(hours=1)
 
     list_dict = [
         {"id": 1, "user_id": 0, "started_at": t1, "finished_at": t2, "geom": p1},
@@ -52,8 +50,7 @@ def example_staypoints():
     ]
     sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     sp = sp.set_index("id")
-    sp.as_staypoints
-    return sp
+    return ti.Staypoints(sp)
 
 
 @pytest.fixture
@@ -74,7 +71,6 @@ def example_staypoints_merge():
     t45 = pd.Timestamp("1971-01-02 08:57:00", tz="utc")
     t5 = pd.Timestamp("1971-01-02 09:00:00", tz="utc")
     t6 = pd.Timestamp("1971-01-02 09:20:00", tz="utc")
-    one_hour = datetime.timedelta(hours=1)
 
     list_dict = [
         {"id": 1, "user_id": 0, "started_at": t1, "finished_at": t2, "geom": p1, "location_id": 1},
@@ -88,11 +84,10 @@ def example_staypoints_merge():
     ]
     sp = gpd.GeoDataFrame(data=list_dict, geometry="geom", crs="EPSG:4326")
     sp = sp.set_index("id")
-    assert sp.as_staypoints
 
-    # generate example triplegs for the merge function
-    tpls = gpd.GeoDataFrame(columns=["user_id", "started_at", "finished_at"])
-    return sp, tpls
+    # generate empty triplegs for the merge function
+    tpls = pd.DataFrame([], columns=["user_id", "started_at", "finished_at"])
+    return ti.Staypoints(sp), tpls
 
 
 @pytest.fixture
@@ -115,7 +110,7 @@ def example_triplegs_merge(example_staypoints_merge):
         {"id": 1, "user_id": 0, "started_at": t21, "finished_at": t22},
     ]
     # geometry is not required for the merge operation, so we leave it away
-    tpls = gpd.GeoDataFrame(data=list_dict)
+    tpls = pd.DataFrame(data=list_dict)
     tpls = tpls.set_index("id")
     return sp, tpls
 
@@ -132,7 +127,7 @@ class TestGenerate_locations:
 
         warn_string = "No locations can be generated, returning empty locs."
         with pytest.warns(UserWarning, match=warn_string):
-            sp, locs = sp.as_staypoints.generate_locations(
+            sp, locs = sp.generate_locations(
                 method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user"
             )
         assert len(locs) == 0
@@ -142,11 +137,11 @@ class TestGenerate_locations:
         sp = example_staypoints
 
         # without parallel computing code
-        sp_ori, locs_ori = sp.as_staypoints.generate_locations(
+        sp_ori, locs_ori = sp.generate_locations(
             method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user", n_jobs=1
         )
         # using two cores
-        sp_para, locs_para = sp.as_staypoints.generate_locations(
+        sp_para, locs_para = sp.generate_locations(
             method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user", n_jobs=2
         )
 
@@ -154,13 +149,32 @@ class TestGenerate_locations:
         assert_geodataframe_equal(locs_ori, locs_para)
         assert_geodataframe_equal(sp_ori, sp_para)
 
+    def test_extent_buffer(self):
+        """Extent geometry shall be buffered with epsilon."""
+        sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
+
+        epsilon = 100
+        # haversine calculation using sklearn.metrics.pairwise_distances
+        sp, locs = sp.generate_locations(
+            method="dbscan", epsilon=epsilon, num_samples=1, distance_metric="haversine", agg_level="dataset"
+        )
+
+        # use extent as geometry
+        locs = gpd.GeoDataFrame(locs.drop(columns={"center"}), geometry="extent", crs="EPSG:4326")
+        # WGS_1984_UTM_Zone_49N
+        locs = locs.to_crs("epsg:32649")
+
+        # area shall be buffered -> thus larger than the circle with buffer as radius
+        assert (locs.area > epsilon**2 * np.pi).all()
+
     def test_dbscan_hav_euc(self):
         """Test if using haversine and euclidean distances will generate the same location result."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
 
         # haversine calculation
-        _, loc_har = sp.as_staypoints.generate_locations(
+        _, loc_har = sp.generate_locations(
             method="dbscan", epsilon=100, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
         # WGS_1984
@@ -169,7 +183,7 @@ class TestGenerate_locations:
         sp = sp.to_crs("epsg:32649")
 
         # euclidean calculation
-        _, loc_eu = sp.as_staypoints.generate_locations(
+        _, loc_eu = sp.generate_locations(
             method="dbscan", epsilon=100, num_samples=1, distance_metric="euclidean", agg_level="dataset"
         )
 
@@ -178,10 +192,10 @@ class TestGenerate_locations:
     def test_dbscan_haversine(self):
         """Test haversine dbscan location result with manually calling the DBSCAN method."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
 
         # haversine calculation using sklearn.metrics.pairwise_distances
-        sp, locs = sp.as_staypoints.generate_locations(
+        sp, locs = sp.generate_locations(
             method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
 
@@ -195,8 +209,8 @@ class TestGenerate_locations:
     def test_dbscan_loc(self):
         """Test haversine dbscan location result with manually grouping the locations method."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
-        sp, locs = sp.as_staypoints.generate_locations(
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
+        sp, locs = sp.generate_locations(
             method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
 
@@ -219,13 +233,12 @@ class TestGenerate_locations:
         other_locs = gpd.GeoDataFrame(other_locs, columns=["user_id", "id", "center"], geometry="center", crs=sp.crs)
         other_locs.set_index("id", inplace=True)
 
-        assert all(other_locs["center"] == locs["center"])
-        assert all(other_locs.index == locs.index)
+        assert_geoseries_equal(other_locs["center"], locs["center"], check_less_precise=True)
 
     def test_dbscan_user_dataset(self):
         """Test user and dataset location generation."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
         # take the first row and duplicate once
         sp = sp.head(1)
         sp = pd.concat([sp, sp], ignore_index=True)
@@ -234,10 +247,10 @@ class TestGenerate_locations:
 
         # duplicate for a certain number
         sp = pd.concat([sp] * 6, ignore_index=True)
-        _, locs_ds = sp.as_staypoints.generate_locations(
+        _, locs_ds = sp.generate_locations(
             method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
-        _, locs_us = sp.as_staypoints.generate_locations(
+        _, locs_us = sp.generate_locations(
             method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="user"
         )
         loc_dataset_num = len(locs_ds.index.unique())
@@ -245,19 +258,21 @@ class TestGenerate_locations:
         assert loc_dataset_num == 1
         assert loc_user_num == 2
 
+    def test_crs(self, example_staypoints):
+        """Test whether the crs of the output locations is set correctly."""
+        sp = example_staypoints
+        sp, locs = sp.generate_locations(method="dbscan", epsilon=20, num_samples=1)
+        assert locs.crs == sp.crs
+
     def test_dbscan_min(self):
         """Test with small epsilon parameter."""
         pfs_file = os.path.join("tests", "data", "positionfixes.csv")
-        pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id")
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id", crs="epsg:4326")
         _, sp = pfs.as_positionfixes.generate_staypoints(
             method="sliding", gap_threshold=1e6, dist_threshold=0, time_threshold=0
         )
-        _, locs_user = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=1e-18, num_samples=1, agg_level="user"
-        )
-        _, locs_data = sp.as_staypoints.generate_locations(
-            method="dbscan", epsilon=1e-18, num_samples=1, agg_level="dataset"
-        )
+        _, locs_user = sp.generate_locations(method="dbscan", epsilon=1e-18, num_samples=1, agg_level="user")
+        _, locs_data = sp.generate_locations(method="dbscan", epsilon=1e-18, num_samples=1, agg_level="dataset")
         # With small hyperparameters, clustering should not reduce the number
         assert len(locs_user) == len(sp)
         assert len(locs_data) == len(sp)
@@ -265,18 +280,14 @@ class TestGenerate_locations:
     def test_dbscan_max(self):
         """Test with large epsilon parameter."""
         pfs_file = os.path.join("tests", "data", "positionfixes.csv")
-        pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id")
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id", crs="epsg:4326")
         _, sp = pfs.as_positionfixes.generate_staypoints(
             method="sliding", gap_threshold=1e6, dist_threshold=0, time_threshold=0
         )
         warn_string = "No locations can be generated, returning empty locs."
         with pytest.warns(UserWarning, match=warn_string):
-            _, locs_user = sp.as_staypoints.generate_locations(
-                method="dbscan", epsilon=1e18, num_samples=1000, agg_level="user"
-            )
-            _, locs_data = sp.as_staypoints.generate_locations(
-                method="dbscan", epsilon=1e18, num_samples=1000, agg_level="dataset"
-            )
+            _, locs_user = sp.generate_locations(method="dbscan", epsilon=1e18, num_samples=1000, agg_level="user")
+            _, locs_data = sp.generate_locations(method="dbscan", epsilon=1e18, num_samples=1000, agg_level="dataset")
         # "With large epsilon, every user location is an outlier"
         assert len(locs_user) == 0
         assert len(locs_data) == 0
@@ -284,25 +295,21 @@ class TestGenerate_locations:
     def test_missing_link(self):
         """Test nan is assigned for missing link between sp and locs."""
         pfs_file = os.path.join("tests", "data", "positionfixes.csv")
-        pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id")
+        pfs = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id", crs="epsg:4326")
         _, sp = pfs.as_positionfixes.generate_staypoints(
             method="sliding", gap_threshold=1e6, dist_threshold=0, time_threshold=0
         )
         warn_string = "No locations can be generated, returning empty locs."
         with pytest.warns(UserWarning, match=warn_string):
-            sp, _ = sp.as_staypoints.generate_locations(
-                method="dbscan", epsilon=1e18, num_samples=1000, agg_level="user"
-            )
+            sp, _ = sp.generate_locations(method="dbscan", epsilon=1e18, num_samples=1000, agg_level="user")
 
         assert pd.isna(sp["location_id"]).any()
 
     def test_num_samples_high(self):
         """Test higher values of num_samples for generate_locations."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
-        sp_ns_5, _ = sp.as_staypoints.generate_locations(
-            epsilon=50, distance_metric="haversine", agg_level="user", num_samples=2
-        )
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
+        sp_ns_5, _ = sp.generate_locations(epsilon=50, distance_metric="haversine", agg_level="user", num_samples=2)
         non_noise_sp = sp_ns_5[sp_ns_5["location_id"] != -1]
 
         # group_by_user_id and check that no two different user ids share a common location id
@@ -315,12 +322,41 @@ class TestGenerate_locations:
         # (each user has overlap with the same user)
         assert sum([int(len(p & q) > 0) for p in loc_set for q in loc_set]) == len(loc_set)
 
+    def test_num_samples_3(self):
+        """Test with num_samples=3 to check if fully false pointLine_idx causes no error."""
+        sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
+        # generate locations with num_samples=1 and num_samples=3 creates the same locations
+        # but locations with only one or two staypoint are filtered out in the second run
+        sp1, locs1 = sp.generate_locations(num_samples=1, distance_metric="haversine", agg_level="dataset")
+        sp3, locs3 = sp.generate_locations(num_samples=3, distance_metric="haversine", agg_level="dataset")
+        # get all location_ids with less than 3 staypoints
+        f = sp1["location_id"].value_counts(dropna=False) < 3
+        f = f[f].index  # get set of locations with less than 3 staypoints
+        locs1 = locs1.iloc[locs1.index.difference(f)]  # drop locations with less than 3 staypoints
+        locs1 = locs1.reset_index(drop=True)  # reset index to remove offset
+        locs1.index.name = "id"  # reset index name
+        assert_geodataframe_equal(locs1, locs3)
+        map_dict = {}
+        next_loc_id = 0
+        for i, row in sp1.iterrows():
+            val = row["location_id"]
+            if val in f:  # means we have less than 3 staypoints
+                sp1.at[i, "location_id"] = np.nan
+            else:
+                # remove offset we have in counting more locations
+                if val not in map_dict:
+                    map_dict[val] = next_loc_id
+                    next_loc_id += 1
+                sp1.at[i, "location_id"] = map_dict[val]
+        assert_geodataframe_equal(sp1, sp3)
+
     def test_dtype_consistent(self):
         """Test the dtypes for the generated columns."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
         #
-        sp, locs = sp.as_staypoints.generate_locations(
+        sp, locs = sp.generate_locations(
             method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
         assert sp["user_id"].dtype == locs["user_id"].dtype
@@ -328,7 +364,7 @@ class TestGenerate_locations:
         assert locs.index.dtype == "int64"
         # change the user_id to string
         sp["user_id"] = sp["user_id"].apply(lambda x: str(x))
-        sp, locs = sp.as_staypoints.generate_locations(
+        sp, locs = sp.generate_locations(
             method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
         assert sp["user_id"].dtype == locs["user_id"].dtype
@@ -338,13 +374,16 @@ class TestGenerate_locations:
     def test_index_start(self):
         """Test the generated index start from 0 for different methods."""
         sp_file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id")
+        sp = ti.read_staypoints_csv(sp_file, tz="utc", index_col="id", crs="epsg:4326")
+
+        # reproject to WGS_1984_UTM_Zone_49N
+        sp = sp.to_crs("epsg:32649")
 
         distance_metric_ls = ["haversine", "euclidean"]
         agg_level_ls = ["dataset", "user"]
         for distance_metric in distance_metric_ls:
             for agg_level in agg_level_ls:
-                _, locations = sp.as_staypoints.generate_locations(
+                _, locations = sp.generate_locations(
                     method="dbscan", epsilon=10, num_samples=1, distance_metric=distance_metric, agg_level=agg_level
                 )
                 assert (locations.index == np.arange(len(locations))).any()
@@ -352,20 +391,20 @@ class TestGenerate_locations:
     def test_print_progress_flag(self, capsys):
         """Test if the print_progress bar controls the printing behavior."""
         file = os.path.join("tests", "data", "geolife", "geolife_staypoints.csv")
-        staypoints = ti.read_staypoints_csv(file, tz="utc", index_col="id")
+        staypoints = ti.read_staypoints_csv(file, tz="utc", index_col="id", crs="epsg:4326")
 
-        staypoints.as_staypoints.generate_locations(print_progress=True)
+        staypoints.generate_locations(print_progress=True)
         captured_print = capsys.readouterr()
         assert captured_print.err != ""
 
-        staypoints.as_staypoints.generate_locations(print_progress=False)
+        staypoints.generate_locations(print_progress=False)
         captured_print = capsys.readouterr()
         assert captured_print.err == ""
 
     def test_index_stability(self, example_staypoints):
         """Test if the index of the staypoints remains stable"""
         sp = example_staypoints
-        sp2, locs = sp.as_staypoints.generate_locations(
+        sp2, _ = sp.generate_locations(
             method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user"
         )
         assert sp.index.equals(sp2.index)
@@ -374,7 +413,7 @@ class TestGenerate_locations:
         """Test if all test cases in the example_staypoints dataset get identified correctly.
         See docstring of example_staypoints for more information"""
         sp = example_staypoints
-        sp2, _ = sp.as_staypoints.generate_locations(
+        sp2, _ = sp.generate_locations(
             method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="user"
         )
         assert sp2.loc[1, "location_id"] == sp2.loc[15, "location_id"]
@@ -389,7 +428,7 @@ class TestGenerate_locations:
         """Test if all test cases in the example_staypoints dataset get identified correctly.
         See docstring of example_staypoints for more information"""
         sp = example_staypoints
-        sp2, _ = sp.as_staypoints.generate_locations(
+        sp2, _ = sp.generate_locations(
             method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="dataset"
         )
 
@@ -399,13 +438,61 @@ class TestGenerate_locations:
 
         assert sp2.loc[[2, 7], "location_id"].isnull().all()
 
+    def test_agg_level_error(self, example_staypoints):
+        """Test if unknown "agg_level" raises ValueError"""
+        agg_level = "unknown"
+        error_msg = f"agg_level '{agg_level}' is unknown. Supported values are ['user', 'dataset']."
+        with pytest.raises(ValueError) as e:
+            example_staypoints.generate_locations(method="dbscan", agg_level="unkown")
+            assert error_msg == str(e.value)
+
+    def test_method_error(self, example_staypoints):
+        """Test if unknown "method" raises ValueError"""
+        method = "unknown"
+        error_msg = f"method '{method}' is unknown. Supported values are ['dbscan']."
+        with pytest.raises(ValueError) as e:
+            example_staypoints.generate_locations(method="unknown")
+            assert error_msg == str(e.value)
+
+    def test_activity_flag(self, example_staypoints):
+        """Test if only activity staypoints are used if flag is set."""
+        # take out staypoint 6 that should have been merged with 2, 15
+        sp = example_staypoints
+        data = [True, True, True, True, False, True, True, True]
+        idx = [1, 2, 3, 5, 6, 7, 15, 80]
+        activities = pd.Series(data, index=idx)
+        sp["activity"] = activities
+        sp, _ = sp.generate_locations(
+            method="dbscan",
+            epsilon=10,
+            num_samples=2,
+            distance_metric="haversine",
+            agg_level="user",
+            activities_only=True,
+        )
+        assert sp.loc[1, "location_id"] == sp.loc[15, "location_id"]
+        assert sp.loc[2, "location_id"] is pd.NA
+
+    def test_activity_flag_missing_column(self, example_staypoints):
+        """Test if KeyError is raised if `activity` column is missing"""
+        msg = 'staypoints must contain column "activity" if "activities_only" flag is set.'
+        with pytest.raises(KeyError, match=msg):
+            example_staypoints.generate_locations(activities_only=True)
+
+    def test_location_type(self, example_staypoints):
+        """Test that returned locations is of type Locations"""
+        _, locs = example_staypoints.generate_locations(
+            method="dbscan", epsilon=10, num_samples=2, distance_metric="haversine", agg_level="dataset"
+        )
+        assert isinstance(locs, ti.Locations)
+
 
 class TestMergeStaypoints:
     def test_merge_staypoints(self, example_staypoints_merge):
         """Test staypoint merging."""
         sp, tpls = example_staypoints_merge
         # first test with empty tpls
-        merged_sp = sp.as_staypoints.merge_staypoints(tpls, agg={"geom": "first"})
+        merged_sp = sp.merge_staypoints(tpls, agg={"geom": "first"})
         merged_sp = merged_sp.reindex(columns=sp.columns)
         assert len(merged_sp) == len(sp) - 3
         # some staypoints stay the same (not merged)
@@ -417,7 +504,7 @@ class TestMergeStaypoints:
         """Test staypoint merging with triplegs inbetween"""
         # get triplegs inbetween
         sp, tpls = example_triplegs_merge
-        merged_sp_with_tpls = sp.as_staypoints.merge_staypoints(tpls)
+        merged_sp_with_tpls = sp.merge_staypoints(tpls)
         # assert that staypoint 6 and 15 were not merged because of tpls inbetween
         assert len(merged_sp_with_tpls) == len(sp) - 2
         # 15 should not be merged
@@ -426,7 +513,7 @@ class TestMergeStaypoints:
     def test_merge_staypoints_time(self, example_staypoints_merge):
         """Test if all merged staypoints have the correct start and end time"""
         sp, tpls = example_staypoints_merge
-        merged_sp = sp.as_staypoints.merge_staypoints(tpls)
+        merged_sp = sp.merge_staypoints(tpls)
         # user 1 - id 7 and 80 merged
         assert sp.loc[7, "started_at"] == merged_sp.loc[7, "started_at"]
         assert sp.loc[80, "finished_at"] == merged_sp.loc[7, "finished_at"]
@@ -437,7 +524,7 @@ class TestMergeStaypoints:
     def test_merge_staypoints_max_time_gap(self, example_staypoints_merge):
         """Test it the max_time_gap argument works correctly"""
         sp, tpls = example_staypoints_merge
-        merged_sp = sp.as_staypoints.merge_staypoints(tpls, max_time_gap="2h")
+        merged_sp = sp.merge_staypoints(tpls, max_time_gap="2h")
         assert len(merged_sp) == len(sp) - 4
         # user 0 - id 5, 2,6, and 15 merged
         assert sp.loc[5, "started_at"] == merged_sp.loc[5, "started_at"]
@@ -447,17 +534,17 @@ class TestMergeStaypoints:
         sp, tpls = example_staypoints_merge
         # check that an int as max time gap raises a TypeError
         with pytest.raises(Exception) as e_info:
-            merged_sp = sp.as_staypoints.merge_staypoints(tpls, max_time_gap=2)
+            sp.merge_staypoints(tpls, max_time_gap=2)
             assert e_info == "Parameter max_time_gap must be either of type String or pd.Timedelta!"
         # check that an timedelta as max time gap works
-        _ = sp.as_staypoints.merge_staypoints(tpls, max_time_gap=pd.to_timedelta("1h"))
+        _ = sp.merge_staypoints(tpls, max_time_gap=pd.to_timedelta("1h"))
 
     def test_merge_staypoints_agg(self, example_staypoints_merge):
         """Test whether the user can specify the aggregation mode"""
         aggregation_dict = {"geom": "first", "finished_at": "first"}
 
         sp, tpls = example_staypoints_merge
-        merged_sp = sp.as_staypoints.merge_staypoints(tpls, agg=aggregation_dict)
+        merged_sp = sp.merge_staypoints(tpls, agg=aggregation_dict)
 
         # in contrast to the test above, the first of (7,80) should now be used for finished at
         assert sp.loc[7, "finished_at"] == merged_sp.loc[7, "finished_at"]
@@ -470,6 +557,6 @@ class TestMergeStaypoints:
         sp, tpls = example_staypoints_merge
         sp.drop(columns=["location_id"], inplace=True)
         with pytest.raises(AssertionError) as excinfo:
-            _ = sp.as_staypoints.merge_staypoints(tpls)
+            _ = sp.merge_staypoints(tpls)
 
         assert "Staypoints must contain column location_id" in str(excinfo.value)

@@ -1,7 +1,6 @@
 import warnings
 import numpy as np
 import pandas as pd
-import trackintel as ti
 
 
 def location_identifier(staypoints, method="FREQ", pre_filter=True, **pre_filter_kwargs):
@@ -9,7 +8,7 @@ def location_identifier(staypoints, method="FREQ", pre_filter=True, **pre_filter
 
     Parameters
     ----------
-    staypoints : Geodataframe (as trackintel staypoints)
+    staypoints : Staypoints
         Staypoints with column "location_id".
 
     method : {'FREQ', 'OSNA'}, default "FREQ"
@@ -27,7 +26,7 @@ def location_identifier(staypoints, method="FREQ", pre_filter=True, **pre_filter
 
     Returns
     -------
-    sp: Geodataframe (as trackintel staypoints)
+    sp: Staypoints
         With additional column `purpose` assigning one of three activity labels {'home', 'work', None}.
 
     Note
@@ -45,17 +44,14 @@ def location_identifier(staypoints, method="FREQ", pre_filter=True, **pre_filter
 
     Examples
     --------
-    >>> from ti.analysis.location_identification import location_identifier
+    >>> from ti.analysis import location_identifier
     >>> location_identifier(staypoints, pre_filter=True, method="FREQ")
     """
-    # assert validity of staypoints
-    staypoints.as_staypoints
-
     sp = staypoints.copy()
     if "location_id" not in sp.columns:
         raise KeyError(
             (
-                "To derive activity labels the GeoDataFrame (as trackintel staypoints) must have a column "
+                "To derive activity labels the Staypoints must have a column "
                 f"named 'location_id' but it has [{', '.join(sp.columns)}]"
             )
         )
@@ -90,7 +86,7 @@ def pre_filter_locations(
 
     Parameters
     ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
+    staypoints : Staypoints
         Staypoints with the column "location_id".
 
     agg_level: {"user", "dataset"}, default "user"
@@ -121,13 +117,10 @@ def pre_filter_locations(
 
     Examples
     --------
-    >>> from ti.analysis.location_identification import pre_filter_locations
+    >>> from ti.analysis import pre_filter_locations
     >>> mask = pre_filter_locations(staypoints)
     >>> staypoints = staypoints[mask]
     """
-    # assert validity of staypoints
-    staypoints.as_staypoints
-
     sp = staypoints.copy()
     if isinstance(thresh_loc_time, str):
         thresh_loc_time = pd.to_timedelta(thresh_loc_time)
@@ -150,7 +143,7 @@ def pre_filter_locations(
         groupby_loc = ["location_id"]
     else:
         raise ValueError(f"Unknown agg_level '{agg_level}' use instead {{'user', 'dataset'}}.")
-    loc = sp.groupby(groupby_loc).agg({"started_at": [min, "count"], "finished_at": max, "duration": sum})
+    loc = sp.groupby(groupby_loc).agg({"started_at": ["min", "count"], "finished_at": "max", "duration": "sum"})
     loc.columns = loc.columns.droplevel(0)  # remove possible multi-index
     loc.rename(columns={"min": "started_at", "max": "finished_at", "sum": "duration"}, inplace=True)
     # period for maximal time span first visit - last visit.
@@ -179,7 +172,7 @@ def freq_method(staypoints, *labels):
 
     Parameters
     ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
+    staypoints : Staypoints
         Staypoints with the column "location_id".
 
     labels : collection of str, default ("home", "work")
@@ -187,12 +180,12 @@ def freq_method(staypoints, *labels):
 
     Returns
     -------
-    sp: GeoDataFrame (as trackintel staypoints)
+    sp: Staypoints
         The input staypoints with additional column "purpose".
 
     Examples
     --------
-    >>> from ti.analysis.location_identification import freq_method
+    >>> from ti.analysis import freq_method
     >>> staypoints = freq_method(staypoints, "home", "work")
     """
     sp = staypoints.copy()
@@ -203,6 +196,8 @@ def freq_method(staypoints, *labels):
             group["duration"] = group["finished_at"] - group["started_at"]
         # pandas keeps inner order of groups
         sp.loc[sp["user_id"] == name, "purpose"] = _freq_transform(group, *labels)
+    if "purpose" not in sp.columns:  # if empty sp
+        sp["purpose"] = None
     return sp
 
 
@@ -219,7 +214,7 @@ def _freq_transform(group, *labels):
     pd.Series
         dtype : object
     """
-    group_agg = group.groupby("location_id").agg({"duration": sum})
+    group_agg = group.groupby("location_id").agg({"duration": "sum"})
     group_agg["purpose"] = _freq_assign(group_agg["duration"], *labels)
     group_merge = pd.merge(
         group["location_id"], group_agg["purpose"], how="left", left_on="location_id", right_index=True
@@ -255,12 +250,12 @@ def osna_method(staypoints):
 
     Parameters
     ----------
-    staypoints : GeoDataFrame (as trackintel staypoints)
+    staypoints : Staypoints
         Staypoints with the column "location_id".
 
     Returns
     -------
-    GeoDataFrame (as trackintel staypoints)
+    Staypoints
         The input staypoints with additional column "purpose".
 
     Note
@@ -278,7 +273,7 @@ def osna_method(staypoints):
 
     Examples
     --------
-    >>> from ti.analysis.location_identification import osna_method
+    >>> from ti.analysis import osna_method
     >>> staypoints = osna_method(staypoints)
     """
     sp_in = staypoints  # no copy --> used to join back later.
@@ -306,24 +301,35 @@ def osna_method(staypoints):
 
     # create a pivot table -> labels "home" and "work" as columns. ("user_id", "location_id" still in index.)
     sp_pivot = sp_agg.unstack()
-    # this line is here to circumvent a bug in pandas .idxmax should return NA if all values in column are
-    # empty but that doesn't work for pd.NaT -> therefor we cast to float64
-    sp_pivot /= pd.Timedelta("1ns")
     # get index of maximum for columns "work" and "home"
     # looks over locations to find maximum for columns
-    sp_idxmax = sp_pivot.groupby(["user_id"]).idxmax(axis="index")
-    # first assign labels
-    for col in sp_idxmax.columns:
-        sp_pivot.loc[sp_idxmax[col].dropna(), "purpose"] = col
+    # use fillna such that idxmax raises no error on columns with only NaT
+    sp_idxmax = sp_pivot.fillna(pd.Timedelta(0)).groupby(["user_id"]).idxmax()
 
-    # The "home" label could overlap with the "work" label
-    # we set the rows where "home" is maximum to zero (pd.NaT) and recalculate index of work maximum.
-    if all(col in sp_idxmax.columns for col in ["work", "home"]):
-        redo_work = sp_idxmax[sp_idxmax["home"] == sp_idxmax["work"]]
-        sp_pivot.loc[redo_work["work"], "purpose"] = "home"
-        sp_pivot.loc[redo_work["work"], "work"] = np.nan
-        sp_idxmax_work = sp_pivot.groupby(["user_id"])["work"].idxmax()
-        sp_pivot.loc[sp_idxmax_work.dropna(), "purpose"] = "work"
+    # preset dtype to avoid upcast (float64 -> object) in pandas (and the corresponding error)
+    sp_pivot["purpose"] = None
+    # assign empty index to idx_work/idx_home to have a default behavior for the intersection later
+    idx_work = idx_home = pd.Index([])
+    if "work" in sp_pivot.columns:
+        # first get all index of max entries (of work) that are not NaT
+        idx_work = sp_pivot.loc[sp_idxmax["work"], "work"].dropna().index
+        # set them to the corresponding purpose (work)
+        sp_pivot.loc[idx_work, "purpose"] = "work"
+
+    if "home" in sp_pivot.columns:
+        # get all index of max entries (of home) that are not NaT
+        idx_home = sp_pivot.loc[sp_idxmax["home"], "home"].dropna().index
+        # set them to the corresponding purpose (home overrides work!)
+        sp_pivot.loc[idx_home, "purpose"] = "home"
+
+    # if override happened recalculate work
+    overlap = idx_home.intersection(idx_work)
+    if not overlap.empty:
+        # remove overlap -> must take another location as everything is NaT on maximum
+        sp_pivot.loc[overlap, "work"] = pd.NaT
+        sp_idxmax = sp_pivot["work"].fillna(pd.Timedelta(0)).groupby(["user_id"]).idxmax()
+        idx_work = sp_pivot.loc[sp_idxmax, "work"].dropna().index
+        sp_pivot.loc[idx_work, "purpose"] = "work"
 
     # now join it back together
     sel = sp_in.columns != "purpose"  # no overlap with older "purpose"
