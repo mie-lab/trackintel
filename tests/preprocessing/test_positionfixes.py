@@ -569,3 +569,20 @@ class TestGenerate_triplegs:
 
         _, tpls = pfs.as_positionfixes.generate_triplegs()
         assert isinstance(tpls, ti.Triplegs)
+
+    def test_overlap_staypoints(self, geolife_pfs_sp_long):
+        """Test if triplegs correctly overlap with staypoints when 'overlap_staypoints' method is used."""
+        pfs, sp = geolife_pfs_sp_long
+        # generate triplegs with overlap_staypoints method
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp, method="overlap_staypoints")
+
+        # filter triplegs and staypoints for user 0
+        user_0_tpls = tpls[tpls["user_id"] == 0]
+        user_0_sp = sp[sp["user_id"] == 0]
+        # tripleg 2 overlaps staypoint 0, which then overlaps tripleg 3
+        assert (
+            user_0_tpls.loc[2, "finished_at"] == user_0_sp.loc[0, "started_at"]
+        ), "Finished at time of tripleg 2 does not overlap with started at time of staypoint 0."
+        assert (
+            user_0_sp.loc[0, "finished_at"] == user_0_tpls.loc[3, "started_at"]
+        ), "Finished at time of staypoint 0 does not overlap with started at time of tripleg 3."
