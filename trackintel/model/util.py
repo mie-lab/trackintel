@@ -52,9 +52,7 @@ class TrackintelGeoDataFrame(GeoDataFrame):
         return _constructor_with_fallback
 
     def _constructor_from_mgr(self, mgr, axes):
-        """
-        GeoPandas cannot use Pandas methods due to some difficulties.
-        Thus they have their own _constructor_from_mgr, which we need to mirror."""
+        """Mirror GeoPandas _constructor_from_mgr method."""
         return self._constructor(GeoDataFrame._constructor_from_mgr(self, mgr, axes))
 
     # Following methods manually set self.__class__ fix to GeoDataFrame.
