@@ -373,7 +373,7 @@ def generate_triplegs(
         tpls = tpls.set_geometry("geom")
         tpls.crs = pfs.crs
     elif method == "overlap_staypoints":
-        tpls = _triplegs_overlap_staypoints(cond_gap, pfs, staypoints)
+        tpls = _generate_triplegs_overlap_staypoints(cond_gap, pfs, staypoints)
     else:
         raise ValueError(
             f"Method unknown. We only support 'between_staypoints' and 'overlap_staypoints'. You passed {method}"
@@ -399,7 +399,7 @@ def generate_triplegs(
     return pfs, Triplegs(tpls)
 
 
-def _triplegs_overlap_staypoints(cond_gap, pfs, staypoints):
+def _generate_triplegs_overlap_staypoints(cond_gap, pfs, staypoints):
     """Connect staypoints with overlapping triplegs
 
     Parameters
@@ -514,7 +514,7 @@ def _generate_staypoints_sliding_user(
 
 
 def __create_new_staypoints(start, end, pfs, elevation_flag, geo_col, last_flag=False):
-    """Create a staypoint with relevant infomation from start to end pfs."""
+    """Create a staypoint with relevant information from start to end pfs."""
     new_sp = {}
 
     # Here we consider pfs[end] time for stp 'finished_at', but only include
