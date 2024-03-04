@@ -236,19 +236,15 @@ def generate_triplegs(
     pfs.sort_values(by=["user_id", "tracked_at"], inplace=True)
 
     # get case:
-    # Case 1: pfs have a column 'staypoint_id'
-    # Case 2: pfs do not have a column 'staypoint_id' but staypoint are provided
-
-    if "staypoint_id" not in pfs.columns:
-        case = 2
-    else:
-        case = 1
+    # Case 1: True, pfs have a column 'staypoint_id'
+    # Case 2: False, pfs do not have a column 'staypoint_id' but staypoint are provided
+    staypoints_exist = "staypoint_id" in pfs.columns
 
     # Preprocessing for case 2:
     # - step 1: Assign staypoint ids to positionfixes by matching timestamps (per user)
     # - step 2: Find first positionfix after a staypoint
     # (relevant if the pfs of sp are not provided, and we can only infer the pfs after sp through time)
-    if case == 2:
+    if not staypoints_exist:
         # initialize the index list of pfs where a tpl will begin
         insert_index_ls = []
         pfs["staypoint_id"] = pd.NA
@@ -302,7 +298,7 @@ def generate_triplegs(
 
     # special check for case 2: pfs that belong to stp might not present in the data.
     # We need to select these pfs using time.
-    if case == 2:
+    if not staypoints_exist:
         cond_stp = cond_stp | cond_staypoints_case2
 
     # combine conditions
@@ -382,7 +378,7 @@ def generate_triplegs(
     # assert validity of triplegs
     tpls, pfs = _drop_invalid_triplegs(tpls, pfs)
 
-    if case == 2:
+    if not staypoints_exist:
         pfs.drop(columns="staypoint_id", inplace=True)
 
     # dtype consistency
