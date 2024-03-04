@@ -422,31 +422,29 @@ def _generate_triplegs_overlap_staypoints(cond_gap, pfs, staypoints):
     # not a new user & not a tripleg & not a gap at staypoint start & not a gap at staypoint end
     cond_not_tpl = ~pd.isna(pfs["staypoint_id"])
     cond_overlap = ~(pfs["user_id"] != pfs["user_id"].shift(1)) & cond_not_tpl
-    cond_overlap_end = cond_overlap & ~cond_gap.shift(-1).fillna(False)
-    cond_overlap_start = cond_overlap & ~cond_gap & pd.isna(pfs["tripleg_id"])
 
     # temporal overlap: overlap tripleg end with start of next staypoint
+    cond_overlap_start = cond_overlap & ~cond_gap & pd.isna(pfs["tripleg_id"])
     pfs.loc[cond_overlap_start, "tripleg_id"] = tpls_ids.shift(1)[cond_overlap_start]
     tpls = pfs.groupby("tripleg_id").agg(
         user_id=("user_id", "first"), started_at=("tracked_at", "min"), finished_at=("tracked_at", "max")
     )
 
     # spatial overlap: overlap tripleg with the location of previous and next staypoint
-    pfs.loc[cond_overlap_start, "tripleg_id_geom"] = tpls_ids.shift(1)[cond_overlap_start]
-    cond_empty = pd.isna(pfs["tripleg_id_geom"])
-    pfs.loc[cond_overlap_end & cond_empty, "tripleg_id_geom"] = tpls_ids.shift(-1)[cond_overlap_end & cond_empty]
-    cond_empty = pd.isna(pfs["tripleg_id_geom"])
-    pfs.loc[cond_empty, "tripleg_id_geom"] = tpls_ids[cond_empty]
+    cond_overlap_end = cond_overlap & ~cond_gap.shift(-1).fillna(False) & pd.isna(pfs["tripleg_id"])
+    pfs.loc[cond_overlap_end, "tripleg_id"] = tpls_ids.shift(-1)[cond_overlap_end]
+    cond_empty = pd.isna(pfs["tripleg_id"])
+    pfs.loc[cond_empty, "tripleg_id"] = tpls_ids[cond_empty]
 
     # replace geometry of staypoint positionfixes with staypoint geometry
-    pfs_copy = pfs.copy()
+    pfs_copy = pfs[["tripleg_id", "staypoint_id", pfs.geometry.name]].copy()
     if staypoints is not None:
         pfs_copy.loc[cond_not_tpl, pfs_copy.geometry.name] = staypoints.loc[
             pfs_copy.loc[cond_not_tpl, "staypoint_id"]
         ].geometry.values
 
     # create and set tripleg geometries
-    tpls["geom"] = pfs_copy.groupby("tripleg_id_geom")[pfs_copy.geometry.name].apply(lambda x: LineString(x))
+    tpls["geom"] = pfs_copy.groupby("tripleg_id")[pfs_copy.geometry.name].apply(lambda x: LineString(x))
     tpls = tpls.set_geometry("geom")
     tpls.crs = pfs.crs
 
