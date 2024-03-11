@@ -365,7 +365,7 @@ def generate_triplegs(
         tpls = tpls.set_geometry("geom")
         tpls.crs = pfs.crs
     elif method == "overlap_staypoints":
-        tpls, pfs = _generate_triplegs_overlap_staypoints(cond_temporal_gap, pfs, staypoints)
+        tpls, pfs = _generate_triplegs_overlap_staypoints(cond_temporal_gap, pfs)
     else:
         raise ValueError(
             f"Method unknown. We only support 'between_staypoints' and 'overlap_staypoints'. You passed {method}"
@@ -391,14 +391,13 @@ def generate_triplegs(
     return pfs, Triplegs(tpls)
 
 
-def _generate_triplegs_overlap_staypoints(cond_temporal_gap, pfs, staypoints):
+def _generate_triplegs_overlap_staypoints(cond_temporal_gap, pfs):
     """Connect staypoints with overlapping triplegs
 
     Parameters
     ----------
     cond_temporal_gap : A boolean mask indicating gaps in the pfs data frame.
     pfs : Positionfixes
-    staypoints : Staypoints
 
     Returns
     -------
