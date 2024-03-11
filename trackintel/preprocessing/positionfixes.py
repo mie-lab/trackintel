@@ -185,10 +185,11 @@ def generate_triplegs(
         The staypoints (corresponding to the positionfixes). If this is not passed, the
         positionfixes need 'staypoint_id' associated with them.
 
-    method: {'between_staypoints'}
+    method: {'between_staypoints', 'overlap_staypoints'}
         Method to create triplegs. 'between_staypoints' method defines a tripleg as all positionfixes
-        between two staypoints (no overlap). This method requires either a column 'staypoint_id' on
-        the positionfixes or passing staypoints as an input.
+        between two staypoints (no overlap). 'overlap_staypoints' method defines a tripleg as all positionfixes
+        between two staypoints and includes the coordinates of the staypoints. The methods require either a
+        column 'staypoint_id' on the positionfixes or passing staypoints as an input.
 
     gap_threshold: float, default 15 (minutes)
         Maximum allowed temporal gap size in minutes. If tracking data is missing for more than
@@ -234,172 +235,231 @@ def generate_triplegs(
     # we need to ensure pfs is properly ordered
     pfs.sort_values(by=["user_id", "tracked_at"], inplace=True)
 
+    # get case:
+    # Case 1: True, pfs have a column 'staypoint_id'
+    # Case 2: False, pfs do not have a column 'staypoint_id' but staypoint are provided
+    staypoints_exist = "staypoint_id" in pfs.columns
+
+    # Preprocessing for case 2:
+    # - step 1: Assign staypoint ids to positionfixes by matching timestamps (per user)
+    # - step 2: Find first positionfix after a staypoint
+    # (relevant if the pfs of sp are not provided, and we can only infer the pfs after sp through time)
+    if not staypoints_exist:
+        # initialize the index list of pfs where a tpl will begin
+        insert_index_ls = []
+        pfs["staypoint_id"] = pd.NA
+
+        # initalize the variable 'disable' to control display of progress bar.
+        disable = not print_progress
+
+        for user_id_this in tqdm(pfs["user_id"].unique(), disable=disable):
+            sp_user = staypoints[staypoints["user_id"] == user_id_this]
+            pfs_user = pfs[pfs["user_id"] == user_id_this]
+
+            # step 1
+            # All positionfixes with timestamp between staypoints are assigned the value 0
+            # Intersect all positionfixes of a user with all staypoints of the same user
+            intervals = pd.IntervalIndex.from_arrays(sp_user["started_at"], sp_user["finished_at"], closed="left")
+            is_in_interval = pfs_user["tracked_at"].apply(lambda x: intervals.contains(x).any()).astype("bool")
+            pfs.loc[is_in_interval[is_in_interval].index, "staypoint_id"] = 0
+
+            # step 2
+            # Identify first positionfix after a staypoint
+            # find index of closest positionfix with equal or greater timestamp.
+            tracked_at_sorted = pfs_user["tracked_at"].sort_values()
+            insert_position_user = tracked_at_sorted.searchsorted(sp_user["finished_at"])
+            insert_index_user = tracked_at_sorted.iloc[insert_position_user].index
+
+            # store the insert insert_position_user in an array
+            insert_index_ls.extend(list(insert_index_user))
+        #
+        cond_staypoints_case2 = pd.Series(False, index=pfs.index)
+        cond_staypoints_case2.loc[insert_index_ls] = True
+
+    # initialize tripleg_id with pd.NA and fill all pfs that belong to staypoints with -1
+    # pd.NA will be replaced later with tripleg ids
+    pfs["tripleg_id"] = pd.NA
+    pfs.loc[~pd.isna(pfs["staypoint_id"]), "tripleg_id"] = -1
+
+    # get all conditions that trigger a new tripleg.
+    # condition 1: a positionfix belongs to a new tripleg if the user changes. For this we need to sort pfs.
+    # The first positionfix of the new user is the start of a new tripleg (if it is no staypoint)
+    cond_new_user = (pfs["user_id"] != pfs["user_id"].shift(1)) & pd.isna(pfs["staypoint_id"])
+
+    # condition 2: Temporal gaps
+    # if there is a gap that is longer than gap_threshold minutes, we start a new tripleg
+    cond_gap = pfs["tracked_at"] - pfs["tracked_at"].shift(1) > datetime.timedelta(minutes=gap_threshold)
+
+    # condition 3: staypoint
+    # By our definition the pf after a stp is the first pf of a tpl.
+    # this works only for numeric staypoint ids, TODO: can we change?
+    _stp_id = (pfs["staypoint_id"] + 1).fillna(0)
+    cond_stp = (_stp_id - _stp_id.shift(1)) != 0
+
+    # special check for case 2: pfs that belong to stp might not present in the data.
+    # We need to select these pfs using time.
+    if not staypoints_exist:
+        cond_stp = cond_stp | cond_staypoints_case2
+
+    # combine conditions
+    cond_all = cond_new_user | cond_gap | cond_stp
+    # make sure not to create triplegs within staypoints:
+    cond_all = cond_all & pd.isna(pfs["staypoint_id"])
+
+    # get the start position of tpls
+    tpls_starts = np.where(cond_all)[0]
+    tpls_diff = np.diff(tpls_starts)
+
+    # get the start position of staypoint
+    # pd.NA causes error in boolean comparision, replace to -1
+    sp_id = pfs["staypoint_id"].copy().fillna(-1)
+    unique_sp, sp_starts = np.unique(sp_id, return_index=True)
+    # get the index of where the tpls_starts belong in sp_starts
+    sp_starts = sp_starts[unique_sp != -1]
+    tpls_place_in_sp = np.searchsorted(sp_starts, tpls_starts)
+
+    # get the length between each stp and tpl
+    try:
+        # pfs ends with stp
+        sp_tpls_diff = sp_starts[tpls_place_in_sp] - tpls_starts
+
+        # tpls_lengths is the minimum of tpls_diff and sp_tpls_diff
+        # sp_tpls_diff one larger than tpls_diff
+        tpls_lengths = np.minimum(tpls_diff, sp_tpls_diff[:-1])
+
+        # the last tpl has length (last stp begin - last tpl begin)
+        tpls_lengths = np.append(tpls_lengths, sp_tpls_diff[-1])
+    except IndexError:
+        # pfs ends with tpl
+        # ignore the tpls after the last sp sp_tpls_diff
+        ignore_index = tpls_place_in_sp == len(sp_starts)
+        sp_tpls_diff = sp_starts[tpls_place_in_sp[~ignore_index]] - tpls_starts[~ignore_index]
+
+        # tpls_lengths is the minimum of tpls_diff and sp_tpls_diff
+        tpls_lengths = np.minimum(tpls_diff[: len(sp_tpls_diff)], sp_tpls_diff)
+        tpls_lengths = np.append(tpls_lengths, tpls_diff[len(sp_tpls_diff) :])
+
+        # add the length of the last tpl
+        tpls_lengths = np.append(tpls_lengths, len(pfs) - tpls_starts[-1])
+
+    # a valid linestring needs 2 points
+    cond_to_remove = np.take(tpls_starts, np.where(tpls_lengths < 2)[0])
+    cond_all.iloc[cond_to_remove] = False
+    # Note: cond_to_remove is the array index of pfs.index and not pfs.index itself
+    pfs.loc[pfs.index[cond_to_remove], "tripleg_id"] = -1
+
+    # assign an incrementing id to all positionfixes that start a tripleg
+    # create triplegs
+    pfs.loc[cond_all, "tripleg_id"] = np.arange(cond_all.sum())
+
+    # fill the pd.NAs with the previously observed tripleg_id
+    # pfs not belonging to tripleg are also propagated (with -1)
+    pfs["tripleg_id"] = pfs["tripleg_id"].ffill()
+    # assign back pd.NA to -1
+    pfs.loc[pfs["tripleg_id"] == -1, "tripleg_id"] = pd.NA
+
+    # connect staypoints with triplegs
     if method == "between_staypoints":
-        # get case:
-        # Case 1: pfs have a column 'staypoint_id'
-        # Case 2: pfs do not have a column 'staypoint_id' but staypoint are provided
-
-        if "staypoint_id" not in pfs.columns:
-            case = 2
-        else:
-            case = 1
-
-        # Preprocessing for case 2:
-        # - step 1: Assign staypoint ids to positionfixes by matching timestamps (per user)
-        # - step 2: Find first positionfix after a staypoint
-        # (relevant if the pfs of sp are not provided, and we can only infer the pfs after sp through time)
-        if case == 2:
-            # initialize the index list of pfs where a tpl will begin
-            insert_index_ls = []
-            pfs["staypoint_id"] = pd.NA
-
-            # initalize the variable 'disable' to control display of progress bar.
-            disable = not print_progress
-
-            for user_id_this in tqdm(pfs["user_id"].unique(), disable=disable):
-                sp_user = staypoints[staypoints["user_id"] == user_id_this]
-                pfs_user = pfs[pfs["user_id"] == user_id_this]
-
-                # step 1
-                # All positionfixes with timestamp between staypoints are assigned the value 0
-                # Intersect all positionfixes of a user with all staypoints of the same user
-                intervals = pd.IntervalIndex.from_arrays(sp_user["started_at"], sp_user["finished_at"], closed="left")
-                is_in_interval = pfs_user["tracked_at"].apply(lambda x: intervals.contains(x).any()).astype("bool")
-                pfs.loc[is_in_interval[is_in_interval].index, "staypoint_id"] = 0
-
-                # step 2
-                # Identify first positionfix after a staypoint
-                # find index of closest positionfix with equal or greater timestamp.
-                tracked_at_sorted = pfs_user["tracked_at"].sort_values()
-                insert_position_user = tracked_at_sorted.searchsorted(sp_user["finished_at"])
-                insert_index_user = tracked_at_sorted.iloc[insert_position_user].index
-
-                # store the insert insert_position_user in an array
-                insert_index_ls.extend(list(insert_index_user))
-            #
-            cond_staypoints_case2 = pd.Series(False, index=pfs.index)
-            cond_staypoints_case2.loc[insert_index_ls] = True
-
-        # initialize tripleg_id with pd.NA and fill all pfs that belong to staypoints with -1
-        # pd.NA will be replaced later with tripleg ids
-        pfs["tripleg_id"] = pd.NA
-        pfs.loc[~pd.isna(pfs["staypoint_id"]), "tripleg_id"] = -1
-
-        # get all conditions that trigger a new tripleg.
-        # condition 1: a positionfix belongs to a new tripleg if the user changes. For this we need to sort pfs.
-        # The first positionfix of the new user is the start of a new tripleg (if it is no staypoint)
-        cond_new_user = (pfs["user_id"] != pfs["user_id"].shift(1)) & pd.isna(pfs["staypoint_id"])
-
-        # condition 2: Temporal gaps
-        # if there is a gap that is longer than gap_threshold minutes, we start a new tripleg
-        cond_gap = pfs["tracked_at"] - pfs["tracked_at"].shift(1) > datetime.timedelta(minutes=gap_threshold)
-
-        # condition 3: staypoint
-        # By our definition the pf after a stp is the first pf of a tpl.
-        # this works only for numeric staypoint ids, TODO: can we change?
-        _stp_id = (pfs["staypoint_id"] + 1).fillna(0)
-        cond_stp = (_stp_id - _stp_id.shift(1)) != 0
-
-        # special check for case 2: pfs that belong to stp might not present in the data.
-        # We need to select these pfs using time.
-        if case == 2:
-            cond_stp = cond_stp | cond_staypoints_case2
-
-        # combine conditions
-        cond_all = cond_new_user | cond_gap | cond_stp
-        # make sure not to create triplegs within staypoints:
-        cond_all = cond_all & pd.isna(pfs["staypoint_id"])
-
-        # get the start position of tpls
-        tpls_starts = np.where(cond_all)[0]
-        tpls_diff = np.diff(tpls_starts)
-
-        # get the start position of staypoint
-        # pd.NA causes error in boolean comparision, replace to -1
-        sp_id = pfs["staypoint_id"].copy().fillna(-1)
-        unique_sp, sp_starts = np.unique(sp_id, return_index=True)
-        # get the index of where the tpls_starts belong in sp_starts
-        sp_starts = sp_starts[unique_sp != -1]
-        tpls_place_in_sp = np.searchsorted(sp_starts, tpls_starts)
-
-        # get the length between each stp and tpl
-        try:
-            # pfs ends with stp
-            sp_tpls_diff = sp_starts[tpls_place_in_sp] - tpls_starts
-
-            # tpls_lengths is the minimum of tpls_diff and sp_tpls_diff
-            # sp_tpls_diff one larger than tpls_diff
-            tpls_lengths = np.minimum(tpls_diff, sp_tpls_diff[:-1])
-
-            # the last tpl has length (last stp begin - last tpl begin)
-            tpls_lengths = np.append(tpls_lengths, sp_tpls_diff[-1])
-        except IndexError:
-            # pfs ends with tpl
-            # ignore the tpls after the last sp sp_tpls_diff
-            ignore_index = tpls_place_in_sp == len(sp_starts)
-            sp_tpls_diff = sp_starts[tpls_place_in_sp[~ignore_index]] - tpls_starts[~ignore_index]
-
-            # tpls_lengths is the minimum of tpls_diff and sp_tpls_diff
-            tpls_lengths = np.minimum(tpls_diff[: len(sp_tpls_diff)], sp_tpls_diff)
-            tpls_lengths = np.append(tpls_lengths, tpls_diff[len(sp_tpls_diff) :])
-
-            # add the length of the last tpl
-            tpls_lengths = np.append(tpls_lengths, len(pfs) - tpls_starts[-1])
-
-        # a valid linestring needs 2 points
-        cond_to_remove = np.take(tpls_starts, np.where(tpls_lengths < 2)[0])
-        cond_all.iloc[cond_to_remove] = False
-        # Note: cond_to_remove is the array index of pfs.index and not pfs.index itself
-        pfs.loc[pfs.index[cond_to_remove], "tripleg_id"] = -1
-
-        # assign an incrementing id to all positionfixes that start a tripleg
-        # create triplegs
-        pfs.loc[cond_all, "tripleg_id"] = np.arange(cond_all.sum())
-
-        # fill the pd.NAs with the previously observed tripleg_id
-        # pfs not belonging to tripleg are also propagated (with -1)
-        pfs["tripleg_id"] = pfs["tripleg_id"].ffill()
-        # assign back pd.NA to -1
-        pfs.loc[pfs["tripleg_id"] == -1, "tripleg_id"] = pd.NA
-
-        posfix_grouper = pfs.groupby("tripleg_id")
-
-        tpls = posfix_grouper.agg(
-            {"user_id": ["first"], "tracked_at": ["min", "max"], pfs.geometry.name: list}
-        )  # could add a "number of pfs": can be any column "count"
-
-        # prepare dataframe: Rename columns; read/set geometry/crs;
-        # Order of column has to correspond to the order of the groupby statement
-        tpls.columns = ["user_id", "started_at", "finished_at", "geom"]
-        tpls["geom"] = tpls["geom"].apply(LineString)
+        tpls = pfs.groupby("tripleg_id").agg(
+            user_id=("user_id", "first"),
+            started_at=("tracked_at", "min"),
+            finished_at=("tracked_at", "max"),
+            geom=(pfs.geometry.name, lambda x: LineString(x.tolist())),
+        )
         tpls = tpls.set_geometry("geom")
         tpls.crs = pfs.crs
-
-        # assert validity of triplegs
-        tpls, pfs = _drop_invalid_triplegs(tpls, pfs)
-
-        if case == 2:
-            pfs.drop(columns="staypoint_id", inplace=True)
-
-        # dtype consistency
-        pfs["tripleg_id"] = pfs["tripleg_id"].astype("Int64")
-        tpls.index = tpls.index.astype("int64")
-        tpls.index.name = "id"
-
-        # user_id of tpls should be the same as pfs
-        tpls["user_id"] = tpls["user_id"].astype(pfs["user_id"].dtype)
-        if len(tpls) == 0:
-            warnings.warn("No triplegs can be generated, returning empty tpls.")
-            return pfs, tpls
-
-        return pfs, Triplegs(tpls)
-
+    elif method == "overlap_staypoints":
+        tpls = _generate_triplegs_overlap_staypoints(cond_gap, pfs, staypoints)
     else:
-        raise ValueError(f"Method unknown. We only support 'between_staypoints'. You passed {method}")
+        raise ValueError(
+            f"Method unknown. We only support 'between_staypoints' and 'overlap_staypoints'. You passed {method}"
+        )
+
+    # assert validity of triplegs
+    tpls, pfs = _drop_invalid_triplegs(tpls, pfs)
+
+    if not staypoints_exist:
+        pfs.drop(columns="staypoint_id", inplace=True)
+
+    # dtype consistency
+    pfs["tripleg_id"] = pfs["tripleg_id"].astype("Int64")
+    tpls.index = tpls.index.astype("int64")
+    tpls.index.name = "id"
+
+    # user_id of tpls should be the same as pfs
+    tpls["user_id"] = tpls["user_id"].astype(pfs["user_id"].dtype)
+    if len(tpls) == 0:
+        warnings.warn("No triplegs can be generated, returning empty tpls.")
+        return pfs, tpls
+
+    return pfs, Triplegs(tpls)
+
+
+def _generate_triplegs_overlap_staypoints(cond_gap, pfs, staypoints):
+    """Connect staypoints with overlapping triplegs
+
+    Parameters
+    ----------
+    cond_gap : A boolean mask indicating gaps in the pfs data frame.
+    pfs : Positionfixes
+    staypoints : Staypoints
+
+    Returns
+    -------
+    tpls: Triplegs
+        tpls with geometries.
+
+    Notes
+    -----
+    In case of a staypoint with only one positionfix the previous tripleg will have a spatial overlap with the
+    staypoint, while the following tripleg will not overlap with the staypoint. Otherwise, the positionfix of the
+    staypoints would need a duplication.
+    """
+    # keep initial ids from the between staypoints method
+    between_tpls_ids = pfs["tripleg_id"].copy()
+
+    # conditions to identify overlap positions in the positionfixes:
+    # not a new user & not a tripleg & not a gap at staypoint start & not a gap at staypoint end
+    cond_not_tpl = ~pd.isna(pfs["staypoint_id"])
+    cond_overlap = ~(pfs["user_id"] != pfs["user_id"].shift(1)) & cond_not_tpl
+
+    # temporal overlap: overlap tripleg end with start of next staypoint
+    cond_overlap_start = cond_overlap & ~cond_gap & pd.isna(pfs["tripleg_id"])
+    pfs.loc[cond_overlap_start, "tripleg_id"] = between_tpls_ids.shift(1)[cond_overlap_start]
+    tpls = pfs.groupby("tripleg_id").agg(
+        user_id=("user_id", "first"), started_at=("tracked_at", "min"), finished_at=("tracked_at", "max")
+    )
+
+    # spatial overlap: overlap tripleg with the location of previous and next staypoint
+    cond_overlap_end = cond_overlap & ~cond_gap.shift(-1).fillna(False) & pd.isna(pfs["tripleg_id"])
+    pfs.loc[cond_overlap_end, "tripleg_id"] = between_tpls_ids.shift(-1)[cond_overlap_end]
+    cond_empty = pd.isna(pfs["tripleg_id"])
+    pfs.loc[cond_empty, "tripleg_id"] = between_tpls_ids[cond_empty]
+
+    # replace geometry of staypoint positionfixes with staypoint geometry
+    pfs_copy = pfs[["tripleg_id", "staypoint_id", pfs.geometry.name]].copy()
+    if staypoints is not None:
+        pfs_copy.loc[cond_not_tpl, pfs_copy.geometry.name] = staypoints.loc[
+            pfs_copy.loc[cond_not_tpl, "staypoint_id"]
+        ].geometry.values
+
+    # create and set tripleg geometries
+    tpls["geom"] = pfs_copy.groupby("tripleg_id")[pfs_copy.geometry.name].apply(lambda x: LineString(x))
+    tpls = tpls.set_geometry("geom")
+    tpls.crs = pfs.crs
+
+    return tpls
 
 
 def _generate_staypoints_sliding_user(
-    df, geo_col, elevation_flag, dist_threshold, time_threshold, gap_threshold, distance_metric, include_last=False
+    df,
+    geo_col,
+    elevation_flag,
+    dist_threshold,
+    time_threshold,
+    gap_threshold,
+    distance_metric,
+    include_last=False,
 ):
     """User level staypoint generation using sliding method, see generate_staypoints() function for parameter meaning."""
     if distance_metric == "haversine":
@@ -448,7 +508,7 @@ def _generate_staypoints_sliding_user(
 
 
 def __create_new_staypoints(start, end, pfs, elevation_flag, geo_col, last_flag=False):
-    """Create a staypoint with relevant infomation from start to end pfs."""
+    """Create a staypoint with relevant information from start to end pfs."""
     new_sp = {}
 
     # Here we consider pfs[end] time for stp 'finished_at', but only include

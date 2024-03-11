@@ -1,13 +1,13 @@
 import datetime
 import os
 import sys
-from pandas import Timestamp
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pytest
 from geopandas.testing import assert_geodataframe_equal
+from pandas import Timestamp
 from shapely.geometry import Point
 
 import trackintel as ti
@@ -339,7 +339,7 @@ class Test__create_new_staypoints:
 
 
 class TestGenerate_triplegs:
-    """Tests for generate_triplegs() method."""
+    """Tests for generate_triplegs() with 'between_staypoints' method."""
 
     def test_empty_generation(self, example_positionfixes_isolated):
         """The function should run without error if the generation result is empty (no tripleg could be generated)."""
@@ -553,7 +553,7 @@ class TestGenerate_triplegs:
             assert all(diff >= np.timedelta64(datetime.timedelta()))
 
     def test_str_userid(self, example_positionfixes_isolated):
-        """Tripleg generation should also work if the user IDs are strings"""
+        """Tripleg generation should also work if the user IDs are strings."""
         pfs = example_positionfixes_isolated
         # remove isolated - not needed for this test
         pfs = pfs[~pfs.index.isin([1, 2])].copy()
@@ -569,3 +569,46 @@ class TestGenerate_triplegs:
 
         _, tpls = pfs.as_positionfixes.generate_triplegs()
         assert isinstance(tpls, ti.Triplegs)
+
+
+class TestGenerate_triplegs_overlap:
+    """Tests for generate_triplegs() with 'overlap_staypoints' method."""
+
+    def test_sp_tpls_overlap(self, geolife_pfs_sp_long):
+        """Triplegs should overlap staypoint with more than one positionfix."""
+        pfs, sp = geolife_pfs_sp_long
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp, method="overlap_staypoints")
+
+        tpl_0 = tpls[tpls["user_id"] == 0].loc[2]
+        sp = sp[sp["user_id"] == 0].loc[0]
+        tpl_1 = tpls[tpls["user_id"] == 0].loc[3]
+
+        assert tpl_0["finished_at"] == sp["started_at"]
+        assert sp["finished_at"] == tpl_1["started_at"]
+        assert Point(tpl_0["geom"].coords[-1]) == sp["geom"]
+        assert sp["geom"] == Point(tpl_1["geom"].coords[0])
+
+    def test_sp_one_pfs_tpls_overlap(self, geolife_pfs_sp_long):
+        """Triplegs should overlap staypoint in time with only one positionfix, but only the first tripleg should
+        spatially overlap the staypoint."""
+        pfs, sp = geolife_pfs_sp_long
+        pfs, tpls = pfs.as_positionfixes.generate_triplegs(sp, method="overlap_staypoints")
+
+        tpl_0 = tpls[tpls["user_id"] == 1].loc[13]
+        sp = sp[sp["user_id"] == 1].loc[6]
+        tpl_1 = tpls[tpls["user_id"] == 1].loc[14]
+
+        assert tpl_0["finished_at"] == sp["started_at"]
+        assert sp["finished_at"] == tpl_1["started_at"]
+        assert Point(tpl_0["geom"].coords[-1]) == sp["geom"]
+        # no spatial overlap with second tripleg
+        assert sp["geom"] != Point(tpl_1["geom"].coords[0])
+
+    def test_str_userid(self, example_positionfixes_isolated):
+        """Tripleg generation should also work if the user IDs are strings."""
+        pfs = example_positionfixes_isolated
+        # remove isolated - not needed for this test
+        pfs = pfs[~pfs.index.isin([1, 2])].copy()
+        # set user ID to string
+        pfs["user_id"] = pfs["user_id"].astype(str) + "not_numerical_interpretable_str"
+        pfs, _ = pfs.as_positionfixes.generate_triplegs(method="overlap_staypoints")
