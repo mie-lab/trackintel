@@ -573,8 +573,10 @@ class TestGenerate_triplegs_overlap_staypoints:
 
         assert tpl_0["finished_at"] == sp["started_at"]
         assert sp["finished_at"] == tpl_1["started_at"]
-        assert Point(tpl_0["geom"].coords[-1]) == sp["geom"]
-        assert sp["geom"] == Point(tpl_1["geom"].coords[0])
+        # last point of tpl should correspond to first pfs of next sp
+        assert Point(tpl_0["geom"].coords[-1]) == pfs.loc[sp.name == pfs["staypoint_id"]].iloc[0].geom
+        # first point of next tpl should correspond to last pfs of previous sp
+        assert Point(tpl_1["geom"].coords[0]) == pfs.loc[sp.name == pfs["staypoint_id"]].iloc[-1].geom
 
     def test_sp_one_pfs_tpls_overlap(self, geolife_pfs_sp_long):
         """Triplegs should overlap staypoint in time with only one positionfix, but only the first tripleg should
@@ -588,9 +590,27 @@ class TestGenerate_triplegs_overlap_staypoints:
 
         assert tpl_0["finished_at"] == sp["started_at"]
         assert sp["finished_at"] == tpl_1["started_at"]
-        assert Point(tpl_0["geom"].coords[-1]) == sp["geom"]
+
+        assert Point(tpl_0["geom"].coords[-1]) == pfs.loc[sp.name == pfs["staypoint_id"]].iloc[0].geom
         # no spatial overlap with second tripleg
-        assert sp["geom"] != Point(tpl_1["geom"].coords[0])
+        assert pfs.loc[sp.name == pfs["staypoint_id"]].iloc[0].geom != Point(tpl_1["geom"].coords[0])
+
+    def test_stability(self, geolife_pfs_sp_long):
+        """Checks if the results are same for different cases."""
+        pfs, sp = geolife_pfs_sp_long
+        # case 1
+        pfs_case1, tpls_case1 = pfs.generate_triplegs(sp, method="overlap_staypoints")
+        # case 1 without sp
+        pfs_case1_wo, tpls_case1_wo = pfs.generate_triplegs(method="overlap_staypoints")
+
+        # case 2
+        pfs = pfs.drop(columns="staypoint_id")
+        pfs_case2, tpls_case2 = pfs.generate_triplegs(sp, method="overlap_staypoints")
+
+        assert_geodataframe_equal(pfs_case1.drop(columns="staypoint_id", axis=1), pfs_case2)
+        assert_geodataframe_equal(pfs_case1, pfs_case1_wo)
+        assert_geodataframe_equal(tpls_case1, tpls_case2)
+        assert_geodataframe_equal(tpls_case1, tpls_case1_wo)
 
     def test_str_userid(self, example_positionfixes_isolated):
         """Tripleg generation should also work if the user IDs are strings."""

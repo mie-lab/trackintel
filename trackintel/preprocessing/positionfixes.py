@@ -436,15 +436,8 @@ def _generate_triplegs_overlap_staypoints(cond_temporal_gap, pfs, staypoints):
     cond_empty = pd.isna(pfs["tripleg_id"])
     pfs.loc[cond_empty, "tripleg_id"] = between_tpls_ids[cond_empty]
 
-    # replace geometry of staypoint positionfixes with staypoint geometry
-    pfs_copy = pfs[["tripleg_id", "staypoint_id", pfs.geometry.name]].copy()
-    if staypoints is not None:
-        pfs_copy.loc[cond_not_tpl, pfs_copy.geometry.name] = staypoints.loc[
-            pfs_copy.loc[cond_not_tpl, "staypoint_id"]
-        ].geometry.values
-
     # create and set tripleg geometries
-    tpls["geom"] = pfs_copy.groupby("tripleg_id")[pfs_copy.geometry.name].apply(lambda x: LineString(x))
+    tpls["geom"] = pfs.groupby("tripleg_id")[pfs.geometry.name].apply(lambda x: LineString(x))
     tpls = tpls.set_geometry("geom")
     tpls.crs = pfs.crs
 
