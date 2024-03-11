@@ -415,8 +415,8 @@ def _generate_triplegs_overlap_staypoints(cond_gap, pfs, staypoints):
     staypoint, while the following tripleg will not overlap with the staypoint. Otherwise, the positionfix of the
     staypoints would need a duplication.
     """
-    # initialize: keep original ids
-    tpls_ids = pfs["tripleg_id"].copy()
+    # keep initial ids from the between staypoints method
+    between_tpls_ids = pfs["tripleg_id"].copy()
 
     # conditions to identify overlap positions in the positionfixes:
     # not a new user & not a tripleg & not a gap at staypoint start & not a gap at staypoint end
@@ -425,16 +425,16 @@ def _generate_triplegs_overlap_staypoints(cond_gap, pfs, staypoints):
 
     # temporal overlap: overlap tripleg end with start of next staypoint
     cond_overlap_start = cond_overlap & ~cond_gap & pd.isna(pfs["tripleg_id"])
-    pfs.loc[cond_overlap_start, "tripleg_id"] = tpls_ids.shift(1)[cond_overlap_start]
+    pfs.loc[cond_overlap_start, "tripleg_id"] = between_tpls_ids.shift(1)[cond_overlap_start]
     tpls = pfs.groupby("tripleg_id").agg(
         user_id=("user_id", "first"), started_at=("tracked_at", "min"), finished_at=("tracked_at", "max")
     )
 
     # spatial overlap: overlap tripleg with the location of previous and next staypoint
     cond_overlap_end = cond_overlap & ~cond_gap.shift(-1).fillna(False) & pd.isna(pfs["tripleg_id"])
-    pfs.loc[cond_overlap_end, "tripleg_id"] = tpls_ids.shift(-1)[cond_overlap_end]
+    pfs.loc[cond_overlap_end, "tripleg_id"] = between_tpls_ids.shift(-1)[cond_overlap_end]
     cond_empty = pd.isna(pfs["tripleg_id"])
-    pfs.loc[cond_empty, "tripleg_id"] = tpls_ids[cond_empty]
+    pfs.loc[cond_empty, "tripleg_id"] = between_tpls_ids[cond_empty]
 
     # replace geometry of staypoint positionfixes with staypoint geometry
     pfs_copy = pfs[["tripleg_id", "staypoint_id", pfs.geometry.name]].copy()
