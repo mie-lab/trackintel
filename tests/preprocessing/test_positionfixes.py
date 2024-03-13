@@ -615,14 +615,13 @@ class TestGenerate_triplegs_overlap_staypoints:
         assert_geodataframe_equal(pfs_case1.drop(columns="staypoint_id", axis=1), pfs_case2)
         # assert_geodataframe_equal(tpls_case1, tpls_case2)
 
-    def test_str_userid(self, example_positionfixes_isolated):
+    def test_str_userid(self, geolife_pfs_sp_long):
         """Tripleg generation should also work if the user IDs are strings."""
-        pfs = example_positionfixes_isolated
-        # remove isolated - not needed for this test
-        pfs = pfs[~pfs.index.isin([1, 2])].copy()
+        pfs, sp = geolife_pfs_sp_long
+
         # set user ID to string
         pfs["user_id"] = pfs["user_id"].astype(str) + "not_numerical_interpretable_str"
-        pfs, _ = pfs.generate_triplegs(method="overlap_staypoints")
+        pfs, _ = pfs.generate_triplegs(staypoints=sp, method="overlap_staypoints")
 
     def test_staypoint_inputs(self, geolife_pfs_sp_long):
         """Test if TypeError will be raised when no staypoint is provided."""
