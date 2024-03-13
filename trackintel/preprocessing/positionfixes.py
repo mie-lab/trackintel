@@ -188,8 +188,7 @@ def generate_triplegs(
     method: {'between_staypoints', 'overlap_staypoints'}
         Method to create triplegs. 'between_staypoints' method defines a tripleg as all positionfixes
         between two staypoints (no overlap). 'overlap_staypoints' method defines a tripleg as all positionfixes
-        between two staypoints and includes the coordinates of the staypoints. The methods require either a
-        column 'staypoint_id' on the positionfixes or passing staypoints as an input.
+        between two staypoints and includes the coordinates of the staypoints. The latter method require passing staypoints as an input.
 
     gap_threshold: float, default 15 (minutes)
         Maximum allowed temporal gap size in minutes. If tracking data is missing for more than
@@ -212,7 +211,7 @@ def generate_triplegs(
 
     Following the assumptions in the function generate_staypoints(), to ensure consistency, the time extend and geometry for triplegs is defined as follows:
         - 'between_staypoints': The generated tripleg will not have overlapping positionfix with the existing staypoints, thus triplegs' 'geometry' does not have common pfs as sp. 'started_at' is the timestamp of the first pf after a sp, and 'finished_at' is the time of the last pf before a sp. This means a temporal gap will occur between the first positionfix of sp and the last pf of tripleg: pfs_stp_first['tracked_at'] - pfs_tpl_last['tracked_at'] != 0. No temporal gap will occur between sp ends and tripleg starts (as per sp time definition).
-        - 'overlap_staypoints': The generated tripleg will have common start and end positionfix with the existing staypoints, thus triplegs' 'geometry' have common start and end pfs as sp. 'started_at' is the timestamp of the first pf after a sp (same as 'between_staypoints', to be consistent with generate_staypoints()), and 'finished_at' is the time of the first pf of a following sp. Temporal gaps will not occur between sp and triplegs.
+        - 'overlap_staypoints': The generated tripleg will have common start and end point geometries with the existing staypoints. 'started_at' is the timestamp of the first pf after a sp (same as 'between_staypoints', to be consistent with generate_staypoints()), and 'finished_at' is the time of the first pf of a following sp. Temporal gaps will not occur between sp and triplegs.
 
     Examples
     --------
