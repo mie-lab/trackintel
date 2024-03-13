@@ -219,8 +219,6 @@ def generate_triplegs(
     >>> pfs.generate_triplegs('between_staypoints', gap_threshold=15)
     """
     Positionfixes.validate(positionfixes)
-    if staypoints is not None:
-        Staypoints.validate(staypoints)
     # copy the original pfs for adding 'tripleg_id' column
     pfs = positionfixes.copy()
 
@@ -235,6 +233,17 @@ def generate_triplegs(
     # Case 1: True, pfs have a column 'staypoint_id'
     # Case 2: False, pfs do not have a column 'staypoint_id' but staypoint are provided
     staypoints_exist = "staypoint_id" in pfs.columns
+
+    if staypoints is not None:
+        Staypoints.validate(staypoints)
+    if (staypoints is None) and (not staypoints_exist):
+        raise TypeError("staypoints input must be provide for pfs without staypoint_id column.")
+    if (staypoints is None) and (method == "overlap_staypoints"):
+        raise TypeError("staypoints input must be provide for overlap_staypoints method.")
+    if method not in ["between_staypoints", "overlap_staypoints"]:
+        raise ValueError(
+            f"Method unknown. We only support 'between_staypoints' and 'overlap_staypoints'. You passed {method}"
+        )
 
     # Preprocessing for case 2:
     # - step 1: Assign staypoint ids to positionfixes by matching timestamps (per user)
@@ -271,6 +280,17 @@ def generate_triplegs(
         #
         cond_staypoints_case2 = pd.Series(False, index=pfs.index)
         cond_staypoints_case2.loc[insert_index_ls] = True
+
+        # # assign incremental staypoint_id to pfs
+        # pfs_cumsum = (pfs["staypoint_id"]).fillna(1).cumsum()
+        # # as original staypoint_id is assigned 0, pfs_cumsum == 1 records are not staypoint
+        # counts = pfs_cumsum.value_counts()
+        # pfs_cumsum[pfs_cumsum.isin(counts[counts == 1].index)] = pd.NA
+        # # additional filter the last pfs before a staypoint
+        # pfs_cumsum[pfs_cumsum.groupby(pfs_cumsum).head(1).index] = pd.NA
+
+        # # assign group (sp) numbers
+        # pfs["staypoint_id"] = pfs_cumsum.groupby(pfs_cumsum).ngroup()
 
     # initialize tripleg_id with pd.NA and fill all pfs that belong to staypoints with -1
     # pd.NA will be replaced later with tripleg ids
@@ -365,11 +385,7 @@ def generate_triplegs(
         tpls = tpls.set_geometry("geom")
         tpls.crs = pfs.crs
     elif method == "overlap_staypoints":
-        tpls, pfs = _generate_triplegs_overlap_staypoints(cond_temporal_gap, pfs)
-    else:
-        raise ValueError(
-            f"Method unknown. We only support 'between_staypoints' and 'overlap_staypoints'. You passed {method}"
-        )
+        tpls, pfs = _generate_triplegs_overlap_staypoints(cond_temporal_gap, pfs, staypoints)
 
     # assert validity of triplegs
     tpls, pfs = _drop_invalid_triplegs(tpls, pfs)
@@ -391,13 +407,16 @@ def generate_triplegs(
     return pfs, Triplegs(tpls)
 
 
-def _generate_triplegs_overlap_staypoints(cond_temporal_gap, pfs):
+def _generate_triplegs_overlap_staypoints(cond_temporal_gap, pfs, staypoints):
     """Connect staypoints with overlapping triplegs
 
     Parameters
     ----------
     cond_temporal_gap : A boolean mask indicating gaps in the pfs data frame.
+
     pfs : Positionfixes
+
+    staypoints : Staypoints
 
     Returns
     -------
@@ -435,8 +454,14 @@ def _generate_triplegs_overlap_staypoints(cond_temporal_gap, pfs):
     cond_empty = pd.isna(pfs["tripleg_id"])
     pfs.loc[cond_empty, "tripleg_id"] = between_tpls_ids[cond_empty]
 
+    # replace geometry of staypoint positionfixes with staypoint geometry
+    pfs_copy = pfs[["tripleg_id", "staypoint_id", pfs.geometry.name]].copy()
+    pfs_copy.loc[cond_not_tpl, pfs_copy.geometry.name] = staypoints.loc[
+        pfs_copy.loc[cond_not_tpl, "staypoint_id"]
+    ].geometry.values
+
     # create and set tripleg geometries
-    tpls["geom"] = pfs.groupby("tripleg_id")[pfs.geometry.name].apply(lambda x: LineString(x))
+    tpls["geom"] = pfs_copy.groupby("tripleg_id")[pfs_copy.geometry.name].apply(lambda x: LineString(x))
     tpls = tpls.set_geometry("geom")
     tpls.crs = pfs.crs
 
