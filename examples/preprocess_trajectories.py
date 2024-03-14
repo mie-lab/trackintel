@@ -15,7 +15,7 @@ logging.basicConfig(filename="examples/log/preprocessing.log", level=logging.INF
 pfs = ti.read_positionfixes_csv("examples/data/geolife_trajectory.csv", sep=";", crs="EPSG:4326", index_col=None)
 ti.plot(filename="examples/out/gps_trajectory_positionfixes.png", positionfixes=pfs, plot_osm=True)
 
-_, sp = pfs.generate_staypoints(method="sliding", dist_threshold=100, time_threshold=5)
+pfs, sp = pfs.generate_staypoints(method="sliding", dist_threshold=100, time_threshold=5)
 ti.plot(
     filename="examples/out/gps_trajectory_staypoints.png",
     staypoints=sp,

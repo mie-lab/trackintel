@@ -247,6 +247,11 @@ def generate_triplegs(
     # - step 2: Find first positionfix after a staypoint
     # (relevant if the pfs of sp are not provided, and we can only infer the pfs after sp through time)
     if not staypoints_exist:
+        warnings.warn(
+            "Providing positionfixes without a 'staypoint_id' column will no longer be supported in future releases, consider call generate_staypoints() first.",
+            DeprecationWarning,
+        )
+
         # initialize the index list of pfs where a tpl will begin
         insert_index_ls = []
         pfs["staypoint_id"] = pd.NA

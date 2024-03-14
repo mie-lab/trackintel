@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from geopandas.testing import assert_geodataframe_equal
-from pandas.testing import assert_frame_equal
 from pandas import Timestamp
 from shapely.geometry import Point
 
@@ -403,10 +402,14 @@ class TestGenerate_triplegs_between_staypoints:
 
         ## test for case 2
         pfs.drop(columns="staypoint_id", inplace=True)
-        # manually change the first pfs' user_id, which has no stp correspondence
-        _, tpls_1 = pfs.generate_triplegs(sp, method="between_staypoints")
-        # result should be the same ommiting the first row
-        _, tpls_2 = pfs.iloc[1:].generate_triplegs(sp, method="between_staypoints")
+
+        warn_string = "Providing positionfixes without*"
+        with pytest.warns(DeprecationWarning, match=warn_string):
+            # manually change the first pfs' user_id, which has no stp correspondence
+            _, tpls_1 = pfs.generate_triplegs(sp, method="between_staypoints")
+            # result should be the same ommiting the first row
+            _, tpls_2 = pfs.iloc[1:].generate_triplegs(sp, method="between_staypoints")
+
         assert_geodataframe_equal(tpls_1, tpls_2)
 
     def test_pfs_without_sp(self, geolife_pfs_sp_long):
@@ -416,7 +419,9 @@ class TestGenerate_triplegs_between_staypoints:
         _, tpls_case1 = pfs.generate_triplegs(sp, method="between_staypoints")
         # only keep pfs where staypoint id is nan
         pfs_no_sp = pfs[pd.isna(pfs["staypoint_id"])].drop(columns="staypoint_id")
-        _, tpls_case2 = pfs_no_sp.generate_triplegs(sp, method="between_staypoints")
+        warn_string = "Providing positionfixes without*"
+        with pytest.warns(DeprecationWarning, match=warn_string):
+            _, tpls_case2 = pfs_no_sp.generate_triplegs(sp, method="between_staypoints")
 
         assert_geodataframe_equal(tpls_case1, tpls_case2)
 
@@ -430,7 +435,9 @@ class TestGenerate_triplegs_between_staypoints:
 
         # case 2
         pfs = pfs.drop(columns="staypoint_id")
-        pfs_case2, tpls_case2 = pfs.generate_triplegs(sp, method="between_staypoints")
+        warn_string = "Providing positionfixes without*"
+        with pytest.warns(DeprecationWarning, match=warn_string):
+            pfs_case2, tpls_case2 = pfs.generate_triplegs(sp, method="between_staypoints")
 
         assert_geodataframe_equal(pfs_case1.drop(columns="staypoint_id", axis=1), pfs_case2)
         assert_geodataframe_equal(pfs_case1, pfs_case1_wo)
@@ -494,7 +501,9 @@ class TestGenerate_triplegs_between_staypoints:
         pfs, sp = geolife_pfs_sp_long
 
         _, tpls_case1 = pfs.generate_triplegs(sp)
-        _, tpls_case2 = pfs.drop("staypoint_id", axis=1).generate_triplegs(sp)
+        warn_string = "Providing positionfixes without*"
+        with pytest.warns(DeprecationWarning, match=warn_string):
+            _, tpls_case2 = pfs.drop("staypoint_id", axis=1).generate_triplegs(sp)
 
         assert (tpls_case1.index == np.arange(len(tpls_case1))).any()
         assert (tpls_case2.index == np.arange(len(tpls_case2))).any()
