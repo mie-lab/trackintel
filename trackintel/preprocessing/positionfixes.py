@@ -192,9 +192,6 @@ def generate_triplegs(
         Maximum allowed temporal gap size in minutes. If tracking data is missing for more than
         `gap_threshold` minutes, a new tripleg will be generated.
 
-    print_progress: boolean, default False
-        Show the progress bar for assigning staypoints to positionfixes if set to True.
-
     Returns
     -------
     pfs: Positionfixes
