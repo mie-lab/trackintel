@@ -5,7 +5,6 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from shapely.geometry import LineString
-from tqdm import tqdm
 
 from trackintel import Positionfixes, Staypoints, Triplegs
 from trackintel.geogr import check_gdf_planar, point_haversine_dist
@@ -171,7 +170,6 @@ def generate_triplegs(
     staypoints=None,
     method="between_staypoints",
     gap_threshold=15,
-    print_progress=False,
 ):
     """
     Generate triplegs from positionfixes.
@@ -188,7 +186,7 @@ def generate_triplegs(
     method: {'between_staypoints', 'overlap_staypoints'}
         Method to create triplegs. 'between_staypoints' method defines a tripleg as all positionfixes
         between two staypoints (no overlap). 'overlap_staypoints' method defines a tripleg as all positionfixes
-        between two staypoints and includes the coordinates of the staypoints. The latter method require passing staypoints as an input.
+        between two staypoints and includes the coordinates of the staypoints. The latter method require positionfixes to have the 'staypoint_id' column and passing staypoints as an input.
 
     gap_threshold: float, default 15 (minutes)
         Maximum allowed temporal gap size in minutes. If tracking data is missing for more than
@@ -210,8 +208,8 @@ def generate_triplegs(
     The methods require either a column 'staypoint_id' on the positionfixes or passing some staypoints that correspond to the positionfixes! This means you usually should call ``generate_staypoints()`` first.
 
     Following the assumptions in the function generate_staypoints(), to ensure consistency, the time extend and geometry for triplegs is defined as follows:
-        - 'between_staypoints': The generated tripleg will not have overlapping positionfix with the existing staypoints, thus triplegs' 'geometry' does not have common pfs as sp. 'started_at' is the timestamp of the first pf after a sp, and 'finished_at' is the time of the last pf before a sp. This means a temporal gap will occur between the first positionfix of sp and the last pf of tripleg: pfs_stp_first['tracked_at'] - pfs_tpl_last['tracked_at'] != 0. No temporal gap will occur between sp ends and tripleg starts (as per sp time definition).
-        - 'overlap_staypoints': The generated tripleg will have common start and end point geometries with the existing staypoints. 'started_at' is the timestamp of the first pf after a sp (same as 'between_staypoints', to be consistent with generate_staypoints()), and 'finished_at' is the time of the first pf of a following sp. Temporal gaps will not occur between sp and triplegs.
+        - 'between_staypoints': The generated tripleg will not have overlapping pf with the existing sps, thus triplegs' 'geometry' does not have common pf as sps. 'started_at' is the timestamp of the first pf after a sp, and 'finished_at' is the time of the last pf before a sp. This means a temporal gap will occur between the first pf of sp and the last pf of tripleg: pfs_stp_first['tracked_at'] - pfs_tpl_last['tracked_at'] != 0. No temporal gap will occur between sp ends and tripleg starts (as per sp time definition).
+        - 'overlap_staypoints': The generated tripleg will have common start and end point geometries with the existing sps. 'started_at' is the timestamp of the first pf after a sp (same as 'between_staypoints', to be consistent with generate_staypoints()), and 'finished_at' is the time of the first pf of a following sp. Temporal gaps will not occur between sps and triplegs.
 
     Examples
     --------
@@ -237,8 +235,11 @@ def generate_triplegs(
         Staypoints.validate(staypoints)
     if (staypoints is None) and (not staypoints_exist):
         raise TypeError("staypoints input must be provide for pfs without staypoint_id column.")
-    if (staypoints is None) and (method == "overlap_staypoints"):
-        raise TypeError("staypoints input must be provide for overlap_staypoints method.")
+    if method == "overlap_staypoints":
+        if staypoints is None:
+            raise TypeError("staypoints input must be provide for overlap_staypoints method.")
+        if not staypoints_exist:
+            raise TypeError("positionfixes must contain a staypoint_id column for overlap_staypoints method.")
     if method not in ["between_staypoints", "overlap_staypoints"]:
         raise ValueError(
             f"Method unknown. We only support 'between_staypoints' and 'overlap_staypoints'. You passed {method}"
@@ -253,10 +254,7 @@ def generate_triplegs(
         insert_index_ls = []
         pfs["staypoint_id"] = pd.NA
 
-        # initalize the variable 'disable' to control display of progress bar.
-        disable = not print_progress
-
-        for user_id_this in tqdm(pfs["user_id"].unique(), disable=disable):
+        for user_id_this in pfs["user_id"].unique():
             sp_user = staypoints[staypoints["user_id"] == user_id_this]
             pfs_user = pfs[pfs["user_id"] == user_id_this]
 
@@ -279,17 +277,6 @@ def generate_triplegs(
         #
         cond_staypoints_case2 = pd.Series(False, index=pfs.index)
         cond_staypoints_case2.loc[insert_index_ls] = True
-
-        # # assign incremental staypoint_id to pfs
-        # pfs_cumsum = (pfs["staypoint_id"]).fillna(1).cumsum()
-        # # as original staypoint_id is assigned 0, pfs_cumsum == 1 records are not staypoint
-        # counts = pfs_cumsum.value_counts()
-        # pfs_cumsum[pfs_cumsum.isin(counts[counts == 1].index)] = pd.NA
-        # # additional filter the last pfs before a staypoint
-        # pfs_cumsum[pfs_cumsum.groupby(pfs_cumsum).head(1).index] = pd.NA
-
-        # # assign group (sp) numbers
-        # pfs["staypoint_id"] = pfs_cumsum.groupby(pfs_cumsum).ngroup()
 
     # initialize tripleg_id with pd.NA and fill all pfs that belong to staypoints with -1
     # pd.NA will be replaced later with tripleg ids

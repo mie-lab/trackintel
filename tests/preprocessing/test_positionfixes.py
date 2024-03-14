@@ -578,12 +578,10 @@ class TestGenerate_triplegs_overlap_staypoints:
         assert tpl_0["finished_at"] == sp["started_at"]
         assert sp["finished_at"] == tpl_1["started_at"]
 
+        # last point of tpl should correspond to next sp
         assert Point(tpl_0["geom"].coords[-1]) == sp["geom"]
+        # first point of next tpl should correspond to previous sp
         assert sp["geom"] == Point(tpl_1["geom"].coords[0])
-        # # last point of tpl should correspond to first pfs of next sp
-        # assert Point(tpl_0["geom"].coords[-1]) == pfs.loc[sp.name == pfs["staypoint_id"]].iloc[0].geom
-        # # first point of next tpl should correspond to last pfs of previous sp
-        # assert Point(tpl_1["geom"].coords[0]) == pfs.loc[sp.name == pfs["staypoint_id"]].iloc[-1].geom
 
     def test_sp_one_pfs_tpls_overlap(self, geolife_pfs_sp_long):
         """Triplegs should overlap staypoint in time with only one positionfix, but only the first tripleg should
@@ -602,19 +600,6 @@ class TestGenerate_triplegs_overlap_staypoints:
         # no spatial overlap with second tripleg
         assert sp["geom"] != Point(tpl_1["geom"].coords[0])
 
-    def test_stability(self, geolife_pfs_sp_long):
-        """Checks if the results are same for different cases."""
-        pfs, sp = geolife_pfs_sp_long
-        # case 1
-        pfs_case1, tpls_case1 = pfs.generate_triplegs(sp, method="overlap_staypoints")
-
-        # case 2
-        # pfs = pfs.drop(columns="staypoint_id")
-        pfs_case2, tpls_case2 = pfs.drop(columns="staypoint_id").generate_triplegs(sp, method="overlap_staypoints")
-
-        assert_geodataframe_equal(pfs_case1.drop(columns="staypoint_id", axis=1), pfs_case2)
-        # assert_geodataframe_equal(tpls_case1, tpls_case2)
-
     def test_str_userid(self, geolife_pfs_sp_long):
         """Tripleg generation should also work if the user IDs are strings."""
         pfs, sp = geolife_pfs_sp_long
@@ -629,3 +614,10 @@ class TestGenerate_triplegs_overlap_staypoints:
 
         with pytest.raises(TypeError, match="staypoints input must be provide for overlap_staypoints"):
             pfs.generate_triplegs(staypoints=None, method="overlap_staypoints")
+
+    def test_pfs_format(self, geolife_pfs_sp_long):
+        """Test if TypeError will be raised when pfs with no staypoint_id column is provided."""
+        pfs, sp = geolife_pfs_sp_long
+
+        with pytest.raises(TypeError, match="positionfixes must contain a staypoint_id column for overlap_staypoints"):
+            pfs.drop(columns="staypoint_id").generate_triplegs(staypoints=sp, method="overlap_staypoints")
