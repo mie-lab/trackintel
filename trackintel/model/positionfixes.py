@@ -115,7 +115,6 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         staypoints=None,
         method="between_staypoints",
         gap_threshold=15,
-        print_progress=False,
     ):
         """
         Generate triplegs from positionfixes.
@@ -127,7 +126,6 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
             staypoints=staypoints,
             method=method,
             gap_threshold=gap_threshold,
-            print_progress=print_progress,
         )
 
     def to_csv(self, filename, *args, **kwargs):

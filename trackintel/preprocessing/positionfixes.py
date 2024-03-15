@@ -5,7 +5,6 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from shapely.geometry import LineString
-from tqdm import tqdm
 
 from trackintel import Positionfixes, Staypoints, Triplegs
 from trackintel.geogr import check_gdf_planar, point_haversine_dist
@@ -171,7 +170,6 @@ def generate_triplegs(
     staypoints=None,
     method="between_staypoints",
     gap_threshold=15,
-    print_progress=False,
 ):
     """
     Generate triplegs from positionfixes.
@@ -188,15 +186,11 @@ def generate_triplegs(
     method: {'between_staypoints', 'overlap_staypoints'}
         Method to create triplegs. 'between_staypoints' method defines a tripleg as all positionfixes
         between two staypoints (no overlap). 'overlap_staypoints' method defines a tripleg as all positionfixes
-        between two staypoints and includes the coordinates of the staypoints. The methods require either a
-        column 'staypoint_id' on the positionfixes or passing staypoints as an input.
+        between two staypoints and includes the coordinates of the staypoints. The latter method require positionfixes to have the 'staypoint_id' column and passing staypoints as an input.
 
     gap_threshold: float, default 15 (minutes)
         Maximum allowed temporal gap size in minutes. If tracking data is missing for more than
         `gap_threshold` minutes, a new tripleg will be generated.
-
-    print_progress: boolean, default False
-        Show the progress bar for assigning staypoints to positionfixes if set to True.
 
     Returns
     -------
@@ -208,23 +202,17 @@ def generate_triplegs(
 
     Notes
     -----
-    Methods 'between_staypoints' requires either a column 'staypoint_id' on the
-    positionfixes or passing some staypoints that correspond to the positionfixes!
-    This means you usually should call ``generate_staypoints()`` first.
+    The methods require either a column 'staypoint_id' on the positionfixes or passing some staypoints that correspond to the positionfixes! This means you usually should call ``generate_staypoints()`` first.
 
-    The first positionfix after a staypoint is regarded as the first positionfix of the
-    generated tripleg. The generated tripleg will not have overlapping positionfix with
-    the existing staypoints. This means a small temporal gap in user's trace will occur
-    between the first positionfix of staypoint and the last positionfix of tripleg:
-    pfs_stp_first['tracked_at'] - pfs_tpl_last['tracked_at'].
+    Following the assumptions in the function generate_staypoints(), to ensure consistency, the time extend and geometry for triplegs is defined as follows:
+        - 'between_staypoints': The generated tripleg will not have overlapping pf with the existing sps, thus triplegs' 'geometry' does not have common pf as sps. 'started_at' is the timestamp of the first pf after a sp, and 'finished_at' is the time of the last pf before a sp. This means a temporal gap will occur between the first pf of sp and the last pf of tripleg: pfs_stp_first['tracked_at'] - pfs_tpl_last['tracked_at'] != 0. No temporal gap will occur between sp ends and tripleg starts (as per sp time definition).
+        - 'overlap_staypoints': The generated tripleg will have common start and end point geometries with the existing sps. 'started_at' is the timestamp of the first pf after a sp (same as 'between_staypoints', to be consistent with generate_staypoints()), and 'finished_at' is the time of the first pf of a following sp. Temporal gaps will not occur between sps and triplegs.
 
     Examples
     --------
     >>> pfs.generate_triplegs('between_staypoints', gap_threshold=15)
     """
     Positionfixes.validate(positionfixes)
-    if staypoints is not None:
-        Staypoints.validate(staypoints)
     # copy the original pfs for adding 'tripleg_id' column
     pfs = positionfixes.copy()
 
@@ -240,19 +228,35 @@ def generate_triplegs(
     # Case 2: False, pfs do not have a column 'staypoint_id' but staypoint are provided
     staypoints_exist = "staypoint_id" in pfs.columns
 
+    if staypoints is not None:
+        Staypoints.validate(staypoints)
+    if (staypoints is None) and (not staypoints_exist):
+        raise TypeError("staypoints input must be provided for pfs without staypoint_id column.")
+    if method == "overlap_staypoints":
+        if staypoints is None:
+            raise TypeError("staypoints input must be provided for overlap_staypoints method.")
+        if not staypoints_exist:
+            raise TypeError("positionfixes must contain a staypoint_id column for overlap_staypoints method.")
+    if method not in ["between_staypoints", "overlap_staypoints"]:
+        raise ValueError(
+            f"Method unknown. We only support 'between_staypoints' and 'overlap_staypoints'. You passed {method}"
+        )
+
     # Preprocessing for case 2:
     # - step 1: Assign staypoint ids to positionfixes by matching timestamps (per user)
     # - step 2: Find first positionfix after a staypoint
     # (relevant if the pfs of sp are not provided, and we can only infer the pfs after sp through time)
     if not staypoints_exist:
+        warnings.warn(
+            "Providing positionfixes without a 'staypoint_id' column will no longer be supported in future releases, consider call generate_staypoints() first.",
+            DeprecationWarning,
+        )
+
         # initialize the index list of pfs where a tpl will begin
         insert_index_ls = []
         pfs["staypoint_id"] = pd.NA
 
-        # initalize the variable 'disable' to control display of progress bar.
-        disable = not print_progress
-
-        for user_id_this in tqdm(pfs["user_id"].unique(), disable=disable):
+        for user_id_this in pfs["user_id"].unique():
             sp_user = staypoints[staypoints["user_id"] == user_id_this]
             pfs_user = pfs[pfs["user_id"] == user_id_this]
 
@@ -288,7 +292,7 @@ def generate_triplegs(
 
     # condition 2: Temporal gaps
     # if there is a gap that is longer than gap_threshold minutes, we start a new tripleg
-    cond_gap = pfs["tracked_at"] - pfs["tracked_at"].shift(1) > datetime.timedelta(minutes=gap_threshold)
+    cond_temporal_gap = pfs["tracked_at"] - pfs["tracked_at"].shift(1) > datetime.timedelta(minutes=gap_threshold)
 
     # condition 3: staypoint
     # By our definition the pf after a stp is the first pf of a tpl.
@@ -302,7 +306,7 @@ def generate_triplegs(
         cond_stp = cond_stp | cond_staypoints_case2
 
     # combine conditions
-    cond_all = cond_new_user | cond_gap | cond_stp
+    cond_all = cond_new_user | cond_temporal_gap | cond_stp
     # make sure not to create triplegs within staypoints:
     cond_all = cond_all & pd.isna(pfs["staypoint_id"])
 
@@ -369,11 +373,7 @@ def generate_triplegs(
         tpls = tpls.set_geometry("geom")
         tpls.crs = pfs.crs
     elif method == "overlap_staypoints":
-        tpls = _generate_triplegs_overlap_staypoints(cond_gap, pfs, staypoints)
-    else:
-        raise ValueError(
-            f"Method unknown. We only support 'between_staypoints' and 'overlap_staypoints'. You passed {method}"
-        )
+        tpls, pfs = _generate_triplegs_overlap_staypoints(cond_temporal_gap, pfs, staypoints)
 
     # assert validity of triplegs
     tpls, pfs = _drop_invalid_triplegs(tpls, pfs)
@@ -395,13 +395,15 @@ def generate_triplegs(
     return pfs, Triplegs(tpls)
 
 
-def _generate_triplegs_overlap_staypoints(cond_gap, pfs, staypoints):
+def _generate_triplegs_overlap_staypoints(cond_temporal_gap, pfs, staypoints):
     """Connect staypoints with overlapping triplegs
 
     Parameters
     ----------
-    cond_gap : A boolean mask indicating gaps in the pfs data frame.
+    cond_temporal_gap : A boolean mask indicating gaps in the pfs data frame.
+
     pfs : Positionfixes
+
     staypoints : Staypoints
 
     Returns
@@ -409,11 +411,13 @@ def _generate_triplegs_overlap_staypoints(cond_gap, pfs, staypoints):
     tpls: Triplegs
         tpls with geometries.
 
+    pfs: Positionfixes
+        original pfs with overlaping tripleg_id with staypoint_id.
+
     Notes
     -----
-    In case of a staypoint with only one positionfix the previous tripleg will have a spatial overlap with the
-    staypoint, while the following tripleg will not overlap with the staypoint. Otherwise, the positionfix of the
-    staypoints would need a duplication.
+    In case of a staypoint with only one positionfix, the previous tripleg will have a spatial overlap with the
+    staypoint, while the following tripleg will not overlap with the staypoint.
     """
     # keep initial ids from the between staypoints method
     between_tpls_ids = pfs["tripleg_id"].copy()
@@ -424,31 +428,32 @@ def _generate_triplegs_overlap_staypoints(cond_gap, pfs, staypoints):
     cond_overlap = ~(pfs["user_id"] != pfs["user_id"].shift(1)) & cond_not_tpl
 
     # temporal overlap: overlap tripleg end with start of next staypoint
-    cond_overlap_start = cond_overlap & ~cond_gap & pd.isna(pfs["tripleg_id"])
+    cond_overlap_start = cond_overlap & ~cond_temporal_gap & pd.isna(pfs["tripleg_id"])
     pfs.loc[cond_overlap_start, "tripleg_id"] = between_tpls_ids.shift(1)[cond_overlap_start]
+    # time: tpl's end pfs overlaps with sp, but tpl's start time is set as the time of the first pf after sp (see doctrting of generate_triplegs())
     tpls = pfs.groupby("tripleg_id").agg(
         user_id=("user_id", "first"), started_at=("tracked_at", "min"), finished_at=("tracked_at", "max")
     )
 
     # spatial overlap: overlap tripleg with the location of previous and next staypoint
-    cond_overlap_end = cond_overlap & ~cond_gap.shift(-1).fillna(False) & pd.isna(pfs["tripleg_id"])
+    # geometry: tpl's share common start and end pfs with sp
+    cond_overlap_end = cond_overlap & ~cond_temporal_gap.shift(-1).fillna(False) & pd.isna(pfs["tripleg_id"])
     pfs.loc[cond_overlap_end, "tripleg_id"] = between_tpls_ids.shift(-1)[cond_overlap_end]
     cond_empty = pd.isna(pfs["tripleg_id"])
     pfs.loc[cond_empty, "tripleg_id"] = between_tpls_ids[cond_empty]
 
     # replace geometry of staypoint positionfixes with staypoint geometry
     pfs_copy = pfs[["tripleg_id", "staypoint_id", pfs.geometry.name]].copy()
-    if staypoints is not None:
-        pfs_copy.loc[cond_not_tpl, pfs_copy.geometry.name] = staypoints.loc[
-            pfs_copy.loc[cond_not_tpl, "staypoint_id"]
-        ].geometry.values
+    pfs_copy.loc[cond_not_tpl, pfs_copy.geometry.name] = staypoints.loc[
+        pfs_copy.loc[cond_not_tpl, "staypoint_id"]
+    ].geometry.values
 
     # create and set tripleg geometries
     tpls["geom"] = pfs_copy.groupby("tripleg_id")[pfs_copy.geometry.name].apply(lambda x: LineString(x))
     tpls = tpls.set_geometry("geom")
     tpls.crs = pfs.crs
 
-    return tpls
+    return tpls, pfs
 
 
 def _generate_staypoints_sliding_user(
