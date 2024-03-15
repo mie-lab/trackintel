@@ -231,10 +231,10 @@ def generate_triplegs(
     if staypoints is not None:
         Staypoints.validate(staypoints)
     if (staypoints is None) and (not staypoints_exist):
-        raise TypeError("staypoints input must be provide for pfs without staypoint_id column.")
+        raise TypeError("staypoints input must be provided for pfs without staypoint_id column.")
     if method == "overlap_staypoints":
         if staypoints is None:
-            raise TypeError("staypoints input must be provide for overlap_staypoints method.")
+            raise TypeError("staypoints input must be provided for overlap_staypoints method.")
         if not staypoints_exist:
             raise TypeError("positionfixes must contain a staypoint_id column for overlap_staypoints method.")
     if method not in ["between_staypoints", "overlap_staypoints"]:
