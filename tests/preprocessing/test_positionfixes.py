@@ -444,7 +444,7 @@ class TestGenerate_triplegs_between_staypoints:
         assert_geodataframe_equal(tpls_case1, tpls_case2)
         assert_geodataframe_equal(tpls_case1, tpls_case1_wo)
 
-        with pytest.raises(TypeError, match="staypoints input must be provide for pfs without staypoint_id column"):
+        with pytest.raises(TypeError, match="staypoints input must be provided for pfs without staypoint_id column"):
             pfs.generate_triplegs(staypoints=None, method="between_staypoints")
 
     def test_random_order(self, geolife_pfs_sp_long):
@@ -621,7 +621,7 @@ class TestGenerate_triplegs_overlap_staypoints:
         """Test if TypeError will be raised when no staypoint is provided."""
         pfs, _ = geolife_pfs_sp_long
 
-        with pytest.raises(TypeError, match="staypoints input must be provide for overlap_staypoints"):
+        with pytest.raises(TypeError, match="staypoints input must be provided for overlap_staypoints"):
             pfs.generate_triplegs(staypoints=None, method="overlap_staypoints")
 
     def test_pfs_format(self, geolife_pfs_sp_long):
