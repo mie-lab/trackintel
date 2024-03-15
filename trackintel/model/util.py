@@ -79,6 +79,9 @@ class TrackintelDataFrame(pd.DataFrame):
         """Interface to subtype pandas properly"""
         return partial(self.__class__, validate=False)
 
+    def _constructor_from_mgr(self, mgr, axes):
+        return TrackintelDataFrame._from_mgr(mgr, axes=axes)
+
 
 class TrackintelBase(object):
     """Class for supplying basic functionality to all Trackintel classes."""
