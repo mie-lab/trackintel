@@ -67,10 +67,16 @@ def point_haversine_dist(lon_1, lat_1, lon_2, lat_2, r=6371000, float_flag=False
 
         return r * math.acos(cos_lat_d - cos_lat1 * cos_lat2 * (1 - cos_lon_d))
 
-    lon_1 = np.deg2rad(lon_1).ravel()
-    lat_1 = np.deg2rad(lat_1).ravel()
-    lon_2 = np.deg2rad(lon_2).ravel()
-    lat_2 = np.deg2rad(lat_2).ravel()
+    if all(isinstance(x, pd.Series) for x in [lon_1, lat_1, lon_2, lat_2]):
+        lon_1 = lon_1.to_numpy()
+        lat_1 = lat_1.to_numpy()
+        lon_2 = lon_2.to_numpy()
+        lat_2 = lat_2.to_numpy()
+
+    lon_1 = np.deg2rad(lon_1)
+    lat_1 = np.deg2rad(lat_1)
+    lon_2 = np.deg2rad(lon_2)
+    lat_2 = np.deg2rad(lat_2)
 
     cos_lat1 = np.cos(lat_1)
     cos_lat2 = np.cos(lat_2)
