@@ -182,7 +182,7 @@ def _split_overlaps(source, granularity="day"):
     Trackintel class
         The input object after the splitting
     """
-    freq = "H" if granularity == "hour" else "D"
+    freq = "h" if granularity == "hour" else "D"
     gdf = source.copy()
     gdf[["started_at", "finished_at"]] = gdf.apply(_get_times, axis="columns", result_type="expand", freq=freq)
     # must call DataFrame.explode directly because GeoDataFrame.explode cannot be used on multiple columns

@@ -90,7 +90,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     # temporary as empty trips are not filtered out yet.
     sp_tpls.loc[new_trip, "temp_trip_id"] = np.arange(new_trip.sum())
     # fill NA with previous entry
-    sp_tpls["temp_trip_id"].ffill(inplace=True)
+    sp_tpls["temp_trip_id"]= sp_tpls["temp_trip_id"].ffill()
 
     # exclude activities to aggregate trips together.
     # activity can be thought of as the same aggregation level as trips.
@@ -154,7 +154,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     trips_with_act["next_trip_id"] = trips_with_act["trip_id"].shift(-1)
 
     # transform column to binary
-    trips_with_act["is_activity"].fillna(False, inplace=True)
+    trips_with_act["is_activity"] = trips_with_act["is_activity"].fillna(False)
     # delete activities
     trips = trips_with_act[~trips_with_act["is_activity"]].copy()
 
@@ -271,7 +271,7 @@ def _concat_staypoints_triplegs(staypoints, triplegs, add_geometry):
     sp_cols = ["started_at", "finished_at", "user_id", "type", "is_activity"]
     tpls_cols = ["started_at", "finished_at", "user_id", "type"]
     sp_tpls = pd.concat([sp[sp_cols], tpls[tpls_cols]])
-    sp_tpls["is_activity"].fillna(False, inplace=True)
+    sp_tpls["is_activity"] = sp_tpls["is_activity"].fillna(False)
     sp_tpls["sp_tpls_id"] = sp_tpls.index  # store id for later reassignment
     if add_geometry:
         # Check if crs is set. Warn if None
