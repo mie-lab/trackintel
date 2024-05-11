@@ -123,22 +123,13 @@ def save_fig(out_filename, tight="tight", formats=["png", "pdf"]):
     logging.info("Finished!")
 
 
-def plot_osm_streets(north, south, east, west, ax):
+def plot_osm_streets(bbox, ax):
     """Plots with osmnx OpenStreetMap streets onto an axis.
 
     Parameters
     ----------
-    north : float
-        The northernmost coordinate (to retrieve OSM data for).
-
-    south : float
-        The southernmost coordinate.
-
-    east : float
-        The easternmost coordinate.
-
-    west : float
-        The westernmost coordinate.
+    bbox : tuple of floats
+            bounding box as (north, south, east, west)
 
     ax : matplotlib.pyplot.Artist, optional
         Axis on which to draw the plot.
@@ -148,7 +139,7 @@ def plot_osm_streets(north, south, east, west, ax):
     >>> ti.visualization.plotting.plot_osm_street(47.392, 47.364, 8.557, 8.509, ax)
     """
     try:
-        G = ox.graph_from_bbox(north, south, east, west, network_type="drive")
+        G = ox.graph_from_bbox(bbox=bbox, network_type="drive")
         lines = []
         for u, v, data in G.edges(keys=False, data=True):
             if "geometry" in data:
@@ -319,8 +310,8 @@ def plot(
 
     positionfixes, staypoints, triplegs, locations = _prepare_frames(positionfixes, staypoints, triplegs, locations)
     if plot_osm:
-        north, south, east, west = _calculate_bounds(positionfixes, staypoints, triplegs, locations)
-        plot_osm_streets(north, south, east, west, ax=ax)
+        north, south, east, west = bbox = _calculate_bounds(positionfixes, staypoints, triplegs, locations)
+        plot_osm_streets(bbox, ax=ax)
         ax.set_xlim([west, east])
         ax.set_ylim([south, north])
     _plot_frames(positionfixes, staypoints, triplegs, locations, radius_sp, radius_locs, ax)
