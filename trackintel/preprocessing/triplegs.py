@@ -90,7 +90,7 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     # temporary as empty trips are not filtered out yet.
     sp_tpls.loc[new_trip, "temp_trip_id"] = np.arange(new_trip.sum())
     # fill NA with previous entry
-    sp_tpls["temp_trip_id"]= sp_tpls["temp_trip_id"].ffill()
+    sp_tpls["temp_trip_id"] = sp_tpls["temp_trip_id"].ffill()
 
     # exclude activities to aggregate trips together.
     # activity can be thought of as the same aggregation level as trips.
