@@ -435,7 +435,7 @@ class TestSpeedPositionfixes:
             time_diff = (pfs.loc[ind, "tracked_at"] - pfs.loc[ind_prev, "tracked_at"]).total_seconds()
             point1 = pfs.loc[ind_prev, "geom"]
             point2 = pfs.loc[ind, "geom"]
-            dist = point_haversine_dist(point1.x, point1.y, point2.x, point2.y)[0]
+            dist = point_haversine_dist(point1.x, point1.y, point2.x, point2.y)
             assert np.isclose(dist / time_diff, computed_speeds[ind], rtol=1e-06)
             assert np.isclose(dist / time_diff, correct_speeds[ind], rtol=1e-06)
 
