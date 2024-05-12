@@ -374,4 +374,4 @@ class TestGet_times:
         times = [time1, time2, time3, time4]
         result = (times[:-1], times[1:])
         row = pd.Series({"index": 0, "started_at": times[0], "finished_at": times[-1]})
-        assert _get_times(row, freq="H") == result
+        assert _get_times(row, freq="h") == result
