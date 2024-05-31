@@ -107,28 +107,28 @@ class TestGenerate_staypoints:
 
     def test_duplicate_pfs_warning(self, example_positionfixes):
         """Calling generate_staypoints with duplicate positionfixes should raise a warning."""
-        pfs_duplicate_loc = example_positionfixes.copy()
-        pfs_duplicate_loc.loc[0, "geometry"] = pfs_duplicate_loc.loc[1, "geometry"]
+        duplicated_location = example_positionfixes.copy()
+        duplicated_location.loc[0, "geometry"] = duplicated_location.loc[1, "geometry"]
 
-        pfs_duplicate_t = example_positionfixes.copy()
-        pfs_duplicate_t.loc[0, "tracked_at"] = pfs_duplicate_t.loc[1, "tracked_at"]
+        duplicated_time = example_positionfixes.copy()
+        duplicated_time.loc[0, "tracked_at"] = duplicated_time.loc[1, "tracked_at"]
 
         # 0 and 1 pfs are now identical
-        pfs_duplicate_all = pfs_duplicate_loc.copy()
-        pfs_duplicate_all.loc[0, "tracked_at"] = pfs_duplicate_all.loc[1, "tracked_at"]
+        duplicated_location_and_time = example_positionfixes.copy()
+        duplicated_location_and_time.iloc[0] = duplicated_location_and_time.iloc[1]
 
-        warn_string = "duplicates were dropped from your positionfixes."
+        warn_duplicates = "duplicates were dropped from your positionfixes."
         # generates warning for empty generation but not for duplicate pfs
         with pytest.warns(UserWarning) as record:
             example_positionfixes.generate_staypoints()
-            pfs_duplicate_loc.generate_staypoints()
-            pfs_duplicate_t.generate_staypoints()
+            duplicated_location.generate_staypoints()
+            duplicated_time.generate_staypoints()
+            assert not any(True for x in record if warn_duplicates in str(x.message))
 
-            # assert that no warning of the defined type is raised
-            assert len([x for x in record if warn_string in str(x.message)]) == 0
-
-        with pytest.warns(UserWarning, match=warn_string):
-            pfs_duplicate_all.generate_staypoints()
+        # capture all warnings in record -> we will maybe loose some warnings
+        with pytest.warns(UserWarning) as record:
+            duplicated_location_and_time.generate_staypoints()
+            assert any(True for x in record if warn_duplicates in str(x.message))
 
     def test_duplicate_pfs_filtering(self, example_positionfixes):
         """Test that duplicate positionfixes are filtered in generate_staypoints."""
