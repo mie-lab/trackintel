@@ -38,9 +38,9 @@ def radius_gyration(sp, method="count", print_progress=False):
 
     if print_progress:
         tqdm.pandas(desc="User radius of gyration calculation")
-        s = sp.groupby("user_id").progress_apply(_radius_gyration_user, method=method)
+        s = sp.groupby("user_id").progress_apply(_radius_gyration_user, method=method, include_groups=False)
     else:
-        s = sp.groupby("user_id").apply(_radius_gyration_user, method=method)
+        s = sp.groupby("user_id").apply(_radius_gyration_user, method=method, include_groups=False)
 
     s = s.rename("radius_gyration")
     return s

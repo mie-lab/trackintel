@@ -133,7 +133,13 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     user_change[["type", "is_activity"]] = ["user_change", True]  # nicer for debugging
 
     # merge trips with (filler) activities
-    trips.drop(columns=["type", "sp_tpls_id"], inplace=True)  # make space so no overlap with activity "sp_tpls_id"
+
+    # make space so no overlap with activity "sp_tpls_id"
+    trips.drop(columns=["type", "sp_tpls_id"], inplace=True)
+
+    # trips are no activity (with this we don't have to fillna later)
+    trips["is_activity"] = False
+
     # Inserting `gaps` and `user_change` into the dataframe creates buffers that catch shifted
     # "staypoint_id" and "trip_id" from corrupting staypoints/trips.
     trips_with_act = pd.concat((trips, sp_tpls_only_act, gaps, user_change), axis=0, ignore_index=True)
@@ -153,8 +159,6 @@ def generate_trips(staypoints, triplegs, gap_threshold=15, add_geometry=True):
     trips_with_act["prev_trip_id"] = trips_with_act["trip_id"].shift(1)
     trips_with_act["next_trip_id"] = trips_with_act["trip_id"].shift(-1)
 
-    # transform column to binary
-    trips_with_act["is_activity"] = trips_with_act["is_activity"].fillna(False)
     # delete activities
     trips = trips_with_act[~trips_with_act["is_activity"]].copy()
 
@@ -268,9 +272,8 @@ def _concat_staypoints_triplegs(staypoints, triplegs, add_geometry):
     sp["type"] = "staypoint"
 
     # create table with relevant information from triplegs and staypoints.
-    sp_cols = ["started_at", "finished_at", "user_id", "type", "is_activity"]
-    tpls_cols = ["started_at", "finished_at", "user_id", "type"]
-    sp_tpls = pd.concat([sp[sp_cols], tpls[tpls_cols]])
+    cols = ["started_at", "finished_at", "user_id", "type", "is_activity"]
+    sp_tpls = pd.concat([sp[cols], tpls[cols]])
     sp_tpls["is_activity"] = sp_tpls["is_activity"].fillna(False)
     sp_tpls["sp_tpls_id"] = sp_tpls.index  # store id for later reassignment
     if add_geometry:

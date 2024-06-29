@@ -242,7 +242,6 @@ class TestCalculate_distance_matrix:
         pfs0, euc00, pfs1, euc01 = two_pfs
         res00 = calculate_distance_matrix(X=pfs0, dist_metric="euclidean")
         res01 = calculate_distance_matrix(X=pfs0, Y=pfs1, dist_metric="euclidean")
-        print(res00)
         assert np.all(euc00 == res00)
         assert np.all(euc01 == res01)
 

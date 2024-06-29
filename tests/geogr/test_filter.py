@@ -18,8 +18,6 @@ def locs_from_geolife():
         method="dbscan", epsilon=10, num_samples=1, distance_metric="haversine", agg_level="dataset"
     )
 
-    # the projection needs to be defined: WGS84
-    locs.crs = "epsg:4326"
     return locs
 
 
@@ -79,7 +77,7 @@ class TestSpatial_filter:
     def test_filter_locations(self, locs_from_geolife):
         """Test if spatial_filter works for locations."""
         locs = locs_from_geolife
-        extent = gpd.read_file(os.path.join("tests", "data", "area", "tsinghua.geojson"), crs="epsg:4326")
+        extent = gpd.read_file(os.path.join("tests", "data", "area", "tsinghua.geojson"))
 
         # filter locations with the area
         within_loc = locs.spatial_filter(areas=extent, method="within", re_project=True)

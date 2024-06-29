@@ -254,7 +254,7 @@ def generate_triplegs(
 
         # initialize the index list of pfs where a tpl will begin
         insert_index_ls = []
-        pfs["staypoint_id"] = pd.NA
+        pfs["staypoint_id"] = pd.Series(dtype="Int64")
 
         for user_id_this in pfs["user_id"].unique():
             sp_user = staypoints[staypoints["user_id"] == user_id_this]
@@ -282,7 +282,7 @@ def generate_triplegs(
 
     # initialize tripleg_id with pd.NA and fill all pfs that belong to staypoints with -1
     # pd.NA will be replaced later with tripleg ids
-    pfs["tripleg_id"] = pd.NA
+    pfs["tripleg_id"] = pd.Series(dtype="Int64")
     pfs.loc[~pd.isna(pfs["staypoint_id"]), "tripleg_id"] = -1
 
     # get all conditions that trigger a new tripleg.
@@ -437,7 +437,7 @@ def _generate_triplegs_overlap_staypoints(cond_temporal_gap, pfs, staypoints):
 
     # spatial overlap: overlap tripleg with the location of previous and next staypoint
     # geometry: tpl's share common start and end pfs with sp
-    cond_overlap_end = cond_overlap & ~cond_temporal_gap.shift(-1).fillna(False) & pd.isna(pfs["tripleg_id"])
+    cond_overlap_end = cond_overlap & ~cond_temporal_gap.shift(-1, fill_value=False) & pd.isna(pfs["tripleg_id"])
     pfs.loc[cond_overlap_end, "tripleg_id"] = between_tpls_ids.shift(-1)[cond_overlap_end]
     cond_empty = pd.isna(pfs["tripleg_id"])
     pfs.loc[cond_empty, "tripleg_id"] = between_tpls_ids[cond_empty]
@@ -524,7 +524,7 @@ def __create_new_staypoints(start, end, pfs, elevation_flag, geo_col, last_flag=
     # if end is the last pfs, we want to include the info from it as well
     if last_flag:
         end = len(pfs)
-    points = pfs[geo_col].iloc[start:end].unary_union
+    points = pfs[geo_col].iloc[start:end].union_all()
     if check_gdf_planar(pfs):
         new_sp[geo_col] = points.centroid
     else:
