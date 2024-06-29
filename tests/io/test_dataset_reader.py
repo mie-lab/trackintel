@@ -267,7 +267,8 @@ class TestGpx_reader:
             "user_id": [0, 0, 0],
         }
         pfs_test = Positionfixes(data, geometry="geometry", crs=4326)
-        assert_geodataframe_equal(pfs, pfs_test)
+        # ignore dtypes as gpd.read_file defaults to i32 while pd.DataFrame defaults to i64
+        assert_geodataframe_equal(pfs, pfs_test, check_dtype=False)
 
     def test_missing_files(self):
         """Test if useful message is output if directory has no gpx files"""
