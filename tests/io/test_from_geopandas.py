@@ -131,7 +131,8 @@ class TestRead_Positionfixes_Gpd:
         pfs_from_csv = ti.read_positionfixes_csv(pfs_file, sep=";", tz="utc", index_col="id", crs="EPSG:4326")
         pfs_from_csv = pfs_from_csv.rename(columns={"geom": "geometry"})
 
-        assert_frame_equal(pfs_from_gpd, pfs_from_csv, check_exact=False)
+        # ignore dtypes as gpd.read_file defaults to i32 while pd.read_csv defaults to i64
+        assert_frame_equal(pfs_from_gpd, pfs_from_csv, check_dtype=False, check_index_type=False)
 
     def test_mapper(self, example_positionfixes):
         """Test if mapper argument allows for additional renaming."""
@@ -163,7 +164,8 @@ class TestRead_Triplegs_Gpd:
         tpls_from_csv = ti.read_triplegs_csv(tpls_file, sep=";", tz="utc", index_col="id")
         tpls_from_csv = tpls_from_csv.rename(columns={"geom": "geometry"})
 
-        assert_frame_equal(tpls_from_gpd, tpls_from_csv, check_exact=False)
+        # ignore dtypes as gpd.read_file defaults to i32 while pd.read_csv defaults to i64
+        assert_frame_equal(tpls_from_gpd, tpls_from_csv, check_dtype=False, check_index_type=False)
 
     def test_mapper(self):
         """Test if mapper argument allows for additional renaming."""
@@ -198,7 +200,8 @@ class TestRead_Staypoints_Gpd:
         sp_from_csv = ti.read_staypoints_csv(sp_file, sep=";", tz="utc", index_col="id")
         sp_from_csv = sp_from_csv.rename(columns={"geom": "geometry"})
 
-        assert_frame_equal(sp_from_gpd, sp_from_csv, check_exact=False)
+        # ignore dtypes as gpd.read_file defaults to i32 while pd.read_csv defaults to i64
+        assert_frame_equal(sp_from_gpd, sp_from_csv, check_dtype=False, check_index_type=False)
 
     def test_mapper(self):
         """Test if mapper argument allows for additional renaming."""
@@ -254,7 +257,8 @@ class TestRead_Locations_Gpd:
 
         # drop the second geometry column manually because not storable in GeoJSON (from Geopandas)
         locs_from_csv = locs_from_csv.drop(columns="extent")
-        assert_frame_equal(locs_from_csv, locs_from_gpd, check_exact=False)
+        # ignore dtypes as gpd.read_file defaults to i32 while pd.read_csv defaults to i64
+        assert_frame_equal(locs_from_csv, locs_from_gpd, check_dtype=False, check_index_type=False)
 
     def test_extent_col(self, example_locations):
         """Test function with optional geom-column "extent"."""
