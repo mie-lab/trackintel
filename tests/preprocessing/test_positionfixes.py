@@ -74,10 +74,11 @@ def example_positionfixes_isolated():
         {"user_id": 2, "tracked_at": t2, "geometry": p2, "staypoint_id": pd.NA},
         {"user_id": 2, "tracked_at": t4, "geometry": p3, "staypoint_id": 5},
     ]
-    pfs = gpd.GeoDataFrame(data=list_dict, geometry="geometry", crs="EPSG:4326")
+    pfs = ti.Positionfixes(data=list_dict, geometry="geometry", crs="EPSG:4326")
+    pfs["staypoint_id"] = pfs["staypoint_id"].astype("Int64")
     pfs.index.name = "id"
 
-    return ti.Positionfixes(pfs)
+    return pfs
 
 
 class TestGenerate_staypoints:
@@ -201,9 +202,7 @@ class TestGenerate_staypoints:
         """Test if the include_last arguement will include the last pfs as stp."""
         pfs, _ = ti.io.dataset_reader.read_geolife(os.path.join("tests", "data", "geolife"))
 
-        pfs_wo, sp_wo = pfs.generate_staypoints(
-            method="sliding", dist_threshold=100, time_threshold=5.0, include_last=False
-        )
+        pfs_wo, sp_wo = pfs.generate_staypoints()
         pfs_include, sp_include = pfs.generate_staypoints(
             method="sliding", dist_threshold=100, time_threshold=5.0, include_last=True
         )

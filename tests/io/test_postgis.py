@@ -281,7 +281,7 @@ class TestPositionfixes:
         table = "positionfixes"
         sql = f"SELECT * FROM {table}"
         geom_col = pfs.geometry.name
-        pfs.crs = None
+        pfs = pfs.set_crs(None, allow_override=True)
         no_crs_warning = "Could not parse CRS from the GeoDataFrame. Inserting data without defined CRS."
         try:
             with pytest.warns(UserWarning, match=no_crs_warning):
@@ -375,7 +375,7 @@ class TestTriplegs:
         table = "triplegs"
         sql = f"SELECT * FROM {table}"
         geom_col = tpls.geometry.name
-        tpls.crs = None
+        tpls = tpls.set_crs(None, allow_override=True)
 
         no_crs_warning = "Could not parse CRS from the GeoDataFrame. Inserting data without defined CRS."
         try:
@@ -446,7 +446,7 @@ class TestStaypoints:
         table = "staypoints"
         sql = f"SELECT * FROM {table}"
         geom_col = example_staypoints.geometry.name
-        sp.crs = None
+        sp = sp.set_crs(None, allow_override=True)
 
         no_crs_warning = "Could not parse CRS from the GeoDataFrame. Inserting data without defined CRS."
         try:
@@ -500,7 +500,7 @@ class TestLocations:
         table = "locations"
         sql = f"SELECT * FROM {table}"
         geom_col = locs.geometry.name
-        locs.crs = None
+        locs = locs.set_crs(None, allow_override=True)
 
         no_crs_warning = "Could not parse CRS from the GeoDataFrame. Inserting data without defined CRS."
         try:
@@ -731,7 +731,7 @@ class TestGetSrid:
     def test_srid(self, example_positionfixes):
         """Test if `_get_srid` returns the correct srid."""
         gdf = example_positionfixes.copy()
-        gdf.crs = None
+        gdf = gdf.set_crs(None, allow_override=True)
         assert _get_srid(gdf) == -1
         srid = 3857
         gdf.set_crs(f"epsg:{srid}", inplace=True)

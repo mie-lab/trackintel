@@ -55,11 +55,11 @@ def spatial_filter(source, areas, method="within", re_project=False):
 
     # get final result
     if method == "within":
-        ret_gdf = possible_matches.loc[possible_matches.within(areas.unary_union)]
+        ret_gdf = possible_matches.loc[possible_matches.within(areas.union_all())]
     elif method == "intersects":
-        ret_gdf = possible_matches.loc[possible_matches.intersects(areas.unary_union)]
+        ret_gdf = possible_matches.loc[possible_matches.intersects(areas.union_all())]
     elif method == "crosses":
-        ret_gdf = possible_matches.loc[possible_matches.crosses(areas.unary_union)]
+        ret_gdf = possible_matches.loc[possible_matches.crosses(areas.union_all())]
     else:
         raise ValueError("method unknown. We only support ['within', 'intersects', 'crosses']. " f"You passed {method}")
 

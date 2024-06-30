@@ -76,7 +76,9 @@ def temporal_tracking_quality(source, granularity="all"):
         return None
 
     if granularity == "all":
-        quality = df.groupby("user_id", as_index=False).apply(_get_tracking_quality_user, granularity)
+        quality = df.groupby("user_id", as_index=False).apply(
+            _get_tracking_quality_user, granularity, include_groups=False
+        )
         return quality
 
     # split records that span several days
@@ -90,19 +92,11 @@ def temporal_tracking_quality(source, granularity="all"):
         column_name = "week_monday"
 
     elif granularity == "weekday":
-        # get the tracked week relative to the first day
-        start_date = df["started_at"].min().floor(freq="D")
-        df["week"] = ((df["started_at"] - start_date)).dt.days // 7
-
         grouper = df["started_at"].dt.weekday
         column_name = "weekday"
 
     elif granularity == "hour":
         df = _split_overlaps(df, granularity="hour")
-        # get the tracked day relative to the first day
-        start_date = df["started_at"].min().floor(freq="D")
-        df["day"] = (df["started_at"] - start_date).dt.days
-
         grouper = df["started_at"].dt.hour
         column_name = "hour"
 
@@ -111,8 +105,13 @@ def temporal_tracking_quality(source, granularity="all"):
             f"granularity unknown. We only support ['all', 'day', 'week', 'weekday', 'hour']. You passed {granularity}"
         )
 
+    start_date = df["started_at"].min().floor(freq="D")
     # calculate per-user per-grouper tracking quality
-    quality = df.groupby(["user_id", grouper]).apply(_get_tracking_quality_user, granularity).reset_index()
+    quality = (
+        df.groupby(["user_id", grouper])[["started_at", "finished_at"]]
+        .apply(_get_tracking_quality_user, start_date, granularity)
+        .reset_index()
+    )
 
     # rename and reorder
     quality.rename(columns={"started_at": column_name}, inplace=True)
@@ -121,7 +120,7 @@ def temporal_tracking_quality(source, granularity="all"):
     return quality
 
 
-def _get_tracking_quality_user(df, granularity="all"):
+def _get_tracking_quality_user(df, start_date, granularity="all"):
     """
     Tracking quality per-user per-granularity.
 
@@ -129,6 +128,9 @@ def _get_tracking_quality_user(df, granularity="all"):
     ----------
     df : Trackintel class
         The source dataframe
+
+    start_date: pd.Timestamp
+        When measurement started, used to calculate in which weekday or week the measurement lies.
 
     granularity : {"all", "day", "weekday", "week", "hour"}, default "all"
         Determines the extent of the tracking. "all" the entire tracking period,
@@ -149,6 +151,7 @@ def _get_tracking_quality_user(df, granularity="all"):
     elif granularity == "weekday":
         # total seconds in an day * number of tracked weeks
         # (entries from multiple weeks may be grouped together)
+        df["week"] = ((df["started_at"] - start_date)).dt.days // 7
         extent = 60 * 60 * 24 * (df["week"].max() - df["week"].min() + 1)
     elif granularity == "week":
         # total seconds in a week
@@ -156,6 +159,7 @@ def _get_tracking_quality_user(df, granularity="all"):
     elif granularity == "hour":
         # total seconds in an hour * number of tracked days
         # (entries from multiple days may be grouped together)
+        df["day"] = (df["started_at"] - start_date).dt.days
         extent = (60 * 60) * (df["day"].max() - df["day"].min() + 1)
     else:
         raise ValueError(

@@ -178,7 +178,7 @@ class TestGenerate_locations:
             method="dbscan", epsilon=100, num_samples=1, distance_metric="haversine", agg_level="dataset"
         )
         # WGS_1984
-        sp.crs = "epsg:4326"
+        sp = sp.set_crs("epsg:4326", allow_override=True)
         # WGS_1984_UTM_Zone_49N
         sp = sp.to_crs("epsg:32649")
 

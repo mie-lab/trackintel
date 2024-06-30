@@ -66,9 +66,9 @@ class Test_Trackintel_Model:
     def test_set_crs(self, example_positionfixes):
         """Test if crs will be set."""
         pfs = example_positionfixes.copy()
-        example_positionfixes.crs = "EPSG:2056"
+        example_positionfixes = example_positionfixes.set_crs("EPSG:2056", allow_override=True)
         # check if the crs is correctly set
-        pfs.crs = None
+        pfs = pfs.set_crs(None, allow_override=True)
         pfs = _trackintel_model(pfs, crs="EPSG:2056")
         assert_geodataframe_equal(example_positionfixes, pfs)
 

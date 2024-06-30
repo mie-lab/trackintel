@@ -188,11 +188,12 @@ class TestTemporal_tracking_quality:
         """Test if the an error is raised when passing unknown 'granularity' to _get_tracking_quality_user()."""
         sp_tpls = testdata_sp_tpls_geolife_long
         user_0 = sp_tpls.loc[sp_tpls["user_id"] == 0]
+        start_date = sp_tpls["started_at"].min().floor(freq="D")
 
         with pytest.raises(ValueError):
-            ti.analysis.tracking_quality._get_tracking_quality_user(user_0, granularity=12345)
+            ti.analysis.tracking_quality._get_tracking_quality_user(user_0, start_date, granularity=12345)
         with pytest.raises(ValueError):
-            ti.analysis.tracking_quality._get_tracking_quality_user(user_0, granularity="random")
+            ti.analysis.tracking_quality._get_tracking_quality_user(user_0, start_date, granularity="random")
 
     def test_staypoints_accessors(self, testdata_all_geolife_long):
         """Test tracking_quality calculation from staypoints accessor."""

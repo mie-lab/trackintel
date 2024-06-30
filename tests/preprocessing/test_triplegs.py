@@ -387,27 +387,27 @@ class TestGenerate_trips:
         """Test that the resulting GeoDataFrame has the correct crs or a warning or error is thrown if not set"""
         sp, tpls = example_triplegs
         # Case 1: sp crs None --> throw warning and set to tpls crs
-        sp.crs = None
+        sp = sp.set_crs(None, allow_override=True)
         with pytest.warns(UserWarning):
             _, _, trips = generate_trips(sp, tpls)
             assert trips.crs == tpls.crs
         # Case 2: Both crs None --> warn and set to None
-        tpls.crs = None
+        tpls = tpls.set_crs(None, allow_override=True)
         with pytest.warns(UserWarning):
             _, _, trips = generate_trips(sp, tpls)
             assert trips.crs is None
         # Case 3: tpls crs is None --> throw warning and set to sp crs
-        sp.crs = "EPSG:4326"
+        sp = sp.set_crs("EPSG:4326", allow_override=True)
         with pytest.warns(UserWarning):
             _, _, trips = generate_trips(sp, tpls)
             assert trips.crs == "EPSG:4326"
         # Case 4: Both crs set and correspond
-        tpls.crs = "EPSG:2056"
-        sp.crs = "EPSG:2056"
+        tpls = tpls.set_crs("EPSG:2056", allow_override=True)
+        sp = sp.set_crs("EPSG:2056", allow_override=True)
         _, _, trips = generate_trips(sp, tpls)
         assert trips.crs == "EPSG:2056"
         # Case 5: Both crs set but differ --> throw error
-        sp.crs = "EPSG:4326"
+        sp = sp.set_crs("EPSG:4326", allow_override=True)
         error_msg = "CRS of staypoints and triplegs differ. Geometry cannot be joined safely."
         with pytest.raises(AssertionError, match=error_msg):
             generate_trips(sp, tpls)
@@ -432,10 +432,9 @@ def _create_debug_sp_tpls_data(sp, tpls, gap_threshold):
     sp_tpls["is_activity"] = sp_tpls["is_activity"].__eq__(True)
     sp_tpls.sort_values(by=["user_id", "started_at"], inplace=True)
     sp_tpls["started_at_next"] = sp_tpls["started_at"].shift(-1)
-    sp_tpls["activity_next"] = sp_tpls["is_activity"].shift(-1)
+    sp_tpls["activity_next"] = sp_tpls["is_activity"].shift(-1, fill_value=False)
 
     sp_tpls["gap"] = (sp_tpls["started_at_next"] - sp_tpls["finished_at"]).dt.seconds / 60 > gap_threshold
-
     return sp_tpls
 
 
@@ -519,16 +518,17 @@ def _generate_trips_old(sp_input, tpls_input, gap_threshold=15, print_progress=F
     sp_tpls["started_at_next"] = sp_tpls["started_at"].shift(-1)
     sp_tpls["is_activity_next"] = sp_tpls["is_activity"].shift(-1)
 
+    cols = ["started_at", "finished_at", "user_id", "type", "is_activity", "id", "started_at_next", "is_activity_next"]
     if print_progress:
         tqdm.pandas(desc="User trip generation")
         trips = (
-            sp_tpls.groupby(["user_id"], group_keys=False, as_index=False)
+            sp_tpls.groupby(["user_id"], group_keys=False, as_index=False)[cols]
             .progress_apply(_generate_trips_user, gap_threshold=gap_threshold)
             .reset_index(drop=True)
         )
     else:
         trips = (
-            sp_tpls.groupby(["user_id"], group_keys=False, as_index=False)
+            sp_tpls.groupby(["user_id"], group_keys=False, as_index=False)[cols]
             .apply(_generate_trips_user, gap_threshold=gap_threshold)
             .reset_index(drop=True)
         )
