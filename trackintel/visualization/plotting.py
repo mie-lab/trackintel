@@ -222,7 +222,7 @@ def _calculate_bounds(positionfixes, staypoints, triplegs, locations):
         south = locations.geometry.y.min() - 0.03
         east = locations.geometry.x.max() + 0.03
         west = locations.geometry.x.min() - 0.03
-    return (north, south, east, west)
+    return (west, south, east, north)
 
 
 def _plot_frames(positionfixes, staypoints, triplegs, locations, radius_sp, radius_locs, ax):
@@ -310,7 +310,7 @@ def plot(
 
     positionfixes, staypoints, triplegs, locations = _prepare_frames(positionfixes, staypoints, triplegs, locations)
     if plot_osm:
-        north, south, east, west = bbox = _calculate_bounds(positionfixes, staypoints, triplegs, locations)
+        west, south, east, north = bbox = _calculate_bounds(positionfixes, staypoints, triplegs, locations)
         plot_osm_streets(bbox, ax=ax)
         ax.set_xlim([west, east])
         ax.set_ylim([south, north])
