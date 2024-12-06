@@ -8,7 +8,6 @@ dependencies:
 - matplotlib
 - geopandas>=0.12.0
 - scikit-learn
-- networkx 
 - pip 
 - geoalchemy2 
 - osmnx 

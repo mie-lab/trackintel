@@ -10,7 +10,6 @@ dependencies:
   - matplotlib
   - pandas
   - scikit-learn
-  - networkx
   - geoalchemy2
   - osmnx
   - psycopg2
