@@ -153,7 +153,7 @@ class Test_calculate_bounds:
     def test_locations(self, test_data):
         """Test reading of locations bounds"""
         _, _, _, locs = test_data
-        n, s, e, w = _calculate_bounds(None, None, None, locs)
+        w, s, e, n = _calculate_bounds(None, None, None, locs)
         assert n >= locs.geometry.y.max()
         assert s <= locs.geometry.y.min()
         assert e >= locs.geometry.x.max()
@@ -162,7 +162,7 @@ class Test_calculate_bounds:
     def test_triplegs(self, test_data):
         """Test reading of triplegs bounds"""
         _, _, tpls, locs = test_data
-        n, s, e, w = _calculate_bounds(None, None, tpls, locs)
+        w, s, e, n = _calculate_bounds(None, None, tpls, locs)
         bounds = tpls.bounds
         assert n >= max(bounds.maxy)
         assert s <= min(bounds.miny)
@@ -172,7 +172,7 @@ class Test_calculate_bounds:
     def test_staypoints(self, test_data):
         """Test reading of staypoint bounds"""
         _, sp, tpls, locs = test_data
-        n, s, e, w = _calculate_bounds(None, sp, tpls, locs)
+        w, s, e, n = _calculate_bounds(None, sp, tpls, locs)
         assert n >= sp.geometry.y.max()
         assert s <= sp.geometry.y.min()
         assert e >= sp.geometry.x.max()
@@ -181,7 +181,7 @@ class Test_calculate_bounds:
     def test_positionfixes(self, test_data):
         """Test reading of positionfixes bounds"""
         pfs, sp, tpls, locs = test_data
-        n, s, e, w = _calculate_bounds(pfs, sp, tpls, locs)
+        w, s, e, n = _calculate_bounds(pfs, sp, tpls, locs)
         assert n >= pfs.geometry.y.max()
         assert s <= pfs.geometry.y.min()
         assert e >= pfs.geometry.x.max()
@@ -213,7 +213,7 @@ class TestPlot:
     def test_osm(self, test_data):
         """Test call to plot_osm"""
         pfs, sp, tpls, locs = test_data
-        n, s, e, w = _calculate_bounds(*test_data)
+        w, s, e, n = _calculate_bounds(*test_data)
         _, ax = regular_figure()
         plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, locations=locs, plot_osm=True, ax=ax)
         assert ax.get_xlim() == (w, e)

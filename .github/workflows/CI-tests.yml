@@ -32,7 +32,6 @@ jobs:
       with:
           environment-file: ${{ matrix.env }}
           miniforge-version: latest
-          miniforge-variant: Mambaforge
           use-mamba: true
           
     - name: Check Environment
