@@ -81,7 +81,7 @@ ti.plot(positionfixes=pfs, staypoints=sp, triplegs=tpls, radius_sp=10)
 # e.g., predict travel mode labels based on travel speed
 tpls = tpls.predict_transport_mode()
 # or calculate the temporal tracking coverage of users
-tracking_coverage = ti.temporal_tracking_quality(tpls, granularity='all')
+tracking_coverage = ti.analysis.temporal_tracking_quality(tpls, granularity='all')
 ```
 
 **[5.]** Save results.
