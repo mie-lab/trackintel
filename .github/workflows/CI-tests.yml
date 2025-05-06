@@ -28,10 +28,11 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Set up Python environment
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v3
       with:
           environment-file: ${{ matrix.env }}
           miniforge-version: latest
+          mamba-version: "*"
           use-mamba: true
           
     - name: Check Environment
