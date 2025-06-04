@@ -42,7 +42,11 @@ class Staypoints(TrackintelBase, TrackintelGeoDataFrame):
 
     def __init__(self, *args, validate=True, **kwargs):
         super().__init__(*args, **kwargs)
-        if validate:
+        if (
+            validate
+            and getattr(self, "_geometry_column_name", None) is not None
+            and all(c in self.columns for c in _required_columns)
+        ):
             self.validate(self)
 
     # create circular reference directly -> avoid second call of init via accessor

@@ -13,7 +13,7 @@ logging.basicConfig(filename="examples/log/preprocessing.log", level=logging.INF
 
 # GPS trajectory.
 pfs = ti.read_positionfixes_csv("examples/data/geolife_trajectory.csv", sep=";", crs="EPSG:4326", index_col=None)
-ti.plot(filename="examples/out/gps_trajectory_positionfixes.png", positionfixes=pfs, plot_osm=True)
+ti.plot(filename="examples/out/gps_trajectory_positionfixes.png", positionfixes=pfs, plot_osm=False)
 
 pfs, sp = pfs.generate_staypoints(method="sliding", dist_threshold=100, time_threshold=5)
 ti.plot(
@@ -21,7 +21,7 @@ ti.plot(
     staypoints=sp,
     radius_sp=100,
     positionfixes=pfs,
-    plot_osm=True,
+    plot_osm=False,
 )
 
 _, locs = sp.generate_locations(method="dbscan", epsilon=100, num_samples=3)
@@ -32,12 +32,12 @@ ti.plot(
     positionfixes=pfs,
     staypoints=sp,
     radius_sp=100,
-    plot_osm=True,
+    plot_osm=False,
 )
 
 _, tpls = pfs.generate_triplegs(staypoints=sp)
 ti.plot(
-    filename="examples/out/gpsies_trajectory_triplegs.png", triplegs=tpls, staypoints=sp, radius_sp=100, plot_osm=True
+    filename="examples/out/gpsies_trajectory_triplegs.png", triplegs=tpls, staypoints=sp, radius_sp=100, plot_osm=False
 )
 
 # Geolife trajectory.
@@ -50,7 +50,7 @@ ti.plot(
     staypoints=sp,
     radius_sp=100,
     positionfixes=pfs,
-    plot_osm=True,
+    plot_osm=False,
 )
 
 # Google trajectory.
@@ -61,7 +61,7 @@ ti.plot(
     staypoints=sp,
     radius_sp=75,
     positionfixes=pfs,
-    plot_osm=True,
+    plot_osm=False,
 )
 
 # Posmo trajectory.

@@ -43,7 +43,11 @@ class Positionfixes(TrackintelBase, TrackintelGeoDataFrame, gpd.GeoDataFrame):
         # validate kwarg is necessary as the object is not fully initialised if we call it from _constructor
         # (geometry-link is missing). thus we need a way to stop validating too early.
         super().__init__(*args, **kwargs)
-        if validate:
+        if (
+            validate
+            and getattr(self, "_geometry_column_name", None) is not None
+            and all(c in self.columns for c in _required_columns)
+        ):
             self.validate(self)
 
     # create circular reference directly -> avoid second call of init via accessor

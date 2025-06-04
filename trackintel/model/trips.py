@@ -91,7 +91,7 @@ class TripsDataFrame(TrackintelBase, TrackintelDataFrame):
 
     def __init__(self, *args, validate=True, **kwargs):
         super().__init__(*args, **kwargs)
-        if validate:
+        if validate and all(c in self.columns for c in _required_columns):
             TripsDataFrame.validate(self)  # static call
 
     @staticmethod
@@ -173,7 +173,11 @@ class TripsGeoDataFrame(TrackintelGeoDataFrame, TripsDataFrame, gpd.GeoDataFrame
 
     def __init__(self, *args, validate=True, **kwargs):
         super().__init__(*args, validate=validate, **kwargs)
-        if validate:
+        if (
+            validate
+            and getattr(self, "_geometry_column_name", None) is not None
+            and all(c in self.columns for c in _required_columns)
+        ):
             TripsGeoDataFrame.validate(self)
 
     @staticmethod
