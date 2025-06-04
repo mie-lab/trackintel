@@ -38,10 +38,9 @@ class TrackintelGeoDataFrame(GeoDataFrame):
     @property
     def _constructor(self):
         """Interface to subtype pandas properly"""
-        super_cons = super()._constructor
 
         def _constructor_with_fallback(*args, **kwargs):
-            result = super_cons(*args, **kwargs)
+            result = GeoDataFrame._geodataframe_constructor_with_fallback(*args, **kwargs)
             if isinstance(result, GeoDataFrame):
                 return self.__class__(result, validate=False)
             # uses DataFrame constructor -> must be DataFrame
@@ -53,7 +52,7 @@ class TrackintelGeoDataFrame(GeoDataFrame):
 
     def _constructor_from_mgr(self, mgr, axes):
         """Mirror GeoPandas _constructor_from_mgr method."""
-        return self._constructor(GeoDataFrame._constructor_from_mgr(self, mgr, axes))
+        return self._constructor(GeoDataFrame._constructor_from_mgr(GeoDataFrame, mgr, axes))
 
     # Following methods manually set self.__class__ fix to GeoDataFrame.
     # Thus to properly subtype, we need to downcast them with the _wrapped_gdf_method decorator.
