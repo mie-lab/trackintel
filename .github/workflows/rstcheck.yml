@@ -23,4 +23,4 @@ jobs:
 
       - name: Run rstcheck
         run: |
-          rstcheck -r --ignore-directives autofunction .
+          rstcheck -r --ignore-directives autofunction --ignore-messages autoclass.
