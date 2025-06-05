@@ -81,7 +81,7 @@ def generate_locations(
         raise ValueError(f"method '{method}' is unknown. Supported value is ['dbscan'].")
 
     # initialize the return GeoDataFrames
-    sp = staypoints.copy()
+    sp = gpd.GeoDataFrame(staypoints.copy())
     non_activities = None
     if activities_only:
         if "activity" not in sp.columns:
