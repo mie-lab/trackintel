@@ -92,7 +92,6 @@ Tours
 	:members:
 
 
-.. _data_model:
 
 Data Model (SQL)
 ================
