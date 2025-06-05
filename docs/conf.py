@@ -71,7 +71,6 @@ def setup(app):
 # release = version
 
 version = "1.4.1"
-release = version
 
 
 # -- General configuration ---------------------------------------------------
