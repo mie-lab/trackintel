@@ -10,7 +10,7 @@ dependencies:
 - scikit-learn
 - pip
 - geoalchemy2
-- osmnx
+- osmnx>=2.0.0
 - psycopg2
 - tqdm
 - similaritymeasures
