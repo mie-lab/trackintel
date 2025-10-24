@@ -6,7 +6,7 @@ dependencies:
 - python
 - numpy
 - matplotlib
-- geopandas>=0.12.0
+- geopandas>=1.1.0
 - scikit-learn
 - pip
 - geoalchemy2
