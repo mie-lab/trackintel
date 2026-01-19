@@ -167,9 +167,7 @@ def doc(*docstrings, **params):
 _shared_docs = {}
 
 # in _shared_docs as all write_postgis_xyz functions use this docstring
-_shared_docs[
-    "write_postgis"
-] = """
+_shared_docs["write_postgis"] = """
 Stores {long} to PostGIS. Usually, this is directly called on a {long}
 DataFrame (see example below).
 
@@ -210,9 +208,7 @@ Examples
 >>> ti.io.write_{long}_postgis({short}, conn_string, table_name)
 """
 
-_shared_docs[
-    "write_csv"
-] = """
+_shared_docs["write_csv"] = """
 Write {long} to csv file.
 
 Wraps the pandas to_csv function.
