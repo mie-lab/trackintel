@@ -5,7 +5,6 @@ import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import trackintel as ti
 
-
 # This script will remove the following table from your database!
 # It will then, however, repopulate it with new data.
 database_name = "trackintel-tests"
