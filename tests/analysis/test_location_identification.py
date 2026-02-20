@@ -90,14 +90,14 @@ class TestPre_Filter:
 
     def test_loc_period(self, example_staypoints, default_kwargs):
         """Test the minimum period per location parameter."""
-        default_kwargs["thresh_loc_period"] = "2d"
+        default_kwargs["thresh_loc_period"] = "2D"
         f = pre_filter_locations(example_staypoints, **default_kwargs)
         assert all(f == (example_staypoints["location_id"] == 0))
 
     def test_agg_level(self, example_staypoints, default_kwargs):
         """Test if different aggregation works."""
         default_kwargs["agg_level"] = "user"
-        default_kwargs["thresh_loc_period"] = pd.Timedelta("1d")
+        default_kwargs["thresh_loc_period"] = pd.Timedelta("1D")
         f = pre_filter_locations(example_staypoints, **default_kwargs)
         assert all(f == (example_staypoints[["user_id", "location_id"]] == [0, 1]).all(axis=1))
 

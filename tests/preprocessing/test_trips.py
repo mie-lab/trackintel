@@ -186,11 +186,11 @@ class TestGenerate_tours:
     def test_tour_times(self, example_trip_data):
         """Check whether the start and end times of generated tours are correct"""
         trips, _ = example_trip_data
-        _, tours = ti.preprocessing.trips.generate_tours(trips, max_nr_gaps=1, max_time="1d")
+        _, tours = ti.preprocessing.trips.generate_tours(trips, max_nr_gaps=1, max_time="1D")
         # check that all times are below the max time
         for i, row in tours.iterrows():
             time_diff = row["finished_at"] - row["started_at"]
-            assert time_diff > pd.to_timedelta("0m") and time_diff < pd.to_timedelta("1d")
+            assert time_diff > pd.to_timedelta("0m") and time_diff < pd.to_timedelta("1D")
 
         # group trips by tour and check that start and end of each tour are correct
         grouped_trips = ti.preprocessing.trips.get_trips_grouped(trips, tours)

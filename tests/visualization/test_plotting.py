@@ -79,7 +79,7 @@ class TestA4_figsize:
 class TestPlot_modal_split:
     def test_create_plot_geolife(self, geolife_triplegs_with_modes):
         """Check if we can run the plot function with geolife data without error"""
-        modal_split = calculate_modal_split(geolife_triplegs_with_modes, freq="d", per_user=False)
+        modal_split = calculate_modal_split(geolife_triplegs_with_modes, freq="D", per_user=False)
         plot_modal_split(modal_split)
 
     def test_check_dtype_error(self, geolife_triplegs_with_modes):
@@ -93,19 +93,19 @@ class TestPlot_modal_split:
 
     def test_multi_user_error(self, triplegs_with_modes):
         """Create a modal split plot based on randomly generated test data"""
-        modal_split = calculate_modal_split(triplegs_with_modes, freq="d", per_user=True, norm=True)
+        modal_split = calculate_modal_split(triplegs_with_modes, freq="D", per_user=True, norm=True)
         with pytest.raises(ValueError):
             plot_modal_split(modal_split)
 
         # make sure that there is no error if the data was correctly created
-        modal_split = calculate_modal_split(triplegs_with_modes, freq="d", per_user=False, norm=True)
+        modal_split = calculate_modal_split(triplegs_with_modes, freq="D", per_user=False, norm=True)
         plot_modal_split(modal_split)
 
     def test_create_plot_testdata(self, triplegs_with_modes):
         """Create a modal split plot based on randomly generated test data"""
         tmp_file = os.path.join("tests", "data", "modal_split_plot.png")
 
-        modal_split = calculate_modal_split(triplegs_with_modes, freq="d", per_user=False, norm=True)
+        modal_split = calculate_modal_split(triplegs_with_modes, freq="D", per_user=False, norm=True)
 
         modal_split = modal_split[["walk", "bike", "train", "car", "bus"]]  # change order for the looks of the plot
         plot_modal_split(
@@ -119,7 +119,7 @@ class TestPlot_modal_split:
     def test_ax_arg(self, triplegs_with_modes):
         """Test if ax is augmented if passed to function."""
         _, axis = regular_figure()
-        modal_split = calculate_modal_split(triplegs_with_modes, freq="d", norm=True)
+        modal_split = calculate_modal_split(triplegs_with_modes, freq="D", norm=True)
         xlabel, ylabel, title = "xlabel", "ylabel", "title"
         dateformat = "%d"
         _, ax = plot_modal_split(
@@ -132,7 +132,7 @@ class TestPlot_modal_split:
 
     def test_skip_xticks(self, triplegs_with_modes):
         """Test if function set right ticks invisible."""
-        modal_split = calculate_modal_split(triplegs_with_modes, freq="d", norm=True)
+        modal_split = calculate_modal_split(triplegs_with_modes, freq="D", norm=True)
         mod = 4  # remove all but the mod 4 ticks
         _, ax = regular_figure()
         _, ax = plot_modal_split(modal_split)

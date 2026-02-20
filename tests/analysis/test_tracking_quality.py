@@ -306,7 +306,7 @@ class TestSplit_overlaps:
         head2 = testdata_sp_tpls_geolife_long.head(2).copy()
 
         # construct the finished_at exactly one day after started_at
-        head2["finished_at"] = head2["started_at"] + pd.Timedelta("1d")
+        head2["finished_at"] = head2["started_at"] + pd.Timedelta("1D")
 
         # the records have the same hour
         hour_diff = (head2["finished_at"] - pd.Timestamp.resolution).dt.hour - head2["started_at"].dt.hour

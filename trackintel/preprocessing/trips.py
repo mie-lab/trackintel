@@ -55,7 +55,7 @@ def generate_tours(
     trips,
     staypoints=None,
     max_dist=100,
-    max_time="1d",
+    max_time="1D",
     max_nr_gaps=0,
     print_progress=False,
     n_jobs=1,
@@ -76,7 +76,7 @@ def generate_tours(
         This is parameter is only used if staypoints is `None`!
         Also, if `max_nr_gaps > 0`, a tour can contain larger spatial gaps (see Notes below for more detail)
 
-    max_time: str or pd.Timedelta, default "1d" (1 day)
+    max_time: str or pd.Timedelta, default "1D" (1 day)
         Maximum time that a tour is allowed to take
 
     max_nr_gaps: int, default 0
