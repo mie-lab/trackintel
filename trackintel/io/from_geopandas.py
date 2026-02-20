@@ -297,7 +297,8 @@ def read_locations_gpd(gdf, user_id="user_id", center="center", extent=None, crs
     if extent is not None:
         locs["extent"] = gpd.GeoSeries(locs["extent"])
 
-    return Locations(locs)
+    # Ensure geometry storage is materialized (writeable) for shapely/geopandas equality checks.
+    return Locations(locs.copy())
 
 
 def read_tours_gpd(

@@ -338,21 +338,25 @@ def _generate_tours_user(
         # remove points because they are out of the time window
         start_candidates = start_candidates[new_list_start:]
 
+    tour_columns = [
+        "user_id",
+        "started_at",
+        "finished_at",
+        "origin_staypoint_id",
+        "destination_staypoint_id",
+        "trips",
+        "location_id",
+    ]
     if len(tours) == 0:
-        return pd.DataFrame(
-            tours,
-            columns=[
-                "user_id",
-                "started_at",
-                "finished_at",
-                "origin_staypoint_id",
-                "destination_staypoint_id",
-                "trips",
-                "location_id",
-            ],
-        )
+        # Preserve dtype of time columns to avoid object-upcast when concatenating user results.
+        tours_df = user_trip_df.iloc[0:0][
+            ["user_id", "started_at", "finished_at", "origin_staypoint_id", "destination_staypoint_id"]
+        ].copy()
+        tours_df["trips"] = pd.Series(index=tours_df.index, dtype=object)
+        tours_df["location_id"] = pd.Series(index=tours_df.index, dtype=object)
+        return tours_df[tour_columns]
     tours_df = pd.DataFrame(tours)
-    return tours_df
+    return tours_df[tour_columns]
 
 
 def _check_same_loc(stp1, stp2, staypoints):

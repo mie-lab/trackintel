@@ -438,7 +438,7 @@ class TestGenerate_triplegs_between_staypoints:
         with pytest.warns(DeprecationWarning, match=warn_string):
             pfs_case2, tpls_case2 = pfs.generate_triplegs(sp, method="between_staypoints")
 
-        assert_geodataframe_equal(pfs_case1.drop(columns="staypoint_id", axis=1), pfs_case2)
+        assert_geodataframe_equal(pfs_case1.drop(columns="staypoint_id"), pfs_case2)
         assert_geodataframe_equal(pfs_case1, pfs_case1_wo)
         assert_geodataframe_equal(tpls_case1, tpls_case2)
         assert_geodataframe_equal(tpls_case1, tpls_case1_wo)
