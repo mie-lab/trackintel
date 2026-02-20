@@ -191,13 +191,15 @@ def freq_method(staypoints, *labels):
     sp = staypoints.copy()
     if not labels:
         labels = ("home", "work")
+    # Keep backward-compatible dtype semantics independent of pandas string inference.
+    sp["purpose"] = pd.Series(np.full(len(sp), None, dtype=object), index=sp.index, dtype=object)
     for name, group in sp.groupby("user_id"):
         if "duration" not in group.columns:
             group["duration"] = group["finished_at"] - group["started_at"]
         # pandas keeps inner order of groups
-        sp.loc[sp["user_id"] == name, "purpose"] = _freq_transform(group, *labels)
-    if "purpose" not in sp.columns:  # if empty sp
-        sp["purpose"] = None
+        # Preserve legacy semantics: unlabeled rows must stay `None` (not float `nan`).
+        purpose = _freq_transform(group, *labels).astype(object).where(lambda s: s.notna(), None)
+        sp.loc[sp["user_id"] == name, "purpose"] = purpose
     return sp
 
 
@@ -339,7 +341,7 @@ def osna_method(staypoints):
         how="left",
         left_on=["user_id", "location_id"],
         right_index=True,
-    )
+    ).copy()
 
 
 def _osna_label_timeframes(dt, weekend=[5, 6], start_rest=2, start_work=8, start_leisure=19):

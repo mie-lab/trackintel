@@ -402,7 +402,7 @@ class TestOsna_Method:
         sp = gpd.GeoDataFrame(data=list_dict, geometry="g")
         sp.index.name = "id"
         result = osna_method(sp)
-        sp["purpose"] = "work"
+        sp["purpose"] = pd.Series(["work"], index=sp.index, dtype=object)
         assert_geodataframe_equal(result, sp)
 
     def test_only_one_rest_location(self):
@@ -414,7 +414,7 @@ class TestOsna_Method:
         sp = gpd.GeoDataFrame(data=list_dict, geometry="g")
         sp.index.name = "id"
         result = osna_method(sp)
-        sp["purpose"] = "home"
+        sp["purpose"] = pd.Series(["home"], index=sp.index, dtype=object)
         assert_geodataframe_equal(result, sp)
 
     def test_only_one_leisure_location(self):
@@ -426,7 +426,7 @@ class TestOsna_Method:
         sp = gpd.GeoDataFrame(data=list_dict, geometry="g")
         sp.index.name = "id"
         result = osna_method(sp)
-        sp["purpose"] = "home"
+        sp["purpose"] = pd.Series(["home"], index=sp.index, dtype=object)
         assert_geodataframe_equal(result, sp)
 
     def test_prior_activity_label(self, example_osna):
@@ -452,7 +452,7 @@ class TestOsna_Method:
         sp = pd.DataFrame(list_dict)
         sp.index.name = "id"
         result = osna_method(sp)
-        sp["purpose"] = ["home", "work", "home", "work"]
+        sp["purpose"] = pd.Series(["home", "work", "home", "work"], index=sp.index, dtype=object)
         assert_frame_equal(sp, result)
 
 
