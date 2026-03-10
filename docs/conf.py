@@ -17,8 +17,6 @@ import sys
 
 sys.path.insert(0, os.path.abspath(".."))
 
-from pkg_resources import get_distribution
-
 autodoc_mock_imports = [
     "dateutil",
     "descartes",
@@ -52,7 +50,7 @@ autodoc_mock_imports = [
 # -- Project information -----------------------------------------------------
 
 project = "trackintel"
-copyright = "2019 - 2025, Dominik Bucher, Henry Martin, Ye Hong, Nina Wiedemann"
+copyright = "2019 - 2026, Dominik Bucher, Henry Martin, Ye Hong, Nina Wiedemann"
 author = "Dominik Bucher, Henry Martin, Ye Hong, Nina Wiedemann"
 
 
@@ -66,7 +64,6 @@ def setup(app):
 # version = str(ti.__version__)
 # import trackintel
 # version = trackintel.__version__.__version__
-# version = get_distribution('trackintel').version
 # The full version, including alpha/beta/rc tags
 # release = version
 
