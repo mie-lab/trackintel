@@ -280,6 +280,40 @@ class TestGenerate_staypoints:
         _, sp = pfs.generate_staypoints(gap_threshold=1e8, include_last=True)
         assert len(sp) == 1
 
+    def test_timezone_aware_non_nanosecond_timestamps(self):
+        """Staypoint generation should handle timezone-aware datetime dtypes with non-nanosecond units.
+
+        Pandas can store timezone-aware timestamps as e.g. ``datetime64[us, UTC]``. The optimized staypoint path
+        converts timestamps to integer arrays and must derive the unit from pandas' timezone-aware dtype instead of
+        passing that dtype to ``np.datetime_data``, which only understands plain numpy datetime64 dtypes.
+        """
+        tracked_at = pd.Series(
+            pd.array(
+                [
+                    pd.Timestamp("2024-01-01 00:00:00", tz="UTC"),
+                    pd.Timestamp("2024-01-01 00:10:00", tz="UTC"),
+                    pd.Timestamp("2024-01-01 00:20:00", tz="UTC"),
+                ],
+                dtype=pd.DatetimeTZDtype(unit="us", tz="UTC"),
+            )
+        )
+        df = pd.DataFrame(
+            {
+                "user_id": [0, 0, 0],
+                "tracked_at": tracked_at,
+                "longitude": [8.0, 8.0001, 8.01],
+                "latitude": [47.0, 47.0001, 47.01],
+            }
+        )
+        pfs = ti.Positionfixes(
+            gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df["longitude"], df["latitude"]), crs="EPSG:4326")
+        )
+
+        _, sp = pfs.generate_staypoints(dist_threshold=100, time_threshold=5, gap_threshold=15)
+
+        assert str(pfs["tracked_at"].dtype) == "datetime64[us, UTC]"
+        assert len(sp) == 1
+
     def test_str_userid(self, example_positionfixes):
         """Staypoint generation should also run without error if the user_id is a string"""
         # the pfs would not generate staypoints with the default parameters
@@ -323,6 +357,58 @@ class TestCreate_new_staypoints:
         sp_lv95.set_crs(4326, allow_override=True, inplace=True)
         # planar and non-planar differ only if we experience a wrap in coords like [+180, -180]
         assert_geodataframe_equal(sp_wgs84, sp_lv95, check_less_precise=True)
+
+    def test_centroid_uses_unique_positionfix_geometries(self):
+        """Staypoint centroids should match the previous point-union behavior for repeated identical fixes.
+
+        The optimized staypoint path computes centroids from coordinate arrays instead of building a Shapely
+        MultiPoint. Shapely's point union collapses identical point geometries, so repeated pings at the same
+        coordinate must not give that coordinate extra weight in the staypoint centroid.
+        """
+        base_time = pd.Timestamp("2024-01-01 00:00:00", tz="UTC")
+        df = pd.DataFrame(
+            {
+                "user_id": [0, 0, 0, 0],
+                "tracked_at": [base_time + pd.Timedelta(minutes=minutes) for minutes in [0, 10, 20, 30]],
+                "longitude": [0, 0, 2, 100],
+                "latitude": [0, 0, 0, 0],
+            }
+        )
+        pfs = ti.Positionfixes(
+            gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df["longitude"], df["latitude"]), crs="EPSG:4326")
+        )
+
+        _, sp = pfs.generate_staypoints(dist_threshold=500000, time_threshold=5, gap_threshold=60)
+
+        assert len(sp) == 1
+        assert sp.geometry.iloc[0].x == pytest.approx(1)
+        assert sp.geometry.iloc[0].y == pytest.approx(0)
+
+    def test_centroid_wraps_antimeridian(self):
+        """Staypoint centroids should preserve circular longitude averaging around the antimeridian.
+
+        Geographic CRS centroids cannot use a plain arithmetic longitude mean: points at +179 and -179 degrees
+        represent nearby positions, not a centroid near 0 degrees. This guards the optimized array centroid against
+        regressing from Trackintel's previous angle-based centroid behavior.
+        """
+        base_time = pd.Timestamp("2024-01-01 00:00:00", tz="UTC")
+        df = pd.DataFrame(
+            {
+                "user_id": [0, 0, 0],
+                "tracked_at": [base_time + pd.Timedelta(minutes=minutes) for minutes in [0, 10, 20]],
+                "longitude": [179, -179, 0],
+                "latitude": [10, 20, 0],
+            }
+        )
+        pfs = ti.Positionfixes(
+            gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df["longitude"], df["latitude"]), crs="EPSG:4326")
+        )
+
+        _, sp = pfs.generate_staypoints(dist_threshold=2000000, time_threshold=5, gap_threshold=60)
+
+        assert len(sp) == 1
+        assert abs(sp.geometry.iloc[0].x) == pytest.approx(180)
+        assert sp.geometry.iloc[0].y == pytest.approx(15)
 
 
 class TestGenerate_triplegs_between_staypoints:

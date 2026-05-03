@@ -1,14 +1,16 @@
 import datetime
+import math
 import warnings
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Point
+from tqdm import tqdm
 
 from trackintel import Positionfixes, Staypoints, Triplegs
-from trackintel.geogr import check_gdf_planar, point_haversine_dist
-from trackintel.preprocessing.util import _explode_agg, angle_centroid_multipoints, applyParallel
+from trackintel.geogr import check_gdf_planar
+from trackintel.preprocessing.util import _explode_agg, applyParallel
 
 
 def generate_staypoints(
@@ -126,19 +128,36 @@ def generate_staypoints(
     # TODO: tests using a different distance function, e.g., L2 distance
     if method == "sliding":
         # Algorithm from Li et al. (2008). For details, please refer to the paper.
-        sp = applyParallel(
-            pfs.groupby("user_id", as_index=False),
-            _generate_staypoints_sliding_user,
-            n_jobs=n_jobs,
-            print_progress=print_progress,
-            geo_col=geo_col,
-            elevation_flag=elevation_flag,
-            dist_threshold=dist_threshold,
-            time_threshold=time_threshold,
-            gap_threshold=gap_threshold,
-            distance_metric=distance_metric,
-            include_last=include_last,
-        ).reset_index(drop=True)
+        grouped = pfs.groupby("user_id", as_index=False)
+        if n_jobs == 1:
+            result_list = [
+                _generate_staypoints_sliding_user(
+                    group,
+                    geo_col=geo_col,
+                    elevation_flag=elevation_flag,
+                    dist_threshold=dist_threshold,
+                    time_threshold=time_threshold,
+                    gap_threshold=gap_threshold,
+                    distance_metric=distance_metric,
+                    include_last=include_last,
+                )
+                for _, group in tqdm(grouped, disable=not print_progress)
+            ]
+            sp = pd.concat(result_list).reset_index(drop=True)
+        else:
+            sp = applyParallel(
+                grouped,
+                _generate_staypoints_sliding_user,
+                n_jobs=n_jobs,
+                print_progress=print_progress,
+                geo_col=geo_col,
+                elevation_flag=elevation_flag,
+                dist_threshold=dist_threshold,
+                time_threshold=time_threshold,
+                gap_threshold=gap_threshold,
+                distance_metric=distance_metric,
+                include_last=include_last,
+            ).reset_index(drop=True)
 
         # index management
         sp["staypoint_id"] = sp.index
@@ -467,44 +486,48 @@ def _generate_staypoints_sliding_user(
     include_last=False,
 ):
     """User level staypoint generation using sliding method, see generate_staypoints() function for parameter meaning."""
-    if distance_metric == "haversine":
-        dist_func = point_haversine_dist
-    else:
+    if distance_metric != "haversine":
         raise ValueError("distance_metric unknown. We only support ['haversine']. " f"You passed {distance_metric}")
 
     df = df.sort_index(kind="stable").sort_values(by=["tracked_at"], kind="stable")
 
-    # transform times to pandas Timedelta to simplify comparisons
     gap_threshold = pd.Timedelta(gap_threshold, unit="minutes")
     time_threshold = pd.Timedelta(time_threshold, unit="minutes")
-    # to numpy as access time of numpy array is faster than pandas Series
-    gap_times = ((df.tracked_at - df.tracked_at.shift(1)) > gap_threshold).to_numpy()
+    tracked_at = df["tracked_at"]
+    tracked_unit = tracked_at.dtype.unit
+    tracked_values = tracked_at.astype("int64").to_numpy(copy=False)
+    gap_threshold_value = gap_threshold / pd.Timedelta(1, unit=tracked_unit)
+    time_threshold_value = time_threshold / pd.Timedelta(1, unit=tracked_unit)
 
     # put x and y into numpy arrays to speed up the access in the for loop (shapely is slow)
     x = df[geo_col].x.to_numpy()
     y = df[geo_col].y.to_numpy()
+    lon_rad = np.deg2rad(x)
+    lat_rad = np.deg2rad(y)
+    cos_lat = np.cos(lat_rad)
+    planar = check_gdf_planar(df)
 
     ret_sp = []
     curr = start = 0
     for curr in range(1, len(df)):
         # the gap of two consecutive positionfixes should not be too long
-        if gap_times[curr]:
+        if tracked_values[curr] - tracked_values[curr - 1] > gap_threshold_value:
             start = curr
             continue
 
-        delta_dist = dist_func(x[start], y[start], x[curr], y[curr], float_flag=True)
+        delta_dist = _haversine_dist_from_precomputed(lon_rad, lat_rad, cos_lat, start, curr)
         if delta_dist >= dist_threshold:
             # we want the staypoint to have long enough duration
-            if (df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]) >= time_threshold:
-                ret_sp.append(__create_new_staypoints(start, curr, df, elevation_flag, geo_col))
+            if tracked_values[curr] - tracked_values[start] >= time_threshold_value:
+                ret_sp.append(__create_new_staypoints(start, curr, df, elevation_flag, geo_col, x, y, planar))
             # distance large enough but time is too short -> not a staypoint
             # also initializer when new sp is added
             start = curr
 
     if include_last:  # aggregate remaining positionfixes
         # additional control: we aggregate only if duration longer than time_threshold
-        if (df["tracked_at"].iloc[curr] - df["tracked_at"].iloc[start]) >= time_threshold:
-            new_sp = __create_new_staypoints(start, curr, df, elevation_flag, geo_col, last_flag=True)
+        if tracked_values[curr] - tracked_values[start] >= time_threshold_value:
+            new_sp = __create_new_staypoints(start, curr, df, elevation_flag, geo_col, x, y, planar, last_flag=True)
             ret_sp.append(new_sp)
 
     ret_sp = pd.DataFrame(ret_sp)
@@ -512,7 +535,29 @@ def _generate_staypoints_sliding_user(
     return ret_sp
 
 
-def __create_new_staypoints(start, end, pfs, elevation_flag, geo_col, last_flag=False):
+def _haversine_dist_from_precomputed(lon_rad, lat_rad, cos_lat, start, end):
+    """Calculate haversine distance using per-user precomputed trigonometric arrays."""
+    return 6371000 * math.acos(
+        math.cos(lat_rad[start] - lat_rad[end])
+        - cos_lat[start] * cos_lat[end] * (1 - math.cos(lon_rad[start] - lon_rad[end]))
+    )
+
+
+def _centroid_from_coordinates(x, y, start, end, planar):
+    """Return the centroid of unique coordinates in the same way as a point union."""
+    coordinates = np.column_stack((x[start:end], y[start:end]))
+    coordinates = np.unique(coordinates, axis=0)
+
+    if planar:
+        return Point(coordinates[:, 0].mean(), coordinates[:, 1].mean())
+
+    x_rad = np.deg2rad(coordinates[:, 0])
+    x_sin = np.sin(x_rad).mean()
+    x_cos = np.cos(x_rad).mean()
+    return Point(np.rad2deg(np.arctan2(x_sin, x_cos)), coordinates[:, 1].mean())
+
+
+def __create_new_staypoints(start, end, pfs, elevation_flag, geo_col, x, y, planar, last_flag=False):
     """Create a staypoint with relevant information from start to end pfs."""
     new_sp = {}
 
@@ -524,11 +569,8 @@ def __create_new_staypoints(start, end, pfs, elevation_flag, geo_col, last_flag=
     # if end is the last pfs, we want to include the info from it as well
     if last_flag:
         end = len(pfs)
-    points = pfs[geo_col].iloc[start:end].union_all()
-    if check_gdf_planar(pfs):
-        new_sp[geo_col] = points.centroid
-    else:
-        new_sp[geo_col] = angle_centroid_multipoints(points)[0]
+
+    new_sp[geo_col] = _centroid_from_coordinates(x, y, start, end, planar)
 
     if elevation_flag:
         new_sp["elevation"] = pfs["elevation"].iloc[start:end].median()
