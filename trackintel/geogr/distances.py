@@ -1,7 +1,7 @@
 import itertools
 import math
 import warnings
-from math import cos, pi
+from math import pi
 
 import numpy as np
 import pandas as pd
@@ -207,7 +207,7 @@ def meters_to_decimal_degrees(meters, latitude):
     --------
     >>> meters_to_decimal_degrees(500.0, 47.410)
     """
-    return meters / (111.32 * 1000.0 * cos(latitude * (pi / 180.0)))
+    return meters / (111.32 * 1000.0 * np.cos(latitude * (pi / 180.0)))
 
 
 def check_gdf_planar(gdf, transform=False):
