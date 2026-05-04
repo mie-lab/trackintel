@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Local assistant configuration and notes
+CLAUDE.md
+.claude/
+
 # C extensions
 *.so
 
