@@ -258,6 +258,53 @@ class TestGenerate_locations:
         assert loc_dataset_num == 1
         assert loc_user_num == 2
 
+    def test_user_locations_with_singleton_and_multi_staypoints(self):
+        """User-level location generation should handle singleton and multi-staypoint locations together.
+
+        The optimized user-level path skips the expensive dissolve operation for locations that contain only one
+        staypoint, while still dissolving locations with multiple staypoints. This test keeps both cases in one input
+        so center, extent, and staypoint linkage regressions are visible.
+        """
+        started_at = pd.Timestamp("1971-01-01 00:00:00", tz="utc")
+        finished_at = pd.Timestamp("1971-01-01 01:00:00", tz="utc")
+        sp = ti.Staypoints(
+            gpd.GeoDataFrame(
+                [
+                    {"id": 0, "user_id": 0, "started_at": started_at, "finished_at": finished_at, "geom": Point(0, 0)},
+                    {"id": 1, "user_id": 0, "started_at": started_at, "finished_at": finished_at, "geom": Point(0, 0)},
+                    {
+                        "id": 2,
+                        "user_id": 0,
+                        "started_at": started_at,
+                        "finished_at": finished_at,
+                        "geom": Point(100, 100),
+                    },
+                    {
+                        "id": 3,
+                        "user_id": 1,
+                        "started_at": started_at,
+                        "finished_at": finished_at,
+                        "geom": Point(200, 200),
+                    },
+                ],
+                geometry="geom",
+                crs="EPSG:2056",
+            ).set_index("id")
+        )
+
+        linked_sp, locs = sp.generate_locations(
+            method="dbscan", epsilon=1, num_samples=1, distance_metric="euclidean", agg_level="user"
+        )
+
+        assert len(locs) == 3
+        assert linked_sp.loc[0, "location_id"] == linked_sp.loc[1, "location_id"]
+        assert linked_sp.loc[2, "location_id"] != linked_sp.loc[0, "location_id"]
+        assert linked_sp.loc[3, "location_id"] != linked_sp.loc[0, "location_id"]
+        assert locs.geometry.notna().all()
+        assert locs["extent"].notna().all()
+        assert locs.loc[linked_sp.loc[2, "location_id"], "center"] == Point(100, 100)
+        assert locs.loc[linked_sp.loc[3, "location_id"], "center"] == Point(200, 200)
+
     def test_crs(self, example_staypoints):
         """Test whether the crs of the output locations is set correctly."""
         sp = example_staypoints

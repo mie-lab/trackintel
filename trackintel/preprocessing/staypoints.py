@@ -3,9 +3,10 @@ import geopandas as gpd
 import pandas as pd
 from sklearn.cluster import DBSCAN
 import warnings
+from tqdm import tqdm
 
 from trackintel import Staypoints, Locations
-from trackintel.geogr import meters_to_decimal_degrees, check_gdf_planar
+from trackintel.geogr import check_gdf_planar, meters_to_decimal_degrees
 from trackintel.preprocessing.util import applyParallel, angle_centroid_multipoints
 
 
@@ -98,14 +99,22 @@ def generate_locations(
         db = DBSCAN(eps=eps, min_samples=num_samples, algorithm="ball_tree", metric=distance_metric)
 
         if agg_level == "user":
-            sp = applyParallel(
-                sp.groupby("user_id", as_index=False),
-                _gen_locs_dbscan,
-                n_jobs=n_jobs,
-                print_progress=print_progress,
-                distance_metric=distance_metric,
-                db=db,
-            )
+            grouped = sp.groupby("user_id", as_index=False)
+            if n_jobs == 1:
+                result_list = [
+                    _gen_locs_dbscan(group, distance_metric=distance_metric, db=db)
+                    for _, group in tqdm(grouped, disable=not print_progress)
+                ]
+                sp = pd.concat(result_list) if result_list else sp.iloc[:0].copy()
+            else:
+                sp = applyParallel(
+                    grouped,
+                    _gen_locs_dbscan,
+                    n_jobs=n_jobs,
+                    print_progress=print_progress,
+                    distance_metric=distance_metric,
+                    db=db,
+                )
 
             # keeping track of noise labels
             sp_non_noise_labels = sp[sp["location_id"] != -1]
@@ -133,10 +142,22 @@ def generate_locations(
             _gen_locs_dbscan(sp, db=db, distance_metric=distance_metric)
 
         ### create locations as grouped staypoints
-        temp_sp = sp[["user_id", "location_id", sp.geometry.name]]
+        temp_sp = sp.loc[sp["location_id"] != -1, ["user_id", "location_id", sp.geometry.name]]
         if agg_level == "user":
-            # directly dissolve by 'user_id' and 'location_id'
-            locs = temp_sp.dissolve(by=["user_id", "location_id"], as_index=False)
+            # Dissolve only multi-staypoint locations. Singleton locations already have the target geometry.
+            duplicate_mask = temp_sp.duplicated(subset=["user_id", "location_id"], keep=False)
+            singleton_locs = temp_sp.loc[~duplicate_mask].copy()
+            multi_rows = temp_sp.loc[duplicate_mask]
+            if len(multi_rows) > 0:
+                multi_locs = multi_rows.dissolve(by=["user_id", "location_id"], as_index=False)
+                locs = gpd.GeoDataFrame(
+                    pd.concat([singleton_locs, multi_locs], ignore_index=True),
+                    geometry=geo_col,
+                    crs=temp_sp.crs,
+                )
+            else:
+                locs = gpd.GeoDataFrame(singleton_locs, geometry=geo_col, crs=temp_sp.crs)
+            locs = locs.sort_values(["user_id", "location_id"])
         else:
             ## generate user-location pairs with same geometries across users
             # get user-location pairs
@@ -145,9 +166,6 @@ def generate_locations(
             geom_gdf = temp_sp.dissolve(by=["location_id"], as_index=False).drop(columns={"user_id"})
             # merge pairs with location geometries
             locs = geom_gdf.merge(locs, on="location_id", how="right")
-
-        # filter staypoints not belonging to locations
-        locs = locs.loc[locs["location_id"] != -1]
 
         if check_gdf_planar(locs):
             locs["center"] = locs.geometry.centroid
@@ -161,11 +179,13 @@ def generate_locations(
         # We create a buffer of distance epsilon around the convex_hull to denote location extent
         # Perform meter to decimal conversion if the distance metric is haversine
         if distance_metric == "haversine":
-            locs["extent"] = locs.apply(
-                lambda p: p["extent"].buffer(meters_to_decimal_degrees(epsilon, p["center"].y)),
-                axis=1,
-                result_type="reduce",
-            )
+            buffer_distance = meters_to_decimal_degrees(epsilon, locs["center"].y.to_numpy())
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    message="Geometry is in a geographic CRS. Results from 'buffer' are likely incorrect.",
+                )
+                locs["extent"] = locs["extent"].buffer(buffer_distance)
         else:
             locs["extent"] = locs["extent"].buffer(epsilon)
 
