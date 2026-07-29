@@ -1,5 +1,6 @@
 import warnings
 
+import numpy as np
 import pandas as pd
 
 
@@ -188,9 +189,57 @@ def _split_overlaps(source, granularity="day"):
     """
     freq = "h" if granularity == "hour" else "D"
     gdf = source.copy()
-    gdf[["started_at", "finished_at"]] = gdf.apply(_get_times, axis="columns", result_type="expand", freq=freq)
-    # must call DataFrame.explode directly because GeoDataFrame.explode cannot be used on multiple columns
-    gdf = pd.DataFrame.explode(gdf, ["started_at", "finished_at"], ignore_index=True)
+    tz = getattr(gdf["started_at"].dtype, "tz", None)
+
+    if tz is not None and str(tz) != "UTC":
+        # borders depend on the calendar (e.g. DST days are not 24h long),
+        # keep the row-wise splitting, but only for records that contain a
+        # frequency border strictly inside (started_at, finished_at)
+        next_border = gdf["started_at"].dt.floor(freq) + pd.tseries.frequencies.to_offset(freq)
+        crosses = (next_border < gdf["finished_at"]).to_numpy()
+        if crosses.any():
+            split_times = gdf.loc[crosses].apply(_get_times, axis="columns", result_type="expand", freq=freq)
+            starts = gdf["started_at"].to_numpy(dtype=object)
+            finishes = gdf["finished_at"].to_numpy(dtype=object)
+            starts[crosses] = split_times[0].to_numpy()
+            finishes[crosses] = split_times[1].to_numpy()
+            gdf["started_at"] = starts
+            gdf["finished_at"] = finishes
+            # DataFrame.explode directly because GeoDataFrame.explode cannot take multiple columns
+            gdf = pd.DataFrame.explode(gdf, ["started_at", "finished_at"], ignore_index=True)
+        else:
+            gdf = gdf.reset_index(drop=True)
+        if "duration" in gdf.columns:
+            gdf["duration"] = gdf["finished_at"] - gdf["started_at"]
+        return gdf
+
+    # naive or UTC timestamps: borders are uniform, so the segments of every
+    # record can be computed at once with integer nanosecond arithmetic
+    f = pd.Timedelta(1, unit=freq).value
+    orig_dtype = gdf["started_at"].dtype
+    if tz is None:
+        s = gdf["started_at"].to_numpy().astype("datetime64[ns]").astype("int64")
+        e = gdf["finished_at"].to_numpy().astype("datetime64[ns]").astype("int64")
+    else:
+        s = gdf["started_at"].dt.tz_localize(None).to_numpy().astype("datetime64[ns]").astype("int64")
+        e = gdf["finished_at"].dt.tz_localize(None).to_numpy().astype("datetime64[ns]").astype("int64")
+    next_border = (s // f) * f + f
+    # number of borders strictly inside (started_at, finished_at)
+    borders = np.where(e > next_border, (e - next_border - 1) // f + 1, 0)
+    segments = borders + 1
+    row_idx = np.repeat(np.arange(len(gdf)), segments)
+    # position of each output row within its record
+    k = np.arange(len(row_idx)) - np.repeat(np.cumsum(segments) - segments, segments)
+    new_s = np.where(k == 0, s[row_idx], next_border[row_idx] + (k - 1) * f)
+    new_e = np.where(k == segments[row_idx] - 1, e[row_idx], next_border[row_idx] + k * f)
+    gdf = gdf.take(row_idx).reset_index(drop=True)
+    new_s = pd.Series(new_s.astype("datetime64[ns]"), index=gdf.index)
+    new_e = pd.Series(new_e.astype("datetime64[ns]"), index=gdf.index)
+    if tz is not None:
+        new_s = new_s.dt.tz_localize(tz)
+        new_e = new_e.dt.tz_localize(tz)
+    gdf["started_at"] = new_s.astype(orig_dtype)
+    gdf["finished_at"] = new_e.astype(orig_dtype)
     if "duration" in gdf.columns:
         gdf["duration"] = gdf["finished_at"] - gdf["started_at"]
     return gdf
